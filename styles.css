@@ -1,8 +1,167 @@
-/*
+/* ===== Container ===== */
+.calendaric-view {
+  padding: 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.calendaric-container {
+  padding: 0 8px;
+  width: 100%;
+}
 
-If your plugin does not need CSS, delete this file.
+/* ===== Navigation ===== */
+.calendaric-nav {
+  align-items: center;
+  display: flex;
+  margin: 0.6em 0 1em;
+  padding: 0 8px;
+  width: 100%;
+}
 
-*/
+.calendaric-title {
+  color: var(--text-normal);
+  font-size: 1.5em;
+  margin: 0;
+  cursor: pointer;
+}
+
+.calendaric-month {
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.calendaric-year {
+  color: var(--interactive-accent);
+  margin-left: 0.3em;
+}
+
+.calendaric-nav-buttons {
+  display: flex;
+  justify-content: center;
+  margin-left: auto;
+}
+
+/* Arrow buttons */
+.calendaric-nav-btn {
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+
+.calendaric-nav-btn:hover {
+  color: var(--text-normal);
+}
+
+.calendaric-nav-btn svg {
+  height: 16px;
+  width: 16px;
+}
+
+.calendaric-nav-btn--next svg {
+  transform: rotate(180deg);
+}
+
+/* TODAY button */
+.calendaric-today-btn {
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin: 0 4px;
+  padding: 0 4px;
+  text-transform: uppercase;
+}
+
+.calendaric-today-btn:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+/* ===== Grid ===== */
+.calendaric-grid {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.calendaric-grid th {
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 0.6em;
+  letter-spacing: 1px;
+  padding: 4px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendaric-grid td {
+  padding: 1px;
+  text-align: center;
+}
+
+/* ===== Week Numbers ===== */
+.calendaric-weeknum-header {
+  border-right: 1px solid var(--background-modifier-border);
+}
+
+.calendaric-weeknum-cell {
+  border-right: 1px solid var(--background-modifier-border);
+}
+
+.calendaric-weeknum {
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.65em;
+  padding: 4px;
+  text-align: center;
+  transition: background-color 0.1s ease-in, color 0.1s ease-in;
+}
+
+.calendaric-weeknum:hover {
+  background-color: var(--interactive-hover);
+}
+
+/* ===== Day Cells ===== */
+.calendaric-day {
+  border-radius: 4px;
+  color: var(--text-normal);
+  cursor: default;
+  font-size: 0.8em;
+  padding: 4px;
+  text-align: center;
+  transition: background-color 0.1s ease-in, color 0.1s ease-in;
+}
+
+.calendaric-day:hover {
+  background-color: var(--interactive-hover);
+}
+
+.calendaric-day.is-today {
+  color: var(--interactive-accent);
+}
+
+.calendaric-day.is-adjacent-month {
+  opacity: 0.25;
+}
+
+.calendaric-dot-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  line-height: 6px;
+  min-height: 6px;
+}
+
+/* ===== Mobile ===== */
+.is-mobile .calendaric-nav {
+  padding: 0;
+}
+
+.is-mobile .calendaric-today-btn {
+  display: none;
+}
