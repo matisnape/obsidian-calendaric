@@ -157,6 +157,117 @@
   min-height: 6px;
 }
 
+/* ===== Settings Tab ===== */
+
+/* --- Import callout card --- */
+.calendaric-callout {
+  border-radius: var(--radius-m);
+  margin-bottom: 1.5em;
+  padding: 12px 16px 14px;
+}
+
+.calendaric-callout--info {
+  background-color: var(--background-modifier-info);
+  border-left: 3px solid var(--interactive-accent);
+}
+
+.calendaric-callout--warning {
+  background-color: var(--background-modifier-error);
+  border-left: 3px solid var(--text-warning, orange);
+  opacity: 0.85;
+}
+
+.calendaric-callout strong {
+  display: block;
+  font-size: 0.95em;
+  margin-bottom: 4px;
+}
+
+.calendaric-callout p {
+  color: var(--text-muted);
+  font-size: 0.875em;
+  margin: 0 0 12px;
+}
+
+.calendaric-callout__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* --- Periodic Notes groups (matching Periodic Notes plugin styling) --- */
+.periodic-group {
+  background: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+}
+
+.periodic-group:not(:last-of-type) {
+  margin-bottom: 24px;
+}
+
+.periodic-group-heading {
+  cursor: pointer;
+  padding: 24px;
+  border-top: none;
+}
+
+.periodic-group-heading h3 {
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.periodic-group-title {
+  display: flex;
+  align-items: center;
+}
+
+/* Arrow icon */
+.periodic-group-title .arrow {
+  align-items: center;
+  display: flex;
+  margin-right: 0.6em;
+  transition: 0.2s transform ease-in;
+}
+
+.periodic-group-title .arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* "Opens at startup" badge */
+.badge {
+  color: var(--text-muted);
+  font-size: 70%;
+  font-style: italic;
+  font-weight: 500;
+  margin-left: 1em;
+}
+
+.periodic-group-content {
+  padding: 24px;
+}
+
+/* Inline toggle in the group heading — strip the default setting-item chrome */
+.periodic-group-heading .setting-item {
+  border-top: none;
+  padding: 0;
+}
+
+/* Format input full-width */
+.periodic-group-content .setting-item-control input[type="text"] {
+  flex-grow: 1;
+}
+
+/* Bold accent colour for format example — mirrors Periodic Notes' .u-pop */
+.periodic-group-content .u-pop {
+  color: var(--interactive-accent);
+}
+
+/* Line break in setting descriptions */
+.periodic-group-content .setting-item-description {
+  white-space: pre-line;
+}
+
 /* ===== Mobile ===== */
 .is-mobile .calendaric-nav {
   padding: 0;

@@ -1,5 +1,23 @@
 import type { Moment } from "moment";
 
+export interface PeriodicConfig {
+	enabled: boolean;
+	format: string;
+	folder: string;
+	templatePath: string;
+	allowPrefixMatch: boolean;
+	openAtStartup: boolean;
+}
+
+export const DEFAULT_PERIODIC_CONFIG: PeriodicConfig = {
+	enabled: false,
+	format: "",
+	folder: "",
+	templatePath: "",
+	allowPrefixMatch: false,
+	openAtStartup: false,
+};
+
 /** A single day in the calendar grid */
 export interface ICalendarDay {
 	date: Moment;

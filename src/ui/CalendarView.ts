@@ -40,4 +40,8 @@ export class CalendarView extends ItemView {
 		this.calendar?.destroy();
 		this.calendar = null;
 	}
+
+	refresh(): void {
+		this.calendar?.refreshSettings(this.plugin.settings);
+	}
 }

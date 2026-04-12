@@ -1,10 +1,11 @@
+import type { Moment } from "moment";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 
 export class CalendarWidget {
 	private containerEl: HTMLElement;
 	private settings: CalendaricSettings;
-	private displayedMonth: moment.Moment;
+	private displayedMonth: Moment;
 
 	// DOM references for partial updates
 	private titleEl!: HTMLElement;
@@ -102,7 +103,6 @@ export class CalendarWidget {
 				const classes = ["calendaric-day"];
 				if (day.isToday) classes.push("is-today");
 				if (day.isAdjacentMonth) classes.push("is-adjacent-month");
-				if (day.isWeekend) classes.push("is-weekend");
 				const dayDiv = td.createDiv({ cls: classes.join(" "), text: String(day.date.date()) });
 				dayDiv.createDiv({ cls: "calendaric-dot-container" });
 			}
@@ -124,8 +124,15 @@ export class CalendarWidget {
 		this.renderGrid();
 	}
 
+	/** Lightweight refresh — re-renders grid with current settings (e.g. on minute tick). */
 	refresh(): void {
 		this.renderGrid();
+	}
+
+	/** Full refresh after settings change — re-renders everything including the header. */
+	refreshSettings(settings: CalendaricSettings): void {
+		this.settings = settings;
+		this.render();
 	}
 
 	destroy(): void {
