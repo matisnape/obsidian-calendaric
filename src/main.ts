@@ -1,6 +1,9 @@
-import { Plugin } from "obsidian";
+import { Plugin, TFile } from "obsidian";
 import { CalendaricSettings, CalendaricSettingsTab, DEFAULT_SETTINGS } from "./settings";
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./ui/CalendarView";
+import { computeNotePath } from "./notes/noteUtils";
+import { createNote } from "./notes/noteCreate";
+import { openNoteInNewTab } from "./notes/noteOpen";
 
 
 export default class CalendaricPlugin extends Plugin {
@@ -19,7 +22,10 @@ export default class CalendaricPlugin extends Plugin {
 			(window as any).moment?.locale(this.settings.overrideLocale);
 		}
 
-		this.app.workspace.onLayoutReady(() => this.initLeaf());
+		this.app.workspace.onLayoutReady(() => {
+			this.initLeaf();
+			void this.openStartupNote();
+		});
 
 		this.addCommand({
 			id: "show-calendar-view",
@@ -36,7 +42,7 @@ export default class CalendaricPlugin extends Plugin {
 		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) return;
 		const rightLeaf = this.app.workspace.getRightLeaf(false);
 		if (!rightLeaf) return;
-		rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR });
+		void rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
 	}
 
 	async activateView(): Promise<void> {
@@ -57,6 +63,31 @@ export default class CalendaricPlugin extends Plugin {
 		const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
 		if (leaf?.view instanceof CalendarView) {
 			leaf.view.refresh();
+		}
+	}
+
+	private async openStartupNote(): Promise<void> {
+		const granularities = ["day", "week", "month", "quarter", "year"] as const;
+		for (const key of granularities) {
+			const config = this.settings[key];
+			if (!config.openAtStartup || !config.enabled) continue;
+
+			const date = window.moment();
+			const path = computeNotePath(date, config, this.app);
+			const existing = this.app.vault.getAbstractFileByPath(path);
+
+			let file: TFile;
+			if (existing instanceof TFile) {
+				file = existing;
+			} else {
+				// Create silently — bypass confirmBeforeCreate on startup
+				// Only day/week notes are supported for creation; month/quarter/year are not yet implemented
+				if (key !== "day" && key !== "week") break;
+				file = await createNote(date, key, config, this.app);
+			}
+
+			await openNoteInNewTab(file, this.app);
+			break; // Only one granularity can have openAtStartup (enforced by clearStartupNote)
 		}
 	}
 

@@ -5,7 +5,6 @@ export interface PeriodicConfig {
 	format: string;
 	folder: string;
 	templatePath: string;
-	allowPrefixMatch: boolean;
 	openAtStartup: boolean;
 }
 
@@ -14,7 +13,6 @@ export const DEFAULT_PERIODIC_CONFIG: PeriodicConfig = {
 	format: "",
 	folder: "",
 	templatePath: "",
-	allowPrefixMatch: false,
 	openAtStartup: false,
 };
 

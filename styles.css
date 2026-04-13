@@ -157,6 +157,34 @@
   min-height: 6px;
 }
 
+.calendaric-dot {
+  display: inline-block;
+  fill: var(--color-dot, var(--text-muted));
+  height: 6px;
+  margin: 0 1px;
+  width: 6px;
+}
+
+.calendaric-day.is-active .calendaric-dot,
+.calendaric-weeknum.is-active .calendaric-dot {
+  fill: var(--text-on-accent);
+}
+
+.calendaric-day.is-active,
+.calendaric-day.is-active.is-today {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.calendaric-day.is-active:hover {
+  background-color: var(--interactive-accent-hover);
+}
+
+.calendaric-weeknum.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
 /* ===== Settings Tab ===== */
 
 /* --- Import callout card --- */

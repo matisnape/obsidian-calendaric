@@ -299,6 +299,17 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		});
 		syntaxLink.setAttr("target", "_blank");
 		syntaxLink.setAttr("rel", "noopener");
+		formatDesc.appendText(" · ");
+		const guideLink = formatDesc.createEl("a", { text: "Format & template guide", href: "#" });
+		guideLink.addEventListener("click", (e) => {
+			e.preventDefault();
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const basePath: string = (this.app.vault.adapter as any).basePath ?? "";
+			const guidePath = `${basePath}/.obsidian/plugins/obsidian-calendaric/docs/guide.md`;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const { shell } = (window as any).require("electron") as { shell: { openPath: (p: string) => void } };
+			shell.openPath(guidePath);
+		});
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {
 			const m = getMoment();
@@ -342,18 +353,6 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
 				text.onChange(async (value) => {
 					config.templatePath = value;
-					await this.save();
-				});
-			});
-
-		// Allow prefix matching
-		new Setting(content)
-			.setName("Allow prefix matching")
-			.setDesc(`Match ${periodicity} notes whose filename starts with the formatted date string.\nUseful for notes like "2026-W07, 09.02 - 15.02.md".`)
-			.addToggle((toggle) => {
-				toggle.setValue(config.allowPrefixMatch);
-				toggle.onChange(async (value) => {
-					config.allowPrefixMatch = value;
 					await this.save();
 				});
 			});

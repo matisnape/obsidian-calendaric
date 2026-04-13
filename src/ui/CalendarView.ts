@@ -28,7 +28,7 @@ export class CalendarView extends ItemView {
 		container.empty();
 		container.addClass("calendaric-view");
 
-		this.calendar = new CalendarWidget(container, this.plugin.settings);
+		this.calendar = new CalendarWidget(container, this.app, this.plugin.settings);
 
 		// Refresh every 60 seconds to catch midnight rollover
 		this.registerInterval(
