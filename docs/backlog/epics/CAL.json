@@ -1,0 +1,881 @@
+{
+  "epic": "CAL",
+  "epic_title": "The calendar view: grid, navigation, indicators, interaction",
+  "summary": "This epic owns everything the user sees and clicks inside the calendar view itself: the month grid (including adjacent-month days and the week-number column), moving between months and back to today, the click/modifier-click/hover/right-click behaviour of every cell type (day, week number, month header), the indicator dots on a cell and the detail shown for them, and keeping all of that current as files, settings, the active note, and the clock change. It boundaries against NOTE (which owns actually opening or creating a note file), CMD (which owns the command/ribbon that opens this view), SET (which owns the settings values themselves, not the view's reaction to them) and FMT (which owns the week-number value, not its display column).",
+  "stories": [
+    {
+      "id": "US-CAL-01",
+      "epic": "CAL",
+      "title": "Render the month grid with adjacent-month days and the week-number column",
+      "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
+      "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:render-calendar-grid", "calendaric:calendar-month-grid-render"],
+      "constrained_by": [],
+      "granularity": ["month"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-01.1",
+          "given": "any month is displayed",
+          "when": "the grid renders",
+          "then": [
+            "the grid always shows exactly 6 rows of 7 days, regardless of how many days the month has"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-01.2",
+          "given": "the displayed month does not start on the grid's first weekday column",
+          "when": "the grid renders",
+          "then": [
+            "the leading empty cells are filled with the trailing days of the previous month",
+            "those leading cells are visually distinguished from the current month's days"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-01.3",
+          "given": "the displayed month's last day falls before the end of the grid's last row",
+          "when": "the grid renders",
+          "then": [
+            "the trailing empty cells are filled with the leading days of the next month",
+            "those trailing cells are visually distinguished from the current month's days"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-01.4",
+          "given": "the week-number column is enabled",
+          "when": "the grid renders",
+          "then": [
+            "each week row shows a week-number cell at the start of the row",
+            "the week number itself comes from the shared week-numbering rules, not from this view's own calculation"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-01.5",
+          "given": "the week-number column is disabled",
+          "when": "the grid renders",
+          "then": [
+            "no week-number column or cells are shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-01.6",
+          "given": "the displayed month spans a leap-year February or a December-to-January year boundary",
+          "when": "the grid renders",
+          "then": [
+            "adjacent-month days on the grid carry the correct date and year across the boundary"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-02",
+      "epic": "CAL",
+      "title": "Navigate between months and return to today",
+      "story": "As someone planning ahead or looking back, I want to step the grid forward and backward one month at a time and jump straight back to the current month, so that I can browse freely without losing track of where 'now' is.",
+      "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:navigate-month", "calui:reset-to-current-month", "calendaric:calendar-navigation"],
+      "constrained_by": [],
+      "granularity": ["month"],
+      "depends_on": [],
+      "open_questions": [
+        "The prior component version showed a localized word (e.g. a Polish 'Dzisiaj') on the reset-to-today control; a newer version replaced it with an icon and an English-only tooltip. Since this vault is primarily Polish, should the rewritten control keep a localized label?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-02.1",
+          "given": "the grid is showing any month",
+          "when": "the user activates the 'next month' control",
+          "then": [
+            "the grid shows the following month"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-02.2",
+          "given": "the grid is showing any month",
+          "when": "the user activates the 'previous month' control",
+          "then": [
+            "the grid shows the preceding month"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-02.3",
+          "given": "the grid is showing a month other than the current one",
+          "when": "the user activates the dedicated 'return to today' control",
+          "then": [
+            "the grid shows the current month",
+            "today's cell is visible in that month"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-02.4",
+          "given": "the grid is already showing the current month",
+          "when": "the view renders the 'return to today' control",
+          "then": [
+            "the control is shown in an inactive state",
+            "activating it while inactive has no effect"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-03",
+      "epic": "CAL",
+      "title": "Click a day cell to open or create its note",
+      "story": "As someone keeping a daily journal, I want clicking any day in the grid to take me to that day's note, offering to create it if it does not exist yet, so that the grid is a single place to reach any day.",
+      "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:day-cell-interactions", "calendaric:calendar-click-to-open-or-create", "cal:hover-link-preview", "cal:confirmation-modal-dialog", "calendaric:confirm-before-create-modal"],
+      "constrained_by": [],
+      "granularity": ["day"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-03.1",
+          "given": "a day cell already has a note",
+          "when": "the user clicks it",
+          "then": [
+            "the request to open that note is issued for the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.2",
+          "given": "a day cell has no note yet and creating without confirmation is configured",
+          "when": "the user clicks it",
+          "then": [
+            "the request to create and open that day's note is issued immediately, with no confirmation step"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.3",
+          "given": "a day cell has no note yet and confirming before creation is configured",
+          "when": "the user clicks it",
+          "then": [
+            "a confirmation dialog appears naming the day before any file is created",
+            "accepting the dialog issues the create-and-open request",
+            "dismissing the dialog creates nothing and leaves the grid unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.4",
+          "given": "a day cell (with or without a note)",
+          "when": "the user clicks it while holding the split-pane modifier key",
+          "then": [
+            "the open or create request is issued for a new split instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.5",
+          "given": "a day cell",
+          "when": "the user hovers it while holding the preview modifier key",
+          "then": [
+            "a native note preview is requested for that day's note path, whether or not the note exists"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.6",
+          "given": "the clicked day cell belongs to the leading or trailing (adjacent-month) part of the grid",
+          "when": "the user clicks it",
+          "then": [
+            "the same open-or-create behaviour applies as for a day in the displayed month",
+            "the grid keeps showing the same month it showed before the click"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-04",
+      "epic": "CAL",
+      "title": "Click the week-number cell to open or create its note",
+      "story": "As someone who reviews the week as a unit, I want clicking the week number to take me to that week's note, offering to create it if it does not exist, so that I do not have to find a specific day to reach the weekly summary.",
+      "rationale": "The week-number column is a click target in its own right, not just a label.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:week-number-interactions", "calendaric:calendar-click-to-open-or-create", "cal:hover-link-preview", "cal:confirmation-modal-dialog", "calendaric:confirm-before-create-modal"],
+      "constrained_by": [],
+      "granularity": ["week"],
+      "depends_on": [],
+      "open_questions": [
+        "The old week-number cell can resolve a slightly different reference date for click versus hover/right-click, depending on the configured week-start day. Should the rewrite guarantee all three resolve to the same date, or is the discrepancy acceptable?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-04.1",
+          "given": "a week already has a note",
+          "when": "the user clicks its week-number cell",
+          "then": [
+            "the request to open that week's note is issued for the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-04.2",
+          "given": "a week has no note yet",
+          "when": "the user clicks its week-number cell",
+          "then": [
+            "the same create/confirm behaviour applies as for a day cell without a note (direct creation or a confirmation dialog, per the same setting)"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-04.3",
+          "given": "a week-number cell (with or without a note)",
+          "when": "the user clicks it while holding the split-pane modifier key",
+          "then": [
+            "the open or create request is issued for a new split instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-04.4",
+          "given": "a week-number cell",
+          "when": "the user hovers it while holding the preview modifier key",
+          "then": [
+            "a native note preview is requested for that week's note path, whether or not the note exists"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-05",
+      "epic": "CAL",
+      "title": "Open the month's note from the header, and reset to today from a separate control",
+      "story": "As someone who keeps a monthly note, I want clicking the month header to take me to that month's note, and a separate, dedicated control to jump back to today, so that neither action is at risk of accidentally triggering the other.",
+      "rationale": "This carries forward a feature the user relies on today that is currently implemented in a fragile, easily-broken way; the rewrite must make it a real, first-class part of the header rather than a workaround layered on top of it.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:month-header-interactions", "cal:month-header-click-open-monthly-note", "cal:reset-month-to-today-on-header-click", "forks:open-monthly-note-from-header", "cal:expose-displayed-month"],
+      "constrained_by": [],
+      "granularity": ["month"],
+      "depends_on": [],
+      "open_questions": [
+        "If monthly note support becomes unavailable while the view is already open (for example the user disables it mid-session), should the header start falling back to reset-to-today on the very next click, or only after the view is reopened?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-05.1",
+          "given": "monthly periodic notes are configured and available",
+          "when": "the user clicks the month header",
+          "then": [
+            "the request to open or create the displayed month's note is issued for the active pane",
+            "the displayed month on the grid does not change because of this click"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-05.2",
+          "given": "monthly periodic notes are configured and available",
+          "when": "the user clicks the month header while holding the split-pane modifier key",
+          "then": [
+            "the open or create request is issued for a new split instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-05.3",
+          "given": "monthly periodic notes are not configured or not available",
+          "when": "the user clicks the month header",
+          "then": [
+            "the grid resets its displayed month to today, matching the behaviour of the dedicated 'return to today' control"
+          ],
+          "verifies": "compat",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-05.4",
+          "given": "a note already exists for the displayed month",
+          "when": "the user right-clicks the month header",
+          "then": [
+            "that note's file context menu appears at the click position"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-05.5",
+          "given": "the view is assembled",
+          "when": "the month header is built",
+          "then": [
+            "it exposes its own dedicated, addressable click target for 'open this month's note'",
+            "that target is not identified by matching incidental markup or styling produced by an unrelated UI component"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-06",
+      "epic": "CAL",
+      "title": "Right-click a day or week cell for file actions",
+      "story": "As someone managing my notes from the calendar, I want to right-click a day or week that already has a note to get its usual file actions, so that I do not have to locate the file elsewhere to rename or delete it.",
+      "rationale": "The context menu is the calendar's entry point into standard file management, including whatever other installed plugins add to it.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["cal:day-week-context-menu", "cal:file-context-menu"],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-06.1",
+          "given": "a day or week cell already has a note",
+          "when": "the user right-clicks it",
+          "then": [
+            "that note's file context menu appears at the click position",
+            "the menu includes a delete action for that note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-06.2",
+          "given": "a day or week cell has no note",
+          "when": "the user right-clicks it",
+          "then": [
+            "no context menu appears"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-06.3",
+          "given": "other installed plugins contribute items to a file's context menu",
+          "when": "the menu opens from a day or week cell",
+          "then": [
+            "those contributed items also appear in the menu"
+          ],
+          "verifies": "compat",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-06.4",
+          "given": "the file context menu is open",
+          "when": "the user chooses delete",
+          "then": [
+            "the underlying note file is removed",
+            "the cell's indicator for that day or week disappears once the deletion completes"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-07",
+      "epic": "CAL",
+      "title": "Show indicator dots for note existence and amount of content",
+      "story": "As someone scanning the month for how much I've written, I want each day and week to show a small dot when a note exists, filled in proportion to how much is in it, so that I can spot thin or empty periods at a glance without opening anything.",
+      "rationale": "This is the one indicator the vault actually uses today, and the extension point behind it must stay open to other indicators later.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:resolve-day-metadata", "calui:render-dots", "cal:metadata-source-wordcount", "cal:get-word-count", "calendaric:calendar-note-existence-dots", "cal:mount-calendar-view"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-07.1",
+          "given": "a day, week, or month has no note",
+          "when": "its cell renders",
+          "then": [
+            "no indicator dot is shown for it"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-07.2",
+          "given": "a note exists and has at least one word in it",
+          "when": "its cell renders",
+          "then": [
+            "an indicator dot is shown with at least one segment filled"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-07.3",
+          "given": "a note's word count crosses the configured thresholds for additional dot segments",
+          "when": "its cell renders",
+          "then": [
+            "more of the dot's segments are shown filled, up to the maximum",
+            "the fill never exceeds the maximum regardless of how long the note is"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-07.4",
+          "given": "the plugin, or another installed plugin, registers more than one indicator source",
+          "when": "a cell with data from multiple sources renders",
+          "then": [
+            "each source's dot appears on the cell alongside the others",
+            "each source's dot is visually distinguishable from the others (for example by colour)"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-07.5",
+          "given": "a registered indicator source has nothing to say about a given cell (for example, no note exists yet)",
+          "when": "that cell renders",
+          "then": [
+            "that source contributes no dot for that cell, while other sources are unaffected"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-08",
+      "epic": "CAL",
+      "title": "See indicator detail without needing to hover",
+      "story": "As someone using the calendar on both a laptop and a phone, I want to see the full detail behind a cell's indicators, so that I get the same information whether or not my device supports hovering.",
+      "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must work the same on touch devices.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["calui:hover-popover-desktop", "calui:popover-mobile-fallback"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-08.1",
+          "given": "a cell has one or more indicators and the device supports hovering",
+          "when": "the pointer rests on the cell",
+          "then": [
+            "a detail view appears near the cell listing each indicator's value"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-08.2",
+          "given": "the detail view is showing for a cell",
+          "when": "the pointer leaves that cell and does not move onto the detail view itself",
+          "then": [
+            "the detail view closes shortly after"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-08.3",
+          "given": "a cell has one or more indicators and the device does not support hovering",
+          "when": "the user taps the cell",
+          "then": [
+            "the same detail information is shown, without requiring a hover gesture"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-08.4",
+          "given": "a cell has no indicator data at all",
+          "when": "it is hovered or tapped",
+          "then": [
+            "no detail view appears"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-09",
+      "epic": "CAL",
+      "title": "Keep the grid's cells and dots in sync with the vault and its settings",
+      "story": "As someone editing notes from outside the calendar, I want the grid to update itself when a note appears, disappears, is renamed, or a relevant setting changes, so that what I see never goes stale while the view is open.",
+      "rationale": "The grid is read constantly but the notes behind it are created and edited elsewhere; staleness would make it actively misleading.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:auto-refresh-on-vault-events", "calendaric:calendar-live-refresh-on-vault-change", "cal:refresh-on-periodic-notes-settings-change", "cal:reactive-settings-refresh"],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-09.1",
+          "given": "a note matching a day or week format is created outside the view (another pane, sync, or externally)",
+          "when": "the file lands in the vault while the view is open",
+          "then": [
+            "the corresponding cell's indicator appears without the user reloading or interacting with the view"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-09.2",
+          "given": "a note matching a day or week format is deleted",
+          "when": "the deletion happens while the view is open",
+          "then": [
+            "the corresponding cell's indicator disappears without the user reloading or interacting with the view"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-09.3",
+          "given": "a note matching a day or week format is renamed",
+          "when": "the rename happens while the view is open",
+          "then": [
+            "the cell for the old name loses its indicator",
+            "the cell for the new name gains an indicator, if the new name still matches a recognised date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-09.4",
+          "given": "a setting that affects the calendar's own display changes (for example, an indicator threshold or the week-number column)",
+          "when": "the change is saved",
+          "then": [
+            "the grid re-renders immediately to reflect the new setting"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-09.5",
+          "given": "the periodic-notes configuration (folders, formats, or which granularities are enabled) changes elsewhere",
+          "when": "that change is saved",
+          "then": [
+            "the grid re-indexes existing notes and re-renders to reflect the new configuration"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-10",
+      "epic": "CAL",
+      "title": "Highlight and reveal the currently active note",
+      "story": "As someone editing a periodic note in another pane, I want the calendar to show me which cell that note belongs to, and to be able to jump the view to it, so that I always know where I am in the calendar without hunting for it.",
+      "rationale": "The highlight is the calendar's answer to 'where am I', and it must track the active pane, not just clicks made inside the view itself.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:track-active-file-for-highlight", "calendaric:calendar-active-file-highlight", "cal:jump-calendar-to-active-note"],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-10.1",
+          "given": "a day or week note becomes the active file in any pane",
+          "when": "it is visible in the currently displayed month",
+          "then": [
+            "its cell is visibly highlighted as the active note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-10.2",
+          "given": "a cell is highlighted as the active note",
+          "when": "a file that is not a day or week note becomes active",
+          "then": [
+            "the previous highlight is cleared"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-10.3",
+          "given": "the active file is a day or week note whose date falls outside the currently displayed month, and the view is asked to reveal the active note",
+          "when": "that request is handled",
+          "then": [
+            "the view navigates to the month containing that note",
+            "the note's cell is highlighted"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-10.4",
+          "given": "the active file is a day or week note already within the currently displayed month, and the view is asked to reveal the active note",
+          "when": "that request is handled",
+          "then": [
+            "the view highlights the note's cell without navigating away from the month already shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-11",
+      "epic": "CAL",
+      "title": "Keep 'today' current while the view stays open",
+      "story": "As someone who leaves the calendar open across midnight, I want today's cell to advance on its own, so that the view never quietly shows yesterday as today.",
+      "rationale": "The view has no reason to be reopened during normal use, so it must roll itself over rather than relying on the user to refresh it.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:calendar-heartbeat-tick", "calendaric:calendar-minute-refresh"],
+      "constrained_by": [],
+      "granularity": ["day", "month"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-11.1",
+          "given": "the view is open and currently displaying today's month with today's cell marked as today",
+          "when": "midnight passes while the view stays open",
+          "then": [
+            "the marked 'today' cell automatically advances to the new date, with no action from the user"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-11.2",
+          "given": "the view is open and currently displaying today's month, and midnight passes into a new month",
+          "when": "the rollover happens",
+          "then": [
+            "the displayed month advances along with the marked 'today' cell"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-11.3",
+          "given": "the user has navigated away to view a day or month other than today",
+          "when": "midnight passes",
+          "then": [
+            "the view does not automatically jump back to today",
+            "it stays showing whatever the user had navigated to"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CAL-12",
+      "epic": "CAL",
+      "title": "Position hover and menu overlays near their trigger",
+      "story": "As someone opening a popover or a suggestion list from the calendar, I want that overlay to stay fully visible and anchored to whatever triggered it, so that it is never clipped off the edge of the window or left floating in the wrong place.",
+      "rationale": "This is the shared positioning behaviour the indicator popover (and future overlay-driven features) depend on to be usable near the edges of the window.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["pn:text-input-suggest-popper-positioning"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [
+        "Is this positioning behaviour meant to be one shared mechanism reused by both this epic's popover and SET's own autocomplete inputs, or an independent implementation per epic?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-12.1",
+          "given": "an overlay is triggered near the edge of the window",
+          "when": "it opens",
+          "then": [
+            "it is positioned so it stays fully visible rather than being clipped by the window edge"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-12.2",
+          "given": "an overlay is open and its trigger element moves or scrolls out from under it",
+          "when": "that happens",
+          "then": [
+            "the overlay's position updates to stay anchored to the trigger, or the overlay closes"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-12.3",
+          "given": "a list-type overlay (such as a suggestion list) is open",
+          "when": "the user presses the arrow keys",
+          "then": [
+            "keyboard focus moves between the overlay's items",
+            "the overlay stays open while doing so"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-12.4",
+          "given": "an overlay is open",
+          "when": "the user clicks or taps outside it",
+          "then": [
+            "the overlay closes"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "Almost every acceptance criterion in this epic is DOM/interaction-driven (click, hover, contextmenu, live vault events) and is only testable_by 'manual' or 'integration'. The exceptions are pure grid/date math and word-count-to-dot-fill logic (US-CAL-01, most of US-CAL-07), which are testable_by 'unit'.",
+    "US-CAL-03, US-CAL-04 and US-CAL-05 depend on NOTE's 'open or create a note for a date' capability and on FMT's/SET's resolution of where and how that note is named; this epic owns only the click/hover/menu request that triggers it and the resulting view-level effect (which pane, whether the grid navigates), never the file operation itself. Exact NOTE story IDs were not guessed and are left out of depends_on.",
+    "The conflict between 'open the month note' and 'reset to today' on the month header is resolved in US-CAL-05: the header always tries to open/create the displayed month's note when monthly notes are available, and only falls back to resetting to today when they are not. Returning to today on demand (when monthly notes ARE available) has its own separate, always-present control, covered in US-CAL-02, so the two gestures never compete for the same click.",
+    "The vault's real-world indicator is the word-count dot (US-CAL-07); the streak, tags and tasks indicator sources seen in the old plugin are in the icebox (epic ICE) and are intentionally not covered here. US-CAL-07's multi-source acceptance criterion (AC-CAL-07.4) keeps the door open for the icebox sources, or any other future source, without naming an interface.",
+    "pn:text-input-suggest-popper-positioning (US-CAL-12) is mapped from a settings text-input autocomplete in the source plugins, but is written here as the generic overlay-positioning behaviour this epic's own hover popover (US-CAL-08) needs; whether it ends up as one shared mechanism with SET's inputs or a duplicated implementation is flagged as an open question rather than assumed."
+  ]
+}

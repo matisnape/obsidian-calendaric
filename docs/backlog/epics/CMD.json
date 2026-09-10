@@ -1,0 +1,657 @@
+{
+  "epic": "CMD",
+  "epic_title": "Commands, ribbon, menus and startup behaviour",
+  "summary": "This epic owns every way to reach a periodic note without opening the calendar view first: the command palette, the ribbon icon and its context menu, and automatic note-opening at vault startup. It also owns the calendar view's own entry point (opening and auto-revealing it) and reveal-in-calendar shortcuts. It does not own what a note operation actually does when triggered (NOTE), the calendar view's own grid and interactions once open (CAL), or which granularities are enabled and which note is configured to open at startup (SET) - it only owns how the command surface reacts to those choices.",
+  "stories": [
+    {
+      "id": "US-CMD-01",
+      "epic": "CMD",
+      "title": "Open the calendar view from the command palette",
+      "story": "As a vault user who does not want to click a ribbon icon, I want a command that opens the calendar view, so that I can reach it entirely from the keyboard.",
+      "rationale": "The calendar view has no ribbon icon of its own in the merged design, so the palette command is its only guaranteed entry point.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:open-calendar-view", "calendaric:open-calendar-view"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-01.1",
+          "given": "no calendar view leaf is open anywhere in the workspace",
+          "when": "the user runs the \"Open calendar\" command",
+          "then": [
+            "a calendar leaf is created in the workspace",
+            "the calendar leaf becomes visible and gains focus"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-01.2",
+          "given": "a calendar view leaf is already open",
+          "when": "the user opens the command palette",
+          "then": [
+            "the \"Open calendar\" command is not listed"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-01.3",
+          "given": "a calendar view leaf already exists",
+          "when": "anything in the plugin attempts to open the calendar view again",
+          "then": [
+            "no second calendar leaf is created",
+            "the existing leaf is revealed instead"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-01.4",
+          "given": "the sidebar holding the calendar leaf is collapsed or hidden",
+          "when": "the user runs the \"Open calendar\" command",
+          "then": [
+            "the sidebar expands",
+            "the calendar view becomes visible"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-02",
+      "epic": "CMD",
+      "title": "Reveal the calendar view automatically when the vault loads",
+      "story": "As someone who keeps the calendar visible at all times, I want the calendar view to open by itself once the vault finishes loading, so that I never have to run a command every session.",
+      "rationale": "This turns the calendar into a default part of the workspace layout instead of an opt-in view.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["cal:auto-reveal-view-on-layout-ready"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": ["US-CMD-01"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-02.1",
+          "given": "the workspace layout has already finished loading by the time the plugin activates",
+          "when": "the plugin finishes loading",
+          "then": [
+            "the calendar view opens immediately without any user action"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-02.2",
+          "given": "the workspace layout is not yet ready when the plugin activates",
+          "when": "the workspace finishes loading its layout",
+          "then": [
+            "the calendar view opens automatically at that point, not before"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-02.3",
+          "given": "a calendar view leaf already exists because Obsidian restored it from the previous session",
+          "when": "the plugin finishes loading",
+          "then": [
+            "no duplicate calendar leaf is created"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-02.4",
+          "given": "the workspace never fires its layout-ready signal during a session",
+          "when": "the user keeps working in that session",
+          "then": [
+            "the calendar view never opens automatically",
+            "the user can still open it manually with the \"Open calendar\" command"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-03",
+      "epic": "CMD",
+      "title": "Reveal the active note in the calendar",
+      "story": "As someone jumping between many periodic notes, I want a command that jumps the calendar to whatever note I currently have open, so that I can see it in context without manually paging through months.",
+      "rationale": "Without this, switching notes and switching the calendar's displayed period are two disconnected actions.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["cal:reveal-active-note-command"],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": [],
+      "open_questions": [
+        "Should running \"Reveal active note\" with no periodic note active, or with the calendar view closed, show a brief notice, or fail silently as it does today?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-03.1",
+          "given": "a periodic note is open in the active pane",
+          "when": "the user runs the \"Reveal active note\" command",
+          "then": [
+            "the calendar view navigates to display the period containing that note's date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-03.2",
+          "given": "no periodic note is open in the active pane",
+          "when": "the user runs the \"Reveal active note\" command",
+          "then": [
+            "no error is thrown",
+            "the calendar view's displayed period is left unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-03.3",
+          "given": "no periodic note is open in the active pane",
+          "when": "the user opens the command palette",
+          "then": [
+            "the \"Reveal active note\" command is still listed and enabled"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-04",
+      "epic": "CMD",
+      "title": "Open this week's note with a dedicated command",
+      "story": "As someone who wants one command to jump straight to today's weekly note, I want a dedicated \"Open Weekly Note\" command, so that weekly notes stay one keypress away even when the generated per-granularity commands are not covering weekly notes.",
+      "rationale": "This avoids weekly notes losing a keyboard entry point when the generated week command is not registered.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["cal:open-weekly-note-command"],
+      "constrained_by": [],
+      "granularity": ["week"],
+      "depends_on": ["US-CMD-05"],
+      "open_questions": [
+        "Once weekly notes are always covered by the generated per-granularity command set (US-CMD-05), is this standalone \"Open Weekly Note\" command still needed, or should it be retired?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-04.1",
+          "given": "the generated \"open current week's note\" command from the per-granularity set is not registered",
+          "when": "the user opens the command palette",
+          "then": [
+            "\"Open Weekly Note\" is listed",
+            "running it opens this week's note in the active pane, creating it first if it does not exist"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-04.2",
+          "given": "the generated \"open current week's note\" command from the per-granularity set is already registered",
+          "when": "the user opens the command palette",
+          "then": [
+            "\"Open Weekly Note\" is not shown",
+            "only one command opens the current week's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-04.3",
+          "given": "\"Open Weekly Note\" is listed and the underlying note lookup or creation fails",
+          "when": "the user runs the command",
+          "then": [
+            "the failure is surfaced to the user rather than swallowed silently"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-05",
+      "epic": "CMD",
+      "title": "Generate a fixed set of commands for every active granularity",
+      "story": "As someone who enables a new note granularity, I want the full set of navigation commands to appear for it automatically, so that every granularity gets the same keyboard support without anyone writing new code for it.",
+      "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["pn:dynamic-command-registration"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-05.1",
+          "given": "a granularity is active in the current configuration",
+          "when": "the plugin loads, or the active configuration changes",
+          "then": [
+            "five commands exist for that granularity: open the current period's note, jump forward to the closest existing note, jump backward to the closest existing note, open the next period's note, and open the previous period's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.2",
+          "given": "a granularity that was disabled becomes enabled",
+          "when": "the user finishes changing the setting",
+          "then": [
+            "that granularity's five commands appear in the command palette",
+            "no restart of Obsidian is required"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.3",
+          "given": "a granularity that was enabled becomes disabled",
+          "when": "the user finishes changing the setting",
+          "then": [
+            "that granularity's five commands disappear from the command palette",
+            "no restart of Obsidian is required"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.4",
+          "given": "the user has bound a custom hotkey to one of a granularity's commands",
+          "when": "that granularity is disabled and its command removed",
+          "then": [
+            "pressing that key combination triggers no command",
+            "the binding takes effect again if the same granularity, and the same command id, is later re-enabled"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.5",
+          "given": "a command's underlying behaviour changes between plugin versions but its purpose stays the same",
+          "when": "the plugin is upgraded",
+          "then": [
+            "the command keeps the exact same id it had before the upgrade"
+          ],
+          "verifies": "compat",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.6",
+          "given": "a command's display name in the command palette is changed between plugin versions",
+          "when": "the plugin is upgraded",
+          "then": [
+            "the command's id underneath the new name is unchanged from before the rename",
+            "a hotkey bound to that command before the rename still triggers it after the rename"
+          ],
+          "verifies": "compat",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-05.7",
+          "given": "no granularity at all is active in the current configuration",
+          "when": "the user opens the command palette",
+          "then": [
+            "none of the five generated commands appear for any granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-06",
+      "epic": "CMD",
+      "title": "Jump to the closest existing note, without creating one",
+      "story": "As someone browsing notes I have already written, I want a command that jumps to the nearest existing note before or after the one I am viewing, so that I can move through my history without accidentally creating empty notes.",
+      "rationale": "Pure navigation and note creation are different intents, and conflating them would create unwanted files just from browsing.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["pn:jump-to-adjacent-note-command"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-06.1",
+          "given": "the active pane holds a periodic note of a given granularity, and a later note of that same granularity exists",
+          "when": "the user runs \"Jump forward\" for that granularity",
+          "then": [
+            "the closest later note opens in the active pane",
+            "no new note is created"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-06.2",
+          "given": "the active pane holds a periodic note of a given granularity, and no later note of that granularity exists",
+          "when": "the user runs \"Jump forward\" for that granularity",
+          "then": [
+            "no new note is created",
+            "the user is told there is no next note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-06.3",
+          "given": "the active pane holds a periodic note of a given granularity, and no earlier note of that granularity exists",
+          "when": "the user runs \"Jump backward\" for that granularity",
+          "then": [
+            "no new note is created",
+            "the user is told there is no previous note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-06.4",
+          "given": "the active pane does not hold a periodic note of a given granularity",
+          "when": "the user opens the command palette",
+          "then": [
+            "\"Jump forward\" and \"Jump backward\" for that granularity are not shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-07",
+      "epic": "CMD",
+      "title": "Open the next or previous period's note, creating it if needed",
+      "story": "As someone maintaining an unbroken sequence of periodic notes, I want a command that always takes me to the next or previous period's note, creating it if it does not exist yet, so that I never hit a dead end while moving through time.",
+      "rationale": "This is the command that keeps a daily or weekly logging habit moving forward even into periods with no note yet.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["pn:open-adjacent-note-command"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-07.1",
+          "given": "the active pane holds a periodic note of a given granularity, and the next period's note already exists",
+          "when": "the user runs \"Open next\" for that granularity",
+          "then": [
+            "the existing next note opens in the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-07.2",
+          "given": "the active pane holds a periodic note of a given granularity, and the next period's note does not exist",
+          "when": "the user runs \"Open next\" for that granularity",
+          "then": [
+            "a new note for that next period is created",
+            "the new note opens in the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-07.3",
+          "given": "the active pane holds a periodic note of a given granularity, and the previous period's note does not exist",
+          "when": "the user runs \"Open previous\" for that granularity",
+          "then": [
+            "a new note for that previous period is created",
+            "the new note opens in the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-07.4",
+          "given": "the active pane does not hold a periodic note of a given granularity",
+          "when": "the user opens the command palette",
+          "then": [
+            "\"Open next\" and \"Open previous\" for that granularity are not shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-08",
+      "epic": "CMD",
+      "title": "One ribbon icon for the first active granularity, with a menu for the rest",
+      "story": "As someone who prefers a mouse click over the command palette, I want one ribbon icon that opens my most prominent granularity's note, with a right-click menu covering the other active granularities, so that I have one predictable spot in the sidebar for periodic notes.",
+      "rationale": "A single icon avoids cluttering the ribbon with one item per granularity while still keeping every active granularity reachable.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["pn:ribbon-icon-single-granularity", "pn:context-menu-open-note"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-08.1",
+          "given": "at least one granularity is active",
+          "when": "the plugin loads",
+          "then": [
+            "exactly one ribbon icon appears",
+            "it represents the first active granularity in day, week, month, quarter, year order"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-08.2",
+          "given": "the ribbon icon represents a given granularity",
+          "when": "the user clicks the ribbon icon",
+          "then": [
+            "the current period's note for that granularity opens in the active pane, creating it first if it does not exist"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-08.3",
+          "given": "the ribbon icon represents a given granularity",
+          "when": "the user cmd/ctrl-clicks the ribbon icon",
+          "then": [
+            "the current period's note for that granularity opens in a new split instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-08.4",
+          "given": "more than one granularity is active",
+          "when": "the user right-clicks the ribbon icon",
+          "then": [
+            "a menu lists one entry per active granularity",
+            "choosing an entry opens that granularity's current-period note, creating it first if it does not exist"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-08.5",
+          "given": "no granularity at all is active",
+          "when": "the plugin loads",
+          "then": [
+            "no ribbon icon is shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-CMD-09",
+      "epic": "CMD",
+      "title": "Exactly one note may open automatically at startup",
+      "story": "As someone who wants their day to start on a specific note, I want at most one periodic note to open automatically when the vault loads, so that I land exactly where I want without sorting through several auto-opened tabs.",
+      "rationale": "Automatic startup notes only stay useful if the set of them is small and predictable; more than one defeats the purpose.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "pn:startup-note-auto-open",
+        "pn:clear-startup-note-exclusivity",
+        "calendaric:startup-note-auto-open",
+        "calendaric:clear-startup-note-exclusivity"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "depends_on": [],
+      "open_questions": [
+        "One source plugin only created a missing startup note for day and week granularities, silently doing nothing for month, quarter or year. Should the merged plugin create the note for every granularity that can be configured to open at startup, or keep that day/week-only limitation?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-09.1",
+          "given": "no granularity has \"open on startup\" enabled",
+          "when": "the vault finishes loading",
+          "then": [
+            "no note opens automatically"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-09.2",
+          "given": "exactly one granularity has \"open on startup\" enabled and its current-period note already exists",
+          "when": "the vault finishes loading",
+          "then": [
+            "that note opens automatically in a new tab"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-09.3",
+          "given": "the granularity configured to open on startup has no current-period note yet",
+          "when": "the vault finishes loading",
+          "then": [
+            "the note is created",
+            "the newly created note opens automatically in a new tab"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-09.4",
+          "given": "one granularity already has \"open on startup\" enabled",
+          "when": "the user turns \"open on startup\" on for a different granularity",
+          "then": [
+            "the previously-enabled granularity's toggle turns off",
+            "only the newly-chosen granularity is left enabled"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-09.5",
+          "given": "the note that startup would open is already open in the workspace because Obsidian restored the previous session's tabs",
+          "when": "the vault finishes loading",
+          "then": [
+            "no duplicate tab or leaf is created for that note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "Every build uid assigned to CMD is covered by a story; nothing was folded into 'uncovered'.",
+    "Most acceptance criteria in this epic need Obsidian's workspace, command and hotkey APIs to observe (testable_by: integration), because the epic is almost entirely about entry points into the host application rather than pure logic. The exceptions are the two per-command id-stability criteria in US-CMD-05 (snapshot-testable as plain string comparisons) and the startup-exclusivity criterion in US-CMD-09 (a pure settings transform, already unit-tested in one source plugin).",
+    "US-CMD-06 and US-CMD-07 are written as separate stories on purpose: 'jump' never creates a note and reports when there is nothing to jump to, while 'open next/previous' always succeeds by creating the note. Their acceptance criteria show this contrast rather than stating it as a cross-command comparison.",
+    "Commands that call into note creation or lookup (US-CMD-04, US-CMD-06, US-CMD-07, US-CMD-08, US-CMD-09) treat that creation/lookup as a black box owned by NOTE; this epic's criteria only cover whether the command is offered, and what the user sees at the entry point, not how the note itself is built."
+  ]
+}

@@ -1,0 +1,560 @@
+{
+  "epic": "FMT",
+  "epic_title": "Filename formats, date parsing, week numbers, locale",
+  "summary": "This epic owns the two-way conversion between a date+granularity and a filename: generating a filename (including week tokens in the format field) from a date, and parsing an existing filename back into a date, deciding when that counts as a match. It also owns week numbering, week-start day, and locale, and validating a format string before it is saved. It hands NOTE the naming rules NOTE uses to look up, create and index files; NOTE decides what happens once a match (or collision) is found. It hands TPL the day-of-week resolution mechanism that TPL's note-body tokens also rely on, but owns only the filename-format-field half of the token syntax. SET owns where the format string lives and its settings UI; this epic owns only whether a given string is valid.",
+  "stories": [
+    {
+      "id": "US-FMT-01",
+      "epic": "FMT",
+      "title": "Week-relative tokens in the filename format follow the configured week start",
+      "story": "As someone naming weekly notes with per-weekday tokens, I want {{monday:DD.MM}} and its six siblings to resolve to the date that falls in my own configured week rather than a fixed Monday-first week, so that the filename always names the days of the week I actually see everywhere else in the plugin.",
+      "rationale": "The current implementation is documented as respecting the week-start setting but hard-codes ISO Monday-first weeks instead, so filenames can silently name the wrong day.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calendaric:template-token-weekday-format", "dni:get-day-of-week-numerical-value"],
+      "constrained_by": [],
+      "granularity": ["week"],
+      "depends_on": ["US-FMT-03"],
+      "open_questions": [
+        "When a weekday token names something other than one of the seven weekday names, should it be left as literal text in the filename, or should format validation reject it before saving?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-01.1",
+          "given": "a weekly note whose own date is a Sunday and the configured week start is Monday",
+          "when": "the filename format contains a {{monday:fmt}} token",
+          "then": [
+            "the token resolves to the Monday that begins the same week as the note's date, six days before that Sunday",
+            "the resolved date is rendered using the format given after the colon"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-01.2",
+          "given": "the same weekly note whose own date is that Sunday, but the configured week start is Sunday instead of Monday",
+          "when": "the filename format contains the same {{monday:fmt}} token",
+          "then": [
+            "the token resolves to the Monday that ends the same week as the note's date, one day after that Sunday",
+            "this resolved date is a different calendar date, seven days later, than the one produced under a Monday week start for the same note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-01.3",
+          "given": "a format string containing tokens for all seven weekday names, mixing upper and lower case",
+          "when": "the filename is generated for a weekly note",
+          "then": [
+            "each token resolves to that weekday's date within the note's own configured week",
+            "weekday name matching in the token is case-insensitive"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-01.4",
+          "given": "a format string configured for a granularity other than week contains a weekday token such as {{monday:fmt}}",
+          "when": "the filename is generated",
+          "then": [
+            "the token is left unresolved as literal text, because a weekday-within-the-week has no meaning for a note that is not a week"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-02",
+      "epic": "FMT",
+      "title": "Month and week layout follow the configured week start",
+      "story": "As someone viewing a month of notes, I want each week's row to start on my configured week-start day and always show a complete 6-week grid, so that the week numbers and day columns match how I think about weeks.",
+      "rationale": "The grid math must key off the user's actual week-start setting rather than a value that is silently ignored, or the grid disagrees with every other week-aware feature in the plugin.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["calui:compute-month-grid", "calendaric:calendar-week-start-resolution"],
+      "constrained_by": [],
+      "granularity": ["month", "week"],
+      "depends_on": ["US-FMT-03"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-02.1",
+          "given": "the configured week start is Monday",
+          "when": "the grid for a given month is computed",
+          "then": [
+            "every week row begins on a Monday",
+            "the grid contains exactly 6 rows of 7 days, including any leading days from the previous month and trailing days from the next month needed to fill the first and last rows"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-02.2",
+          "given": "the configured week start is Sunday, for the same month as AC-FMT-02.1",
+          "when": "the grid is computed",
+          "then": [
+            "every week row begins on a Sunday instead",
+            "the specific dates assigned to each row differ from the Monday-start grid whenever the 1st of the month falls between Sunday and Monday in the two conventions"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-02.3",
+          "given": "a month whose 1st day of the month is itself the configured week-start day, so the month's own days would otherwise fit in 5 rows",
+          "when": "the grid is computed",
+          "then": [
+            "the grid still contains exactly 6 rows of 7 days, padded with a full extra row of the following month's dates"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-02.4",
+          "given": "the month grid is computed for a displayed month",
+          "when": "the computation runs",
+          "then": [
+            "the Moment instance representing the displayed month passed in by the caller is not mutated"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-03",
+      "epic": "FMT",
+      "title": "Locale and week-start settings govern weekday names and week numbers everywhere, live",
+      "story": "As someone who works in Polish and starts the week on Monday, I want every weekday name and week number the plugin shows or writes into a filename to follow my configured locale and week-start day consistently, so that I never have to translate or recompute dates by hand.",
+      "rationale": "The old implementation mutates locale globally once at load, loses changes until a full reload, and has a live setting-UI bug that writes the locale choice to the wrong key; this story defines the correct, live-updating, user-visible contract instead.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "calui:configure-locale-and-week-start",
+        "pn:localization-week-start-override",
+        "pn:localization-locale-override",
+        "calendaric:override-locale-setting"
+      ],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-03.1",
+          "given": "the locale setting is set to Polish",
+          "when": "any weekday name, month name, or week number is rendered by the plugin, in the calendar, a filename, or a template token",
+          "then": [
+            "Polish weekday and month names are used"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-03.2",
+          "given": "a week-start day is configured",
+          "when": "any week-based computation runs anywhere in the plugin, including the calendar grid, filename week tokens, and week-number resolution",
+          "then": [
+            "all of them use the same configured week-start day",
+            "no feature is left using a different, hard-coded week-start convention than the others"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-03.3",
+          "given": "the plugin is already running and a note is open",
+          "when": "the user changes the locale or the week-start setting, without disabling and re-enabling the plugin or reloading Obsidian",
+          "then": [
+            "the next date rendered anywhere in the plugin reflects the new setting immediately"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-03.4",
+          "given": "no locale override is configured",
+          "when": "the plugin resolves which locale to use",
+          "then": [
+            "it falls back to Obsidian's own configured display language"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-03.5",
+          "given": "a locale value is stored that the date library does not recognise",
+          "when": "the plugin resolves which locale to use",
+          "then": [
+            "it falls back to a default locale rather than leaving weekday names blank or throwing an error"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-04",
+      "epic": "FMT",
+      "title": "Parse a filename back into a date, honouring nested folders and an opt-in prefix fallback",
+      "story": "As someone who already has years of periodic notes on disk, I want the plugin to recognise which date and granularity each filename represents, even when the note lives in a dated subfolder or carries an extra descriptive suffix, so that my existing notes keep working after I switch to this plugin.",
+      "rationale": "Two independent old implementations of this exact behaviour exist and disagree; this story is the single specification the rewrite must follow so an existing vault keeps recognising its own notes.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:parse-date-from-filename",
+        "pn:strict-then-prefix-date-parsing",
+        "pn:possible-formats-nested-path",
+        "pn:allow-prefix-match-gate",
+        "forks:weekly-note-prefix-match",
+        "forks:periodic-note-prefix-match-setting"
+      ],
+      "constrained_by": [
+        "vault:create-daily-note",
+        "vault:create-weekly-note-rename-move",
+        "vault:create-monthly-note-rename-move",
+        "vault:monthly-work-validate-title-shape",
+        "vault:create-yearly-note-static"
+      ],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [
+        "Between the two old implementations, one tries only the single format resolved for the requested granularity, the other tries every candidate format (full path and basename-only) for that granularity. This story adopts the every-candidate-format approach so nested-path formats work, and requires the strict-then-prefix decision below; the remaining open point is the tie-break order when more than one candidate format produces a valid match for the same file — today's code always takes the first candidate in an unspecified list order, and this story does not change that.",
+        "Should the week-number-vs-month/day disambiguation described in AC-FMT-04.5 also apply when a format has a day token but no month token, or only when both a month and a day token are present, as in the narrower of the two old implementations?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-04.1",
+          "given": "a granularity's configured format contains a folder separator, such as a year folder followed by a full date",
+          "when": "a file's full relative path exactly matches what that format would produce for some date",
+          "then": [
+            "the file is recognised as an exact match for that granularity and date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.2",
+          "given": "a note was originally created under a nested format but has since been moved so that only its filename, not its folder, matches the format's final segment",
+          "when": "the plugin resolves notes for that granularity",
+          "then": [
+            "the file is still recognised, matched against its filename alone rather than its full path"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.3",
+          "given": "a filename does not exactly match the configured format for a granularity, but starts with what that format would produce for some date, followed by extra descriptive text",
+          "when": "prefix matching is disabled for that granularity, which is the default",
+          "then": [
+            "the file is not recognised as a note for that period"
+          ],
+          "verifies": "compat",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.4",
+          "given": "the same filename and format as AC-FMT-04.3, but prefix matching is enabled for that granularity",
+          "when": "the plugin resolves notes for that granularity",
+          "then": [
+            "the file is recognised as a note for that date, as an inexact (prefix) match rather than an exact one"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.5",
+          "given": "a weekly format includes both a week-number token and a month or day token",
+          "when": "a filename is parsed against that format, whether the eventual match is exact or a prefix match",
+          "then": [
+            "the week number encoded in the filename takes priority over any conflicting month or day fragment",
+            "this priority is applied the same way regardless of whether the match found is exact or a prefix match"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.6",
+          "given": "the vault already contains 219 daily notes named in the pattern \"YYYY-MM-DD, dddd\", 60 weekly notes named \"YYYY-Wnn, DD.MM - DD.MM\", 21 monthly notes named \"YYYY-MM Month\", and 25 monthly-work notes named \"YYYY-MM Month - Work\"",
+          "when": "the matching format strings are configured for each granularity and the vault is scanned",
+          "then": [
+            "every one of these existing notes is recognised as the note for its date and granularity"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.7",
+          "given": "7 daily notes exist in an older bare \"YYYY-MM-DD.md\" shape that predates the vault's current daily format",
+          "when": "the current format \"YYYY-MM-DD, dddd\" is configured, with prefix matching left at its default of disabled",
+          "then": [
+            "these 7 files are not recognised as daily notes, matching the vault's behaviour before this rewrite rather than introducing a new gap"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-04.8",
+          "given": "two different files in the vault both resolve to the same date and granularity, one as an exact match and one as a prefix match",
+          "when": "the plugin looks up the note for that period",
+          "then": [
+            "the exact match is treated as the note for that period",
+            "the prefix-matched file is not silently treated as an equally valid alternative for the same period"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-05",
+      "epic": "FMT",
+      "title": "Validate a format string before it is saved",
+      "story": "As someone editing the filename format for a granularity, I want to be warned before saving a format that is illegal, cannot be told apart from other dates, or cannot survive being moved out of its folder, so that I do not silently lose the ability to find my own notes.",
+      "rationale": "A format that looks reasonable can still be unusable for its granularity; catching this at save time is cheaper than discovering it once notes already exist under it.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["pn:format-validation", "pn:fragile-basename-detection"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [
+        "Should the fragile-basename and non-identifying-format warnings block saving the format outright, or only show a warning that the user can dismiss and save anyway?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-05.1",
+          "given": "a format string contains a character that cannot appear in a filename on the user's operating system, or resolves to a reserved filename",
+          "when": "the format is validated",
+          "then": [
+            "it is rejected with an error before it can be saved"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-05.2",
+          "given": "a format string, applied to the current date and parsed back, does not return to the same date, or omits enough of the year, month, or day that many distinct dates would produce the same filename (for example, a day format of only \"DD\")",
+          "when": "the format is validated",
+          "then": [
+            "the user is warned that the format cannot uniquely identify a note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-05.3",
+          "given": "a format contains a folder separator, and the portion of the format after the last separator is on its own missing enough of the day, month, or year to identify a specific day",
+          "when": "the format is validated",
+          "then": [
+            "the user is warned that a note moved out of its dated subfolder would no longer be recognised",
+            "the warning includes a workaround the user can apply"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-05.4",
+          "given": "an empty format string is entered for a granularity",
+          "when": "the format is validated",
+          "then": [
+            "it is rejected as invalid rather than silently falling back to a hidden default"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-06",
+      "epic": "FMT",
+      "title": "Canonical identity for a date and granularity",
+      "story": "As the system matching notes and calendar cells to periods, I want a single date and granularity to always produce the same canonical identity, so that two references to \"this week\" or \"this day\" are recognised as the same period regardless of the exact time of day carried by the underlying date value.",
+      "rationale": "Every lookup and duplicate-detection path in the plugin needs a stable way to say two dates mean the same period; this is the shared foundation the rest of FMT and NOTE build on.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["dni:compute-date-uid"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-06.1",
+          "given": "two date values representing different times of day on the same calendar day",
+          "when": "the day-granularity identity is computed for both",
+          "then": [
+            "both produce the identical identity value"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-06.2",
+          "given": "a date value is passed in to compute an identity",
+          "when": "the identity is computed",
+          "then": [
+            "the original date value is not mutated by the computation"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-06.3",
+          "given": "the same date value, but two different granularities such as day and the week containing that date",
+          "when": "identities are computed for each granularity",
+          "then": [
+            "the two identities are different values",
+            "a day-note and a week-note covering the same date are never confused with each other because of this"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-06.4",
+          "given": "no granularity is specified when requesting an identity",
+          "when": "the identity is computed",
+          "then": [
+            "it defaults to the day-granularity identity for that date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-FMT-07",
+      "epic": "FMT",
+      "title": "Resolve which date and granularity an open file represents, day before week",
+      "story": "As someone with a note open, I want the plugin to recognise it as a specific day's or week's note by its filename, preferring the most specific granularity, so that the calendar highlights the exact cell for the note I am looking at.",
+      "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:get-date-uid-from-file"],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": ["US-FMT-04", "US-FMT-06"],
+      "open_questions": [
+        "Today's implementation matches only the file's basename, not its folder, so two same-named files in different folders would resolve identically. Should this rewrite require the file to also be located under the granularity's configured folder before accepting the match?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-07.1",
+          "given": "a file's name matches a valid daily-note filename",
+          "when": "its date identity is resolved",
+          "then": [
+            "it is recognised as that day's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-07.2",
+          "given": "a file's name does not match a valid daily-note filename, but does match a valid weekly-note filename",
+          "when": "its date identity is resolved",
+          "then": [
+            "it is recognised as that week's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-07.3",
+          "given": "a file's name matches neither a valid daily-note nor a valid weekly-note filename",
+          "when": "its date identity is resolved",
+          "then": [
+            "no identity is returned, and the file is not treated as a periodic note for either granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-FMT-07.4",
+          "given": "a file matches a daily or weekly format and its identity is resolved",
+          "when": "that identity is compared against the identity produced for the same date anywhere else in the plugin, such as the calendar grid",
+          "then": [
+            "the two identities are equal, so cross-feature comparisons of the same date always agree"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "Rival implementation decision: US-FMT-04 adopts the 'try every candidate format' structure (the one that already expands nested-path formats into a full-path and a basename-only candidate), because that structure is required anyway to support nested folder formats. Layered on top, it keeps the week-number-vs-month/day disambiguation from the single-format implementation, but applies it consistently to both the exact-match and the prefix-match branch, fixing an inconsistency present in the old single-format implementation (which only disambiguated on its exact-match branch). The undecided residue (candidate tie-break order, and how narrowly the disambiguation rule is scoped) is listed in US-FMT-04's open_questions.",
+    "pn:loose-date-parsing-fallback-global (a vault-wide loose date guess when no configured format matches at all) is icebox, not part of this epic; US-FMT-04's failure paths intentionally stop at 'not recognised' rather than falling back to a global guess.",
+    "forks:weekly-note-prefix-match and forks:periodic-note-prefix-match-setting describe the same prefix-matching feature family as pn:strict-then-prefix-date-parsing and pn:allow-prefix-match-gate, just observed from the other historical codebase; they are folded into the same story (US-FMT-04) rather than duplicated into a second one.",
+    "Most acceptance criteria in this epic are unit-testable in isolation (pure date math), which is why testable_by is almost always 'unit' rather than 'integration' or 'manual'; the two 'integration' criteria in US-FMT-04 are the ones that assert against the real shape of the user's existing vault, and the one 'manual' criterion in US-FMT-03 covers a live-reload UX check that is hard to assert purely in a unit test.",
+    "SET owns the settings UI for the format field, the prefix-match toggle, and the locale/week-start dropdowns; this epic owns only what those stored values must cause to happen. NOTE owns what happens once a note is found or not found (create, open, index); this epic only decides whether a given filename counts as a match. TPL owns the same {{weekday:fmt}} token syntax inside the note body; this epic owns only its use inside the filename format field, sharing the day-of-week resolution mechanism (dni:get-day-of-week-numerical-value) with TPL as a cross-epic dependency rather than a duplicated rule."
+  ]
+}

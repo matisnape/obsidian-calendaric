@@ -1,0 +1,654 @@
+{
+  "epic": "MIG",
+  "epic_title": "Importing existing configuration and coexisting with other plugins",
+  "summary": "This epic gets an existing user's configuration into Calendaric's own shape: reading it out of the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin, offering it as a reviewable, reversible import rather than a silent overwrite, and turning off the plugins it replaces only with consent. It also covers noticing when one of those plugins is still active so Calendaric does not fight it, and keeping Calendaric's own stored configuration loadable across its own version changes. It stops short of defining the target configuration shape (SET) and recognising notes already on disk (NOTE/FMT).",
+  "stories": [
+    {
+      "id": "US-MIG-01",
+      "epic": "MIG",
+      "title": "Import configuration from the core Daily Notes plugin",
+      "story": "As someone who already uses Obsidian's built-in Daily Notes plugin, I want Calendaric to offer to copy its folder, format and template into my day configuration, so that I do not have to retype settings I already have working.",
+      "rationale": "This vault currently has the core Daily Notes plugin configured and enabled, so this is a real, present-day migration path, not a hypothetical one.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "calendaric:read-legacy-daily-notes-config",
+        "calendaric:import-daily-notes-settings",
+        "cal:daily-notes-plugin-warning-banner",
+        "pn:getting-started-banner-daily-notes-detection"
+      ],
+      "constrained_by": [
+        "vault:weekly-dataviewjs-daily-scan"
+      ],
+      "granularity": [
+        "day"
+      ],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-01.1",
+          "given": "the core Daily Notes plugin is enabled and Calendaric's day configuration has not yet been imported",
+          "when": "the user opens Calendaric's settings",
+          "then": [
+            "a banner offers to import the folder, format and template from the core Daily Notes plugin"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-01.2",
+          "given": "the user accepts the import offer",
+          "when": "the import runs",
+          "then": [
+            "Calendaric's day folder is set to the core Daily Notes plugin's folder",
+            "Calendaric's day format is set to the core Daily Notes plugin's format",
+            "Calendaric's day template is set to the core Daily Notes plugin's template",
+            "day is marked enabled",
+            "the import is recorded as completed"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-01.3",
+          "given": "the core Daily Notes plugin's stored format is empty",
+          "when": "the import runs",
+          "then": [
+            "Calendaric's day format is set to a documented default date format instead of being left empty"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-01.4",
+          "given": "the import has already completed once",
+          "when": "the user opens Calendaric's settings again",
+          "then": [
+            "the import banner does not reappear",
+            "running the import again leaves the day folder, format and template unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-01.5",
+          "given": "the user has already set a day folder, format or template in Calendaric before running the import",
+          "when": "the import would overwrite one of those values",
+          "then": [
+            "Calendaric shows the incoming value next to the user's current value",
+            "the value is only replaced after the user confirms"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-01.6",
+          "given": "the core Daily Notes plugin is not enabled",
+          "when": "the user opens Calendaric's settings",
+          "then": [
+            "no Daily Notes import banner is shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-02",
+      "epic": "MIG",
+      "title": "Disable the core Daily Notes plugin after import, with consent",
+      "story": "As someone who has just imported my Daily Notes configuration into Calendaric, I want to be asked before Calendaric turns the old plugin off, so that I keep control over a change to my setup that I did not directly ask for.",
+      "rationale": "Disabling another plugin is a destructive action on the user's configuration and must never happen as a silent side effect of import.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "calendaric:disable-core-daily-notes-plugin"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day"
+      ],
+      "depends_on": [
+        "US-MIG-01"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-02.1",
+          "given": "the user has just imported the Daily Notes configuration",
+          "when": "Calendaric offers to disable the core Daily Notes plugin",
+          "then": [
+            "the offer explains that the plugin will be turned off",
+            "the offer warns that hotkeys bound to the old plugin's commands may stop working",
+            "no plugin is disabled until the user responds"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-02.2",
+          "given": "the user confirms the offer to disable the plugin",
+          "when": "Calendaric disables it",
+          "then": [
+            "the core Daily Notes plugin is turned off",
+            "Calendaric continues creating and opening day notes using the imported configuration"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-02.3",
+          "given": "the user declines or dismisses the offer",
+          "when": "the import finishes",
+          "then": [
+            "the core Daily Notes plugin is left enabled and unmodified"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-02.4",
+          "given": "Calendaric has disabled the core Daily Notes plugin",
+          "when": "the user re-enables it from Obsidian's own plugin list afterwards",
+          "then": [
+            "the plugin re-enables normally",
+            "no configuration or note data was deleted by Calendaric's earlier disable action"
+          ],
+          "verifies": "compat",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-02.5",
+          "given": "the core Daily Notes plugin is already disabled or cannot be found when the disable action runs",
+          "when": "Calendaric attempts to disable it",
+          "then": [
+            "Calendaric does not throw an error or crash"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-03",
+      "epic": "MIG",
+      "title": "Import weekly configuration and display preferences from the Calendar plugin",
+      "story": "As someone who uses the Calendar plugin today, I want Calendaric to offer to copy its weekly note settings and display preferences, so that switching plugins does not reset how my week view looks or behaves.",
+      "rationale": "No predecessor plugin ever imported Calendar-plugin settings into another plugin's configuration; this is new behaviour needed because Calendaric absorbs the Calendar plugin's role.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "week"
+      ],
+      "depends_on": [],
+      "open_questions": [
+        "In this vault the Calendar plugin's own weekly folder/format/template fields are blank, and weekly configuration actually comes from the Periodic Notes plugin instead. Should the Calendar-plugin importer skip offering itself when those fields are blank, to avoid suggesting an import of nothing?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-03.1",
+          "given": "the Calendar plugin is installed and its weekly note folder, format or template are set",
+          "when": "the user imports from the Calendar plugin",
+          "then": [
+            "Calendaric's week folder, week format and week template are set from the same configuration the Calendar plugin actually uses to create weekly notes",
+            "week is marked enabled"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.2",
+          "given": "the Calendar plugin's settings screen also shows its own weekly folder/format/template fields, which the Calendar plugin no longer reads when creating notes",
+          "when": "Calendaric imports weekly configuration from the Calendar plugin",
+          "then": [
+            "the imported values come from the configuration the Calendar plugin actually uses, not from its unused settings-screen fields"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.3",
+          "given": "the Calendar plugin's week-start day, confirm-before-create toggle, week-number display toggle and locale override are set",
+          "when": "the user imports from the Calendar plugin",
+          "then": [
+            "Calendaric's week start, confirm-before-create, show-week-numbers and locale override settings are set to the matching Calendar plugin values"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.4",
+          "given": "the Calendar plugin also stores a words-per-dot setting",
+          "when": "the import runs",
+          "then": [
+            "that value is not transferred, because this configuration has no equivalent field for it"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.5",
+          "given": "the user has already customised Calendaric's week folder, format or template",
+          "when": "the import would overwrite one of those values",
+          "then": [
+            "Calendaric shows the incoming value next to the user's current value",
+            "the value is only replaced after the user confirms"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.6",
+          "given": "the Calendar plugin is not installed or not enabled",
+          "when": "the user looks for this import option",
+          "then": [
+            "it is not offered"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-04",
+      "epic": "MIG",
+      "title": "Import per-granularity configuration from the Periodic Notes plugin's active calendar set",
+      "story": "As someone who configured day, week, month and year notes through the Periodic Notes plugin, I want Calendaric to import exactly what is actually in effect for each of those, so that my real settings survive the switch instead of a stale leftover value.",
+      "rationale": "This vault's Periodic Notes configuration currently disagrees with itself between an old top-level format and its live calendar set; getting this wrong would silently import the wrong folder and template.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "pn:legacy-settings-migration"
+      ],
+      "constrained_by": [
+        "vault:weekly-dataviewjs-daily-scan",
+        "vault:monthly-dataview-weekly-daily-lists"
+      ],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [],
+      "open_questions": [
+        "The Periodic Notes plugin's per-granularity configuration also carries an 'allow prefix matching' flag with no equivalent field in this configuration. Should the importer silently drop it, or should it be handed to whichever epic ends up owning prefix-matched note lookup?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-04.1",
+          "given": "the Periodic Notes plugin's active calendar set enables a granularity with a folder, format and template",
+          "when": "the user imports from the Periodic Notes plugin",
+          "then": [
+            "Calendaric's matching folder, format, template and enabled fields for that granularity are set from the active calendar set's values"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-04.2",
+          "given": "the Periodic Notes plugin's stored data still contains an older top-level key for a granularity alongside its active calendar set, and that top-level key names a different folder and template than the active calendar set's value for the same granularity",
+          "when": "the user imports from the Periodic Notes plugin",
+          "then": [
+            "the imported folder and template match the active calendar set's values",
+            "the disagreeing top-level key's values are never applied to Calendaric's configuration"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-04.3",
+          "given": "the Periodic Notes plugin defines more than one calendar set",
+          "when": "the user imports from the Periodic Notes plugin",
+          "then": [
+            "only the currently active calendar set is imported",
+            "the other calendar sets are neither imported nor merged into the active one"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-04.4",
+          "given": "the user has already customised one of Calendaric's per-granularity settings",
+          "when": "the import would overwrite it",
+          "then": [
+            "Calendaric shows the incoming value next to the user's current value",
+            "the value is only replaced after the user confirms"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-04.5",
+          "given": "the import has already completed once and the Periodic Notes configuration has not changed since",
+          "when": "the user runs the import again",
+          "then": [
+            "Calendaric's settings are left exactly as they were",
+            "no granularity is re-marked as needing review"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-04.6",
+          "given": "the Periodic Notes plugin is not installed or not enabled",
+          "when": "the user looks for this import option",
+          "then": [
+            "it is not offered"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-05",
+      "epic": "MIG",
+      "title": "Choose which predecessor plugin's configuration governs a granularity when more than one is active",
+      "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
+      "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:should-use-periodic-notes-settings",
+        "dni:detect-periodic-notes-plugin",
+        "dni:detect-daily-notes-plugin-loaded",
+        "dni:detect-weekly-notes-plugin-loaded",
+        "dni:detect-monthly-notes-plugin-loaded",
+        "dni:detect-yearly-notes-plugin-loaded",
+        "cal:periodic-notes-weekly-detection",
+        "cal:periodic-notes-monthly-plugin-resolution"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [],
+      "open_questions": [
+        "The old code treats the mere presence of the Calendar plugin as proof that weekly notes are externally configured, without checking whether the Calendar plugin's own weekly setting is actually enabled -- unlike day, month and year, which all check an explicit enabled flag. Is that asymmetry intentional (the Calendar plugin always manages weekly notes once installed) or should weekly be checked the same way as the others?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-05.1",
+          "given": "the Periodic Notes plugin is installed and its active calendar set enables a granularity",
+          "when": "Calendaric resolves which predecessor configuration governs that granularity",
+          "then": [
+            "the Periodic Notes plugin's configuration for that granularity is treated as authoritative, regardless of what the core Daily Notes plugin or the Calendar plugin are set to"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-05.2",
+          "given": "the Periodic Notes plugin is absent, or does not have day enabled in its active calendar set",
+          "when": "Calendaric resolves which predecessor configuration governs day notes",
+          "then": [
+            "the core Daily Notes plugin's configuration is used if that plugin is enabled"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-05.3",
+          "given": "none of the predecessor plugins are enabled for a granularity",
+          "when": "Calendaric resolves which predecessor configuration governs that granularity",
+          "then": [
+            "it reports the granularity as having no external configuration to import",
+            "it does not throw an error"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-05.4",
+          "given": "the Periodic Notes plugin instance is present but exposes no way to read which granularities are currently active in its installed version",
+          "when": "Calendaric checks whether it governs a granularity",
+          "then": [
+            "Calendaric treats that granularity as not externally configured rather than guessing from a settings object that may not reflect the plugin's real state"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-05.5",
+          "given": "the same resolution is needed for day, week, month and year",
+          "when": "Calendaric performs this resolution",
+          "then": [
+            "one shared resolution routine is used for all four granularities instead of a separate implementation per granularity"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-06",
+      "epic": "MIG",
+      "title": "Notice a predecessor plugin is still active and avoid double-managing periodic notes",
+      "story": "As someone who has not yet removed my old periodic-notes plugins, I want Calendaric to tell me when one of them is still switched on, so that I do not end up with two plugins both trying to create or manage the same notes without my knowledge.",
+      "rationale": "This vault currently has the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin all enabled at once, so this coexistence risk exists from the moment Calendaric is installed, not only in edge cases.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "forks:dev-plugin-id-fallback"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [
+        "US-MIG-05"
+      ],
+      "open_questions": [
+        "Some cross-plugin detection is still needed: Calendaric must be able to tell whether the core Daily Notes plugin, the Calendar plugin or the Periodic Notes plugin is currently enabled, both to offer the one-time imports and to show this coexistence notice. What should not carry forward is the old dev-build/production-build id-pair probe for each of those plugins -- that existed only to support one vault's side-loaded development copies of Calendar and Periodic Notes, not a real interoperability need. Recommendation: probe exactly one canonical plugin id per predecessor plugin."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-06.1",
+          "given": "the core Daily Notes plugin, the Calendar plugin, or the Periodic Notes plugin is still enabled after the user has imported its configuration into Calendaric",
+          "when": "Calendaric starts",
+          "then": [
+            "a visible notice tells the user that a predecessor plugin is still active for at least one granularity",
+            "Calendaric does not silently let both plugins create or manage notes for the same period"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-06.2",
+          "given": "none of the three predecessor plugins remain enabled",
+          "when": "Calendaric starts",
+          "then": [
+            "no coexistence notice is shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-06.3",
+          "given": "a predecessor plugin is installed under exactly one canonical plugin id",
+          "when": "Calendaric checks whether that plugin is present",
+          "then": [
+            "it probes that single id only"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-06.4",
+          "given": "Obsidian's plugin registry cannot be queried for some reason when this check runs",
+          "when": "Calendaric checks whether a predecessor plugin is enabled",
+          "then": [
+            "it treats the plugin as not enabled rather than throwing an error"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-MIG-07",
+      "epic": "MIG",
+      "title": "Load Calendaric's own stored configuration safely across versions",
+      "story": "As someone who keeps this plugin updated, I want Calendaric to keep working with my existing settings after an update, so that a plugin upgrade never quietly resets or breaks my folders, formats and templates.",
+      "rationale": "Calendaric's stored configuration shape will change over time; none of the predecessor plugins actually implemented this (their own version field was written but never read back), so this has to be built new rather than ported.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [
+        "When Calendaric loads data written by a newer version than the one currently running, should it preserve the fields it does not recognise so a later upgrade back to that newer version sees them again, or is it acceptable to drop them once the older version saves the file? This is a real design decision, not something the old plugins ever had to make."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-MIG-07.1",
+          "given": "the stored configuration was written by an older version of Calendaric whose settings shape differs from the current one",
+          "when": "Calendaric loads it",
+          "then": [
+            "the settings are upgraded to the current shape",
+            "no configured folder, format, template or toggle value already present in the old file is lost"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-07.2",
+          "given": "the stored configuration was written by a newer version of Calendaric than the one currently running",
+          "when": "Calendaric loads it",
+          "then": [
+            "Calendaric starts successfully",
+            "any field it does not recognise is not treated as an error",
+            "it falls back to a safe default for anything it cannot interpret"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-07.3",
+          "given": "the stored configuration is not valid JSON, or has been hand-edited into an invalid shape such as a folder field holding a number instead of a string",
+          "when": "Calendaric loads it",
+          "then": [
+            "it falls back to default settings for the invalid parts",
+            "it tells the user that some settings could not be read and were reset",
+            "the plugin does not crash"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-07.4",
+          "given": "the configuration has already been upgraded to the current shape once",
+          "when": "the vault is opened again with the same version",
+          "then": [
+            "the upgrade routine does not run a second time",
+            "the stored file is not rewritten unnecessarily"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-MIG-07.5",
+          "given": "upgrading the stored configuration fails partway through",
+          "when": "Calendaric writes the result back to disk",
+          "then": [
+            "either the fully upgraded settings are saved, or the original file is left completely untouched",
+            "a partially-written configuration file is never left on disk"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "The real disagreement between periodic-notes-anks's stale top-level 'monthly' key and its live calendarSets[0].month value (folder '_00 Planer/_03a Miesiące Work' / template 'Monthly work.md' vs. the correct '_00 Planer/_03 Miesiące' / 'Monthly Periodic Template.md') is recorded in calendaric-map.json as an observation, not as a capability, so it has no uid to cite in constrained_by. AC-MIG-04.2 encodes it directly.",
+    "Three of the fifteen build capabilities in this slice (cal:daily-notes-plugin-warning-banner, pn:getting-started-banner-daily-notes-detection) are UI banners best exercised manually; most of the rest need a real Obsidian plugin instance to test meaningfully, so this epic leans integration/manual rather than unit.",
+    "No predecessor plugin ever imported the Calendar plugin's or the Periodic Notes plugin's configuration into another plugin's settings -- only the Daily Notes import path (calendaric:import-daily-notes-settings) existed before. US-MIG-03 and US-MIG-04's Periodic-Notes-facing half, and all of US-MIG-07, are therefore new behaviour with no old capability to point to in 'covers'.",
+    "Cross-plugin detection by plugin id is still needed for the three named predecessor plugins (core Daily Notes, Calendar, Periodic Notes) to drive imports and the coexistence notice in US-MIG-06 -- see that story's open_questions for why the old dev/production dual-id probe specifically should not carry forward."
+  ]
+}

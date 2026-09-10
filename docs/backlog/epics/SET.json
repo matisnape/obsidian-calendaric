@@ -1,0 +1,547 @@
+{
+  "epic": "SET",
+  "epic_title": "Configuration model and settings UI",
+  "summary": "SET owns the shape of Calendaric's configuration (what is stored per granularity versus what is global), the settings screen that edits it, persisting it safely across restarts and hand-edits, and the guarantee that a saved change reaches the rest of the plugin without restarting Obsidian. It stops at the boundary of what a value means: FMT decides whether a format string is valid, TPL decides what a template does, NOTE decides how a folder is used to create a note, and MIG owns importing configuration from other plugins and upgrading old stored shapes — SET owns the field that holds each of those values and the feedback shown when a value is rejected.",
+  "stories": [
+    {
+      "id": "US-SET-01",
+      "epic": "SET",
+      "title": "Per-granularity configuration model",
+      "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
+      "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "pn:calendar-set-model",
+        "pn:get-active-calendar-set",
+        "pn:get-active-and-inactive-granularities",
+        "pn:settings-per-granularity-allow-prefix-match-toggle"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-01.1",
+          "given": "the plugin's stored configuration",
+          "when": "any granularity's settings are inspected",
+          "then": [
+            "it has its own enabled flag, filename format, folder, template path and allow-prefix-matching value",
+            "none of these values are shared with, or derived from, another granularity's settings"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-01.2",
+          "given": "a user changes the allow-prefix-matching toggle for one granularity",
+          "when": "the change is saved",
+          "then": [
+            "only that granularity's stored allow-prefix-matching value changes",
+            "every other granularity's stored settings remain unchanged"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-01.3",
+          "given": "the stored configuration contains an additional named configuration group beyond the single one currently in use",
+          "when": "the plugin loads the configuration and then saves it again unchanged",
+          "then": [
+            "the extra group's data is preserved exactly",
+            "the in-use group's data is preserved exactly",
+            "no control for creating, renaming or switching between groups is shown to the user"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-01.4",
+          "given": "a granularity is currently disabled and has previously-configured format, folder, template and allow-prefix-matching values",
+          "when": "the user disables it on the settings screen",
+          "then": [
+            "its format, folder, template and allow-prefix-matching values remain stored unchanged",
+            "re-enabling the granularity later shows those same values rather than blanks or defaults"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-01.5",
+          "given": "a fresh install with no configuration ever saved",
+          "when": "the plugin loads for the first time",
+          "then": [
+            "exactly one implicit configuration group exists",
+            "the user is not asked to name, choose or create a group"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-02",
+      "epic": "SET",
+      "title": "Global settings live alongside per-granularity settings",
+      "story": "As someone configuring Calendaric, I want settings that apply to the whole plugin kept separate from any single granularity's settings, so that I can find and change a plugin-wide option without opening every granularity's section.",
+      "rationale": "Global and per-granularity settings answer different questions, and mixing them makes the screen for either harder to read.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["cal:settings-tab-ui"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": ["US-SET-01"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-02.1",
+          "given": "the settings screen",
+          "when": "it is opened",
+          "then": [
+            "global settings appear in an area that is visually and structurally separate from any granularity's own settings"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-02.2",
+          "given": "a global setting is changed",
+          "when": "it is saved",
+          "then": [
+            "it is stored exactly once in the configuration, not once per granularity"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-02.3",
+          "given": "a fresh install whose global settings were never opened or changed",
+          "when": "the settings screen is opened for the first time",
+          "then": [
+            "every global setting shows its documented built-in default value",
+            "no global setting appears blank or undefined"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-03",
+      "epic": "SET",
+      "title": "Resolve effective settings for a granularity from a single source of truth",
+      "story": "As someone relying on periodic notes, I want each granularity's effective format, folder and template to resolve to one predictable value, so that I never have to guess which of several possible sources of that setting actually won.",
+      "rationale": "The old plugins let format, folder and template be set in more than one place at once; a single resolver removes the guesswork the vault currently gets right only by coincidence.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:get-periodic-note-settings",
+        "dni:resolve-daily-settings",
+        "dni:resolve-weekly-settings",
+        "dni:resolve-monthly-settings",
+        "dni:resolve-yearly-settings"
+      ],
+      "constrained_by": ["vault:resolve-daily-settings"],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-SET-01"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-03.1",
+          "given": "a granularity's format field is left empty",
+          "when": "its effective settings are resolved",
+          "then": [
+            "a documented built-in default format for that granularity is used",
+            "no error is raised and no undefined value is returned"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-03.2",
+          "given": "a granularity's folder and template path fields are both left empty",
+          "when": "its effective settings are resolved",
+          "then": [
+            "the folder resolves to the vault root",
+            "no template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-03.3",
+          "given": "the same granularity's settings are needed by two different parts of the plugin at the same moment, for example note creation and the calendar view",
+          "when": "each resolves that granularity's settings",
+          "then": [
+            "both receive identical format, folder, template and allow-prefix-matching values"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-03.4",
+          "given": "the same logical daily-note setting exists both in Calendaric's own stored configuration and in an unrelated external file that disagrees with it, as recorded for this vault",
+          "when": "Calendaric resolves the effective daily-note settings",
+          "then": [
+            "Calendaric's own stored configuration is used",
+            "the disagreeing external file's value is never read or applied"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-03.5",
+          "given": "a stored per-granularity value has been hand-edited into an unexpected shape, for example a number where a format string is expected",
+          "when": "the plugin resolves that granularity's effective settings",
+          "then": [
+            "the built-in default for that field is substituted",
+            "resolving the granularity's other fields is unaffected"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-04",
+      "epic": "SET",
+      "title": "Format, folder and template fields show validity feedback",
+      "story": "As someone typing a filename format, folder or template path into settings, I want to see immediately whether it is valid, so that I catch a mistake before it silently affects note creation.",
+      "rationale": "A field that only fails much later, when a note is actually created, wastes the time between making the mistake and discovering it.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:settings-per-granularity-format-editor",
+        "pn:settings-per-granularity-folder-editor",
+        "pn:settings-per-granularity-template-editor",
+        "calendaric:open-format-guide-from-settings"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-SET-01"],
+      "open_questions": [
+        "Does Calendaric intend to support mobile Obsidian? The old format-guide link only worked on desktop; the new one must not silently fail on whichever platforms are actually in scope."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-04.1",
+          "given": "the user types a value into a granularity's format field",
+          "when": "the value fails validation",
+          "then": [
+            "an inline message next to the field explains what is wrong",
+            "the field is visually marked as invalid"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-04.2",
+          "given": "the user types a value into a granularity's folder field that does not match an existing location in the vault",
+          "when": "the field loses focus",
+          "then": [
+            "a warning is shown that the folder does not yet exist",
+            "the value is still saved to the stored configuration"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-04.3",
+          "given": "the user types a value into a granularity's template field that does not resolve to an existing file",
+          "when": "the field loses focus",
+          "then": [
+            "an error is shown that the template file was not found",
+            "the value is still saved to the stored configuration"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-04.4",
+          "given": "any of the format, folder or template fields currently shows an invalid-value warning",
+          "when": "the settings screen is closed and reopened",
+          "then": [
+            "the field still shows exactly what the user typed, unmodified",
+            "the same warning is shown again unchanged"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-04.5",
+          "given": "the user wants help constructing a format string",
+          "when": "they activate the format/template guide link next to the format field",
+          "then": [
+            "the guide opens successfully",
+            "opening it does not throw or silently fail on any platform the plugin supports"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-05",
+      "epic": "SET",
+      "title": "Only one granularity can open automatically at startup",
+      "story": "As someone who wants exactly one note to greet them when Obsidian opens, I want turning on 'Open on startup' for one granularity to turn it off for every other granularity, so that I never end up with two notes racing to open at once.",
+      "rationale": "Two granularities both trying to auto-open at startup is a contradiction the settings screen has to resolve for the user, not leave as an ambiguous stored state.",
+      "priority": "should",
+      "status": "todo",
+      "covers": ["pn:settings-per-granularity-open-at-startup-toggle"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-SET-01"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-05.1",
+          "given": "granularity A currently has 'Open on startup' switched on",
+          "when": "the user switches 'Open on startup' on for granularity B",
+          "then": [
+            "granularity A's toggle switches off automatically",
+            "the settings screen shows A as off immediately, without the user reopening or reloading it"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-05.2",
+          "given": "no granularity currently has 'Open on startup' switched on",
+          "when": "the user switches it on for one granularity",
+          "then": [
+            "that granularity is the only one left with the flag on"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-05.3",
+          "given": "a granularity's 'Open on startup' is currently on",
+          "when": "the user switches it off directly",
+          "then": [
+            "no other granularity's 'Open on startup' value changes"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-05.4",
+          "given": "the stored configuration has more than one granularity marked 'Open on startup' at once, for example after the file was edited by hand",
+          "when": "the settings screen loads",
+          "then": [
+            "it shows the stored state honestly, without silently picking one for the user",
+            "the next time the user switches any granularity's flag on, only that one remains on afterward"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-06",
+      "epic": "SET",
+      "title": "Persist settings and recover from partial or invalid stored data",
+      "story": "As someone whose settings file can be edited outside the plugin, I want Calendaric to keep working even when the stored configuration is incomplete or malformed, so that one bad or missing field never breaks the whole plugin.",
+      "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:persist-plugin-settings"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": ["US-SET-01"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-06.1",
+          "given": "a change is made anywhere on the settings screen",
+          "when": "the change is committed, for example a field loses focus or a toggle is switched",
+          "then": [
+            "the change is written to the plugin's persisted configuration immediately",
+            "no separate 'Save' action is required"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-06.2",
+          "given": "Obsidian is closed and reopened",
+          "when": "the plugin loads",
+          "then": [
+            "every setting the user previously saved is restored exactly as it was left"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-06.3",
+          "given": "the persisted configuration file is missing a field entirely, for example because it was hand-edited",
+          "when": "the plugin loads",
+          "then": [
+            "the missing field is filled with its built-in default",
+            "the plugin finishes loading normally"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-06.4",
+          "given": "the persisted configuration contains a field with an unexpected type or shape",
+          "when": "the plugin loads",
+          "then": [
+            "that field falls back to its default",
+            "every other, well-formed field in the same configuration loads unaffected"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-06.5",
+          "given": "the complete set of keys the plugin persists and shows as editable",
+          "when": "each key is checked against the plugin's own runtime code",
+          "then": [
+            "every persisted, user-editable key has at least one place in the plugin that reads it",
+            "no setting is stored and shown as editable while nothing in the plugin ever uses its value"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-SET-07",
+      "epic": "SET",
+      "title": "A saved setting takes effect immediately",
+      "story": "As someone tuning periodic-note settings while Obsidian is open, I want the rest of the plugin to pick up my change the instant it is saved, so that I never have to restart Obsidian to see the effect.",
+      "rationale": "A setting that only applies after a restart makes every change feel risky to try.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["cal:persist-plugin-settings"],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-SET-01", "US-SET-06"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-07.1",
+          "given": "the calendar view is open and a granularity's folder or format is changed on the settings screen",
+          "when": "the change is saved",
+          "then": [
+            "the calendar redraws to reflect the change without the view being reopened or Obsidian being restarted"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-07.2",
+          "given": "a granularity's folder is changed on the settings screen",
+          "when": "that granularity's note is next looked up or created",
+          "then": [
+            "the newly saved folder is used, not the folder that was in effect when Obsidian started"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-07.3",
+          "given": "a granularity is switched from disabled to enabled, or the reverse, on the settings screen",
+          "when": "the change is saved",
+          "then": [
+            "the commands for that granularity appear or disappear immediately, without restarting Obsidian"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-07.4",
+          "given": "a settings change fails to persist, for example because the write to disk fails",
+          "when": "this happens",
+          "then": [
+            "the rest of the plugin keeps operating on the last successfully saved configuration",
+            "no part of the plugin ends up running on a half-applied change"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [
+    {
+      "uid": "pn:settings-router-navigation",
+      "reason": "This is the breadcrumb router that moved the settings screen between a calendar-set list page and a calendar-set detail page. With calendar sets in the icebox and exactly one implicit configuration group (US-SET-01), the settings screen has one page and nothing to navigate between; the router's own behaviour (for example that it always resets to the dashboard on close) has no equivalent to carry forward."
+    }
+  ],
+  "notes": [
+    "Of the 80 mapped settings-map rows, most are the SAME logical field recorded once per source plugin (dni, cal, pn, calendaric, vault, forks); they do not each need a distinct key in the new model. Concluded canonical survivors: 6 per-granularity fields (enabled, format, folder, templatePath, openAtStartup, allowPrefixMatch) for day/week/month/year, plus roughly 7 global fields (week start, show week numbers, confirm-before-create, locale override, words-per-dot, the single implicit configuration group, and the internal daily-notes-import-shown flag).",
+    "Dropped as explicitly dead (stored and editable but never read by anything, per the map's own notes): cal's weeklyNoteFormat/weeklyNoteTemplate/weeklyNoteFolder, pn's hasMigratedDailyNoteSettings, hasMigratedWeeklyNoteSettings, installedVersion, and pn's dead-duplicate ISettings localeOverride/weekStart fields. AC-SET-06.5 asserts none of these come back.",
+    "Dropped as icebox-scoped, not because they are wrong: every quarterly-granularity row (periodic-notes.settings.quarterly.*, the vault's calendarSets[].quarter, and the placeholder Monthly/Quarterly/Yearly UI groups), enableTimelineComplication, and calendar-set plurality (activeCalendarSet as a user-facing choice). The underlying array/id may still exist internally as the single implicit group's id; it is just never exposed as a choice.",
+    "Collapsed as duplicate multi-source read paths now replaced by one source of truth (US-SET-03): daily-notes.format/folder/template (core plugin copy), calendar.options.weeklyNoteFormat/Folder/Template (legacy Calendar-plugin copy), and every periodic-notes.settings.<granularity>.enabled 'use Periodic Notes settings' precedence flag — with a single stored value per field there is nothing left to choose between.",
+    "Out of SET's scope entirely: app.vault.getConfig('weekStart') and ('localeOverride') read Obsidian's own vault-wide config rather than a Calendaric-owned key, and Templater's templates_folder/trigger_on_file_creation_mode/folder_templates and the core daily-notes.json format belong to the plugins MIG imports from, not to Calendaric's own configuration shape.",
+    "Roughly a third of the acceptance criteria in this epic are testable_by manual or integration rather than unit, because the behaviour under test is either a live settings-screen interaction (inline validation feedback, the guide link) or requires the calendar view and command palette to observe reactivity end to end.",
+    "US-SET-04 and US-SET-06 reference 'invalid stored data' and 'the format/folder/template check fails' without asserting what specifically makes a value invalid — that judgment belongs to FMT (format), NOTE (folder) and TPL (template); this epic only owns that the field shows the feedback and that saving still succeeds."
+  ]
+}

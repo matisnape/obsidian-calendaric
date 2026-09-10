@@ -1,0 +1,172 @@
+{
+  "epic": "ICE",
+  "epic_title": "Kept for a later decision, not built now",
+  "summary": "26 capabilities the mapping surfaced but that the user chose not to build in this release, grouped into seven decision units: a disabled note granularity, a config mechanism with no current second use, three low-traffic calendar indicators, a feature whose own toggle is on but unused, two switcher UIs that depend on a plugin she does not run, one interaction built on an undocumented Obsidian internal, and one behaviour that should never be rebuilt at all. Most entries carry no cost to deferring; the one exception is calendar sets, where the first release's data shape decides whether adding a second set later is a feature or a migration.",
+  "entries": [
+    {
+      "id": "ICE-01",
+      "title": "Quarterly notes",
+      "kind": "deferred-feature",
+      "covers": [
+        "dni:create-quarterly-note",
+        "dni:get-quarterly-note",
+        "dni:get-all-quarterly-notes",
+        "dni:resolve-quarterly-settings",
+        "dni:detect-quarterly-notes-plugin-loaded",
+        "calendaric:granularity-placeholder-groups"
+      ],
+      "what_it_does": "Adds a fifth note granularity, quarter, with the same create, look-up, enumerate, and settings-resolution behaviour that day, week, month and year already get: a user could open or create 'this quarter's note' from a configured folder, format and template, and the plugin would detect whether quarter notes are turned on. It would also replace today's dead 'Quarterly Notes' and 'Custom Notes' rows in Settings, which currently render as permanently-disabled, unclickable headings, with a real working section or remove them entirely.",
+      "why_deferred": "The user has quarter notes switched off in her live configuration, with no folder or template ever set for them, so nothing in the vault depends on this granularity existing.",
+      "evidence": [
+        "vault: calendarSets[0].quarter has enabled=false, format='YYYY-[Q]Q', folder='', templatePath='' in the live periodic-notes-anks config — quarter is disabled and unconfigured",
+        "map: calendaric's own settings UI already ships a 'Quarterly Notes' toggle row that is permanently disabled with no expandable content, and 'Custom Notes' has no backing data shape anywhere in the codebase at all — both were UI scaffolding for a feature that was never wired up"
+      ],
+      "cost_to_add_later": "low",
+      "cost_rationale": "Month and year notes are being built in this release with the same create/get/enumerate/resolve-settings shape quarter would need; once that generic per-granularity machinery exists, adding quarter mostly means adding one more entry to a config list and one more format/folder/template settings row, not new architecture.",
+      "blocks_if_omitted": [
+        "NOTE epic: the note-granularity code (create, get, enumerate, resolve-settings, and the generic create-note dispatcher) must be written as one function per operation driven by a granularity list, not five hand-written copies or a switch statement naming day/week/month/year explicitly — otherwise adding quarter later means touching every one of those functions instead of extending a list.",
+        "SET epic: the per-granularity settings model and settings-UI row renderer must already be generic over 'whichever granularities exist' so a quarter row can be added without a new UI component."
+      ],
+      "revisit_when": "The user turns quarter notes on in her own settings, or starts wanting a genuine quarterly review note distinct from the existing Templater-driven '_04 1on1' folder, which already covers a quarterly-ish cadence entirely outside this plugin.",
+      "risk_of_deferring": "Nothing — no current note, template, or workflow depends on quarter notes existing."
+    },
+    {
+      "id": "ICE-02",
+      "title": "Multiple calendar sets",
+      "kind": "deferred-feature",
+      "covers": [
+        "pn:switch-active-calendar-set",
+        "pn:create-calendar-set",
+        "pn:duplicate-calendar-set",
+        "pn:rename-calendar-set",
+        "pn:delete-calendar-set",
+        "pn:calendar-set-quick-switch-modal",
+        "pn:settings-dashboard-list-and-add",
+        "pn:settings-details-rename-and-toggle-granularities"
+      ],
+      "what_it_does": "Lets a user maintain more than one independent bundle of day/week/month/quarter/year settings — for example a 'Personal' set and a separate 'Work' set with their own folders, formats and templates — and switch which one is active from a command, a fuzzy-search quick-switch modal, or a settings dashboard listing every set as a card with add, duplicate, rename and delete controls plus a details page per set.",
+      "why_deferred": "The user's live configuration defines exactly one calendar set ('Default'), and her actual Personal/Work split is already handled a different way: a second physical folder, a separate template, and a ' - Work' filename suffix, not this plugin's calendar-set mechanism. There is no observed need for a second set.",
+      "evidence": [
+        "vault: activeCalendarSet is 'Default' and only one calendar set exists in the live periodic-notes-anks config — multi-calendar-set support is unused",
+        "vault: the Work vs personal split in this vault is implemented ad hoc via a second folder, a separate template, and a ' - Work' filename suffix, not via periodic-notes' own multi-calendar-set mechanism — a merge should not assume calendar sets are how 'Work' is actually kept separate here"
+      ],
+      "cost_to_add_later": "medium",
+      "cost_rationale": "The CRUD UI (dashboard cards, a details page per set, inline rename, duplicate/delete with a last-set guard) and the switch-time side effects (re-run command and ribbon registration, reset the note cache) are a real chunk of settings-UI and state work on top of whatever the single-set v1 already builds — but only additive UI, not a data migration, provided the underlying config is already array-shaped (see blocks_if_omitted).",
+      "blocks_if_omitted": [
+        "SET epic: the settings data model must store configuration as an array of calendar sets plus an 'active set' pointer (CalendarSet[] + activeCalendarSet), even though v1 only ever creates one set automatically — never as a single flat per-granularity settings object. Storing it flat now means a real data migration is needed the day a second set is added.",
+        "NOTE and CAL epics: every place that resolves 'the' folder, format or template for a granularity must resolve it through 'the active calendar set', not a hardcoded single settings reference, so switching sets later changes behaviour everywhere automatically instead of requiring each call site to be found and rewritten."
+      ],
+      "revisit_when": "The user wants a genuinely separate calendar configuration — different active granularities, formats or folders per context — rather than today's folder-plus-suffix convention, for example if she takes on a second, unrelated vault-like context inside the same vault.",
+      "risk_of_deferring": "If the SET epic's first release hard-codes a single implicit set instead of an array, adding calendar sets later becomes a migration of every existing user's settings JSON rather than a feature switch-on. This is the one item in this icebox where the architecture choice made now has a real, avoidable later cost."
+    },
+    {
+      "id": "ICE-03",
+      "title": "Extra calendar indicator (dot) sources",
+      "kind": "deferred-feature",
+      "covers": [
+        "cal:extend-metadata-sources-via-event",
+        "cal:metadata-source-streak",
+        "cal:metadata-source-tags",
+        "cal:metadata-source-tasks"
+      ],
+      "what_it_does": "Adds three more kinds of small indicator dots under calendar days and weeks, beyond the word-count dot already being built: a plain has-a-note dot, a dot coloured or labelled from the note's frontmatter tags, and an unfilled dot when a note has incomplete task checkboxes — plus a workspace event other installed plugins could listen to in order to register their own indicator sources.",
+      "why_deferred": "The only dot source actually configured anywhere in the vault is the word-count-based one; no tag-based, task-based or streak-based indicator is set up in any readable plugin config, so nothing today shows a user has ever turned on or missed these.",
+      "evidence": [
+        "vault: the Calendar plugin's word-count-based heatmap dot (wordsPerDot) is the only dot source configured; no custom or metadata-based dot source appears in any readable config"
+      ],
+      "cost_to_add_later": "low",
+      "cost_rationale": "If CAL epic's day-metadata resolution is built as a list of pluggable sources, even with only word-count shipped in v1, each of these three is a small, self-contained function of the same shape — a cheap store lookup for streak, a metadata-cache read for tags, a cached file read plus regex for tasks — and the third-party extension point is a thin wrapper over the same list.",
+      "blocks_if_omitted": [
+        "CAL epic: the 'resolve per-day/week metadata' architecture story should keep the per-cell dot pipeline as an ordered list of source providers, not a single hardcoded word-count code path, so streak, tags, tasks and third-party sources can be added as new list entries later without restructuring how dots are rendered."
+      ],
+      "revisit_when": "The user starts using frontmatter tags or task checkboxes as a way to mark a day's status she wants visible at a glance on the calendar, or installs a third-party plugin that wants to contribute its own indicator.",
+      "risk_of_deferring": "Nothing — no workflow today reads, or would notice the absence of, these dots."
+    },
+    {
+      "id": "ICE-04",
+      "title": "Timeline complication",
+      "kind": "deferred-feature",
+      "covers": [
+        "pn:timeline-complication-render",
+        "pn:timeline-lifecycle-per-leaf",
+        "pn:relative-date-humanization"
+      ],
+      "what_it_does": "Shows a small floating badge in the corner of any open periodic note with a relative-date label such as 'Today' or 'Last week' (plus an arrow if the note was only an inexact match); clicking it expands into a 7-day strip for jumping to a nearby day without leaving the note. It would mount and unmount itself automatically as markdown panes are opened and closed.",
+      "why_deferred": "The user's live configuration has this feature's toggle turned on, but nothing in her actual templates, dataview queries or note content references or uses a timeline view — the setting is on, but the feature it promises has never been exercised.",
+      "evidence": [
+        "vault: enableTimelineComplication=true in the live periodic-notes-anks config, but no template, dataview query, or note content in the readable vault references a timeline view — enabled but unused"
+      ],
+      "cost_to_add_later": "medium",
+      "cost_rationale": "It needs its own mount/unmount lifecycle manager reacting to workspace layout-change events across every open leaf, plus a small interactive UI component and the relative-date-formatting helper it depends on — a self-contained vertical slice, bounded but not trivial.",
+      "blocks_if_omitted": [],
+      "revisit_when": "The user notices she wants faster day-to-day navigation from inside an already-open note without returning to the calendar view, or the 'enabled but does nothing' mismatch in her own config prompts an explicit decision either way.",
+      "risk_of_deferring": "Nothing — today the setting is a switch that promises a feature nobody has built or missed."
+    },
+    {
+      "id": "ICE-05",
+      "title": "Related-files and natural-language date switchers",
+      "kind": "deferred-feature",
+      "covers": [
+        "pn:get-periodic-notes-related",
+        "pn:nl-date-navigator",
+        "pn:related-files-switcher-tab-handoff"
+      ],
+      "what_it_does": "Lets a user type a free-text date query — 'next monday', 'in 3 weeks', 'last month' — into a modal and jump straight to that period's note; pressing Tab hands off to a second list of every cached note related to that period, optionally including finer granularities, for example every daily note inside a chosen month.",
+      "why_deferred": "This whole capability only activates when the third-party nldates-obsidian plugin is installed, and the vault's confirmed list of enabled community plugins does not include it — building this today would ship a command that never appears.",
+      "evidence": [
+        "vault: community-plugins.json's confirmed enabled list is calendar-anks and periodic-notes-anks only — nldates-obsidian is absent",
+        "map: pn:nl-date-navigator only registers its command when app.plugins.getPlugin('nldates-obsidian') exists — the whole capability is inert without that plugin installed"
+      ],
+      "cost_to_add_later": "high",
+      "cost_rationale": "The source material itself flags the hand-off between the two modals — closing one, opening the other, replaying the typed query via a synthetic input event — as untested, fragile glue, and its keyboard shortcut reaches into an unexposed, undocumented Obsidian modal internal (the private `chooser` field); building this well means redesigning that hand-off, not porting it as-is.",
+      "blocks_if_omitted": [
+        "NOTE epic: keep a callable 'list every cached note for a period, optionally at finer granularities' lookup (the get-periodic-notes-related behaviour) as part of the note-lookup API even though no UI calls it in v1 — both this switcher and any future one would depend on it existing."
+      ],
+      "revisit_when": "The user installs and starts relying on nldates-obsidian for other purposes, or specifically wants free-text date entry as an alternative to the calendar grid.",
+      "risk_of_deferring": "Minor — grid-based navigation still gets her to any date; this is a convenience layer that today would depend on a plugin she doesn't run."
+    },
+    {
+      "id": "ICE-06",
+      "title": "Drag-and-drop note dragging",
+      "kind": "deferred-feature",
+      "covers": [
+        "calui:drag-day-or-week-note"
+      ],
+      "what_it_does": "Lets a user drag a day, week, or month cell's note out of the calendar view — for example to drop its link into another note, or the file itself onto another pane — using the operating system's native drag gesture.",
+      "why_deferred": "The only way to implement this relies on an untyped, undocumented Obsidian internal (app.dragManager) rather than any stable, public Obsidian API, and no vault evidence shows this interaction being used or needed.",
+      "evidence": [
+        "map: calui:drag-day-or-week-note depends on an untyped, undocumented Obsidian internal (app.dragManager) — a fragile external dependency, not a stable API",
+        "map: dragging a cell with no existing file still starts a drag with the file undefined, with behaviour then entirely dependent on that internal's own undocumented handling"
+      ],
+      "cost_to_add_later": "high",
+      "cost_rationale": "Correctness depends on an Obsidian-internal API that can change without notice across Obsidian releases, unlike every other cell interaction (click, hover, context-menu) in the CAL epic, which use documented public APIs — this one needs its own ongoing compatibility watch regardless of when it is built.",
+      "blocks_if_omitted": [],
+      "revisit_when": "Obsidian publishes a documented drag-and-drop API for file links, or the user specifically asks to drag a periodic note's cell into another note or pane.",
+      "risk_of_deferring": "Nothing lost by waiting — and building it earlier would not remove the ongoing risk of it breaking silently on an Obsidian upgrade, since that risk comes from the API it depends on, not from when it is built."
+    },
+    {
+      "id": "ICE-07",
+      "title": "Vault-wide loose date parsing fallback",
+      "kind": "do-not-rebuild",
+      "covers": [
+        "pn:loose-date-parsing-fallback-global"
+      ],
+      "what_it_does": "When no calendar set's configured folder-and-format matches a file, the old code falls back to guessing a date from the bare filename anywhere in the vault, using a loose regex for a YYYY-MM-DD-ish, YYYY-MM-ish, or bare 4-digit-year substring, and treats any match as if it were a periodic note.",
+      "why_deferred": "This is a defect, not a postponed feature. The fallback is not scoped to any calendar set's configured folder, so any markdown file anywhere in the vault whose name merely contains a year, month or day-shaped substring gets miscached as an inexact periodic-note match. It should not be carried into the rewrite in this form.",
+      "evidence": [
+        "map (P2 bug): 'the vault-wide loose date-fallback in cache.resolve() is not scoped to any calendar set's configured folder... any markdown file anywhere in the vault whose basename merely contains a YYYY-MM-DD/YYYY-MM/YYYY-shaped substring (e.g. \"2026 Meeting Notes.md\") gets cached as an inexact match for every calendar set that has active granularities, which can surface as incorrect +N related notes badges and pollute the related-files switcher with unrelated files'"
+      ],
+      "cost_to_add_later": "low",
+      "cost_rationale": "If a scoped version is ever wanted, it is a small change: restrict the same regex fallback to run only inside a calendar set's own configured folder, reusing the strict-then-prefix matching FMT and NOTE are already building instead of inventing a new mechanism.",
+      "blocks_if_omitted": [
+        "FMT epic: the date-parsing and note-resolution stories must not include a vault-wide, unscoped loose-match fallback; any 'last-resort' filename guess must be scoped to a calendar set's configured folder from the start, so this bug is not reintroduced by accident during the rewrite."
+      ],
+      "revisit_when": "Never in its current unscoped form. Revisit only if there is a real request for a folder-scoped loose-match fallback as a genuinely new, bounded feature — at which point it should be designed fresh against FMT's real parsing rules, not ported from this code.",
+      "risk_of_deferring": "None — leaving this out removes a source of miscategorized notes; no value is lost by not rebuilding it."
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "pn:relative-date-humanization is used by both the Timeline complication (ICE-04, where it is covered) and the natural-language switcher (ICE-05); it has no user-visible behaviour of its own, so it is grouped with the feature it more directly renders for rather than split across both entries."
+  ]
+}

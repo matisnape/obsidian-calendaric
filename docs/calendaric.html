@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendaric — map and backlog</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg:#12141c; --panel:#191c26; --panel2:#1f2330; --line:#2c3142;
+    --fg:#e6e8ef; --dim:#949bb0; --accent:#7c9cff;
+    --p1:#ff8e8e; --p2:#f7b955; --p3:#5fd2aa; --blue:#7c9cff; --purple:#bd8cff;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  header { padding:16px 24px 0; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 2px; font-size:19px; }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:12px; }
+  nav { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
+  .navgroup { display:flex; gap:2px; align-items:center; }
+  .navgroup > .glabel { color:var(--dim); font-size:11px; text-transform:uppercase;
+    letter-spacing:.06em; padding:0 8px 9px 0; }
+  nav button { background:none; border:0; border-bottom:2px solid transparent;
+    color:var(--dim); padding:7px 12px; font:inherit; cursor:pointer; white-space:nowrap; }
+  nav button:hover { color:var(--fg); }
+  nav button.on { color:var(--fg); border-bottom-color:var(--accent); }
+  nav button .n { color:var(--dim); font-size:12px; margin-left:5px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; padding:14px 24px 0; align-items:center; }
+  select, input[type=search] { background:var(--panel2); color:var(--fg);
+    border:1px solid var(--line); border-radius:6px; padding:6px 9px; font:inherit; }
+  input[type=search] { min-width:230px; flex:1; max-width:440px; }
+  .count { color:var(--dim); font-size:12px; margin-left:auto; }
+  main { padding:14px 24px 60px; }
+  .tablewrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:900px; }
+  th { text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+       color:var(--dim); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line);
+       position:sticky; top:0; background:var(--bg); }
+  td { padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:hover td { background:var(--panel); }
+  .badge { display:inline-block; padding:1px 7px; border-radius:10px; font-size:11px;
+           white-space:nowrap; border:1px solid transparent; }
+  .badge.src, .badge.neutral { background:#232838; color:#b8c0d8; }
+  .badge.p1,.badge.fail   { background:rgba(255,142,142,.16); color:var(--p1); border-color:rgba(255,142,142,.35); }
+  .badge.p2,.badge.blocked{ background:rgba(247,185,85,.16); color:var(--p2); border-color:rgba(247,185,85,.35); }
+  .badge.p3,.badge.pass,.badge.done { background:rgba(95,210,170,.14); color:var(--p3); border-color:rgba(95,210,170,.3); }
+  .badge.inferred { background:rgba(247,185,85,.14); color:var(--p2); }
+  .badge.verified { background:rgba(95,210,170,.12); color:var(--p3); }
+  .badge.must { background:rgba(255,142,142,.13); color:var(--p1); }
+  .badge.should { background:rgba(247,185,85,.13); color:var(--p2); }
+  .badge.could { background:#232838; color:var(--dim); }
+  .badge.epic { background:rgba(124,156,255,.15); color:var(--blue); border-color:rgba(124,156,255,.3); }
+  .badge.ice { background:rgba(139,214,255,.13); color:#8bd6ff; }
+  .badge.unverified,.badge.todo { background:#232838; color:var(--dim); }
+  .badge.in-progress { background:rgba(189,140,255,.16); color:var(--purple); border-color:rgba(189,140,255,.34); }
+  code,.mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
+  .path { color:var(--dim); }
+  .note { color:var(--dim); font-size:12.5px; margin-top:4px; }
+  ul.tight { margin:3px 0 0; padding-left:16px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .card h3 { margin:0 0 4px; font-size:15px; }
+  .kv { display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--dim); margin-top:8px; }
+  .kv b { color:var(--fg); font-weight:600; }
+  .flow,.story { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+          padding:14px 16px; margin-bottom:12px; }
+  .flow h3,.story h3 { margin:0 0 3px; font-size:15px; }
+  ol.steps { margin:10px 0 0; padding-left:20px; }
+  ol.steps li { margin:4px 0; }
+  .arrow { color:var(--dim); }
+  .empty { color:var(--dim); padding:40px 0; text-align:center; }
+  .err { background:rgba(255,142,142,.1); border:1px solid var(--p1); color:var(--p1);
+         padding:14px 18px; border-radius:8px; margin:24px; }
+  /* kanban */
+  .board { display:grid; grid-template-columns:repeat(4,minmax(230px,1fr)); gap:12px; align-items:start; }
+  .col { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px; }
+  .col > h3 { margin:2px 4px 10px; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+              color:var(--dim); display:flex; justify-content:space-between; }
+  .kcard { background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+           padding:9px 11px; margin-bottom:8px; cursor:pointer; }
+  .kcard:hover { border-color:var(--accent); }
+  .kcard .kid { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--dim); }
+  .kcard .kt { display:block; margin:2px 0 6px; }
+  .kmeta { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+  .bar { height:4px; border-radius:2px; background:#2c3142; overflow:hidden; margin-top:7px; }
+  .bar > i { display:block; height:100%; background:var(--p3); }
+  /* story detail */
+  .ac { border-left:2px solid var(--line); padding:2px 0 2px 12px; margin:10px 0 10px 2px; }
+  .ac .acid { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--dim); }
+  .gwt { margin:3px 0 0; }
+  .gwt b { color:var(--dim); font-weight:600; display:inline-block; min-width:46px; }
+  details > summary { cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Calendaric — map and backlog</h1>
+  <div class="sub" id="sub">loading…</div>
+  <nav id="tabs"></nav>
+</header>
+<div class="filters" id="filters"></div>
+<main id="main"><div class="empty">loading…</div></main>
+
+<script>
+const MAP_FILE = "mapping/calendaric-map.json";
+const BACKLOG_FILE = "backlog/backlog.json";
+let MAP = null, BL = null, TAB = "kanban";
+const F = { source:"", category:"", extra:"", q:"" };
+
+const TABS = [
+  { group:"Backlog", id:"kanban",   label:"Kanban",   count:d => BL.stories.length },
+  { group:"Backlog", id:"stories",  label:"Stories",  count:d => BL.stories.length },
+  { group:"Backlog", id:"coverage", label:"Coverage", count:d => MAP.capabilities.length },
+  { group:"Backlog", id:"icebox",   label:"Icebox",   count:d => BL.icebox.length },
+  { group:"Map", id:"overview",     label:"Overview",     key:null },
+  { group:"Map", id:"capabilities", label:"Capabilities", key:"capabilities" },
+  { group:"Map", id:"flows",        label:"Flows",        key:"flows" },
+  { group:"Map", id:"settings",     label:"Settings",     key:"settings" },
+  { group:"Map", id:"commands",     label:"Commands",     key:"commands" },
+  { group:"Map", id:"api_surface",  label:"API",          key:"api_surface" },
+  { group:"Map", id:"modules",      label:"Modules",      key:"modules" },
+  { group:"Map", id:"observations", label:"Observations", key:"observations" },
+];
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const bdg = (cls, txt) => `<span class="badge ${cls}">${esc(txt)}</span>`;
+const list = a => (a && a.length) ? `<ul class="tight note">${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
+const catLabel = id => (MAP.categories.find(c => c.id === id) || {}).label || id || "—";
+const capByUid = uid => MAP.capabilities.find(c => c.uid === uid);
+
+function acRoll(story) {
+  const acs = story.acceptance_criteria || [];
+  const pass = acs.filter(a => a.status === "pass").length;
+  const fail = acs.filter(a => a.status === "fail").length;
+  return { total: acs.length, pass, fail, pct: acs.length ? Math.round(pass / acs.length * 100) : 0 };
+}
+
+function rowsFor(tab) {
+  const t = TABS.find(x => x.id === tab) || {};
+  if (t.group === "Map") return t.key ? (MAP[t.key] || []) : [];
+  if (tab === "kanban" || tab === "stories") return BL.stories;
+  if (tab === "icebox") return BL.icebox;
+  if (tab === "coverage") return MAP.capabilities;
+  return [];
+}
+
+function matches(r) {
+  if (F.source && (r.source || r.epic) !== F.source) return false;
+  if (F.category && r.category !== F.category) return false;
+  if (F.extra) {
+    const v = r.surface || r.severity || r.kind || r.type || r.stability || r.priority || r.status || "";
+    if (v !== F.extra) return false;
+  }
+  if (F.q && !JSON.stringify(r).toLowerCase().includes(F.q.toLowerCase())) return false;
+  return true;
+}
+
+function buildTabs() {
+  const groups = [...new Set(TABS.map(t => t.group))];
+  document.getElementById("tabs").innerHTML = groups.map(g =>
+    `<div class="navgroup"><span class="glabel">${g}</span>` +
+    TABS.filter(t => t.group === g).map(t => {
+      const n = t.count ? t.count() : (t.key ? (MAP[t.key] || []).length : "");
+      return `<button data-tab="${t.id}" class="${t.id === TAB ? "on" : ""}">${t.label}` +
+             (n === "" ? "" : `<span class="n">${n}</span>`) + `</button>`;
+    }).join("") + `</div>`).join("");
+  document.querySelectorAll("#tabs button").forEach(b =>
+    b.onclick = () => { TAB = b.dataset.tab; F.extra = ""; F.source = ""; F.category = ""; render(); });
+}
+
+function buildFilters() {
+  const el = document.getElementById("filters");
+  if (TAB === "overview") { el.innerHTML = ""; return; }
+  const rows = rowsFor(TAB);
+  const uniq = f => [...new Set(rows.map(f).filter(Boolean))].sort();
+  const sel = (id, label, vals, cur) => vals.length < 2 ? "" :
+    `<select data-f="${id}"><option value="">${label}: all</option>` +
+    vals.map(v => `<option ${v === cur ? "selected" : ""}>${esc(v)}</option>`).join("") + `</select>`;
+  const isBacklog = ["kanban","stories","icebox"].includes(TAB);
+  el.innerHTML =
+    sel("source", isBacklog ? "epic" : "source", uniq(r => r.epic || r.source), F.source) +
+    (isBacklog ? "" : sel("category", "category", uniq(r => r.category), F.category)) +
+    sel("extra", "kind", uniq(r => r.surface || r.severity || r.kind || r.type || r.stability || r.priority), F.extra) +
+    `<input type="search" data-f="q" placeholder="search…" value="${esc(F.q)}">` +
+    `<span class="count" id="count"></span>`;
+  el.querySelectorAll("[data-f]").forEach(x => {
+    const h = () => { F[x.dataset.f] = x.value; render(false); };
+    x.tagName === "SELECT" ? x.onchange = h : x.oninput = h;
+  });
+}
+
+function tableHTML(cols, rows) {
+  if (!rows.length) return `<div class="empty">nothing matches</div>`;
+  return `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r => `<tr>${cols.map(c => `<td>${c[1](r)}</td>`).join("")}</tr>`).join("") +
+    `</tbody></table></div>`;
+}
+
+function storyBlock(s, open) {
+  const roll = acRoll(s);
+  return `<div class="story"><details ${open ? "open" : ""}>
+    <summary><h3 style="display:inline">${esc(s.title)}</h3>
+      <span class="kmeta" style="display:inline-flex; margin-left:8px">
+        <code>${esc(s.id)}</code> ${bdg("epic", s.epic)} ${bdg(s.priority || "could", s.priority || "?")}
+        ${bdg(s.status, s.status)} ${bdg("neutral", `${roll.pass}/${roll.total} AC`)}
+      </span></summary>
+    <div class="note" style="margin-top:8px">${esc(s.story)}</div>
+    ${s.rationale ? `<div class="note"><i>Why:</i> ${esc(s.rationale)}</div>` : ""}
+    ${(s.acceptance_criteria || []).map(a => `
+      <div class="ac">
+        <span class="acid">${esc(a.id)}</span> ${bdg(a.status, a.status)}
+        ${bdg("neutral", a.testable_by || "?")} ${bdg("neutral", a.verifies || "?")}
+        <div class="gwt"><b>Given</b> ${esc(a.given)}</div>
+        <div class="gwt"><b>When</b> ${esc(a.when)}</div>
+        <div class="gwt"><b>Then</b> ${(a.then || []).map(esc).join("<br><b></b>")}</div>
+        ${a.evidence ? `<div class="note">evidence: ${esc(a.evidence)}</div>` : ""}
+      </div>`).join("")}
+    <div class="kv">
+      ${(s.covers || []).length ? `<span>covers ${s.covers.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
+      ${(s.constrained_by || []).length ? `<span>constrained by ${s.constrained_by.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
+      ${(s.depends_on || []).length ? `<span>after ${s.depends_on.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
+    </div>
+    ${(s.open_questions || []).length ? `<div class="note"><i>Open:</i>${list(s.open_questions)}</div>` : ""}
+  </details></div>`;
+}
+
+const VIEWS = {
+  kanban: rows => {
+    const cols = BL.meta.story_statuses;
+    return `<div class="board">` + cols.map(st => {
+      const cards = rows.filter(s => s.status === st);
+      return `<div class="col"><h3><span>${st}</span><span>${cards.length}</span></h3>` +
+        (cards.length ? cards.map(s => {
+          const r = acRoll(s);
+          return `<div class="kcard" data-story="${esc(s.id)}">
+            <span class="kid">${esc(s.id)}</span>
+            <span class="kt">${esc(s.title)}</span>
+            <span class="kmeta">${bdg("epic", s.epic)} ${bdg(s.priority || "could", s.priority || "?")}
+              ${r.fail ? bdg("fail", `${r.fail} failing`) : bdg("neutral", `${r.pass}/${r.total} AC`)}</span>
+            <div class="bar"><i style="width:${r.pct}%"></i></div>
+          </div>`;
+        }).join("") : `<div class="note" style="padding:6px 4px">empty</div>`) + `</div>`;
+    }).join("") + `</div>`;
+  },
+
+  stories: rows => rows.length
+    ? BL.epics.filter(e => rows.some(s => s.epic === e.id)).map(e =>
+        `<h2 style="font-size:15px;margin:18px 0 8px">${esc(e.id)} — ${esc(e.title)}</h2>
+         <div class="note" style="margin-bottom:10px">${esc(e.summary)}</div>` +
+        rows.filter(s => s.epic === e.id).map(s => storyBlock(s, false)).join("")).join("")
+    : `<div class="empty">nothing matches</div>`,
+
+  icebox: rows => rows.length ? rows.map(e => `
+    <div class="story">
+      <h3>${esc(e.title)} <code>${esc(e.id)}</code>
+        ${bdg(e.kind === "do-not-rebuild" ? "fail" : "ice", e.kind || "deferred-feature")}
+        ${bdg("neutral", `cost ${e.cost_to_add_later || "?"}`)}</h3>
+      <div class="note">${esc(e.what_it_does)}</div>
+      <div class="note"><i>Deferred because:</i> ${esc(e.why_deferred)}</div>
+      ${e.revisit_when ? `<div class="note"><i>Revisit when:</i> ${esc(e.revisit_when)}</div>` : ""}
+      ${e.risk_of_deferring ? `<div class="note"><i>Risk:</i> ${esc(e.risk_of_deferring)}</div>` : ""}
+      ${(e.blocks_if_omitted || []).length ? `<div class="note"><i>Constrains:</i> ${e.blocks_if_omitted.map(x => `<code>${esc(x)}</code>`).join(" ")}</div>` : ""}
+      <div class="kv"><span>covers ${(e.covers || []).map(u => `<code>${esc(u)}</code>`).join(" ")}</span></div>
+    </div>`).join("") : `<div class="empty">nothing matches</div>`,
+
+  coverage: rows => {
+    const owners = {};
+    BL.stories.forEach(s => (s.covers || []).forEach(u => (owners[u] ||= []).push(s)));
+    BL.icebox.forEach(e => (e.covers || []).forEach(u => (owners[u] ||= []).push(e)));
+    const excused = Object.fromEntries((BL.coverage.excused || []).map(x => [x.uid, x.reason]));
+    return tableHTML([
+      ["Capability", r => `<b>${esc(r.name)}</b><div class="note mono">${esc(r.uid)}</div>`],
+      ["Src", r => bdg("src", r.source)],
+      ["Epic", r => { const a = (BL.assignment || {})[r.uid];
+        return a ? bdg(a.epic === "ICE" ? "ice" : "epic", a.epic) : "—"; }],
+      ["Covered by", r => {
+        const os = owners[r.uid] || [];
+        if (os.length) return os.map(o => `<code>${esc(o.id)}</code>`).join(" ");
+        if (excused[r.uid]) return bdg("neutral", "folded in") + `<div class="note">${esc(excused[r.uid])}</div>`;
+        const role = (BL.assignment || {})[r.uid]?.role;
+        if (role === "evidence") return bdg("neutral", "evidence") +
+          `<div class="note">Real-world constraint, not a feature to build.</div>`;
+        return bdg("fail", "no story");
+      }],
+      ["Story status", r => (owners[r.uid] || []).filter(o => o.status)
+        .map(o => bdg(o.status, o.status)).join(" ") || "—"],
+      ["AC", r => (owners[r.uid] || []).filter(o => o.acceptance_criteria).map(o => {
+        const x = acRoll(o); return bdg(x.fail ? "fail" : x.pass === x.total && x.total ? "pass" : "neutral",
+          `${x.pass}/${x.total}`); }).join(" ") || "—"],
+    ], rows);
+  },
+
+  overview: () => `<div class="cards">` + MAP.sources.map(s => `
+    <div class="card">
+      <h3>${esc(s.repo)} ${s.version && s.version !== "n/a" ? `<span class="note mono">${esc(s.version)}</span>` : ""}</h3>
+      <div class="note">${esc(s.role)}</div>
+      <div class="note mono path">${esc(s.path)}</div>
+      <div class="kv">${Object.entries(s.counts || {}).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("")}</div>
+    </div>`).join("") + `</div>`,
+
+  capabilities: rows => tableHTML([
+    ["Capability", r => `<b>${esc(r.name)}</b><div class="note mono">${esc(r.uid)}</div>`],
+    ["Surface", r => bdg("src", r.surface)],
+    ["Gran.", r => `<span class="note mono">${esc((r.granularity || []).join(", ") || "—")}</span>`],
+    ["What it does", r => esc(r.description) + list(r.behaviour_notes) +
+      (r.edge_cases?.length ? `<div class="note"><i>edge:</i> ${esc(r.edge_cases.join("; "))}</div>` : "")],
+    ["Defined in", r => (r.defined_in || []).map(d =>
+      `<div class="mono path">${esc(d.path)}${d.lines ? ":" + esc(d.lines) : ""}${d.symbol ? `<br>${esc(d.symbol)}` : ""}</div>`).join("") || "—"],
+    ["", r => bdg(r.confidence === "verified" ? "verified" : "inferred", r.confidence || "?")],
+  ], rows),
+
+  flows: rows => rows.length ? rows.map(f => `
+    <div class="flow"><h3>${esc(f.title)} ${bdg("src", f.source)}
+      ${bdg(f.confidence === "verified" ? "verified" : "inferred", f.confidence || "?")}</h3>
+      <div class="note">${esc(f.description)}</div>
+      ${f.trigger ? `<div class="note"><i>trigger:</i> ${esc(f.trigger)}</div>` : ""}
+      <ol class="steps">${(f.steps || []).map(s =>
+        `<li><code>${esc(s.from)}</code> <span class="arrow">&rarr;</span> <code>${esc(s.to)}</code>
+         &nbsp;${esc(s.action)}${s.payload && s.payload !== "—" ? ` <span class="note mono">${esc(s.payload)}</span>` : ""}</li>`).join("")}</ol>
+    </div>`).join("") : `<div class="empty">nothing matches</div>`,
+
+  settings: rows => tableHTML([
+    ["Key", r => `<code>${esc(r.key)}</code>`], ["Src", r => bdg("src", r.source)],
+    ["Label", r => esc(r.label)], ["Type", r => bdg("src", r.type)],
+    ["Default", r => `<code>${esc(JSON.stringify(r.default))}</code>`], ["Scope", r => esc(r.scope)],
+    ["Where", r => `<span class="mono path">${esc(r.path)}</span>`],
+    ["Affects / notes", r => (r.affects || []).map(a => `<code>${esc(a)}</code>`).join(" ") +
+      (r.notes ? `<div class="note">${esc(r.notes)}</div>` : "")],
+  ], rows),
+
+  commands: rows => tableHTML([
+    ["Id", r => `<code>${esc(r.id)}</code>`], ["Src", r => bdg("src", r.source)],
+    ["Name", r => esc(r.name)], ["Kind", r => bdg("src", r.kind)],
+    ["Where", r => `<span class="mono path">${esc(r.path)}</span>`],
+    ["Calls", r => (r.calls || []).map(c => `<code>${esc(c)}</code>`).join(" ")],
+    ["Condition", r => r.condition ? esc(r.condition) : "—"],
+  ], rows),
+
+  api_surface: rows => tableHTML([
+    ["Export", r => `<code>${esc(r.export)}</code>`], ["Src", r => bdg("src", r.source)],
+    ["Kind", r => bdg("src", r.kind)], ["Signature", r => `<span class="mono">${esc(r.signature)}</span>`],
+    ["Where", r => `<span class="mono path">${esc(r.path)}</span>`],
+    ["Stability", r => bdg(r.stability === "public" ? "p3" : r.stability === "accidental" ? "p1" : "p2", r.stability)],
+    ["Consumers", r => (r.consumers || []).join(", ") || "—"],
+  ], rows),
+
+  modules: rows => tableHTML([
+    ["Module", r => `<b>${esc(r.name)}</b><div class="note mono">${esc(r.id)}</div>`],
+    ["Src", r => bdg("src", r.source)], ["Category", r => esc(catLabel(r.category))],
+    ["Role", r => esc(r.role)], ["Path", r => `<span class="mono path">${esc(r.path)}</span>`],
+    ["LOC", r => r.loc ?? "—"],
+    ["Depends on", r => (r.depends_on || []).map(d => `<code>${esc(d)}</code>`).join(" ") || "—"],
+  ], rows),
+
+  observations: rows => tableHTML([
+    ["Sev", r => bdg(String(r.severity || "").toLowerCase(), r.severity)],
+    ["Src", r => bdg("src", r.source)], ["Kind", r => bdg("src", r.kind)],
+    ["What", r => `<b>${esc(r.what)}</b><div class="note">${esc(r.why_it_matters)}</div>`],
+    ["Where", r => (r.where || []).map(w => `<div class="mono path">${esc(w)}</div>`).join("") || "—"],
+  ], rows),
+};
+
+const SEV = { P1:0, P2:1, P3:2 };
+
+function render(rebuild = true) {
+  if (rebuild) { buildTabs(); buildFilters(); }
+  let rows = rowsFor(TAB).filter(matches);
+  if (TAB === "observations") rows = [...rows].sort((a, b) => (SEV[a.severity] ?? 9) - (SEV[b.severity] ?? 9));
+  document.getElementById("main").innerHTML = VIEWS[TAB](rows);
+  const c = document.getElementById("count");
+  if (c) c.textContent = `${rows.length} of ${rowsFor(TAB).length}`;
+  document.querySelectorAll(".kcard").forEach(card => card.onclick = () => {
+    TAB = "stories"; F.q = card.dataset.story; render();
+  });
+}
+
+Promise.all([
+  fetch(MAP_FILE).then(r => { if (!r.ok) throw new Error(`${MAP_FILE}: ${r.status}`); return r.json(); }),
+  fetch(BACKLOG_FILE).then(r => r.ok ? r.json()
+    : { meta:{ story_statuses:["todo","in-progress","blocked","done"] }, epics:[], stories:[], icebox:[],
+        coverage:{ excused:[] } }),
+]).then(([m, b]) => {
+  MAP = m; BL = b;
+  const c = BL.coverage || {};
+  document.getElementById("sub").textContent =
+    `${BL.stories.length} stories · ${BL.stories.reduce((n, s) => n + (s.acceptance_criteria || []).length, 0)} acceptance criteria · ` +
+    `${MAP.capabilities.length} mapped capabilities · generated ${BL.meta?.generated || MAP.meta.generated}`;
+  if (!BL.stories.length) TAB = "overview";
+  render();
+}).catch(e => {
+  document.body.innerHTML = `<div class="err"><b>Could not load the data</b><br>${esc(e.message)}
+    <br><br>This page fetches its data, so it needs a local server started in <code>docs/</code>:
+    <br><code>cd docs &amp;&amp; python3 -m http.server 8973</code></div>`;
+});
+</script>
+</body>
+</html>

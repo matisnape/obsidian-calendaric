@@ -1,0 +1,867 @@
+{
+  "epic": "NOTE",
+  "epic_title": "Resolve, create, open and navigate periodic notes",
+  "summary": "NOTE owns the full lifecycle of a periodic note: knowing whether it exists, creating it (folder, template, file) when it does not, opening it the way the user asked, telling whether an arbitrary file is one of them, finding its neighbours, and keeping a fast index of all of it correct as the vault changes. FMT supplies date-to-filename and filename-to-date conversion and week/locale rules; TPL supplies what a template's tokens expand to; CAL and CMD decide when a note operation gets triggered (a click, a command, startup) and NOTE only supplies what happens once that decision is made; SET supplies the resolved folder/format/template values NOTE consumes.",
+  "stories": [
+    {
+      "id": "US-NOTE-01",
+      "epic": "NOTE",
+      "title": "Look up whether a period already has a note",
+      "story": "As someone reviewing my periodic notes, I want to check whether a note for a specific day, week, month, or year already exists, so that other features can decide whether to open it or create it without guessing.",
+      "rationale": "Every open-or-create flow, calendar dot, and adjacent-note search depends on this lookup being fast and correct.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:get-daily-note",
+        "dni:get-weekly-note",
+        "dni:get-monthly-note",
+        "dni:get-yearly-note",
+        "pn:get-periodic-note"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-11"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-01.1",
+          "given": "a note exists for the requested period",
+          "when": "the lookup runs for that period",
+          "then": [
+            "the existing note's file is returned"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-01.2",
+          "given": "no note exists for the requested period",
+          "when": "the lookup runs for that period",
+          "then": [
+            "the lookup reports nothing found",
+            "no note is created as a side effect of looking",
+            "no error is thrown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-01.3",
+          "given": "two moments that fall on the same day, week, month, or year but differ only in time of day",
+          "when": "the lookup runs for either moment",
+          "then": [
+            "both return the same note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-01.4",
+          "given": "a granularity Calendaric does not support (for example quarter)",
+          "when": "a lookup is requested for it",
+          "then": [
+            "a clear, actionable error is reported instead of an incorrect or silent result"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-02",
+      "epic": "NOTE",
+      "title": "Enumerate every note of a granularity",
+      "story": "As someone auditing my notes, I want to list every note of a given granularity that exists in the vault, so that calendars, dashboards, and migrations can be built on a complete set instead of a partial guess.",
+      "rationale": "Calendar dots, related-note lists, and index rebuilding all need the complete set, not a sample.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:get-all-daily-notes",
+        "dni:get-all-weekly-notes",
+        "dni:get-all-monthly-notes",
+        "dni:get-all-yearly-notes"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-11"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-02.1",
+          "given": "notes exist at several dates for a granularity, including some nested in subfolders under its configured folder",
+          "when": "notes of that granularity are enumerated",
+          "then": [
+            "every one of them is returned, including the nested ones"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-02.2",
+          "given": "the granularity's configured folder does not exist in the vault",
+          "when": "notes of that granularity are enumerated",
+          "then": [
+            "a clear error is reported naming the missing folder, instead of an empty list that looks like there are simply no notes yet"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-02.3",
+          "given": "the granularity's configured folder exists but is empty",
+          "when": "notes of that granularity are enumerated",
+          "then": [
+            "an empty list is returned without an error"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-02.4",
+          "given": "a file in the configured folder does not match the granularity's configured filename format",
+          "when": "notes of that granularity are enumerated",
+          "then": [
+            "that file is excluded from the results"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-03",
+      "epic": "NOTE",
+      "title": "Resolve the folder for a note and create missing parent folders",
+      "story": "As someone who has never manually created a folder for my notes, I want the plugin to create whatever folders a new note needs, so that turning on a granularity or pointing it at a new folder just works without a manual setup step.",
+      "rationale": "A missing folder should never be the reason a note fails to be created.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:resolve-note-path-and-ensure-folder",
+        "pn:note-creation-path-and-folder-autocreate",
+        "pn:folder-validation",
+        "calendaric:compute-note-path",
+        "calendaric:resolve-default-note-folder"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-03.1",
+          "given": "a granularity's configured folder does not exist yet",
+          "when": "a note is created for that granularity",
+          "then": [
+            "the folder, and any missing parent folders above it, are created automatically before the note is written"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-03.2",
+          "given": "no folder is configured for a granularity",
+          "when": "the path for its note is resolved",
+          "then": [
+            "the note falls back to Obsidian's own default location for new notes, rather than an unpredictable or empty path"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-03.3",
+          "given": "a configured folder path that is empty or the vault root",
+          "when": "the folder path is checked for validity",
+          "then": [
+            "it is accepted as valid"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-03.4",
+          "given": "a configured folder path that does not currently exist in the vault",
+          "when": "the folder path is checked for validity ahead of note creation",
+          "then": [
+            "it is flagged as not-yet-created",
+            "the flag does not block a note from being created later, since the folder is made automatically at creation time"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-03.5",
+          "given": "a configured folder several levels deep where none of the intermediate segments exist",
+          "when": "a note is created for that granularity",
+          "then": [
+            "every missing intermediate folder is created, not only the immediate parent"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-04",
+      "epic": "NOTE",
+      "title": "Create the note for any supported granularity, reliably",
+      "story": "As someone keeping a periodic journal, I want creating a note to work the same reliable way for every granularity Calendaric supports, so that switching between daily, weekly, monthly, and yearly notes never surprises me with a create that silently does nothing or crashes.",
+      "rationale": "The old code has three different, inconsistent answers for what happens when a create goes wrong; users need one predictable answer.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:create-daily-note",
+        "dni:create-weekly-note",
+        "dni:create-monthly-note",
+        "dni:create-yearly-note",
+        "dni:create-periodic-note",
+        "pn:create-periodic-note",
+        "calendaric:create-daily-or-weekly-note"
+      ],
+      "constrained_by": ["vault:create-daily-note"],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-03", "US-NOTE-05"],
+      "open_questions": [
+        "Is a bare 'create' ever invoked directly by another epic, or does every real entry point go through open-or-create (US-NOTE-07), which already checks existence first? This changes how often AC-NOTE-04.5/.6 are actually reachable in practice."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-04.1",
+          "given": "no note exists yet for the requested period",
+          "when": "a create is requested for that period",
+          "then": [
+            "a new note file is written at the resolved folder and filename for that granularity",
+            "the created file is returned to the caller"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-04.2",
+          "given": "a granularity Calendaric currently supports (day, week, month, or year)",
+          "when": "the generic 'create the note for this granularity' entry point is used",
+          "then": [
+            "it creates the note correctly for that granularity, the same as calling that granularity's own create operation directly"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-04.3",
+          "given": "a granularity Calendaric does not support (for example quarter)",
+          "when": "the generic 'create the note for this granularity' entry point is used",
+          "then": [
+            "a clear, actionable error is reported naming the unsupported granularity, instead of an internal or unhandled failure"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-04.4",
+          "given": "the configured folder for the granularity does not exist yet",
+          "when": "a create is requested",
+          "then": [
+            "the note is still created successfully",
+            "the missing folder is created automatically first"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-04.5",
+          "given": "a file already exists at the exact path a new note for this period would be written to",
+          "when": "a create is requested for that period",
+          "then": [
+            "no existing content is overwritten or deleted",
+            "the operation reports clearly that a note already exists there, instead of silently doing nothing or throwing an unhandled error",
+            "the caller can use that report to open the existing note instead"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-04.6",
+          "given": "the exact path a new note would occupy is taken by something that is not a markdown note (for example a folder)",
+          "when": "a create is requested for that period",
+          "then": [
+            "the create fails with a clear, actionable error naming the conflict",
+            "nothing at that path is altered or deleted"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-05",
+      "epic": "NOTE",
+      "title": "Apply the configured template when creating a note",
+      "story": "As someone with a note-taking routine, I want each newly created periodic note to start from my configured template, so that I do not have to add the same headings and frontmatter by hand every time.",
+      "rationale": "A template is the difference between a useful note and a blank file; it must apply every time a note is created, not just sometimes.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:get-template-info",
+        "calendaric:apply-template-on-create"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-05.1",
+          "given": "a template is configured for the granularity",
+          "when": "a new note is created",
+          "then": [
+            "the template's content, with its tokens expanded, becomes the new note's initial content"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-05.2",
+          "given": "no template is configured for the granularity",
+          "when": "a new note is created",
+          "then": [
+            "the note is created with empty content rather than failing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-05.3",
+          "given": "the configured template file cannot be found",
+          "when": "a new note is created",
+          "then": [
+            "the note is still created, with empty content",
+            "a specific, visible warning tells the user the template could not be read"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-05.4",
+          "given": "a saved fold state exists for the configured template",
+          "when": "a new note is created from it",
+          "then": [
+            "that fold state is applied to the new note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-06",
+      "epic": "NOTE",
+      "title": "Open a note in the active pane, a new tab, or a split",
+      "story": "As someone jumping between notes quickly, I want opening a note to reuse my current view by default but let me force a new tab or a split when I ask for it, so that navigating never fights the layout I already have open.",
+      "rationale": "Where a note opens is as much a part of the experience as whether it opens at all.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "calendaric:open-note-in-active-leaf",
+        "calendaric:open-note-in-new-tab"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-06.1",
+          "given": "a note is opened without any modifier key held",
+          "when": "it opens",
+          "then": [
+            "it reuses the current unpinned tab instead of opening a new one"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-06.2",
+          "given": "a note is opened while the platform's split modifier key (Cmd on macOS, Ctrl elsewhere) is held",
+          "when": "it opens",
+          "then": [
+            "it opens in a split next to the current view instead of replacing it"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-06.3",
+          "given": "a note is opened as part of the startup flow rather than a direct user click",
+          "when": "it opens",
+          "then": [
+            "it opens in a new tab rather than reusing or replacing whatever tab is already active"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-06.4",
+          "given": "the resolved file was deleted or moved between being found and being opened",
+          "when": "opening it is attempted",
+          "then": [
+            "a clear notice is shown",
+            "no unrelated file is opened in its place"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-07",
+      "epic": "NOTE",
+      "title": "Activating a period opens or creates its note",
+      "story": "As someone keeping a periodic journal, I want activating a period to take me straight to its note, so that I never have to manually find or create the file myself.",
+      "rationale": "This is the single most-used operation in the plugin: the payoff every other NOTE story exists to support.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "cal:open-or-create-daily-note",
+        "cal:open-or-create-weekly-note",
+        "cal:create-daily-note-with-confirmation",
+        "cal:create-weekly-note-with-confirmation",
+        "pn:open-periodic-note"
+      ],
+      "constrained_by": ["vault:create-daily-note", "vault:cascade-create-weekly-from-daily"],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-01", "US-NOTE-04", "US-NOTE-05", "US-NOTE-06"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-07.1",
+          "given": "no note exists for the activated period",
+          "when": "that period is activated",
+          "then": [
+            "a note is created for it",
+            "the newly created note opens"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-07.2",
+          "given": "a note already exists for the activated period",
+          "when": "that period is activated",
+          "then": [
+            "the existing note opens",
+            "no duplicate is created and its content is left unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-07.3",
+          "given": "the setting to confirm before creating is turned on and no note exists for the activated period",
+          "when": "that period is activated",
+          "then": [
+            "the user is asked to confirm before any file is written",
+            "declining the confirmation creates nothing and opens nothing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-07.4",
+          "given": "the setting to confirm before creating is turned off and no note exists for the activated period",
+          "when": "that period is activated",
+          "then": [
+            "the note is created and opened immediately, without any prompt"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-07.5",
+          "given": "creating the note for the activated period fails",
+          "when": "that period is activated",
+          "then": [
+            "a clear, actionable error is shown",
+            "no blank or broken pane is left open in place of a real note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-08",
+      "epic": "NOTE",
+      "title": "Know whether a file is a periodic note, and which period",
+      "story": "As someone who wants navigation commands to only apply where they make sense, I want the plugin to tell whether any given file is one of my periodic notes and, if so, which period it represents, so that features like jump-to-adjacent only ever activate for real periodic notes.",
+      "rationale": "Every command that only makes sense on a periodic note needs a precise, folder-scoped answer to 'is this one?'.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "pn:is-periodic",
+        "pn:find-note-in-cache"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-11"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-08.1",
+          "given": "a file sits inside a granularity's configured folder and matches its configured format",
+          "when": "the file is checked",
+          "then": [
+            "it is recognised as a periodic note of that granularity",
+            "the exact period it represents is returned"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-08.2",
+          "given": "a file's name looks like a date but the file does not live inside any granularity's configured folder",
+          "when": "the file is checked",
+          "then": [
+            "it is not recognised as a periodic note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-08.3",
+          "given": "a file is not a markdown file",
+          "when": "the file is checked",
+          "then": [
+            "it is never recognised as a periodic note, regardless of its name"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-08.4",
+          "given": "a file was previously recognised as a period's note and is then renamed without changing which period it represents",
+          "when": "the file is checked again",
+          "then": [
+            "it is still recognised as the same period's note"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-09",
+      "epic": "NOTE",
+      "title": "Find the closest existing adjacent note",
+      "story": "As someone reviewing my history, I want to jump to the closest existing note before or after the one I am looking at, without creating anything new, so that I can browse what I have actually written without accidentally adding empty notes.",
+      "rationale": "Browsing history and filling in a missing day are two different intents and must not be conflated.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "pn:find-adjacent-note"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-11"],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-09.1",
+          "given": "at least one earlier note and one later note of the same granularity exist relative to a reference note",
+          "when": "the previous, or the next, adjacent note is requested",
+          "then": [
+            "the nearest existing note in that direction is returned"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-09.2",
+          "given": "no earlier, or no later, note of that granularity exists",
+          "when": "the previous, or the next, adjacent note is requested in the direction with nothing there",
+          "then": [
+            "nothing is returned, instead of an error or a result wrapped around to the other end"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-09.3",
+          "given": "the reference file is not itself a recognised periodic note",
+          "when": "an adjacent note is requested from it",
+          "then": [
+            "nothing is returned, since there is no period to be adjacent to"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-09.4",
+          "given": "the neighbouring date for the requested direction has no note yet",
+          "when": "the closest existing adjacent note is requested",
+          "then": [
+            "no note is created for that neighbouring date",
+            "finding an existing neighbour and creating the note for a specific neighbouring date remain two separate operations"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-10",
+      "epic": "NOTE",
+      "title": "Auto-apply the template to a manually created periodic-shaped file",
+      "story": "As someone who sometimes creates a file by hand and names it to match my daily format instead of using a command, I want that file to get the same template as one the plugin created for me, so that I never end up with an untemplated gap in my journal just because of how the file came to exist.",
+      "rationale": "A note's origin should not change what it looks like once it is recognised as a period's note.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:auto-apply-template-on-empty-manual-file"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": ["US-NOTE-11", "US-NOTE-05"],
+      "open_questions": [
+        "Should a periodic-shaped empty file that already existed before the plugin started (picked up only by the initial index build) also be auto-templated, or is 'only files created while running' the intended, permanent boundary?"
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-10.1",
+          "given": "a new, completely empty file is created directly in a granularity's configured folder with a name matching its configured format",
+          "when": "the index resolves that file",
+          "then": [
+            "the configured template is applied to it exactly as if the plugin had created it"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-10.2",
+          "given": "the manually created file already has content",
+          "when": "the index resolves that file",
+          "then": [
+            "no template is applied",
+            "the existing content is left untouched"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-10.3",
+          "given": "an empty, periodic-shaped file already existed in the vault before the plugin's index was first built",
+          "when": "the initial index build resolves that file",
+          "then": [
+            "the template is not retroactively applied to it"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-NOTE-11",
+      "epic": "NOTE",
+      "title": "Build and maintain the periodic-note index",
+      "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
+      "rationale": "Every other NOTE story reads from this index; if it drifts from reality, all of them silently break.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "calui:periodic-note-file-cache",
+        "pn:cache-index-build-on-load",
+        "pn:cache-resolve-on-file-create",
+        "pn:cache-resolve-on-rename",
+        "pn:cache-resolve-frontmatter",
+        "pn:cache-reset-on-settings-change"
+      ],
+      "constrained_by": ["vault:cascade-create-weekly-from-daily", "vault:create-weekly-note-rename-move"],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-NOTE-11.1",
+          "given": "the vault finishes loading",
+          "when": "the plugin starts",
+          "then": [
+            "the index contains an entry for every existing file that matches a granularity's configured folder and format"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.2",
+          "given": "a new file is created that matches a granularity's configured folder and format",
+          "when": "the file is created",
+          "then": [
+            "it is added to the index without a full rescan of the vault"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.3",
+          "given": "a file already in the index is renamed to a different name that still matches its granularity's configured folder and format, including being renamed by an external script from a raw title to a longer 'pretty' title",
+          "when": "the rename completes",
+          "then": [
+            "the file is still recognised as the same period's note under its new name"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.4",
+          "given": "a file's name happens to match a granularity's configured format but the file lives outside every granularity's configured folder",
+          "when": "the index resolves that file",
+          "then": [
+            "it is never added to the index"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.5",
+          "given": "a plugin setting that affects which files count as periodic (for example a folder or a format) is changed",
+          "when": "the change is saved",
+          "then": [
+            "the index is rebuilt so it reflects the new configuration",
+            "files that only match under the new settings are added",
+            "files that no longer match are removed"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.6",
+          "given": "a file carries a periodic date in its frontmatter and lives inside that granularity's configured folder",
+          "when": "the index resolves that file",
+          "then": [
+            "it is recognised as that period's note even if its filename alone would not have matched"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-NOTE-11.7",
+          "given": "a file that was in the index is deleted",
+          "when": "the deletion is noticed",
+          "then": [
+            "it is removed from the index"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "Every 'build' uid assigned to NOTE is covered by exactly one story's covers[]; none were left in uncovered[].",
+    "The generic create-note dispatcher's real defect (missing quarter/year branches, dni:create-periodic-note) is addressed as AC-NOTE-04.2/.3 rather than narrated as a bug: the entry point must handle every granularity Calendaric supports and report a clear error for one it does not.",
+    "Existing-file handling (AC-NOTE-04.5/.6) picks one answer where the old code had three (dni swallows the error behind a generic Notice and resolves undefined; pn lets vault.create's exception propagate unhandled; neither tells the caller anything actionable). The chosen answer: report the conflict clearly enough that the caller (typically US-NOTE-07's open-or-create) can recover by opening the existing note, and never destroy what is already on disk.",
+    "The vault-wide loose date-fallback (pn:loose-date-parsing-fallback-global) is icebox and intentionally excluded; AC-NOTE-08.2 and AC-NOTE-11.4 instead require folder-scoping as the only way a file is recognised as periodic.",
+    "Several stories (US-NOTE-03, 04, 05, 06, 07, 08, 09, 10, 11) are marked granularity-agnostic (day/week/month/year) even though Calendaric's own current code only wires day and week end-to-end; the underlying behaviour is already granularity-generic in the prior-art libraries (dni, pn), and quarter is the only granularity deliberately excluded (icebox). Wiring month/year all the way through settings UI and the calendar grid is CAL/SET/CMD/TPL's job, not NOTE's.",
+    "Most acceptance criteria are testable_by unit against a pre-populated index/cache and mocked vault calls; anything that touches a real Obsidian workspace leaf, a real vault.createFolder, or the confirmation modal is marked integration or (for the modal's own prompt) manual, since this epic's tests will need a fuller Obsidian mock (TFile, Vault, Workspace, MetadataCache) than exists in the current test suite.",
+    "pn:jump-to-adjacent-note-command and pn:open-adjacent-note-command are epic CMD, not NOTE: CMD's commands compose US-NOTE-09's closest-existing lookup and US-NOTE-07's open-or-create to implement 'jump to closest existing' and 'open the neighbouring date, creating it if needed' respectively. NOTE supplies both underlying operations; CMD decides how a command palette entry uses them."
+  ]
+}

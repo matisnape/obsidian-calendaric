@@ -1,0 +1,501 @@
+{
+  "epic": "TPL",
+  "epic_title": "Template files and token substitution in the note body",
+  "summary": "This epic owns turning a loaded template's raw content into the text a new note actually contains: substituting {{date}}, {{time}}, {{title}}, day-relative and weekday tokens, leaving anything it does not recognise untouched, and validating that a configured template path is usable. It does not create the file or decide when a template is applied (NOTE), does not touch the same token syntax used in the filename Format field (FMT), and does not store the template path setting (SET). Because every real template in this vault hands the interesting work to a full template engine instead of using these tokens, roughly half of this epic's stories pin down the boundary with that engine rather than the tokens themselves.",
+  "stories": [
+    {
+      "id": "US-TPL-01",
+      "epic": "TPL",
+      "title": "Fill date, time, and title tokens into the template body",
+      "story": "As someone applying a template to a new periodic note, I want {{date}}, {{date:FORMAT}}, {{time}}, {{title}}, and date-arithmetic tokens like {{date+1d:FORMAT}} filled in automatically, so that the note already carries the right day, time, and name without me typing them by hand.",
+      "rationale": "These tokens apply to every granularity, so their exact output is the baseline the rest of the token system builds on.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:template-token-date-time-calc",
+        "pn:template-token-expansion",
+        "calendaric:template-token-date",
+        "calendaric:template-token-date-custom",
+        "calendaric:template-token-time",
+        "calendaric:template-token-title"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-01.1",
+          "given": "a template body contains {{date}}",
+          "when": "the note is created",
+          "then": [
+            "{{date}} is replaced with the note's own date",
+            "the date is formatted using that granularity's configured filename Format, not a fixed default"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-01.2",
+          "given": "a template body contains {{date:FORMAT}} with a custom format string",
+          "when": "substitution runs",
+          "then": [
+            "it is replaced with the note's own date rendered in that custom format",
+            "a plain {{date}} token elsewhere in the same body is substituted independently and is not consumed or corrupted by the {{date:FORMAT}} match"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-01.3",
+          "given": "a template body contains {{time}}",
+          "when": "the note is created",
+          "then": [
+            "it is replaced with the current wall-clock time as HH:mm at the moment of creation",
+            "this is not derived from any time-of-day carried by the note's own date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-01.4",
+          "given": "a template body contains {{title}}",
+          "when": "the note is created",
+          "then": [
+            "it is replaced with the new note's filename, without its file extension",
+            "the filename used is the one the note has at the moment substitution runs"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-01.5",
+          "given": "a template body contains a date-arithmetic token such as {{date+7d:FORMAT}} or {{date-1M:FORMAT}}",
+          "when": "substitution runs",
+          "then": [
+            "it is replaced with the note's own date shifted by the signed offset and unit",
+            "the result is rendered in FORMAT when given, or otherwise in the granularity's configured Format"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-01.6",
+          "given": "a date-arithmetic token has a malformed offset, for example a missing unit letter in {{date+7:FORMAT}}",
+          "when": "substitution runs",
+          "then": [
+            "the token is left in the note exactly as written",
+            "no error is raised and no text is deleted"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-TPL-02",
+      "epic": "TPL",
+      "title": "Fill {{yesterday}} and {{tomorrow}} into daily note templates only",
+      "story": "As someone journaling day by day, I want {{yesterday}} and {{tomorrow}} in a daily note's template to resolve to the adjacent calendar days, so that I can link into my journal's timeline without typing dates.",
+      "rationale": "This is a daily-only convenience carried over from the source plugins; the rewrite should keep the asymmetry explicit rather than silently extending or dropping it.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "dni:template-token-yesterday-tomorrow",
+        "calendaric:template-token-yesterday-tomorrow"
+      ],
+      "constrained_by": [],
+      "granularity": ["day", "week"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-02.1",
+          "given": "a daily note's template contains {{yesterday}}",
+          "when": "the note is created",
+          "then": [
+            "it is replaced with the calendar day before the note's own date",
+            "the result is formatted using the daily granularity's configured Format"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-02.2",
+          "given": "a daily note's template contains {{tomorrow}}",
+          "when": "the note is created",
+          "then": [
+            "it is replaced with the calendar day after the note's own date",
+            "the result uses the same Format as {{yesterday}}"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-02.3",
+          "given": "a template for a non-daily granularity, for example weekly, contains {{yesterday}} or {{tomorrow}}",
+          "when": "substitution runs",
+          "then": [
+            "the tokens are left in the note exactly as written",
+            "no adjacent-day value is invented for a granularity where the concept does not apply"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-TPL-03",
+      "epic": "TPL",
+      "title": "Fill named weekday tokens into a weekly note's template body, honouring the configured week start",
+      "story": "As someone whose weekly template lays out one heading per day, I want {{monday:FORMAT}} through {{sunday:FORMAT}} to resolve to the correct calendar date for that weekday of my own week, so that the headings are right whether my week starts on Monday or on Sunday.",
+      "rationale": "The current implementation hard-codes an ISO Monday-start week for this token family, so it silently produces the wrong date whenever the configured week start is not Monday; this pins the correct rule down before the bug is carried into the rewrite.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [
+        "dni:template-token-day-of-week",
+        "calendaric:template-token-weekday-body"
+      ],
+      "constrained_by": ["vault:monthly-work-generate-weekday-headers"],
+      "granularity": ["week", "day"],
+      "depends_on": [],
+      "open_questions": [
+        "The Sunday-first rule in AC-TPL-03.2 is derived from the token's own definition, not observed in this vault: every real template here, including the weekday-header generator this story is constrained by, assumes an ISO Monday-first week. Verify the Sunday-first case against a live 'Start week on: Sunday' configuration before shipping.",
+        "FMT hard-codes the identical ISO-Monday assumption for the same {{weekday:fmt}} syntax in the filename Format field (calendaric:template-token-weekday-format). Coordinate the fix so both surfaces resolve a given weekday the same way for the same week-start setting."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-03.1",
+          "given": "a weekly note's template contains a weekday token such as {{monday:FORMAT}}, and the week-start setting is Monday",
+          "when": "the note is created",
+          "then": [
+            "each named weekday token resolves to that weekday's calendar date within the note's own seven-day week",
+            "the result is formatted with FORMAT"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-03.2",
+          "given": "the week-start setting is Sunday, and the note's own date falls on the Sunday that starts its week",
+          "when": "substitution runs",
+          "then": [
+            "{{monday:FORMAT}} resolves to the calendar Monday immediately following that Sunday, i.e. the Monday inside this Sunday-started week",
+            "it does not resolve to a Monday belonging to a different, Monday-start grouping of the same date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-03.3",
+          "given": "a weekday token is written without a format suffix, for example bare {{monday}}",
+          "when": "substitution runs",
+          "then": [
+            "it is left in the note exactly as written",
+            "the token syntax requires an explicit ':FORMAT' part to match at all"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-03.4",
+          "given": "a weekday token has an empty or otherwise unusable format argument, for example {{monday:}}",
+          "when": "substitution runs",
+          "then": [
+            "the token is left in the note exactly as written",
+            "no error is raised and no text is deleted"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-03.5",
+          "given": "a non-weekly note's template, for example daily, contains a weekday token such as {{friday:FORMAT}}",
+          "when": "substitution runs",
+          "then": [
+            "it is left in the note exactly as written",
+            "no weekday date is invented for a granularity the token does not apply to"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-TPL-04",
+      "epic": "TPL",
+      "title": "Validate that a configured template path resolves to a usable file",
+      "story": "As someone configuring which file a granularity's notes are templated from, I want to be told when that path does not point at a real, readable file, so that I find out at configuration time rather than the first time a note is created with an unexpectedly empty or broken body.",
+      "rationale": "A template path is free text pointing into the vault; nothing stops it from going stale or being mistyped, so it has to be checked rather than assumed.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["pn:template-validation"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-04.1",
+          "given": "a configured template path resolves to an existing note file",
+          "when": "the path is validated",
+          "then": [
+            "no error is reported"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-04.2",
+          "given": "a configured template path does not resolve to any file in the vault",
+          "when": "the path is validated",
+          "then": [
+            "an error is shown naming the template as not found"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-04.3",
+          "given": "a configured template path resolves to a folder rather than a file",
+          "when": "the path is validated",
+          "then": [
+            "this is also reported as invalid",
+            "the error distinguishes this case from an unresolvable path so the user knows the path exists but is the wrong kind of thing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-04.4",
+          "given": "the configured template path is empty because no template is set for that granularity",
+          "when": "the path is validated",
+          "then": [
+            "this is not reported as an error",
+            "a template remains optional per granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-04.5",
+          "given": "a configured template path resolves to a file that is completely empty",
+          "when": "a note is created from it",
+          "then": [
+            "no error is raised",
+            "the resulting note body is empty, since there is no content to substitute into"
+          ],
+          "verifies": "data",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-TPL-05",
+      "epic": "TPL",
+      "title": "Guarantee what happens to a created note's content once an external template engine takes over",
+      "story": "As someone whose real templates hand off renaming, moving, and further content generation to a full template engine, I want this plugin's own token substitution to happen exactly once and never fight or repeat itself, so that the engine's later changes stick instead of being reverted or duplicated.",
+      "rationale": "Every real template in this vault relies on a second engine doing the heavy lifting after creation; if this plugin ever re-applies its own template or assumes the file stays where and how it left it, that hand-off breaks.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [
+        "vault:create-weekly-note-rename-move",
+        "vault:create-monthly-note-rename-move",
+        "vault:weekly-embed-base-views",
+        "vault:monthly-embed-base-views",
+        "vault:monthly-work-embed-base-views",
+        "vault:monthly-work-validate-title-shape"
+      ],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-05.1",
+          "given": "a template's content has been substituted and written as a new note's initial body",
+          "when": "nothing else touches the file afterward",
+          "then": [
+            "that written content is the note's final content",
+            "the plugin performs no second substitution pass over the same file"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-05.2",
+          "given": "a separate installed plugin renames or moves the note after creation",
+          "when": "this plugin later interacts with that same note, for example the calendar view refreshing or the note being opened again",
+          "then": [
+            "it operates on the note's current name and location",
+            "it never re-runs template substitution against that note",
+            "it never reverts the rename or the move"
+          ],
+          "verifies": "compat",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-05.3",
+          "given": "a template's own logic decides to leave the note empty or unchanged because its own internal validation failed, independent of this plugin",
+          "when": "that happens",
+          "then": [
+            "this plugin does not treat it as an error",
+            "this plugin does not retry substitution or otherwise second-guess the template's own decision"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-05.4",
+          "given": "no external template engine is installed or configured at all",
+          "when": "a template is applied",
+          "then": [
+            "the note contains exactly the token-substituted content",
+            "nothing further is expected or required of this plugin"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-TPL-06",
+      "epic": "TPL",
+      "title": "Leave anything the plugin does not recognise exactly as written",
+      "story": "As someone whose template mixes this plugin's own tokens with a full template engine's own syntax, I want substitution to touch only the tokens it recognises, so that the engine's own scripting is still intact for it to run once the file exists.",
+      "rationale": "The token system and a full template engine have to coexist inside the same file; the only way that works is if each one only ever touches what it understands.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [
+        "vault:daily-write-frontmatter",
+        "vault:daily-anchor-link-to-work-heading",
+        "vault:weekly-write-frontmatter-nav",
+        "vault:monthly-write-frontmatter-nav",
+        "vault:monthly-work-write-frontmatter-plan",
+        "vault:create-yearly-note-static"
+      ],
+      "granularity": ["day", "week", "month", "year"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-TPL-06.1",
+          "given": "a template body contains both a recognised token, for example {{date}}, and syntax belonging to a different template engine",
+          "when": "substitution runs",
+          "then": [
+            "only the recognised token is replaced",
+            "the other engine's syntax is left character-for-character as written"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-06.2",
+          "given": "a template body contains text in the {{...}} shape that is not one of this plugin's recognised token names",
+          "when": "substitution runs",
+          "then": [
+            "it is left in the note exactly as written",
+            "it is never removed or replaced with an empty string"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-06.3",
+          "given": "a template body contains no recognised tokens at all",
+          "when": "substitution runs",
+          "then": [
+            "the note's content is written unchanged, byte for byte, from the template file"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-06.4",
+          "given": "note creation involves both this plugin's own substitution and a separately installed template engine acting on the same new file",
+          "when": "the file is created",
+          "then": [
+            "the external engine's first look at the file's content is always the fully token-substituted version",
+            "it is never a partially substituted or pre-substitution version"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-TPL-06.5",
+          "given": "a template body contains an opening token delimiter that is never closed, for example a stray '{{date' with no matching '}}'",
+          "when": "substitution runs",
+          "then": [
+            "that text is left exactly as written",
+            "it does not match any recognised token pattern"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "None of the 13 vault:* evidence templates actually use this plugin's own {{...}} tokens; they implement the same ideas (dates, weekday headings, prev/next links) directly in Templater scripts and hand off renaming, moving, and even creating another note to Templater. That makes the composability and ordering boundary (US-TPL-05, US-TPL-06) the load-bearing requirement of this epic in practice, not the token set itself.",
+    "US-TPL-03 documents a real, already-observed defect (see calendaric-map.json observations, severity P2, 'docs/guide.md ... vs formatWithWeekTokens/applyWeekTokens hard-code ISO weekday numbering'): the same {{weekday:fmt}} syntax is implemented once and shared between the note body (this epic, applyWeekTokens) and the filename Format field (FMT, formatWithWeekTokens calls the same helper). Fixing one without the other reintroduces the mismatch the observation already flagged.",
+    "Most stories are unit-testable in isolation (pure string substitution over a date and a config). US-TPL-05 and part of US-TPL-06 are the exception: verifying that a second, independently installed plugin observes the right content and does not get fought requires either an integration harness with a real template-engine plugin or a manual check — flagged per-criterion as 'integration' or 'manual'."
+  ]
+}

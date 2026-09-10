@@ -1,0 +1,629 @@
+{
+  "epic": "ARCH",
+  "epic_title": "Architecture, boundaries, testability and release quality",
+  "summary": "This epic defines the architectural skeleton the other epics build inside: what layers exist, which way dependencies may point, what must be provable by a test without Obsidian running, and what a release must guarantee before it ships. Its boundary with the other epics is that it never describes user-visible behaviour itself — it constrains how the behaviour described elsewhere is allowed to be built, tested, documented and shipped.",
+  "stories": [
+    {
+      "id": "US-ARCH-01",
+      "epic": "ARCH",
+      "title": "Layered architecture with a single allowed dependency direction",
+      "story": "As a maintainer extending Calendaric, I want the codebase organized into layers with one allowed dependency direction, so that I can change one concern without having to understand or risk breaking the others.",
+      "rationale": "The map shows the old code mixing note IO, date parsing, settings resolution and UI inside single files, and reaching into other plugins' internals from three separate layers at once.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-01.1",
+          "given": "a module in the view layer (calendar rendering, settings tab, modals)",
+          "when": "its imports are inspected",
+          "then": [
+            "it imports only from the domain layer and from port interfaces the domain layer defines",
+            "it contains no import of the vault-IO adapter layer",
+            "it contains no import of the cross-plugin-integration layer"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.2",
+          "given": "the domain layer (period and date logic, template-token resolution, settings validation)",
+          "when": "its module source is inspected",
+          "then": [
+            "it contains no import of the \"obsidian\" package",
+            "it contains no import of any adapter module or any view module"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.3",
+          "given": "the plugin's composition root (the module responsible for lifecycle wiring)",
+          "when": "the dependency graph is generated",
+          "then": [
+            "it is the only module allowed to import from every layer",
+            "no other module imports the composition root"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.4",
+          "given": "a change introduces an import from the view layer into the vault-IO layer",
+          "when": "the architecture boundary check runs",
+          "then": [
+            "the check fails",
+            "the check names the offending file and the disallowed import"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.5",
+          "given": "any layer other than the cross-plugin-integration layer needs information about a companion plugin (Periodic Notes, Templater, or any other)",
+          "when": "that information is obtained",
+          "then": [
+            "it is obtained only through a typed function exported by the integration layer",
+            "no other layer imports a companion plugin's module directly"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-02",
+      "epic": "ARCH",
+      "title": "One implementation per shared concept",
+      "story": "As a maintainer, I want each date-parsing rule, filename-matching rule, and shared type defined exactly once in the codebase, so that fixing or extending a rule requires exactly one change instead of several coordinated ones.",
+      "rationale": "The map's most repeated finding is duplication: a date/time template-token pattern copy-pasted across five note-creation functions, two independently-diverging prefix-match implementations across the source repositories, a dev-plugin-id detection probe duplicated at six call sites across four functions in two repos, and (inside the target repository itself) a period-granularity type declared three times independently.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-02.1",
+          "given": "the set of supported period granularities (day, week, month, quarter, year)",
+          "when": "that set is declared as a type",
+          "then": [
+            "exactly one module owns the declaration",
+            "every other module that needs the type imports it from that one module",
+            "no module independently redeclares an equivalent type"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-02.2",
+          "given": "a filename needs to be parsed into a date, whether by strict matching or by prefix-tolerant matching",
+          "when": "two different granularities or two different call sites need that parsing",
+          "then": [
+            "both call the same shared parsing function",
+            "no second, independently-maintained parsing routine exists in the codebase"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-02.3",
+          "given": "a date or time template token is resolved for a note",
+          "when": "resolution runs for any granularity",
+          "then": [
+            "it executes through one shared token-resolution function",
+            "no granularity has its own copy of the resolution logic"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-02.4",
+          "given": "the plugin needs to detect whether a companion plugin or feature is present",
+          "when": "that detection logic is written",
+          "then": [
+            "it exists in exactly one function that every caller uses",
+            "no second inline copy of the same detection logic exists elsewhere in the codebase"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-02.5",
+          "given": "a second implementation of a parser, a matcher, a shared type, or a detection routine is added anywhere in the codebase",
+          "when": "a duplication check runs over the source",
+          "then": [
+            "the check flags the duplicate before the change can merge"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-03",
+      "epic": "ARCH",
+      "title": "Testable without a running Obsidian",
+      "story": "As someone maintaining Calendaric, I want the logic that decides what happens — not only pure date math — to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
+      "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths — a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date — that this epic's testing seam must make reachable.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-03.1",
+          "given": "a function that decides what note to create, open, or update",
+          "when": "it needs data from the vault or the app",
+          "then": [
+            "it receives that data through an interface passed to it as a parameter or dependency",
+            "a test can supply a substitute for that interface without touching a real Obsidian instance"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-03.2",
+          "given": "the substitute used to stand in for the vault and workspace in tests",
+          "when": "a test exercises vault or workspace behaviour",
+          "then": [
+            "the substitute covers every capability the plugin actually calls: file read, file write, file creation, workspace pane opening, and companion-plugin lookup",
+            "no capability the plugin calls is left uncovered by the substitute"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-03.3",
+          "given": "a named failure path (target folder missing, filename format invalid, note already exists at the target path, configured template absent, or date string unparseable)",
+          "when": "the corresponding decision logic runs",
+          "then": [
+            "a test exercises that failure path without a running Obsidian instance",
+            "the test asserts the observable outcome of that failure"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-03.4",
+          "given": "the domain layer's own test suite (period logic, template-token resolution, settings validation)",
+          "when": "those tests run",
+          "then": [
+            "they execute with no dependency on the \"obsidian\" package, including its test double"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-03.5",
+          "given": "a change adds code that touches the vault, the workspace, or a companion plugin's API",
+          "when": "that change lands with no accompanying test exercising it through the substitute",
+          "then": [
+            "the test-coverage gate for that layer fails"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-04",
+      "epic": "ARCH",
+      "title": "One strict type-checking bar, with untyped externals walled off",
+      "story": "As a maintainer, I want the whole codebase held to one strict type-checking standard, with every place it touches an API the compiler cannot verify walled off behind a single typed boundary, so that a wrong assumption about another plugin's shape is caught while compiling, not when a user hits a crash.",
+      "rationale": "The target repository's tsconfig.json enables several of the strict-family flags individually but never sets the single \"strict\" option, and is missing others from that family. The old code reached into a companion plugin's internal state with a plain property read: one P1 defect read a Svelte store as if it were a plain object, and a feature it powered silently returned nothing for every user from the day it shipped.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-04.1",
+          "given": "the TypeScript compiler configuration",
+          "when": "the project is compiled",
+          "then": [
+            "strict mode is enabled as the single \"strict\" setting covering every strict sub-check",
+            "it is not a hand-picked subset of individually-enabled strict flags"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-04.2",
+          "given": "any function parameter, return value, or exported symbol in the codebase",
+          "when": "the project is compiled",
+          "then": [
+            "no explicit or implicit \"any\" type is used to reach into a companion plugin's runtime object"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-04.3",
+          "given": "the plugin needs data or a method from a companion plugin (Periodic Notes, Templater, or any other)",
+          "when": "that data is read",
+          "then": [
+            "it is read only through a hand-written type describing the exact shape the plugin depends on",
+            "that type is defined in one place",
+            "every read of the companion plugin's state is validated or narrowed against that type before use"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-04.4",
+          "given": "a companion plugin's object does not match the expected shape at runtime (a missing method, a reactive store where a plain value was expected, an absent property)",
+          "when": "the plugin's code reads it",
+          "then": [
+            "the read is detected as invalid and handled explicitly",
+            "the depending feature is either disabled visibly or reports an explicit error",
+            "it does not silently return an empty or wrong result while appearing to have succeeded"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-04.5",
+          "given": "the build runs the compiler in strict mode over every first-party source file",
+          "when": "a type error exists anywhere under the plugin's own source",
+          "then": [
+            "the build fails",
+            "it does not merely emit a warning while completing successfully"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-05",
+      "epic": "ARCH",
+      "title": "Adding a granularity or a calendar indicator is a small, localised change",
+      "story": "As the person adding a new period type or a new calendar indicator later, I want that addition to touch a small, predictable set of files, so that extending Calendaric never means relearning or rewriting the whole plugin.",
+      "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended — the new contract must not repeat that failure mode.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [
+        "The old calendar-ui indicator contract broke every consumer across a single version bump. Should the new indicator interface carry an explicit compatibility guarantee (e.g. only additive changes allowed), or is a documented breaking-change process considered sufficient? This is a product/process decision, not one this epic can settle on its own."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-05.1",
+          "given": "the set of supported period granularities",
+          "when": "a new granularity is added",
+          "then": [
+            "it requires one new entry in a single registry plus its own granularity-specific module",
+            "it requires no edit to the logic of any existing granularity's module"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-05.2",
+          "given": "the set of calendar indicators shown per day",
+          "when": "a new indicator is added",
+          "then": [
+            "it is implemented by one new module satisfying a documented indicator interface",
+            "it requires no change to the rendering code that already displays other indicators"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-05.3",
+          "given": "an indicator module written against the documented interface",
+          "when": "the interface changes in a later version",
+          "then": [
+            "existing indicator modules either keep compiling unchanged, or fail to compile with a specific error naming the exact incompatibility",
+            "no existing indicator module changes behaviour silently at runtime as a result"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-05.4",
+          "given": "a new granularity or indicator is added and reviewed",
+          "when": "the change's file footprint is checked",
+          "then": [
+            "it touches only its own new module, the single registry entry, and (for a granularity) that granularity's settings default",
+            "it does not touch the note-creation, parsing, or rendering logic belonging to an existing granularity or indicator"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-06",
+      "epic": "ARCH",
+      "title": "A reproducible release build with every gate actually enforced",
+      "story": "As the person cutting a Calendaric release, I want one build to reliably produce the exact release artefacts on a clean checkout while running every quality gate every time, so that a release is never assembled from an inconsistent local state or from a check that quietly stopped running.",
+      "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["forks:git-dependency-self-build"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-06.1",
+          "given": "a clean checkout with only the pinned Node.js version installed",
+          "when": "the documented install-then-build commands are run",
+          "then": [
+            "main.js, manifest.json, and styles.css (if present) are produced at the plugin root",
+            "no manual step beyond those commands is required"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.2",
+          "given": "manifest.json ahead of a release",
+          "when": "the release is prepared",
+          "then": [
+            "its id is unchanged from the previous release",
+            "its version follows semantic versioning and matches the release tag exactly, with no leading \"v\"",
+            "its minAppVersion is accurate for the Obsidian APIs that release actually uses"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.3",
+          "given": "the build runs type-checking, linting, and the test suite",
+          "when": "any one of those three fails",
+          "then": [
+            "the build as a whole is reported as failed",
+            "none of the three is skipped, disabled, or allowed to fail while the overall build still reports success"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.4",
+          "given": "one of the three gates cannot run because of a tooling defect",
+          "when": "the build is invoked",
+          "then": [
+            "the build fails loudly",
+            "the failure message names which gate could not run"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.5",
+          "given": "the plugin or any of its internal packages is installed directly from source rather than from a published release",
+          "when": "that install happens",
+          "then": [
+            "the built output it depends on is produced automatically as part of the install",
+            "a consumer never receives unbuilt source in place of the compiled artefact"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-07",
+      "epic": "ARCH",
+      "title": "Resilient to surfaces the plugin does not own",
+      "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
+      "rationale": "Two separate P1 defects came from exactly this: Obsidian's 1.13 settings-modal DOM change crashed the Periodic Notes settings pane outright, and separate code that read a companion plugin's settings as a plain object rather than the reactive store it actually was silently and permanently returned nothing, so a shipped feature never worked for any user.",
+      "priority": "must",
+      "status": "todo",
+      "covers": ["forks:settings-tab-crash-guard-1.13"],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-07.1",
+          "given": "the plugin renders inside, or reads layout information from, an Obsidian-owned DOM element it does not control",
+          "when": "that element is absent or shaped differently than expected",
+          "then": [
+            "the plugin skips the affected behaviour instead of throwing an unhandled error",
+            "no other part of the settings or view UI is left half-rendered as a result"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-07.2",
+          "given": "the plugin reads state exposed by a companion plugin (a settings object, a store, a cache)",
+          "when": "that state is a reactive store rather than a plain value",
+          "then": [
+            "the plugin reads it through that store's own subscription or accessor mechanism",
+            "the plugin never treats it as a plain object with a direct property read"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-07.3",
+          "given": "a companion plugin's internal state does not expose the value the plugin expects, because it was renamed, restructured, or the companion plugin is absent",
+          "when": "the plugin tries to read it",
+          "then": [
+            "the read returns a typed \"unavailable\" result",
+            "the depending feature is disabled visibly, or falls back to a documented default",
+            "it does not silently no-op while presenting as enabled"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-07.4",
+          "given": "a new version of Obsidian or a companion plugin changes a DOM structure or a data shape the plugin depends on",
+          "when": "that dependency is exercised",
+          "then": [
+            "only the single adapter module written for that companion surface needs to change",
+            "no other module in the codebase reads that surface directly"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-08",
+      "epic": "ARCH",
+      "title": "User-facing documentation matches verified behaviour",
+      "story": "As a Calendaric user reading the format-and-template guide, I want every behaviour it documents to match what the plugin actually does, so that I can trust the documentation instead of discovering the real behaviour by trial and error.",
+      "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting — the documented and the implemented behaviour disagree today.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": ["n-a"],
+      "depends_on": [],
+      "open_questions": [
+        "Which behaviour is correct for week-based template tokens: ISO week numbering, or the user's configured \"Start week on\" setting? The map found the guide and the code disagree; deciding which one is right is a product decision this epic cannot make on its own."
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-08.1",
+          "given": "a behaviour described in the user-facing guide",
+          "when": "the corresponding code is tested",
+          "then": [
+            "a test asserts the documented behaviour directly",
+            "the guide and the code cannot silently diverge without a test failing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-08.2",
+          "given": "the guide states that week-based template tokens follow the \"Start week on\" setting",
+          "when": "a week-based template token is resolved",
+          "then": [
+            "it uses the day configured in \"Start week on\", not a fixed numbering independent of that setting",
+            "if fixed numbering is kept instead, the guide's wording is corrected to describe that behaviour accurately"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-08.3",
+          "given": "the guide is opened from within the plugin's settings",
+          "when": "that open action runs",
+          "then": [
+            "it works on every platform the manifest declares support for",
+            "opening the guide does not depend on a desktop-only capability when the manifest declares mobile support"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-08.4",
+          "given": "a documented setting, command, or behaviour is renamed, removed, or changed",
+          "when": "that change ships",
+          "then": [
+            "the guide is updated in the same change",
+            "it is not left for a later, separate pass"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "uncovered": [],
+  "notes": [
+    "The two capability uids assigned to ARCH (forks:settings-tab-crash-guard-1.13, forks:git-dependency-self-build) are both single-defect fixes; every other criterion in this epic is derived directly from observations in calendaric-map.json rather than from a capability, per the schema's allowance for observation-derived criteria with covers left empty.",
+    "US-ARCH-05 (extensibility) and parts of US-ARCH-06 (release quality) are marked testable_by \"manual\" because verifying them means actually attempting the exercise (add a granularity, add an indicator, break a tooling gate) and reviewing the result's shape, not running an existing automated check.",
+    "tsconfig.json today enables several individual strict-family flags (noImplicitAny, noImplicitThis, strictNullChecks, strictBindCallApply, useUnknownInCatchVariables) but never sets the single \"strict\": true option, so it is missing others from that family (e.g. strictFunctionTypes, strictPropertyInitialization) implicitly. AC-ARCH-04.1 is written against the single-setting requirement rather than naming which flags are currently absent, since that list would go stale as the config changes.",
+    "No vault:* evidence-role capabilities were assigned to ARCH in epic-assignment.json, so no story carries a constrained_by entry."
+  ]
+}
