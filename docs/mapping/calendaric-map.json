@@ -11138,9 +11138,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:52-54",
       "affects": [
-        "resolve-daily-settings",
-        "create-daily-note",
-        "parse-date-from-filename"
+        "dni:resolve-daily-settings",
+        "dni:create-daily-note",
+        "dni:parse-date-from-filename"
       ],
       "notes": "Read from internalPlugins.getPluginById('daily-notes').instance.options.format; used only when Periodic Notes' daily settings are not in effect.",
       "source": "dni"
@@ -11153,9 +11153,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:52-56",
       "affects": [
-        "resolve-daily-settings",
-        "create-daily-note",
-        "get-all-daily-notes"
+        "dni:resolve-daily-settings",
+        "dni:create-daily-note",
+        "dni:get-all-daily-notes"
       ],
       "source": "dni"
     },
@@ -11167,8 +11167,8 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:52-57",
       "affects": [
-        "resolve-daily-settings",
-        "create-daily-note"
+        "dni:resolve-daily-settings",
+        "dni:create-daily-note"
       ],
       "source": "dni"
     },
@@ -11180,9 +11180,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:29,41",
       "affects": [
-        "should-use-periodic-notes-settings",
-        "resolve-daily-settings",
-        "detect-daily-notes-plugin-loaded"
+        "dni:should-use-periodic-notes-settings",
+        "dni:resolve-daily-settings",
+        "dni:detect-daily-notes-plugin-loaded"
       ],
       "source": "dni"
     },
@@ -11194,7 +11194,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:42-45",
       "affects": [
-        "resolve-daily-settings"
+        "dni:resolve-daily-settings"
       ],
       "source": "dni"
     },
@@ -11206,7 +11206,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:42-46",
       "affects": [
-        "resolve-daily-settings"
+        "dni:resolve-daily-settings"
       ],
       "source": "dni"
     },
@@ -11218,7 +11218,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:42-47",
       "affects": [
-        "resolve-daily-settings"
+        "dni:resolve-daily-settings"
       ],
       "source": "dni"
     },
@@ -11230,7 +11230,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:73-89",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11242,7 +11242,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:73-90",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11254,7 +11254,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:73-91",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11266,9 +11266,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:29,78",
       "affects": [
-        "should-use-periodic-notes-settings",
-        "resolve-weekly-settings",
-        "detect-weekly-notes-plugin-loaded"
+        "dni:should-use-periodic-notes-settings",
+        "dni:resolve-weekly-settings",
+        "dni:detect-weekly-notes-plugin-loaded"
       ],
       "source": "dni"
     },
@@ -11280,7 +11280,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:80",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11292,7 +11292,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:81",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11304,7 +11304,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:82",
       "affects": [
-        "resolve-weekly-settings"
+        "dni:resolve-weekly-settings"
       ],
       "source": "dni"
     },
@@ -11316,8 +11316,8 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:83",
       "affects": [
-        "resolve-weekly-settings",
-        "parse-date-from-filename"
+        "dni:resolve-weekly-settings",
+        "dni:parse-date-from-filename"
       ],
       "notes": "Only granularity that ever populates this flag; day/month/quarter/year always get allowPrefixMatch=undefined (treated as false) because their settings getters never read/return it, even though types.ts declares it as generic.",
       "source": "dni"
@@ -11330,9 +11330,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:106",
       "affects": [
-        "should-use-periodic-notes-settings",
-        "resolve-monthly-settings",
-        "detect-monthly-notes-plugin-loaded"
+        "dni:should-use-periodic-notes-settings",
+        "dni:resolve-monthly-settings",
+        "dni:detect-monthly-notes-plugin-loaded"
       ],
       "source": "dni"
     },
@@ -11344,7 +11344,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:111",
       "affects": [
-        "resolve-monthly-settings"
+        "dni:resolve-monthly-settings"
       ],
       "source": "dni"
     },
@@ -11356,7 +11356,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:112",
       "affects": [
-        "resolve-monthly-settings"
+        "dni:resolve-monthly-settings"
       ],
       "source": "dni"
     },
@@ -11368,7 +11368,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:113",
       "affects": [
-        "resolve-monthly-settings"
+        "dni:resolve-monthly-settings"
       ],
       "source": "dni"
     },
@@ -11380,9 +11380,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:127",
       "affects": [
-        "should-use-periodic-notes-settings",
-        "resolve-quarterly-settings",
-        "detect-quarterly-notes-plugin-loaded"
+        "dni:should-use-periodic-notes-settings",
+        "dni:resolve-quarterly-settings",
+        "dni:detect-quarterly-notes-plugin-loaded"
       ],
       "source": "dni"
     },
@@ -11394,7 +11394,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:132",
       "affects": [
-        "resolve-quarterly-settings"
+        "dni:resolve-quarterly-settings"
       ],
       "source": "dni"
     },
@@ -11406,7 +11406,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:133",
       "affects": [
-        "resolve-quarterly-settings"
+        "dni:resolve-quarterly-settings"
       ],
       "source": "dni"
     },
@@ -11418,7 +11418,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:134",
       "affects": [
-        "resolve-quarterly-settings"
+        "dni:resolve-quarterly-settings"
       ],
       "source": "dni"
     },
@@ -11430,9 +11430,9 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:148",
       "affects": [
-        "should-use-periodic-notes-settings",
-        "resolve-yearly-settings",
-        "detect-yearly-notes-plugin-loaded"
+        "dni:should-use-periodic-notes-settings",
+        "dni:resolve-yearly-settings",
+        "dni:detect-yearly-notes-plugin-loaded"
       ],
       "source": "dni"
     },
@@ -11444,7 +11444,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:153",
       "affects": [
-        "resolve-yearly-settings"
+        "dni:resolve-yearly-settings"
       ],
       "source": "dni"
     },
@@ -11456,7 +11456,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:154",
       "affects": [
-        "resolve-yearly-settings"
+        "dni:resolve-yearly-settings"
       ],
       "source": "dni"
     },
@@ -11468,7 +11468,7 @@
       "scope": "per-granularity",
       "path": "src/settings.ts:155",
       "affects": [
-        "resolve-yearly-settings"
+        "dni:resolve-yearly-settings"
       ],
       "source": "dni"
     },
@@ -11480,7 +11480,7 @@
       "scope": "global",
       "path": "src/settings.ts:11,38",
       "affects": [
-        "metadata-source-wordcount"
+        "cal:metadata-source-wordcount"
       ],
       "notes": "Effectively disables the word-count dots when set to 0 or a negative number (metadata-source-wordcount short-circuits).",
       "source": "cal"
@@ -11493,7 +11493,7 @@
       "scope": "global",
       "path": "src/settings.ts:12,36",
       "affects": [
-        "mount-calendar-view"
+        "cal:mount-calendar-view"
       ],
       "notes": "Passed into obsidian-calendar-ui's configureGlobalMomentLocale via Calendar.svelte's getToday().",
       "source": "cal"
@@ -11506,8 +11506,8 @@
       "scope": "global",
       "path": "src/settings.ts:13,35",
       "affects": [
-        "create-daily-note-with-confirmation",
-        "create-weekly-note-with-confirmation"
+        "cal:create-daily-note-with-confirmation",
+        "cal:create-weekly-note-with-confirmation"
       ],
       "source": "cal"
     },
@@ -11519,8 +11519,8 @@
       "scope": "global",
       "path": "src/settings.ts:16,40",
       "affects": [
-        "mount-calendar-view",
-        "settings-tab-ui"
+        "cal:mount-calendar-view",
+        "cal:settings-tab-ui"
       ],
       "notes": "Controls both the showWeekNums prop passed to obsidian-calendar-ui and whether the legacy Weekly Note Settings section is shown in the tab.",
       "source": "cal"
@@ -11566,7 +11566,7 @@
       "scope": "global",
       "path": "src/settings.ts:21,45",
       "affects": [
-        "mount-calendar-view"
+        "cal:mount-calendar-view"
       ],
       "notes": "Passed into configureGlobalMomentLocale alongside weekStart.",
       "source": "cal"
@@ -11579,10 +11579,10 @@
       "scope": "per-granularity",
       "path": "src/types.ts:18",
       "affects": [
-        "get-active-and-inactive-granularities",
-        "dynamic-command-registration",
-        "ribbon-icon-single-granularity",
-        "cache-index-build-on-load"
+        "pn:get-active-and-inactive-granularities",
+        "pn:dynamic-command-registration",
+        "pn:ribbon-icon-single-granularity",
+        "pn:cache-index-build-on-load"
       ],
       "notes": null,
       "source": "pn"
@@ -11595,9 +11595,9 @@
       "scope": "per-granularity",
       "path": "src/types.ts:21",
       "affects": [
-        "settings-per-granularity-format-editor",
-        "strict-then-prefix-date-parsing",
-        "template-token-expansion"
+        "pn:settings-per-granularity-format-editor",
+        "pn:strict-then-prefix-date-parsing",
+        "pn:template-token-expansion"
       ],
       "notes": "Empty string falls back to DEFAULT_FORMAT[granularity] (src/constants.ts) via getFormat()/getConfig().",
       "source": "pn"
@@ -11610,8 +11610,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:22",
       "affects": [
-        "note-creation-path-and-folder-autocreate",
-        "cache-index-build-on-load"
+        "pn:note-creation-path-and-folder-autocreate",
+        "pn:cache-index-build-on-load"
       ],
       "notes": "Empty string means vault root ('/') via getFolder().",
       "source": "pn"
@@ -11624,8 +11624,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:23",
       "affects": [
-        "template-token-expansion",
-        "settings-per-granularity-template-editor"
+        "pn:template-token-expansion",
+        "pn:settings-per-granularity-template-editor"
       ],
       "notes": null,
       "source": "pn"
@@ -11638,8 +11638,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:19",
       "affects": [
-        "startup-note-auto-open",
-        "clear-startup-note-exclusivity"
+        "pn:startup-note-auto-open",
+        "pn:clear-startup-note-exclusivity"
       ],
       "notes": "Mutually exclusive across the entire vault: enabling one flag clears every other set/granularity's flag (settings/utils.ts:65-75).",
       "source": "pn"
@@ -11652,8 +11652,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:24",
       "affects": [
-        "allow-prefix-match-gate",
-        "strict-then-prefix-date-parsing"
+        "pn:allow-prefix-match-gate",
+        "pn:strict-then-prefix-date-parsing"
       ],
       "notes": "Local fork addition, commit e50b8e8. Not present upstream.",
       "source": "pn"
@@ -11666,8 +11666,8 @@
       "scope": "global",
       "path": "src/settings/index.ts:26",
       "affects": [
-        "get-active-calendar-set",
-        "switch-active-calendar-set"
+        "pn:get-active-calendar-set",
+        "pn:switch-active-calendar-set"
       ],
       "notes": null,
       "source": "pn"
@@ -11680,7 +11680,7 @@
       "scope": "global",
       "path": "src/settings/index.ts:27",
       "affects": [
-        "calendar-set-model"
+        "pn:calendar-set-model"
       ],
       "notes": "The ONLY live store of per-granularity config in v0.0.17. Older top-level daily/weekly/monthly/quarterly/yearly keys are NOT part of ISettings — see observations.",
       "source": "pn"
@@ -11693,7 +11693,7 @@
       "scope": "global",
       "path": "src/settings/index.ts:21",
       "affects": [
-        "getting-started-banner-daily-notes-detection"
+        "pn:getting-started-banner-daily-notes-detection"
       ],
       "notes": null,
       "source": "pn"
@@ -11706,7 +11706,7 @@
       "scope": "global",
       "path": "src/settings/index.ts:29",
       "affects": [
-        "timeline-complication-render"
+        "pn:timeline-complication-render"
       ],
       "notes": null,
       "source": "pn"
@@ -11774,7 +11774,7 @@
       "scope": "global",
       "path": "src/settings/localization.ts:134",
       "affects": [
-        "localization-week-start-override"
+        "pn:localization-week-start-override"
       ],
       "notes": "Obsidian vault-wide config, not scoped to this plugin's own data.json; shared with every other plugin that reads it.",
       "source": "pn"
@@ -11787,7 +11787,7 @@
       "scope": "global",
       "path": "src/settings/localization.ts:133",
       "affects": [
-        "localization-locale-override"
+        "pn:localization-locale-override"
       ],
       "notes": "Currently unreachable from the settings UI due to the Dashboard.svelte:127 bug — the Locale dropdown's onChange always writes 'weekStart' instead of 'localeOverride'.",
       "source": "pn"
@@ -11800,8 +11800,8 @@
       "scope": "global",
       "path": "src/settings.ts:17,30,182-193",
       "affects": [
-        "calendar-week-start-resolution",
-        "calendar-month-grid-render"
+        "calendaric:calendar-week-start-resolution",
+        "calendaric:calendar-month-grid-render"
       ],
       "notes": "Options: locale, monday..sunday. Only affects grid layout, not week-token/{{weekday}} resolution (see observations).",
       "source": "calendaric"
@@ -11814,7 +11814,7 @@
       "scope": "global",
       "path": "src/settings.ts:18,31,206-214",
       "affects": [
-        "calendar-month-grid-render"
+        "calendaric:calendar-month-grid-render"
       ],
       "notes": null,
       "source": "calendaric"
@@ -11827,8 +11827,8 @@
       "scope": "global",
       "path": "src/settings.ts:19,32,195-204",
       "affects": [
-        "calendar-click-to-open-or-create",
-        "confirm-before-create-modal"
+        "calendaric:calendar-click-to-open-or-create",
+        "calendaric:confirm-before-create-modal"
       ],
       "notes": "Bypassed unconditionally by the startup-note flow, which always creates silently.",
       "source": "calendaric"
@@ -11841,7 +11841,7 @@
       "scope": "global",
       "path": "src/settings.ts:20,33,405-423",
       "affects": [
-        "override-locale-setting"
+        "calendaric:override-locale-setting"
       ],
       "notes": "Empty string means 'use system locale'. Setting this mutates the global moment locale for the whole app session.",
       "source": "calendaric"
@@ -11854,7 +11854,7 @@
       "scope": "global",
       "path": "src/settings.ts:21,34",
       "affects": [
-        "import-daily-notes-settings"
+        "calendaric:import-daily-notes-settings"
       ],
       "notes": "Internal flag, not exposed as its own toggle — set as a side effect of Import/Disable/Dismiss in the import card.",
       "source": "calendaric"
@@ -11867,9 +11867,9 @@
       "scope": "per-granularity",
       "path": "src/types.ts:4,12; src/settings.ts:35-39,258-269",
       "affects": [
-        "calendar-click-to-open-or-create",
-        "calendar-note-existence-dots",
-        "calendar-active-file-highlight"
+        "calendaric:calendar-click-to-open-or-create",
+        "calendaric:calendar-note-existence-dots",
+        "calendaric:calendar-active-file-highlight"
       ],
       "notes": "Only day/week expose a real toggle in the UI (renderPeriodicGroup); month/quarter/year show a permanently-disabled placeholder toggle, so their 'enabled' value can never become true from the UI today.",
       "source": "calendaric"
@@ -11882,9 +11882,9 @@
       "scope": "per-granularity",
       "path": "src/types.ts:5,13; src/settings.ts:78-81,291-334",
       "affects": [
-        "compute-note-path",
-        "template-token-weekday-format",
-        "template-token-date"
+        "calendaric:compute-note-path",
+        "calendaric:template-token-weekday-format",
+        "calendaric:template-token-date"
       ],
       "notes": "Moment.js format string, extended with Calendaric's {{weekday:fmt}} week tokens for week notes.",
       "source": "calendaric"
@@ -11897,8 +11897,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:6,14; src/settings.ts:336-345",
       "affects": [
-        "compute-note-path",
-        "resolve-default-note-folder"
+        "calendaric:compute-note-path",
+        "calendaric:resolve-default-note-folder"
       ],
       "notes": "Empty means fall back to Obsidian's own default new-file location.",
       "source": "calendaric"
@@ -11911,7 +11911,7 @@
       "scope": "per-granularity",
       "path": "src/types.ts:7,15; src/settings.ts:349-358",
       "affects": [
-        "apply-template-on-create"
+        "calendaric:apply-template-on-create"
       ],
       "notes": "Resolved via metadataCache.getFirstLinkpathDest; empty or unresolved path means the note is created with empty content.",
       "source": "calendaric"
@@ -11924,8 +11924,8 @@
       "scope": "per-granularity",
       "path": "src/types.ts:8,16; src/settings.ts:360-374",
       "affects": [
-        "startup-note-auto-open",
-        "clear-startup-note-exclusivity"
+        "calendaric:startup-note-auto-open",
+        "calendaric:clear-startup-note-exclusivity"
       ],
       "notes": "Mutually exclusive across all five granularities; toggling one on clears the others via clearStartupNote. Only reachable for day/week from the current UI.",
       "source": "calendaric"
@@ -11938,8 +11938,8 @@
       "scope": "per-calendar-set",
       "path": ".obsidian/plugins/periodic-notes-anks/data.json:8-14",
       "affects": [
-        "create-daily-note",
-        "daily-write-frontmatter"
+        "vault:create-daily-note",
+        "vault:daily-write-frontmatter"
       ],
       "notes": "This is the live source of truth; the top-level 'daily' key (line 27-32) agrees with it exactly.",
       "source": "vault"
@@ -11952,7 +11952,7 @@
       "scope": "per-calendar-set",
       "path": ".obsidian/plugins/periodic-notes-anks/data.json:15-21",
       "affects": [
-        "create-weekly-note-rename-move"
+        "vault:create-weekly-note-rename-move"
       ],
       "notes": "allowPrefixMatch=true is required here (unlike day/year) because Weekly Periodic Template renames the raw 'gggg-[W]ww' file to a longer pretty title; the plugin must still match it by its original prefix.",
       "source": "vault"
@@ -11965,7 +11965,7 @@
       "scope": "per-calendar-set",
       "path": ".obsidian/plugins/periodic-notes-anks/data.json:22-28",
       "affects": [
-        "create-monthly-note-rename-move"
+        "vault:create-monthly-note-rename-move"
       ],
       "notes": "Disagrees with the stale top-level 'monthly' key (format='YYYY-MM', template='Monthly work.md', folder='_00 Planer/_03a Miesiące Work') — see observations.",
       "source": "vault"
@@ -11989,7 +11989,7 @@
       "scope": "per-calendar-set",
       "path": ".obsidian/plugins/periodic-notes-anks/data.json:35-41",
       "affects": [
-        "create-yearly-note-static"
+        "vault:create-yearly-note-static"
       ],
       "notes": "Stale top-level 'yearly' key agrees on format/folder but has template='' — disagreement is on the template path only.",
       "source": "vault"
@@ -12024,7 +12024,7 @@
       "scope": "global",
       "path": ".obsidian/plugins/periodic-notes-anks/data.json:44",
       "affects": [
-        "create-weekly-note-rename-move"
+        "vault:create-weekly-note-rename-move"
       ],
       "notes": "Note: this differs from calendar-anks' own weekStart='monday' (data.json). Weekly template computes weeks via moment's isoWeek(), which is locale-independent Monday-start regardless of either setting, so the practical effect is currently nil, but it's a config divergence worth flattening in the merge.",
       "source": "vault"
@@ -12059,7 +12059,7 @@
       "scope": "global",
       "path": ".obsidian/plugins/calendar-anks/data.json:1",
       "affects": [
-        "create-daily-note"
+        "vault:create-daily-note"
       ],
       "notes": null,
       "source": "vault"
@@ -12083,7 +12083,7 @@
       "scope": "global",
       "path": ".obsidian/plugins/templater-obsidian/data.json:3",
       "affects": [
-        "create-daily-note",
+        "vault:create-daily-note",
         "flow-weekly-note-end-to-end",
         "flow-monthly-note-end-to-end",
         "flow-monthly-work-note-end-to-end",
@@ -12100,7 +12100,7 @@
       "scope": "global",
       "path": ".obsidian/plugins/templater-obsidian/data.json:5",
       "affects": [
-        "create-daily-note",
+        "vault:create-daily-note",
         "flow-weekly-note-end-to-end",
         "flow-monthly-note-end-to-end",
         "flow-monthly-work-note-end-to-end"
@@ -12116,7 +12116,7 @@
       "scope": "global",
       "path": ".obsidian/plugins/templater-obsidian/data.json:8-25",
       "affects": [
-        "create-daily-note",
+        "vault:create-daily-note",
         "flow-weekly-note-end-to-end",
         "flow-monthly-note-end-to-end",
         "flow-monthly-work-note-end-to-end"
@@ -12132,7 +12132,7 @@
       "scope": "global",
       "path": ".obsidian/daily-notes.json:2",
       "affects": [
-        "create-daily-note"
+        "vault:create-daily-note"
       ],
       "notes": "Third independent copy of the same setting; see resolve-daily-settings capability.",
       "source": "vault"
@@ -12145,7 +12145,7 @@
       "scope": "per-granularity",
       "path": "obsidian-periodic-notes/src/types.ts:24",
       "affects": [
-        "periodic-note-prefix-match-setting"
+        "forks:periodic-note-prefix-match-setting"
       ],
       "notes": "Also defaulted in obsidian-periodic-notes/src/settings/index.ts:56. Local addition; does not exist upstream.",
       "source": "forks"
@@ -12158,7 +12158,7 @@
       "scope": "per-granularity",
       "path": "obsidian-daily-notes-interface/src/types.ts:6",
       "affects": [
-        "weekly-note-prefix-match"
+        "forks:weekly-note-prefix-match"
       ],
       "notes": "Only ever populated for the weekly granularity, via getWeeklyNoteSettings() (obsidian-daily-notes-interface/src/settings.ts:67-97); the daily/monthly/quarterly/yearly getters never read or set this field. Local addition; does not exist upstream.",
       "source": "forks"
@@ -12171,7 +12171,7 @@
       "kind": "command",
       "path": "src/main.ts:43",
       "calls": [
-        "open-calendar-view"
+        "cal:open-calendar-view"
       ],
       "condition": "hidden/disabled once a calendar leaf is already open",
       "source": "cal"
@@ -12182,8 +12182,8 @@
       "kind": "command",
       "path": "src/main.ts:56",
       "calls": [
-        "open-weekly-note-command",
-        "open-or-create-weekly-note"
+        "cal:open-weekly-note-command",
+        "cal:open-or-create-weekly-note"
       ],
       "condition": "hidden when Periodic Notes has weekly notes enabled (periodic-notes-weekly-detection)",
       "source": "cal"
@@ -12194,8 +12194,8 @@
       "kind": "command",
       "path": "src/main.ts:67",
       "calls": [
-        "reveal-active-note-command",
-        "jump-calendar-to-active-note"
+        "cal:reveal-active-note-command",
+        "cal:jump-calendar-to-active-note"
       ],
       "condition": null,
       "source": "cal"
@@ -12206,7 +12206,7 @@
       "kind": "context-menu",
       "path": "src/ui/fileMenu.ts:5",
       "calls": [
-        "file-context-menu"
+        "cal:file-context-menu"
       ],
       "condition": "only shown on right-click of a day/week cell that has an existing note",
       "source": "cal"
@@ -12217,7 +12217,7 @@
       "kind": "command",
       "path": "src/commands.ts:98-102",
       "calls": [
-        "open-periodic-note"
+        "pn:open-periodic-note"
       ],
       "condition": "generated per active granularity as open-<periodicity>-note; only registered while that granularity is enabled in the active calendar set (src/main.ts:163-167)",
       "source": "pn"
@@ -12228,8 +12228,8 @@
       "kind": "command",
       "path": "src/commands.ts:104-115",
       "calls": [
-        "jump-to-adjacent-note-command",
-        "find-adjacent-note"
+        "pn:jump-to-adjacent-note-command",
+        "pn:find-adjacent-note"
       ],
       "condition": "checkCallback enables it only when the active file is itself a periodic note of this granularity (isPeriodic)",
       "source": "pn"
@@ -12240,8 +12240,8 @@
       "kind": "command",
       "path": "src/commands.ts:116-127",
       "calls": [
-        "jump-to-adjacent-note-command",
-        "find-adjacent-note"
+        "pn:jump-to-adjacent-note-command",
+        "pn:find-adjacent-note"
       ],
       "condition": "same as next-daily-note",
       "source": "pn"
@@ -12252,8 +12252,8 @@
       "kind": "command",
       "path": "src/commands.ts:128-139",
       "calls": [
-        "open-adjacent-note-command",
-        "open-periodic-note"
+        "pn:open-adjacent-note-command",
+        "pn:open-periodic-note"
       ],
       "condition": "same as next-daily-note",
       "source": "pn"
@@ -12264,8 +12264,8 @@
       "kind": "command",
       "path": "src/commands.ts:140-151",
       "calls": [
-        "open-adjacent-note-command",
-        "open-periodic-note"
+        "pn:open-adjacent-note-command",
+        "pn:open-periodic-note"
       ],
       "condition": "same as next-daily-note",
       "source": "pn"
@@ -12276,7 +12276,7 @@
       "kind": "command",
       "path": "src/main.ts:90-103",
       "calls": [
-        "nl-date-navigator"
+        "pn:nl-date-navigator"
       ],
       "condition": "only available when the nldates-obsidian plugin is installed (checkCallback returns false otherwise)",
       "source": "pn"
@@ -12287,8 +12287,8 @@
       "kind": "command",
       "path": "src/main.ts:105-112",
       "calls": [
-        "switch-active-calendar-set",
-        "calendar-set-quick-switch-modal"
+        "pn:switch-active-calendar-set",
+        "pn:calendar-set-quick-switch-modal"
       ],
       "condition": null,
       "source": "pn"
@@ -12299,8 +12299,8 @@
       "kind": "ribbon",
       "path": "src/main.ts:124-149",
       "calls": [
-        "ribbon-icon-single-granularity",
-        "open-periodic-note"
+        "pn:ribbon-icon-single-granularity",
+        "pn:open-periodic-note"
       ],
       "condition": "only shown when at least one granularity is enabled in the active calendar set; shows the FIRST enabled one only (day/week/month/quarter/year order)",
       "source": "pn"
@@ -12311,8 +12311,8 @@
       "kind": "context-menu",
       "path": "src/main.ts:142-148",
       "calls": [
-        "context-menu-open-note",
-        "open-periodic-note"
+        "pn:context-menu-open-note",
+        "pn:open-periodic-note"
       ],
       "condition": null,
       "source": "pn"
@@ -12323,7 +12323,7 @@
       "kind": "command",
       "path": "src/main.ts:30-34",
       "calls": [
-        "open-calendar-view"
+        "calendaric:open-calendar-view"
       ],
       "condition": null,
       "source": "calendaric"

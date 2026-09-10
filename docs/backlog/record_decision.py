@@ -142,33 +142,53 @@ DECISIONS = {
         "stories": {"NOTE": ["US-NOTE-04"]},
     },
     "DEC-13": {
-        "title": "Templates are applied only to files the plugin creates",
-        "decision": "A periodic-shaped empty file that already existed before the plugin started is "
-                    "indexed but never templated. Applying a template is limited to files the "
-                    "plugin creates while running.",
-        "rationale": "The alternative means the first index build after installing writes into "
-                     "files the plugin has never seen. Writing to someone's existing notes as a "
-                     "side effect of installing is not a behaviour to reintroduce.",
-        "stories": {"NOTE": ["US-NOTE-10"]},
+        "title": "Startup indexes without templating; anything appearing later is templated",
+        "decision": "A matching empty file found while the index is first built is "
+                    "indexed and left untouched. A matching empty file that appears "
+                    "while Calendaric is running is templated, whoever created it: "
+                    "Calendaric itself, the user, or another plugin.",
+        "rationale": "The line is drawn at startup, not at authorship. Templating "
+                     "everything found at startup would write into files the plugin has "
+                     "never seen, as a side effect of installing it. Refusing to "
+                     "template anything the user creates by hand would break the "
+                     "ordinary case of making tomorrow's note in the file explorer and "
+                     "expecting the template to fill it.",
+        "stories": {
+            "NOTE": ["US-NOTE-10"],
+        },
     },
     "DEC-14": {
-        "title": "Candidate formats are tried in declaration order, and that order is documented",
-        "decision": "When more than one candidate format validly matches the same file, the first "
-                    "in declaration order wins. The order is defined and documented rather than "
-                    "incidental.",
-        "rationale": "Today the winner depends on an unspecified list order, so the same vault can "
-                     "resolve differently after an unrelated change. Any deterministic rule beats "
-                     "that; declaration order is the one a user can predict.",
-        "stories": {"FMT": ["US-FMT-04"]},
+        "title": "The configured format is tried before the basename-only format derived from it",
+        "decision": "The user configures one format per granularity. Calendaric derives "
+                    "at most two candidates from it: the format as configured, which "
+                    "may contain path segments, and its basename segment on its own. "
+                    "The configured format is tried first. The derived basename-only "
+                    "format is tried only when the first does not match.",
+        "rationale": "Today the winner depends on an unspecified list order, so the "
+                     "same vault can resolve differently after an unrelated change. "
+                     "Naming a declaration order would not fix that, because the user "
+                     "declares one format, not a list. Stating which derived candidate "
+                     "is tried first is the rule a user can predict from what they "
+                     "typed.",
+        "stories": {
+            "FMT": ["US-FMT-08"],
+        },
     },
     "DEC-15": {
-        "title": "Week-number disambiguation applies whenever a day token is present",
-        "decision": "The rule that separates a week number from a month-or-day value applies when "
-                    "the format carries a day token, whether or not it also carries a month token.",
-        "rationale": "The narrower variant only triggered when both were present, so a format like "
-                     "DD slipped through and parsed as a week number. The wider rule catches the "
-                     "case the narrow one was written to catch.",
-        "stories": {"FMT": ["US-FMT-04"]},
+        "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
+        "decision": "For a weekly format containing a week-number token, week-number "
+                    "precedence applies when the format also carries a month token or a "
+                    "day token. A format with no week-number token is never affected by "
+                    "this rule.",
+        "rationale": "The ambiguity exists only when a week number sits next to a month "
+                     "or day value in the same name. Wording the rule as whenever a day "
+                     "token is present described a case that cannot arise, and the "
+                     "source it cited already treats month and day as alternatives, not "
+                     "as a pair. AC-FMT-04.5 already states the correct rule; this text "
+                     "now agrees with it.",
+        "stories": {
+            "FMT": ["US-FMT-04"],
+        },
     },
     "DEC-16": {
         "title": "Format warnings inform, they do not block",
@@ -179,13 +199,23 @@ DECISIONS = {
         "stories": {"FMT": ["US-FMT-05"]},
     },
     "DEC-17": {
-        "title": "An import with nothing to import is not offered",
-        "decision": "When a predecessor plugin's configuration is empty for every field the "
-                    "importer would read, that import is not offered at all.",
-        "rationale": "In this vault the Calendar plugin's weekly fields are blank because weekly "
-                     "configuration lives in Periodic Notes. Offering to import nothing is noise "
-                     "that teaches users to dismiss the import prompt without reading it.",
-        "stories": {"MIG": ["US-MIG-03"]},
+        "title": "An import is offered when any field it would read carries a value",
+        "decision": "A predecessor's import is offered when at least one field the "
+                    "importer reads carries a value, counting display and behaviour "
+                    "settings such as the week-start day, the create-confirmation "
+                    "toggle, the word-count threshold and the locale override, not only "
+                    "note format, folder and template. The import is suppressed only "
+                    "when every field it reads is unset.",
+        "rationale": "In this vault the Calendar plugin's weekly format, folder and "
+                     "template are blank because weekly configuration lives in Periodic "
+                     "Notes, but week start, create confirmation, words per dot and "
+                     "locale override all carry real values. Suppressing the import "
+                     "there would silently drop settings the user chose. Offering to "
+                     "import literally nothing stays suppressed, which is the noise the "
+                     "original decision was aimed at.",
+        "stories": {
+            "MIG": ["US-MIG-03"],
+        },
     },
     "DEC-18": {
         "title": "Prefix matching is carried across on import",
@@ -217,19 +247,119 @@ DECISIONS = {
         "stories": {"ARCH": ["US-ARCH-05"]},
     },
     "DEC-04": {
-        "title": "Probe exactly one canonical plugin id per predecessor",
-        "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the "
-                    "Periodic Notes plugin by one canonical id each, to offer a one-time import and "
-                    "to warn when a predecessor is still managing the same notes. The paired "
-                    "development-build id probe is not carried forward. Whether a predecessor owns "
-                    "a granularity is decided by its own enabled flag, checked the same way for "
-                    "every granularity.",
-        "rationale": "The dual-id probe existed only to let a development build and a store build "
-                     "of the same plugin coexist in one vault. The merged plugin removes that "
-                     "situation. The old asymmetry, where the mere presence of the Calendar plugin "
-                     "counted as proof that weekly notes were externally managed, goes with it.",
+        "title": "Detect each predecessor by both its published id and its development-build id",
+        "decision": "Calendaric detects the core Daily Notes plugin, the Calendar "
+                    "plugin and the Periodic Notes plugin to offer a one-time import "
+                    "and to warn when a predecessor is still managing the same notes. "
+                    "Detection covers both ids for each: calendar and calendar-anks, "
+                    "periodic-notes and periodic-notes-anks. Whether a predecessor owns "
+                    "a granularity is decided by its own enabled flag, checked the same "
+                    "way for every granularity. The development-build ids may be "
+                    "dropped once no vault still runs one of those builds.",
+        "rationale": "Calendaric has one id of its own, but the plugins it replaces do "
+                     "not. This vault runs calendar-anks and periodic-notes-anks, not "
+                     "the published ids. Probing only the published id would make both "
+                     "the import and the coexistence warning blind to the exact "
+                     "installations this rewrite replaces. The old asymmetry, where the "
+                     "mere presence of the Calendar plugin counted as proof that weekly "
+                     "notes were externally managed, does go.",
         "stories": {
             "MIG": ["US-MIG-05", "US-MIG-06"],
+        },
+    },
+    "DEC-21": {
+        "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
+        "decision": "A {{name:fmt}} token whose name is not one of the seven weekday "
+                    "names is written into the filename as literal text, exactly as "
+                    "typed. Saving the format is not blocked. The format editor shows a "
+                    "warning naming the token it did not recognise, so a typo such as "
+                    "{{funday:DD}} is visible before it reaches a filename.",
+        "rationale": "This question was open on US-FMT-01 and DEC-01 answered a "
+                     "different one, about which week start valid weekday tokens "
+                     "follow. Leaving text alone is what every other unrecognised "
+                     "sequence in a format string already does, so rejecting only this "
+                     "one would be inconsistent. DEC-16 already settled that format "
+                     "warnings inform rather than block.",
+        "resolves": ["Q-FMT-01.1"],
+        "stories": {
+            "FMT": ["US-FMT-01"],
+        },
+    },
+    "DEC-22": {
+        "title": "Words per dot is a global setting with a default of 250",
+        "decision": "Calendaric keeps the word-count threshold that decides how many "
+                    "dots a day shows. It is one global number, default 250, editable "
+                    "in settings. A value that is not a positive whole number falls "
+                    "back to the default and the settings field says so. The Calendar "
+                    "import carries the existing wordsPerDot value across.",
+        "rationale": "US-CAL-07 requires configured word-count thresholds while SET "
+                     "named no control and no default, and MIG dropped the existing "
+                     "value on the claim that Calendaric has no equivalent field. An "
+                     "implementation could satisfy every criterion and still leave the "
+                     "user no way to configure the behaviour CAL promises. This vault's "
+                     "Calendar plugin has wordsPerDot 250, so the default matches what "
+                     "the user already sees.",
+        "stories": {
+            "CAL": ["US-CAL-07"],
+            "SET": ["US-SET-02"],
+            "MIG": ["US-MIG-03"],
+        },
+    },
+    "DEC-23": {
+        "title": "The first release supports day, week, month and year; quarter is reserved",
+        "decision": "The set of granularities the first release supports is day, week, "
+                    "month and year. Quarter is a reserved value: the type may name it "
+                    "and configuration may round-trip it, but no command is generated "
+                    "for it, no note is created for it, and no view offers it. Anything "
+                    "asking for quarter behaves the same way as any other granularity "
+                    "that is not enabled.",
+        "rationale": "ARCH called quarter supported, NOTE used it as the example of an "
+                     "unsupported granularity, ICE-01 deferred it, and CMD still listed "
+                     "it for generated commands and startup opening. An agent reading "
+                     "the backlog could not tell whether quarter paths must work. This "
+                     "vault has quarter disabled, so nothing is lost by reserving it.",
+        "stories": {
+            "ARCH": ["US-ARCH-02"],
+            "NOTE": ["US-NOTE-01", "US-NOTE-04"],
+            "CMD": ["US-CMD-05", "US-CMD-09"],
+        },
+    },
+    "DEC-24": {
+        "title": "The first release is desktop only, and says so in the manifest",
+        "decision": "manifest.json declares isDesktopOnly true, which means Obsidian "
+                    "will not install Calendaric on a phone or tablet. No story may "
+                    "promise phone behaviour while that stands. Hover-dependent "
+                    "surfaces still need a pointer-free path, because a desktop user "
+                    "can be on a keyboard or a touchscreen laptop, but that is an "
+                    "accessibility requirement, not a mobile one. Mobile support is an "
+                    "icebox entry, gated on replacing the desktop-only call behind "
+                    "DEC-03's adapter.",
+        "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written "
+                     "for a laptop and a phone. Both cannot hold: isDesktopOnly true "
+                     "blocks installation on mobile outright, so a phone criterion "
+                     "could never be run, let alone passed. Desktop first without "
+                     "closing the door is the stated position, and one adapter plus an "
+                     "icebox entry is what keeps the door open.",
+        "stories": {
+            "CAL": ["US-CAL-08"],
+            "SET": ["US-SET-04"],
+        },
+    },
+    "DEC-25": {
+        "title": "Calendaric does not manage a granularity a predecessor still owns",
+        "decision": "When a predecessor plugin is enabled and has the same granularity "
+                    "enabled, Calendaric shows a notice and does not create, template "
+                    "or modify notes for that granularity. It still indexes and "
+                    "displays them. Management resumes when the user disables the "
+                    "predecessor for that granularity, or picks Calendaric as the owner "
+                    "in the notice.",
+        "rationale": "The old wording only forbade doing it silently, which a notice "
+                     "satisfies while both plugins keep writing to the same note. Two "
+                     "plugins creating the same daily note race each other and the "
+                     "loser's template output is lost. Refusing to write is the only "
+                     "outcome that matches the story's own title.",
+        "stories": {
+            "MIG": ["US-MIG-06"],
         },
     },
 }

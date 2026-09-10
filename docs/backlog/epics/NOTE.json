@@ -54,7 +54,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-01.3",
@@ -70,7 +71,7 @@
         },
         {
           "id": "AC-NOTE-01.4",
-          "given": "a granularity Calendaric does not support (for example quarter)",
+          "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a lookup is requested for it",
           "then": [
             "a clear, actionable error is reported instead of an incorrect or silent result"
@@ -78,7 +79,17 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -130,7 +141,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-02.3",
@@ -142,7 +154,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-02.4",
@@ -154,7 +167,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -193,7 +207,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.2",
@@ -205,7 +220,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.3",
@@ -217,7 +233,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.4",
@@ -230,7 +247,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.5",
@@ -242,7 +260,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -293,10 +312,11 @@
         },
         {
           "id": "AC-NOTE-04.2",
-          "given": "a granularity Calendaric currently supports (day, week, month, or year)",
-          "when": "the generic 'create the note for this granularity' entry point is used",
+          "given": "any two granularities from the release set of day, week, month, and year",
+          "when": "a note is created for each, under the same circumstances",
           "then": [
-            "it creates the note correctly for that granularity, the same as calling that granularity's own create operation directly"
+            "both creations apply the same collision behaviour when a file already exists at the target path",
+            "both creations apply the same error behaviour when something goes wrong"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -305,15 +325,16 @@
         },
         {
           "id": "AC-NOTE-04.3",
-          "given": "a granularity Calendaric does not support (for example quarter)",
-          "when": "the generic 'create the note for this granularity' entry point is used",
+          "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
+          "when": "a note creation is requested for it",
           "then": [
             "a clear, actionable error is reported naming the unsupported granularity, instead of an internal or unhandled failure"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.4",
@@ -326,7 +347,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.5",
@@ -340,7 +362,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.6",
@@ -353,7 +376,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -363,7 +387,17 @@
           "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
           "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
+      ],
+      "resolves": [
+        "OBS-01"
       ]
     },
     {
@@ -410,7 +444,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-05.3",
@@ -423,7 +458,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-05.4",
@@ -508,7 +544,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -582,7 +619,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-07.4",
@@ -607,8 +645,31 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-NOTE-07.6",
+          "given": "an existing weekly note file named in the pretty format (for example \"2025-W46, 10.11 - 16.11.md\") and prefix matching enabled for the weekly format",
+          "when": "that week is activated",
+          "then": [
+            "the existing pretty-named file opens",
+            "no raw-named duplicate file (for example \"2025-W46.md\") is created"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "OBS-92",
+        "vault:flow-daily-note-end-to-end",
+        "vault:flow-monthly-note-end-to-end",
+        "vault:flow-monthly-work-note-end-to-end",
+        "vault:flow-weekly-note-end-to-end",
+        "vault:flow-yearly-note-end-to-end"
       ]
     },
     {
@@ -658,7 +719,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-08.3",
@@ -670,7 +732,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-08.4",
@@ -731,7 +794,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-09.3",
@@ -743,7 +807,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-09.4",
@@ -756,7 +821,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -786,10 +852,10 @@
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-10.1",
-          "given": "a new, completely empty file is created directly in a granularity's configured folder with a name matching its configured format",
-          "when": "the index resolves that file",
+          "given": "Calendaric is already running and a new, completely empty file is created directly in a granularity's configured folder with a name matching its configured format, whether created by Calendaric itself, the user, or another plugin",
+          "when": "that file is resolved",
           "then": [
-            "the configured template is applied to it exactly as if the plugin had created it"
+            "the configured template is applied to it, regardless of which of those created it"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -799,7 +865,7 @@
         {
           "id": "AC-NOTE-10.2",
           "given": "the manually created file already has content",
-          "when": "the index resolves that file",
+          "when": "the file is resolved",
           "then": [
             "no template is applied",
             "the existing content is left untouched"
@@ -807,27 +873,30 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-10.3",
-          "given": "an empty, periodic-shaped file already existed in the vault before the plugin's index was first built",
-          "when": "the initial index build resolves that file",
+          "given": "an empty, periodic-shaped file already existed in the vault before Calendaric first started",
+          "when": "that startup lookup resolves the file",
           "then": [
-            "the template is not retroactively applied to it"
+            "the template is not retroactively applied to it",
+            "the file is left untouched"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
         {
           "id": "DEC-13",
-          "title": "Templates are applied only to files the plugin creates",
-          "decision": "A periodic-shaped empty file that already existed before the plugin started is indexed but never templated. Applying a template is limited to files the plugin creates while running.",
-          "rationale": "The alternative means the first index build after installing writes into files the plugin has never seen. Writing to someone's existing notes as a side effect of installing is not a behaviour to reintroduce.",
+          "title": "Startup indexes without templating; anything appearing later is templated",
+          "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
+          "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
           "decided_on": "2026-09-10"
         }
       ]
@@ -835,9 +904,9 @@
     {
       "id": "US-NOTE-11",
       "epic": "NOTE",
-      "title": "Build and maintain the periodic-note index",
+      "title": "Keep periodic-note lookup current as vault files change",
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
-      "rationale": "Every other NOTE story reads from this index; if it drifts from reality, all of them silently break.",
+      "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -863,12 +932,12 @@
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-11.1",
-          "given": "the vault finishes loading",
-          "when": "the plugin starts",
+          "given": "the plugin starts and files already exist in the vault that match a granularity's configured folder and format",
+          "when": "a lookup runs for one of those files' periods",
           "then": [
-            "the index contains an entry for every existing file that matches a granularity's configured folder and format"
+            "the matching file is returned"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
@@ -876,21 +945,21 @@
         {
           "id": "AC-NOTE-11.2",
           "given": "a new file is created that matches a granularity's configured folder and format",
-          "when": "the file is created",
+          "when": "a lookup runs for that file's period straight after",
           "then": [
-            "it is added to the index without a full rescan of the vault"
+            "the newly created file is returned"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-NOTE-11.3",
-          "given": "a file already in the index is renamed to a different name that still matches its granularity's configured folder and format, including being renamed by an external script from a raw title to a longer 'pretty' title",
-          "when": "the rename completes",
+          "given": "a file that a lookup already returns for its period is renamed to a different name that still matches its granularity's configured folder and format, including being renamed by an external script from a raw title to a longer 'pretty' title",
+          "when": "a lookup runs for that period after the rename completes",
           "then": [
-            "the file is still recognised as the same period's note under its new name"
+            "the file is returned under its new name"
           ],
           "verifies": "compat",
           "testable_by": "integration",
@@ -900,25 +969,26 @@
         {
           "id": "AC-NOTE-11.4",
           "given": "a file's name happens to match a granularity's configured format but the file lives outside every granularity's configured folder",
-          "when": "the index resolves that file",
+          "when": "a lookup runs for the period its name would suggest",
           "then": [
-            "it is never added to the index"
+            "nothing is returned for that file"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-11.5",
           "given": "a plugin setting that affects which files count as periodic (for example a folder or a format) is changed",
           "when": "the change is saved",
           "then": [
-            "the index is rebuilt so it reflects the new configuration",
-            "files that only match under the new settings are added",
-            "files that no longer match are removed"
+            "a lookup made after the change reflects the new configuration",
+            "a file that only matches under the new settings is now returned by a lookup for its period",
+            "a file that no longer matches is no longer returned by any lookup"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
@@ -926,26 +996,28 @@
         {
           "id": "AC-NOTE-11.6",
           "given": "a file carries a periodic date in its frontmatter and lives inside that granularity's configured folder",
-          "when": "the index resolves that file",
+          "when": "a lookup runs for that period",
           "then": [
-            "it is recognised as that period's note even if its filename alone would not have matched"
+            "the file is returned even if its filename alone would not have matched"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-NOTE-11.7",
-          "given": "a file that was in the index is deleted",
+          "given": "a file that a lookup previously returned for its period is deleted",
           "when": "the deletion is noticed",
           "then": [
-            "it is removed from the index"
+            "a lookup for that period afterwards returns nothing",
+            "the calendar dot for that day disappears"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     }
@@ -956,7 +1028,7 @@
     "The generic create-note dispatcher's real defect (missing quarter/year branches, dni:create-periodic-note) is addressed as AC-NOTE-04.2/.3 rather than narrated as a bug: the entry point must handle every granularity Calendaric supports and report a clear error for one it does not.",
     "Existing-file handling (AC-NOTE-04.5/.6) picks one answer where the old code had three (dni swallows the error behind a generic Notice and resolves undefined; pn lets vault.create's exception propagate unhandled; neither tells the caller anything actionable). The chosen answer: report the conflict clearly enough that the caller (typically US-NOTE-07's open-or-create) can recover by opening the existing note, and never destroy what is already on disk.",
     "The vault-wide loose date-fallback (pn:loose-date-parsing-fallback-global) is icebox and intentionally excluded; AC-NOTE-08.2 and AC-NOTE-11.4 instead require folder-scoping as the only way a file is recognised as periodic.",
-    "Several stories (US-NOTE-03, 04, 05, 06, 07, 08, 09, 10, 11) are marked granularity-agnostic (day/week/month/year) even though Calendaric's own current code only wires day and week end-to-end; the underlying behaviour is already granularity-generic in the prior-art libraries (dni, pn), and quarter is the only granularity deliberately excluded (icebox). Wiring month/year all the way through settings UI and the calendar grid is CAL/SET/CMD/TPL's job, not NOTE's.",
+    "Several stories (US-NOTE-03, 04, 05, 06, 07, 08, 09, 10, 11) are marked granularity-agnostic (day/week/month/year) even though Calendaric's own current code only wires day and week end-to-end; the underlying behaviour is already granularity-generic in the prior-art libraries (dni, pn), and quarter is reserved and out of scope for this release, per DEC-23. Wiring month/year all the way through settings UI and the calendar grid is CAL/SET/CMD/TPL's job, not NOTE's.",
     "Most acceptance criteria are testable_by unit against a pre-populated index/cache and mocked vault calls; anything that touches a real Obsidian workspace leaf, a real vault.createFolder, or the confirmation modal is marked integration or (for the modal's own prompt) manual, since this epic's tests will need a fuller Obsidian mock (TFile, Vault, Workspace, MetadataCache) than exists in the current test suite.",
     "pn:jump-to-adjacent-note-command and pn:open-adjacent-note-command are epic CMD, not NOTE: CMD's commands compose US-NOTE-09's closest-existing lookup and US-NOTE-07's open-or-create to implement 'jump to closest existing' and 'open the neighbouring date, creating it if needed' respectively. NOTE supplies both underlying operations; CMD decides how a command palette entry uses them."
   ]

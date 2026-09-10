@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-67 user stories, 309 acceptance criteria. They describe what Calendaric must do
+70 user stories, 342 acceptance criteria. They describe what Calendaric must do
 for a user, not how the old plugins did it. An agent that builds a feature is
 judged against the acceptance criteria; an agent that validates the work reads
 them and records a verdict.
@@ -39,7 +39,7 @@ Ids are permanent. They appear in validation reports, so nothing is renumbered.
 | `MIG` | Importing existing configuration and coexisting with other plugins |
 | `ARCH` | Architecture, boundaries, testability and release quality |
 
-Plus `ICE`, the icebox: 7 entries covering 26 capabilities that are deliberately
+Plus `ICE`, the icebox: 8 entries covering 22 capabilities that are deliberately
 not in the first release. They are kept with the evidence for deferring them,
 what it would cost to add them later, and — most usefully — what the first
 release must not preclude.
@@ -61,6 +61,7 @@ python3 build_backlog.py         # merge epics/ into backlog.json, and validate
 python3 report.py                # progress per epic, failures, blocked, open questions
 python3 report.py --agent        # every criterion still outstanding, grouped by epic
 python3 report.py --story US-NOTE-03
+python3 set_status.py US-NOTE-03 in-progress   # the board is read-only; this is the write side
 ```
 
 `build_backlog.py` is a gate, not a formatter. It fails when:
@@ -70,6 +71,15 @@ python3 report.py --story US-NOTE-03
 - a mapped capability marked `build` has neither a story nor a stated reason
 - an icebox capability appears in no `ICE` entry
 - a story depends on a story id that does not exist
+- the epic assignment and the map disagree about which capabilities exist
+- a capability is covered by the wrong kind of owner, or by a story in another epic
+- a story has no criterion marked `failure_path`
+- a story is `done` while a criterion is still unverified or failing
+- a judged criterion carries no evidence
+- a mapped setting, command, flow or P1 observation has no owner and no excuse
+
+It writes `backlog.json` only when none of that fires, so a failed run cannot
+leave stale output for the report and the viewer to render.
 
 ## How this connects to the map
 
@@ -79,6 +89,13 @@ what the Coverage tab renders. The split of capabilities across epics lives in
 `../mapping/epic-assignment.json`; change that file and the coverage gate
 changes with it.
 
+A story also names anything else it accounts for in `resolves[]`: a mapped
+setting, command or flow that no capability of its own reaches, and the `OBS-nn`
+id of a P1 observation it settles. Most stories need none — the gate already
+treats a setting as covered when the story covers a capability that setting
+affects. What `resolves[]` closes is the gap where a setting, a command, a flow
+or a P1 hazard had no owner at all and coverage still read 100%.
+
 Capabilities from the `vault` source are marked `evidence`, not `build`. They
 are how the user's real vault uses these features today — constraints the
 stories must not break, cited in `constrained_by[]`. They are deliberately not
@@ -86,11 +103,15 @@ turned into stories.
 
 ## Decisions
 
-The stories surfaced 24 open questions. All 24 are now answered, as 20 decisions
-`DEC-01` … `DEC-20`, recorded on the stories they settle rather than in a chat
+The stories surfaced 25 open questions. All 25 are now answered, as 25 decisions
+`DEC-01` … `DEC-25`, recorded on the stories they settle rather than in a chat
 log. A story carrying one shows the decision, the reasoning and the date; a
 decision that settles the same question in several epics is recorded on each of
-them, which is why 20 decisions appear on 22 stories.
+them, which is why 25 decisions appear on more stories than that.
+
+A decision names the exact question ids it answers, in `resolves`, and removing
+a question is limited to those ids. Re-running updates a decision in place, so
+editing its text here propagates instead of leaving the old copy behind.
 
 ```bash
 python3 record_decision.py            # apply every decision; safe to re-run

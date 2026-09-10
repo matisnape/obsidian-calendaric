@@ -50,7 +50,13 @@ with its `source`:
 - `commands` — command-palette entries, ribbon items, context menus.
 - `api_surface` — what other code can reach, with `stability` judged honestly.
 - `modules` — one record per source file, for the dependency graph.
-- `observations` — merge hazards, ranked `P1` / `P2` / `P3`.
+- `observations` — merge hazards, ranked `P1` / `P2` / `P3`, each with an `OBS-nn` id.
+
+Ids are unique inside one source only, so `merge.py` stamps every capability and
+every module with a `uid` of `<source>:<id>`. A bare reference resolves to the
+writer's own source; anything still ambiguous is an error, not a guess. It also
+checks that every `path:line` citation points at a file that exists and a line
+that exists, and refuses to write the map when any of that fails.
 
 Start with `observations` filtered to `P1`. Those are the things that break a
 naive merge.

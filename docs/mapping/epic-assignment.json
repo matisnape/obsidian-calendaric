@@ -1147,8 +1147,8 @@
     },
     {
       "uid": "pn:relative-date-humanization",
-      "epic": "ICE",
-      "role": "icebox",
+      "epic": "CAL",
+      "role": "build",
       "name": "Human-readable relative date/period labels",
       "surface": "api",
       "category": "dates",
@@ -1237,8 +1237,8 @@
     },
     {
       "uid": "pn:nl-date-navigator",
-      "epic": "ICE",
-      "role": "icebox",
+      "epic": "CMD",
+      "role": "build",
       "name": "Natural-language date switcher",
       "surface": "command",
       "category": "integration",
@@ -1273,8 +1273,8 @@
     },
     {
       "uid": "pn:timeline-complication-render",
-      "epic": "ICE",
-      "role": "icebox",
+      "epic": "CAL",
+      "role": "build",
       "name": "Timeline complication badge and week strip",
       "surface": "ui",
       "category": "ui",
@@ -1282,8 +1282,8 @@
     },
     {
       "uid": "pn:timeline-lifecycle-per-leaf",
-      "epic": "ICE",
-      "role": "icebox",
+      "epic": "CAL",
+      "role": "build",
       "name": "Mount/unmount one Timeline component per open markdown leaf",
       "surface": "event",
       "category": "state",

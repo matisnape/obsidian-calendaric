@@ -45,7 +45,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-01.3",
@@ -58,7 +59,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-01.4",
@@ -71,7 +73,22 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-01.5",
+          "given": "the calendar view leaf fails to initialize when the plugin attempts to create it",
+          "when": "the user runs the \"Open calendar\" command",
+          "then": [
+            "a notice tells the user the calendar view could not be opened",
+            "no partially-initialized calendar leaf is left in the workspace"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -117,7 +134,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-02.3",
@@ -129,7 +147,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-02.4",
@@ -142,7 +161,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -183,12 +203,14 @@
           "when": "the user runs the \"Reveal active note\" command",
           "then": [
             "no error is thrown",
-            "the calendar view's displayed period is left unchanged"
+            "the calendar view's displayed period is left unchanged",
+            "a notice says that \"Reveal active note\" needs an open daily or weekly note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-03.3",
@@ -200,7 +222,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -216,9 +239,9 @@
     {
       "id": "US-CMD-04",
       "epic": "CMD",
-      "title": "Open this week's note with a dedicated command",
-      "story": "As someone who wants one command to jump straight to today's weekly note, I want a dedicated \"Open Weekly Note\" command, so that weekly notes stay one keypress away even when the generated per-granularity commands are not covering weekly notes.",
-      "rationale": "This avoids weekly notes losing a keyboard entry point when the generated week command is not registered.",
+      "title": "Avoid a duplicate weekly-note command",
+      "story": "As someone who wants exactly one command that opens today's weekly note, I want the generated per-granularity week command to be the only one that does this, so that the command palette never offers two entries that do the same thing.",
+      "rationale": "Two commands opening the same note is confusing and leaves one of them as dead code the moment the generated command set covers week.",
       "priority": "should",
       "status": "todo",
       "covers": [
@@ -235,10 +258,10 @@
       "acceptance_criteria": [
         {
           "id": "AC-CMD-04.1",
-          "given": "the generated \"open current week's note\" command from the per-granularity set is not registered",
+          "given": "week is enabled as a granularity",
           "when": "the user opens the command palette",
           "then": [
-            "\"Open Weekly Note\" is listed",
+            "exactly one command opens the current week's note",
             "running it opens this week's note in the active pane, creating it first if it does not exist"
           ],
           "verifies": "behaviour",
@@ -248,28 +271,31 @@
         },
         {
           "id": "AC-CMD-04.2",
-          "given": "the generated \"open current week's note\" command from the per-granularity set is already registered",
+          "given": "week is enabled as a granularity",
           "when": "the user opens the command palette",
           "then": [
-            "\"Open Weekly Note\" is not shown",
-            "only one command opens the current week's note"
+            "the legacy \"Open Weekly Note\" command is not listed",
+            "no second command duplicates the generated command that opens the current week's note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-04.3",
-          "given": "\"Open Weekly Note\" is listed and the underlying note lookup or creation fails",
-          "when": "the user runs the command",
+          "given": "week is not enabled as a granularity",
+          "when": "the user opens the command palette",
           "then": [
-            "the failure is surfaced to the user rather than swallowed silently"
+            "no command opens the current week's note",
+            "the legacy \"Open Weekly Note\" command is not listed either"
           ],
           "verifies": "behaviour",
-          "testable_by": "manual",
+          "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -298,7 +324,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -340,7 +365,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-05.4",
@@ -353,7 +379,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-05.5",
@@ -390,7 +417,30 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-05.8",
+          "given": "a granularity is reserved or otherwise not enabled in the current configuration, such as quarter",
+          "when": "the user opens the command palette",
+          "then": [
+            "no command exists for that granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -440,7 +490,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-06.3",
@@ -453,7 +504,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-06.4",
@@ -465,7 +517,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -539,7 +592,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -626,7 +680,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -649,7 +704,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -665,7 +719,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-09.2",
@@ -703,7 +758,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-09.5",
@@ -715,7 +771,22 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-09.6",
+          "given": "a granularity is reserved or otherwise not enabled in the current configuration, such as quarter",
+          "when": "the user looks for it in the \"open on startup\" setting",
+          "then": [
+            "that granularity cannot be selected to open on startup",
+            "no note for that granularity opens automatically"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -725,7 +796,108 @@
           "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
           "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
+      ]
+    },
+    {
+      "id": "US-CMD-10",
+      "epic": "CMD",
+      "title": "Jump to a note by typing a date in words",
+      "story": "As someone who thinks in phrases rather than dates, I want to type 'last monday' or 'next week' and land on that period's note, so that I do not have to work out the calendar date first.",
+      "rationale": "The natural-language date plugin is installed and enabled in this vault, so this command appears today. Dropping it would remove a working feature.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:nl-date-navigator"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-CMD-05"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-10.1",
+          "given": "the natural-language date plugin is installed and enabled",
+          "when": "the user opens the command palette",
+          "then": [
+            "a command that opens the date switcher is listed"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.2",
+          "given": "the natural-language date plugin is not installed, or is disabled",
+          "when": "the user opens the command palette",
+          "then": [
+            "the date switcher command is not listed",
+            "no error is shown and no other command is affected"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.3",
+          "given": "the date switcher is open and the vault has a note for last Monday",
+          "when": "the user types a phrase naming that day and confirms",
+          "then": [
+            "that day's existing note opens in the active pane",
+            "no second note is created for that day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.4",
+          "given": "the date switcher is open and no note exists for the named period",
+          "when": "the user confirms the phrase",
+          "then": [
+            "the note is created for that period and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.5",
+          "given": "the date switcher is open and the typed phrase names no date the parser recognises",
+          "when": "the user confirms",
+          "then": [
+            "no note is opened and none is created",
+            "the switcher stays open and says the phrase was not recognised"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only."
       ]
     }
   ],

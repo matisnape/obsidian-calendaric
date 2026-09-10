@@ -27,7 +27,7 @@
         "The generic create-note dispatcher's real defect (missing quarter/year branches, dni:create-periodic-note) is addressed as AC-NOTE-04.2/.3 rather than narrated as a bug: the entry point must handle every granularity Calendaric supports and report a clear error for one it does not.",
         "Existing-file handling (AC-NOTE-04.5/.6) picks one answer where the old code had three (dni swallows the error behind a generic Notice and resolves undefined; pn lets vault.create's exception propagate unhandled; neither tells the caller anything actionable). The chosen answer: report the conflict clearly enough that the caller (typically US-NOTE-07's open-or-create) can recover by opening the existing note, and never destroy what is already on disk.",
         "The vault-wide loose date-fallback (pn:loose-date-parsing-fallback-global) is icebox and intentionally excluded; AC-NOTE-08.2 and AC-NOTE-11.4 instead require folder-scoping as the only way a file is recognised as periodic.",
-        "Several stories (US-NOTE-03, 04, 05, 06, 07, 08, 09, 10, 11) are marked granularity-agnostic (day/week/month/year) even though Calendaric's own current code only wires day and week end-to-end; the underlying behaviour is already granularity-generic in the prior-art libraries (dni, pn), and quarter is the only granularity deliberately excluded (icebox). Wiring month/year all the way through settings UI and the calendar grid is CAL/SET/CMD/TPL's job, not NOTE's.",
+        "Several stories (US-NOTE-03, 04, 05, 06, 07, 08, 09, 10, 11) are marked granularity-agnostic (day/week/month/year) even though Calendaric's own current code only wires day and week end-to-end; the underlying behaviour is already granularity-generic in the prior-art libraries (dni, pn), and quarter is reserved and out of scope for this release, per DEC-23. Wiring month/year all the way through settings UI and the calendar grid is CAL/SET/CMD/TPL's job, not NOTE's.",
         "Most acceptance criteria are testable_by unit against a pre-populated index/cache and mocked vault calls; anything that touches a real Obsidian workspace leaf, a real vault.createFolder, or the confirmation modal is marked integration or (for the modal's own prompt) manual, since this epic's tests will need a fuller Obsidian mock (TFile, Vault, Workspace, MetadataCache) than exists in the current test suite.",
         "pn:jump-to-adjacent-note-command and pn:open-adjacent-note-command are epic CMD, not NOTE: CMD's commands compose US-NOTE-09's closest-existing lookup and US-NOTE-07's open-or-create to implement 'jump to closest existing' and 'open the neighbouring date, creating it if needed' respectively. NOTE supplies both underlying operations; CMD decides how a command palette entry uses them."
       ],
@@ -65,7 +65,7 @@
         "Almost every acceptance criterion in this epic is DOM/interaction-driven (click, hover, contextmenu, live vault events) and is only testable_by 'manual' or 'integration'. The exceptions are pure grid/date math and word-count-to-dot-fill logic (US-CAL-01, most of US-CAL-07), which are testable_by 'unit'.",
         "US-CAL-03, US-CAL-04 and US-CAL-05 depend on NOTE's 'open or create a note for a date' capability and on FMT's/SET's resolution of where and how that note is named; this epic owns only the click/hover/menu request that triggers it and the resulting view-level effect (which pane, whether the grid navigates), never the file operation itself. Exact NOTE story IDs were not guessed and are left out of depends_on.",
         "The conflict between 'open the month note' and 'reset to today' on the month header is resolved in US-CAL-05: the header always tries to open/create the displayed month's note when monthly notes are available, and only falls back to resetting to today when they are not. Returning to today on demand (when monthly notes ARE available) has its own separate, always-present control, covered in US-CAL-02, so the two gestures never compete for the same click.",
-        "The vault's real-world indicator is the word-count dot (US-CAL-07); the streak, tags and tasks indicator sources seen in the old plugin are in the icebox (epic ICE) and are intentionally not covered here. US-CAL-07's multi-source acceptance criterion (AC-CAL-07.4) keeps the door open for the icebox sources, or any other future source, without naming an interface.",
+        "The vault's real-world indicator is the word-count dot (US-CAL-07); the streak, tags and tasks indicator sources seen in the old plugin are in the icebox (epic ICE) and are intentionally not covered here. AC-CAL-07.4 and AC-CAL-07.5 cover only the two built-in dot sources that ship in this release (note existence and word count); ICE-03 defers the registration surface an external source would need, so no public extension point is promised here.",
         "pn:text-input-suggest-popper-positioning (US-CAL-12) is mapped from a settings text-input autocomplete in the source plugins, but is written here as the generic overlay-positioning behaviour this epic's own hover popover (US-CAL-08) needs; whether it ends up as one shared mechanism with SET's inputs or a duplicated implementation is flagged as an open question rather than assumed."
       ],
       "uncovered": []
@@ -179,7 +179,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-01.3",
@@ -195,7 +196,7 @@
         },
         {
           "id": "AC-NOTE-01.4",
-          "given": "a granularity Calendaric does not support (for example quarter)",
+          "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a lookup is requested for it",
           "then": [
             "a clear, actionable error is reported instead of an incorrect or silent result"
@@ -203,7 +204,17 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -255,7 +266,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-02.3",
@@ -267,7 +279,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-02.4",
@@ -279,7 +292,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -318,7 +332,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.2",
@@ -330,7 +345,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.3",
@@ -342,7 +358,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.4",
@@ -355,7 +372,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-03.5",
@@ -367,7 +385,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -418,10 +437,11 @@
         },
         {
           "id": "AC-NOTE-04.2",
-          "given": "a granularity Calendaric currently supports (day, week, month, or year)",
-          "when": "the generic 'create the note for this granularity' entry point is used",
+          "given": "any two granularities from the release set of day, week, month, and year",
+          "when": "a note is created for each, under the same circumstances",
           "then": [
-            "it creates the note correctly for that granularity, the same as calling that granularity's own create operation directly"
+            "both creations apply the same collision behaviour when a file already exists at the target path",
+            "both creations apply the same error behaviour when something goes wrong"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -430,15 +450,16 @@
         },
         {
           "id": "AC-NOTE-04.3",
-          "given": "a granularity Calendaric does not support (for example quarter)",
-          "when": "the generic 'create the note for this granularity' entry point is used",
+          "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
+          "when": "a note creation is requested for it",
           "then": [
             "a clear, actionable error is reported naming the unsupported granularity, instead of an internal or unhandled failure"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.4",
@@ -451,7 +472,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.5",
@@ -465,7 +487,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-04.6",
@@ -478,7 +501,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -488,7 +512,17 @@
           "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
           "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
+      ],
+      "resolves": [
+        "OBS-01"
       ]
     },
     {
@@ -535,7 +569,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-05.3",
@@ -548,7 +583,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-05.4",
@@ -633,7 +669,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -707,7 +744,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-07.4",
@@ -732,8 +770,31 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-NOTE-07.6",
+          "given": "an existing weekly note file named in the pretty format (for example \"2025-W46, 10.11 - 16.11.md\") and prefix matching enabled for the weekly format",
+          "when": "that week is activated",
+          "then": [
+            "the existing pretty-named file opens",
+            "no raw-named duplicate file (for example \"2025-W46.md\") is created"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "OBS-92",
+        "vault:flow-daily-note-end-to-end",
+        "vault:flow-monthly-note-end-to-end",
+        "vault:flow-monthly-work-note-end-to-end",
+        "vault:flow-weekly-note-end-to-end",
+        "vault:flow-yearly-note-end-to-end"
       ]
     },
     {
@@ -783,7 +844,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-08.3",
@@ -795,7 +857,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-08.4",
@@ -856,7 +919,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-09.3",
@@ -868,7 +932,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-09.4",
@@ -881,7 +946,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -911,10 +977,10 @@
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-10.1",
-          "given": "a new, completely empty file is created directly in a granularity's configured folder with a name matching its configured format",
-          "when": "the index resolves that file",
+          "given": "Calendaric is already running and a new, completely empty file is created directly in a granularity's configured folder with a name matching its configured format, whether created by Calendaric itself, the user, or another plugin",
+          "when": "that file is resolved",
           "then": [
-            "the configured template is applied to it exactly as if the plugin had created it"
+            "the configured template is applied to it, regardless of which of those created it"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -924,7 +990,7 @@
         {
           "id": "AC-NOTE-10.2",
           "given": "the manually created file already has content",
-          "when": "the index resolves that file",
+          "when": "the file is resolved",
           "then": [
             "no template is applied",
             "the existing content is left untouched"
@@ -932,27 +998,30 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-10.3",
-          "given": "an empty, periodic-shaped file already existed in the vault before the plugin's index was first built",
-          "when": "the initial index build resolves that file",
+          "given": "an empty, periodic-shaped file already existed in the vault before Calendaric first started",
+          "when": "that startup lookup resolves the file",
           "then": [
-            "the template is not retroactively applied to it"
+            "the template is not retroactively applied to it",
+            "the file is left untouched"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
         {
           "id": "DEC-13",
-          "title": "Templates are applied only to files the plugin creates",
-          "decision": "A periodic-shaped empty file that already existed before the plugin started is indexed but never templated. Applying a template is limited to files the plugin creates while running.",
-          "rationale": "The alternative means the first index build after installing writes into files the plugin has never seen. Writing to someone's existing notes as a side effect of installing is not a behaviour to reintroduce.",
+          "title": "Startup indexes without templating; anything appearing later is templated",
+          "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
+          "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
           "decided_on": "2026-09-10"
         }
       ]
@@ -960,9 +1029,9 @@
     {
       "id": "US-NOTE-11",
       "epic": "NOTE",
-      "title": "Build and maintain the periodic-note index",
+      "title": "Keep periodic-note lookup current as vault files change",
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
-      "rationale": "Every other NOTE story reads from this index; if it drifts from reality, all of them silently break.",
+      "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -988,12 +1057,12 @@
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-11.1",
-          "given": "the vault finishes loading",
-          "when": "the plugin starts",
+          "given": "the plugin starts and files already exist in the vault that match a granularity's configured folder and format",
+          "when": "a lookup runs for one of those files' periods",
           "then": [
-            "the index contains an entry for every existing file that matches a granularity's configured folder and format"
+            "the matching file is returned"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
@@ -1001,21 +1070,21 @@
         {
           "id": "AC-NOTE-11.2",
           "given": "a new file is created that matches a granularity's configured folder and format",
-          "when": "the file is created",
+          "when": "a lookup runs for that file's period straight after",
           "then": [
-            "it is added to the index without a full rescan of the vault"
+            "the newly created file is returned"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-NOTE-11.3",
-          "given": "a file already in the index is renamed to a different name that still matches its granularity's configured folder and format, including being renamed by an external script from a raw title to a longer 'pretty' title",
-          "when": "the rename completes",
+          "given": "a file that a lookup already returns for its period is renamed to a different name that still matches its granularity's configured folder and format, including being renamed by an external script from a raw title to a longer 'pretty' title",
+          "when": "a lookup runs for that period after the rename completes",
           "then": [
-            "the file is still recognised as the same period's note under its new name"
+            "the file is returned under its new name"
           ],
           "verifies": "compat",
           "testable_by": "integration",
@@ -1025,25 +1094,26 @@
         {
           "id": "AC-NOTE-11.4",
           "given": "a file's name happens to match a granularity's configured format but the file lives outside every granularity's configured folder",
-          "when": "the index resolves that file",
+          "when": "a lookup runs for the period its name would suggest",
           "then": [
-            "it is never added to the index"
+            "nothing is returned for that file"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-NOTE-11.5",
           "given": "a plugin setting that affects which files count as periodic (for example a folder or a format) is changed",
           "when": "the change is saved",
           "then": [
-            "the index is rebuilt so it reflects the new configuration",
-            "files that only match under the new settings are added",
-            "files that no longer match are removed"
+            "a lookup made after the change reflects the new configuration",
+            "a file that only matches under the new settings is now returned by a lookup for its period",
+            "a file that no longer matches is no longer returned by any lookup"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
@@ -1051,26 +1121,28 @@
         {
           "id": "AC-NOTE-11.6",
           "given": "a file carries a periodic date in its frontmatter and lives inside that granularity's configured folder",
-          "when": "the index resolves that file",
+          "when": "a lookup runs for that period",
           "then": [
-            "it is recognised as that period's note even if its filename alone would not have matched"
+            "the file is returned even if its filename alone would not have matched"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-NOTE-11.7",
-          "given": "a file that was in the index is deleted",
+          "given": "a file that a lookup previously returned for its period is deleted",
           "when": "the deletion is noticed",
           "then": [
-            "it is removed from the index"
+            "a lookup for that period afterwards returns nothing",
+            "the calendar dot for that day disappears"
           ],
-          "verifies": "data",
+          "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -1144,7 +1216,35 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-01.5",
+          "given": "a filename format contains the token {{funday:DD.MM}}, where \"funday\" is not one of the seven weekday names",
+          "when": "the filename is generated",
+          "then": [
+            "the token appears in the generated filename as literal text, exactly as typed, rather than resolving to a date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-01.6",
+          "given": "the same format string containing {{funday:DD.MM}} is entered in the format editor",
+          "when": "the user saves the format",
+          "then": [
+            "the editor shows a warning naming \"funday\" as the token it did not recognise",
+            "the format still saves, and the save is not blocked by the warning"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -1154,6 +1254,13 @@
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-21",
+          "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
+          "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
+          "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1215,7 +1322,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-02.4",
@@ -1228,6 +1336,20 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-FMT-02.5",
+          "given": "the displayed month is December, so the trailing days needed to complete the grid's last row fall in January of the following year",
+          "when": "the grid is computed",
+          "then": [
+            "those trailing days carry the following year, not the same year as the displayed December",
+            "the grid still contains exactly 6 rows of 7 days"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -1299,7 +1421,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-03.5",
@@ -1311,8 +1434,13 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "pn:localeOverride (ISettings field)",
+        "pn:weekStart (ISettings field)"
       ]
     },
     {
@@ -1381,7 +1509,8 @@
           "verifies": "compat",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-04.4",
@@ -1410,10 +1539,10 @@
         },
         {
           "id": "AC-FMT-04.6",
-          "given": "the vault already contains 219 daily notes named in the pattern \"YYYY-MM-DD, dddd\", 60 weekly notes named \"YYYY-Wnn, DD.MM - DD.MM\", 21 monthly notes named \"YYYY-MM Month\", and 25 monthly-work notes named \"YYYY-MM Month - Work\"",
+          "given": "the vault already contains 211 daily notes named in the current pattern \"YYYY-MM-DD, dddd\", 60 weekly notes named \"YYYY-Wnn, DD.MM - DD.MM\", 21 monthly notes named \"YYYY-MM Month\", and 25 monthly-work notes named \"YYYY-MM Month - Work\"",
           "when": "the matching format strings are configured for each granularity and the vault is scanned",
           "then": [
-            "every one of these existing notes is recognised as the note for its date and granularity"
+            "every one of these 211 daily, 60 weekly, 21 monthly, and 25 monthly-work notes is recognised as the note for its date and granularity"
           ],
           "verifies": "compat",
           "testable_by": "integration",
@@ -1422,43 +1551,25 @@
         },
         {
           "id": "AC-FMT-04.7",
-          "given": "7 daily notes exist in an older bare \"YYYY-MM-DD.md\" shape that predates the vault's current daily format",
+          "given": "8 daily notes exist that do not match the current daily format \"YYYY-MM-DD, dddd\": 7 in an older bare \"YYYY-MM-DD.md\" shape, and 1 whose date uses an en dash instead of a hyphen between the month and the day",
           "when": "the current format \"YYYY-MM-DD, dddd\" is configured, with prefix matching left at its default of disabled",
           "then": [
-            "these 7 files are not recognised as daily notes, matching the vault's behaviour before this rewrite rather than introducing a new gap"
+            "the 7 bare-date files are not recognised as daily notes, matching the vault's behaviour before this rewrite rather than introducing a new gap",
+            "the 1 en-dash file is also not recognised as a daily note, because its punctuation does not exactly match the configured format, the same rule that excludes any other filename whose characters do not match"
           ],
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
-        },
-        {
-          "id": "AC-FMT-04.8",
-          "given": "two different files in the vault both resolve to the same date and granularity, one as an exact match and one as a prefix match",
-          "when": "the plugin looks up the note for that period",
-          "then": [
-            "the exact match is treated as the note for that period",
-            "the prefix-matched file is not silently treated as an equally valid alternative for the same period"
-          ],
-          "verifies": "behaviour",
-          "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
         {
-          "id": "DEC-14",
-          "title": "Candidate formats are tried in declaration order, and that order is documented",
-          "decision": "When more than one candidate format validly matches the same file, the first in declaration order wins. The order is defined and documented rather than incidental.",
-          "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Any deterministic rule beats that; declaration order is the one a user can predict.",
-          "decided_on": "2026-09-10"
-        },
-        {
           "id": "DEC-15",
-          "title": "Week-number disambiguation applies whenever a day token is present",
-          "decision": "The rule that separates a week number from a month-or-day value applies when the format carries a day token, whether or not it also carries a month token.",
-          "rationale": "The narrower variant only triggered when both were present, so a format like DD slipped through and parsed as a week number. The wider rule catches the case the narrow one was written to catch.",
+          "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
+          "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
+          "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
           "decided_on": "2026-09-10"
         }
       ]
@@ -1495,7 +1606,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.2",
@@ -1507,7 +1619,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.3",
@@ -1520,7 +1633,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.4",
@@ -1532,7 +1646,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -1613,7 +1728,21 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-06.5",
+          "given": "two date values that fall a few milliseconds apart but on opposite sides of local midnight, so they belong to two different calendar days",
+          "when": "the day-granularity identity is computed for both",
+          "then": [
+            "the two identities are different values, so a moment just after midnight is never merged into the previous day"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -1641,7 +1770,7 @@
       "acceptance_criteria": [
         {
           "id": "AC-FMT-07.1",
-          "given": "a file's name matches a valid daily-note filename",
+          "given": "a Markdown file whose filename matches the daily format and whose path is under the configured daily folder",
           "when": "its date identity is resolved",
           "then": [
             "it is recognised as that day's note"
@@ -1673,7 +1802,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-07.4",
@@ -1686,6 +1816,19 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-FMT-07.5",
+          "given": "a file with the same filename as AC-FMT-07.1, but located outside the configured daily folder",
+          "when": "its date identity is resolved",
+          "then": [
+            "it is not recognised as that day's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -1696,6 +1839,69 @@
           "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
           "decided_on": "2026-09-10"
         }
+      ]
+    },
+    {
+      "id": "US-FMT-08",
+      "epic": "FMT",
+      "title": "Resolve a filename the same way every time when more than one candidate matches",
+      "story": "As someone whose vault holds notes written under more than one naming habit, I want one predictable winner when a filename could be read in more than one way, so that the same file never resolves to a different date after an unrelated change.",
+      "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently between runs.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-FMT-04"
+      ],
+      "open_questions": [],
+      "decisions": [
+        {
+          "id": "DEC-14",
+          "title": "The configured format is tried before the basename-only format derived from it",
+          "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
+          "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
+          "decided_on": "2026-09-10"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-08.1",
+          "given": "two different files in the vault both resolve to the same date and granularity, one as an exact match and one as a prefix match",
+          "when": "the plugin looks up the note for that period",
+          "then": [
+            "the exact match is treated as the note for that period",
+            "the prefix-matched file is not silently treated as an equally valid alternative for the same period"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-08.2",
+          "given": "a granularity's configured format contains a folder segment, and a file's relative path matches the full configured format for one date while the file's basename alone also matches the derived basename-only format for a different date",
+          "when": "the plugin resolves the file's date for that granularity",
+          "then": [
+            "the date produced by the full configured format is used",
+            "the date the basename-only format would have produced on its own is not used"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Split out of US-FMT-04, which reached nine criteria. Covers no capability of its own: the parsing capabilities stay on US-FMT-04 and this story constrains how they choose between results."
       ]
     },
     {
@@ -1800,7 +2006,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -1861,7 +2068,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -1924,7 +2132,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-03.4",
@@ -1937,7 +2146,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-03.5",
@@ -1950,7 +2160,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -2003,7 +2214,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-04.3",
@@ -2016,7 +2228,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-04.4",
@@ -2029,7 +2242,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-04.5",
@@ -2042,7 +2256,8 @@
           "verifies": "data",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -2097,7 +2312,8 @@
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-05.3",
@@ -2110,7 +2326,8 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-05.4",
@@ -2125,6 +2342,11 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "resolves": [
+        "vault:folder_templates",
+        "vault:templates_folder",
+        "vault:trigger_on_file_creation_mode"
       ]
     },
     {
@@ -2177,7 +2399,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-TPL-06.3",
@@ -2215,7 +2438,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -2282,7 +2506,7 @@
           "when": "the grid renders",
           "then": [
             "each week row shows a week-number cell at the start of the row",
-            "the week number itself comes from the shared week-numbering rules, not from this view's own calculation"
+            "every displayed week number agrees with the week number shown elsewhere for the same date and the same settings"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -2311,8 +2535,13 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "OBS-11",
+        "OBS-14"
       ]
     },
     {
@@ -2383,7 +2612,21 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-02.5",
+          "given": "the grid is showing December of any year",
+          "when": "the user activates the 'next month' control",
+          "then": [
+            "the grid shows January of the following year"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -2423,7 +2666,7 @@
           "given": "a day cell already has a note",
           "when": "the user clicks it",
           "then": [
-            "the request to open that note is issued for the active pane"
+            "the existing note opens in the active pane"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2435,7 +2678,7 @@
           "given": "a day cell has no note yet and creating without confirmation is configured",
           "when": "the user clicks it",
           "then": [
-            "the request to create and open that day's note is issued immediately, with no confirmation step"
+            "the note is created and opens in the active pane, with no confirmation step"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2454,14 +2697,15 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-03.4",
           "given": "a day cell (with or without a note)",
           "when": "the user clicks it while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2478,7 +2722,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-03.6",
@@ -2522,7 +2767,7 @@
           "given": "a week already has a note",
           "when": "the user clicks its week-number cell",
           "then": [
-            "the request to open that week's note is issued for the active pane"
+            "the existing note opens in the active pane"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2546,7 +2791,7 @@
           "given": "a week-number cell (with or without a note)",
           "when": "the user clicks it while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2563,7 +2808,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -2603,7 +2849,7 @@
           "given": "monthly periodic notes are configured and available",
           "when": "the user clicks the month header",
           "then": [
-            "the request to open or create the displayed month's note is issued for the active pane",
+            "the displayed month's note opens in the active pane, being created first if it did not already exist",
             "the displayed month on the grid does not change because of this click"
           ],
           "verifies": "behaviour",
@@ -2616,7 +2862,7 @@
           "given": "monthly periodic notes are configured and available",
           "when": "the user clicks the month header while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2633,7 +2879,8 @@
           "verifies": "compat",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-05.4",
@@ -2669,6 +2916,9 @@
           "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
           "decided_on": "2026-09-10"
         }
+      ],
+      "resolves": [
+        "OBS-13"
       ]
     },
     {
@@ -2714,7 +2964,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-06.3",
@@ -2778,7 +3029,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-07.2",
@@ -2794,50 +3046,65 @@
         },
         {
           "id": "AC-CAL-07.3",
-          "given": "a note's word count crosses the configured thresholds for additional dot segments",
+          "given": "the configured word-count threshold (default 250) is a positive whole number and a note's word count crosses one or more multiples of it",
           "when": "its cell renders",
           "then": [
-            "more of the dot's segments are shown filled, up to the maximum",
-            "the fill never exceeds the maximum regardless of how long the note is"
+            "one additional dot segment is filled for each multiple of the threshold the word count has crossed, up to the maximum",
+            "the fill never exceeds the maximum regardless of how long the note is",
+            "when the configured threshold value is not a positive whole number, the default of 250 is used to decide segment fill instead"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-07.4",
-          "given": "the plugin, or another installed plugin, registers more than one indicator source",
-          "when": "a cell with data from multiple sources renders",
+          "given": "a cell has data for both built-in indicator sources that ship in this release: note existence and word count",
+          "when": "the cell renders",
           "then": [
-            "each source's dot appears on the cell alongside the others",
-            "each source's dot is visually distinguishable from the others (for example by colour)"
+            "the note-exists dot and the word-count dot both appear on the cell",
+            "each dot is visually distinguishable from the other (for example by colour)"
           ],
           "verifies": "behaviour",
-          "testable_by": "integration",
+          "testable_by": "unit",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-CAL-07.5",
-          "given": "a registered indicator source has nothing to say about a given cell (for example, no note exists yet)",
+          "given": "one of the two built-in dots (note-exists or word-count) has nothing to show for a given cell (for example, no note exists yet)",
           "when": "that cell renders",
           "then": [
-            "that source contributes no dot for that cell, while other sources are unaffected"
+            "that dot does not appear for that cell, while the other built-in dot is unaffected"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-22",
+          "title": "Words per dot is a global setting with a default of 250",
+          "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+          "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+          "decided_on": "2026-09-11"
+        }
+      ],
+      "resolves": [
+        "OBS-12"
       ]
     },
     {
       "id": "US-CAL-08",
       "epic": "CAL",
       "title": "See indicator detail without needing to hover",
-      "story": "As someone using the calendar on both a laptop and a phone, I want to see the full detail behind a cell's indicators, so that I get the same information whether or not my device supports hovering.",
-      "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must work the same on touch devices.",
+      "story": "As someone using the calendar on a keyboard or a touchscreen laptop, I want to see the full detail behind a cell's indicators without needing to hover, so that I get the same information a mouse user gets from hovering.",
+      "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must be reachable without a pointer, from a keyboard or a touchscreen laptop.",
       "priority": "should",
       "status": "todo",
       "covers": [
@@ -2879,10 +3146,11 @@
         },
         {
           "id": "AC-CAL-08.3",
-          "given": "a cell has one or more indicators and the device does not support hovering",
+          "given": "a cell has one or more indicators, on a touchscreen laptop",
           "when": "the user taps the cell",
           "then": [
-            "the same detail information is shown, without requiring a hover gesture"
+            "the same detail information hover shows is displayed",
+            "no hover gesture is required to see it"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -2892,14 +3160,37 @@
         {
           "id": "AC-CAL-08.4",
           "given": "a cell has no indicator data at all",
-          "when": "it is hovered or tapped",
+          "when": "it is hovered, given keyboard focus, or tapped",
           "then": [
             "no detail view appears"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-08.5",
+          "given": "a cell has one or more indicators",
+          "when": "the user moves keyboard focus to that cell",
+          "then": [
+            "the same detail information hover shows is displayed",
+            "the detail view is reachable and readable using only the keyboard, with no pointer involved"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-24",
+          "title": "The first release is desktop only, and says so in the manifest",
+          "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
+          "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -2960,7 +3251,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-09.4",
@@ -3031,7 +3323,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-10.3",
@@ -3115,7 +3408,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3147,7 +3441,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-12.2",
@@ -3159,7 +3454,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-12.3",
@@ -3185,6 +3481,19 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-CAL-12.5",
+          "given": "an overlay is open and its trigger element is removed from the page while the overlay is still showing (for example, the grid re-renders)",
+          "when": "that happens",
+          "then": [
+            "the overlay closes rather than being left anchored to nothing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -3195,6 +3504,120 @@
           "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly the duplication this rewrite exists to remove. It also means one place to fix when a popover is clipped.",
           "decided_on": "2026-09-10"
         }
+      ]
+    },
+    {
+      "id": "US-CAL-13",
+      "epic": "CAL",
+      "title": "Show which period an open note belongs to, and move between days from inside it",
+      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is and let me step to a neighbouring day, so that I do not have to decode the filename or go back to the calendar.",
+      "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:timeline-complication-render",
+        "pn:timeline-lifecycle-per-leaf",
+        "pn:relative-date-humanization"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-03"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-13.1",
+          "given": "the feature is enabled and a note for a recognised period is open",
+          "when": "the note is displayed",
+          "then": [
+            "a label in the note names the period in words, such as Today or Last week",
+            "the label follows the note's own date, not the current date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.2",
+          "given": "the feature is enabled and a file that is not a periodic note is open",
+          "when": "the note is displayed",
+          "then": [
+            "no label appears",
+            "the note's own content is unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-13.3",
+          "given": "the feature is disabled in settings",
+          "when": "a note for a recognised period is displayed",
+          "then": [
+            "no label appears in any open note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-13.4",
+          "given": "the label is shown on an open daily note",
+          "when": "the user activates it",
+          "then": [
+            "a strip of the seven days of that note's week appears",
+            "the note's own day is marked, and today is marked when it falls in that week",
+            "the week starts on the configured start-of-week day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.5",
+          "given": "the day strip is open",
+          "when": "the user activates a day that has no note",
+          "then": [
+            "the note for that day is created and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.6",
+          "given": "several notes are open in separate panes and one pane is closed",
+          "when": "the layout settles",
+          "then": [
+            "each remaining open periodic note still shows its own label",
+            "the closed pane leaves no label behind"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view."
+      ],
+      "resolves": [
+        "vault:enableTimelineComplication"
       ]
     },
     {
@@ -3259,7 +3682,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-01.4",
@@ -3345,6 +3769,42 @@
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-SET-02.4",
+          "given": "the settings screen",
+          "when": "it is opened",
+          "then": [
+            "a control for the word-count threshold that decides how many dots a day shows is visible among the global settings",
+            "on a fresh install, that control shows a default value of 250"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-02.5",
+          "given": "the user enters a value into the word-count threshold field that is not a positive whole number, for example zero, a negative number, or text",
+          "when": "the value is saved",
+          "then": [
+            "the stored word-count threshold falls back to the default of 250",
+            "the settings field shows a message explaining that the value fell back to the default"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-22",
+          "title": "Words per dot is a global setting with a default of 250",
+          "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+          "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -3439,7 +3899,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3480,7 +3941,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.2",
@@ -3493,7 +3955,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.3",
@@ -3506,7 +3969,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.4",
@@ -3533,6 +3997,19 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-SET-04.6",
+          "given": "the plugin's manifest.json",
+          "when": "it is inspected",
+          "then": [
+            "isDesktopOnly is declared true",
+            "no criterion in this settings area promises the plugin installs or runs on a mobile Obsidian client"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
         }
       ],
       "decisions": [
@@ -3542,6 +4019,13 @@
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-24",
+          "title": "The first release is desktop only, and says so in the manifest",
+          "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
+          "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -3616,7 +4100,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3676,7 +4161,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-06.4",
@@ -3689,7 +4175,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-06.5",
@@ -3777,7 +4264,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3823,7 +4311,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-01.3",
@@ -3836,7 +4325,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-01.4",
@@ -3849,7 +4339,22 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-01.5",
+          "given": "the calendar view leaf fails to initialize when the plugin attempts to create it",
+          "when": "the user runs the \"Open calendar\" command",
+          "then": [
+            "a notice tells the user the calendar view could not be opened",
+            "no partially-initialized calendar leaf is left in the workspace"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3895,7 +4400,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-02.3",
@@ -3907,7 +4413,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-02.4",
@@ -3920,7 +4427,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -3961,12 +4469,14 @@
           "when": "the user runs the \"Reveal active note\" command",
           "then": [
             "no error is thrown",
-            "the calendar view's displayed period is left unchanged"
+            "the calendar view's displayed period is left unchanged",
+            "a notice says that \"Reveal active note\" needs an open daily or weekly note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-03.3",
@@ -3978,7 +4488,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -3994,9 +4505,9 @@
     {
       "id": "US-CMD-04",
       "epic": "CMD",
-      "title": "Open this week's note with a dedicated command",
-      "story": "As someone who wants one command to jump straight to today's weekly note, I want a dedicated \"Open Weekly Note\" command, so that weekly notes stay one keypress away even when the generated per-granularity commands are not covering weekly notes.",
-      "rationale": "This avoids weekly notes losing a keyboard entry point when the generated week command is not registered.",
+      "title": "Avoid a duplicate weekly-note command",
+      "story": "As someone who wants exactly one command that opens today's weekly note, I want the generated per-granularity week command to be the only one that does this, so that the command palette never offers two entries that do the same thing.",
+      "rationale": "Two commands opening the same note is confusing and leaves one of them as dead code the moment the generated command set covers week.",
       "priority": "should",
       "status": "todo",
       "covers": [
@@ -4013,10 +4524,10 @@
       "acceptance_criteria": [
         {
           "id": "AC-CMD-04.1",
-          "given": "the generated \"open current week's note\" command from the per-granularity set is not registered",
+          "given": "week is enabled as a granularity",
           "when": "the user opens the command palette",
           "then": [
-            "\"Open Weekly Note\" is listed",
+            "exactly one command opens the current week's note",
             "running it opens this week's note in the active pane, creating it first if it does not exist"
           ],
           "verifies": "behaviour",
@@ -4026,28 +4537,31 @@
         },
         {
           "id": "AC-CMD-04.2",
-          "given": "the generated \"open current week's note\" command from the per-granularity set is already registered",
+          "given": "week is enabled as a granularity",
           "when": "the user opens the command palette",
           "then": [
-            "\"Open Weekly Note\" is not shown",
-            "only one command opens the current week's note"
+            "the legacy \"Open Weekly Note\" command is not listed",
+            "no second command duplicates the generated command that opens the current week's note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-04.3",
-          "given": "\"Open Weekly Note\" is listed and the underlying note lookup or creation fails",
-          "when": "the user runs the command",
+          "given": "week is not enabled as a granularity",
+          "when": "the user opens the command palette",
           "then": [
-            "the failure is surfaced to the user rather than swallowed silently"
+            "no command opens the current week's note",
+            "the legacy \"Open Weekly Note\" command is not listed either"
           ],
           "verifies": "behaviour",
-          "testable_by": "manual",
+          "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -4076,7 +4590,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -4118,7 +4631,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-05.4",
@@ -4131,7 +4645,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-05.5",
@@ -4168,7 +4683,30 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-05.8",
+          "given": "a granularity is reserved or otherwise not enabled in the current configuration, such as quarter",
+          "when": "the user opens the command palette",
+          "then": [
+            "no command exists for that granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -4218,7 +4756,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-06.3",
@@ -4231,7 +4770,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-06.4",
@@ -4243,7 +4783,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -4317,7 +4858,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -4404,7 +4946,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -4427,7 +4970,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -4443,7 +4985,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-09.2",
@@ -4481,7 +5024,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CMD-09.5",
@@ -4493,7 +5037,22 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-09.6",
+          "given": "a granularity is reserved or otherwise not enabled in the current configuration, such as quarter",
+          "when": "the user looks for it in the \"open on startup\" setting",
+          "then": [
+            "that granularity cannot be selected to open on startup",
+            "no note for that granularity opens automatically"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -4503,7 +5062,108 @@
           "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
           "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
         }
+      ]
+    },
+    {
+      "id": "US-CMD-10",
+      "epic": "CMD",
+      "title": "Jump to a note by typing a date in words",
+      "story": "As someone who thinks in phrases rather than dates, I want to type 'last monday' or 'next week' and land on that period's note, so that I do not have to work out the calendar date first.",
+      "rationale": "The natural-language date plugin is installed and enabled in this vault, so this command appears today. Dropping it would remove a working feature.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:nl-date-navigator"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-CMD-05"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CMD-10.1",
+          "given": "the natural-language date plugin is installed and enabled",
+          "when": "the user opens the command palette",
+          "then": [
+            "a command that opens the date switcher is listed"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.2",
+          "given": "the natural-language date plugin is not installed, or is disabled",
+          "when": "the user opens the command palette",
+          "then": [
+            "the date switcher command is not listed",
+            "no error is shown and no other command is affected"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.3",
+          "given": "the date switcher is open and the vault has a note for last Monday",
+          "when": "the user types a phrase naming that day and confirms",
+          "then": [
+            "that day's existing note opens in the active pane",
+            "no second note is created for that day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.4",
+          "given": "the date switcher is open and no note exists for the named period",
+          "when": "the user confirms the phrase",
+          "then": [
+            "the note is created for that period and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CMD-10.5",
+          "given": "the date switcher is open and the typed phrase names no date the parser recognises",
+          "when": "the user confirms",
+          "then": [
+            "no note is opened and none is created",
+            "the switcher stays open and says the phrase was not recognised"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only."
       ]
     },
     {
@@ -4567,7 +5227,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-01.4",
@@ -4580,7 +5241,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-01.5",
@@ -4593,7 +5255,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-01.6",
@@ -4605,8 +5268,12 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "vault:format (core daily-notes.json)"
       ]
     },
     {
@@ -4666,7 +5333,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-02.4",
@@ -4679,7 +5347,8 @@
           "verifies": "compat",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-02.5",
@@ -4691,7 +5360,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -4734,7 +5404,8 @@
           "verifies": "data",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-03.3",
@@ -4750,10 +5421,10 @@
         },
         {
           "id": "AC-MIG-03.4",
-          "given": "the Calendar plugin also stores a words-per-dot setting",
+          "given": "the Calendar plugin's stored wordsPerDot value is 250",
           "when": "the import runs",
           "then": [
-            "that value is not transferred, because this configuration has no equivalent field for it"
+            "Calendaric's global words-per-dot setting is set to 250, matching the Calendar plugin's value"
           ],
           "verifies": "data",
           "testable_by": "unit",
@@ -4771,7 +5442,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-03.6",
@@ -4783,17 +5455,59 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-MIG-03.7",
+          "given": "the Calendar plugin is enabled with shouldConfirmBeforeCreate true, weekStart \"monday\", wordsPerDot 250, showWeeklyNote true, localeOverride \"system-default\", and weeklyNoteFormat, weeklyNoteTemplate and weeklyNoteFolder all empty",
+          "when": "the user opens Calendaric's settings",
+          "then": [
+            "the Calendar import is offered, because at least one field the importer reads (week start, confirm-before-create, words per dot, show week numbers, or locale override) carries a value"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-MIG-03.8",
+          "given": "the Calendar plugin is enabled but every field the importer reads is unset, including weeklyNoteFormat, weeklyNoteTemplate, weeklyNoteFolder, weekStart, shouldConfirmBeforeCreate, wordsPerDot, showWeeklyNote and localeOverride",
+          "when": "the user opens Calendaric's settings",
+          "then": [
+            "the Calendar import is not offered"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
         {
           "id": "DEC-17",
-          "title": "An import with nothing to import is not offered",
-          "decision": "When a predecessor plugin's configuration is empty for every field the importer would read, that import is not offered at all.",
-          "rationale": "In this vault the Calendar plugin's weekly fields are blank because weekly configuration lives in Periodic Notes. Offering to import nothing is noise that teaches users to dismiss the import prompt without reading it.",
+          "title": "An import is offered when any field it would read carries a value",
+          "decision": "A predecessor's import is offered when at least one field the importer reads carries a value, counting display and behaviour settings such as the week-start day, the create-confirmation toggle, the word-count threshold and the locale override, not only note format, folder and template. The import is suppressed only when every field it reads is unset.",
+          "rationale": "In this vault the Calendar plugin's weekly format, folder and template are blank because weekly configuration lives in Periodic Notes, but week start, create confirmation, words per dot and locale override all carry real values. Suppressing the import there would silently drop settings the user chose. Offering to import literally nothing stays suppressed, which is the noise the original decision was aimed at.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-22",
+          "title": "Words per dot is a global setting with a default of 250",
+          "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+          "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+          "decided_on": "2026-09-11"
         }
+      ],
+      "resolves": [
+        "cal:weeklyNoteFolder",
+        "cal:weeklyNoteFormat",
+        "cal:weeklyNoteTemplate",
+        "vault:shouldConfirmBeforeCreate",
+        "vault:weekStart (calendar-anks)",
+        "vault:weeklyNoteFormat / weeklyNoteTemplate / weeklyNoteFolder (calendar-anks)",
+        "vault:wordsPerDot"
       ]
     },
     {
@@ -4843,7 +5557,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-04.3",
@@ -4856,7 +5571,8 @@
           "verifies": "data",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-04.4",
@@ -4869,7 +5585,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-04.5",
@@ -4882,7 +5599,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-04.6",
@@ -4894,7 +5612,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -4905,6 +5624,13 @@
           "rationale": "The field has a direct equivalent in the new model. Dropping it silently turns off prefix matching for a vault that depends on it, and this vault does depend on it: its weekly notes are renamed to a longer title after creation and only resolve through a prefix match.",
           "decided_on": "2026-09-10"
         }
+      ],
+      "resolves": [
+        "vault:calendarSets[].day.{enabled,format,folder,templatePath,allowPrefixMatch}",
+        "vault:calendarSets[].month.{enabled,format,folder,templatePath}",
+        "vault:calendarSets[].week.{enabled,format,folder,templatePath,allowPrefixMatch}",
+        "vault:calendarSets[].year.{enabled,format,folder,templatePath,allowPrefixMatch}",
+        "vault:weekStart (periodic-notes-anks top-level)"
       ]
     },
     {
@@ -4957,7 +5683,8 @@
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-05.3",
@@ -4970,7 +5697,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-05.4",
@@ -4982,7 +5710,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-05.5",
@@ -5000,11 +5729,16 @@
       "decisions": [
         {
           "id": "DEC-04",
-          "title": "Probe exactly one canonical plugin id per predecessor",
-          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin by one canonical id each, to offer a one-time import and to warn when a predecessor is still managing the same notes. The paired development-build id probe is not carried forward. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity.",
-          "rationale": "The dual-id probe existed only to let a development build and a store build of the same plugin coexist in one vault. The merged plugin removes that situation. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, goes with it.",
+          "title": "Detect each predecessor by both its published id and its development-build id",
+          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
+          "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
           "decided_on": "2026-09-10"
         }
+      ],
+      "resolves": [
+        "OBS-74",
+        "OBS-81",
+        "OBS-84"
       ]
     },
     {
@@ -5029,16 +5763,18 @@
       "acceptance_criteria": [
         {
           "id": "AC-MIG-06.1",
-          "given": "the core Daily Notes plugin, the Calendar plugin, or the Periodic Notes plugin is still enabled after the user has imported its configuration into Calendaric",
-          "when": "Calendaric starts",
+          "given": "a predecessor plugin is enabled and has a granularity enabled that Calendaric also has enabled",
+          "when": "the user triggers Calendaric to create, template or modify a note for that granularity",
           "then": [
-            "a visible notice tells the user that a predecessor plugin is still active for at least one granularity",
-            "Calendaric does not silently let both plugins create or manage notes for the same period"
+            "a visible notice tells the user that predecessor is still managing that granularity",
+            "Calendaric does not create, template or modify the note for that granularity",
+            "the existing note for that granularity is still indexed and displayed"
           ],
           "verifies": "behaviour",
-          "testable_by": "manual",
+          "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-06.2",
@@ -5050,14 +5786,16 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-06.3",
-          "given": "a predecessor plugin is installed under exactly one canonical plugin id",
-          "when": "Calendaric checks whether that plugin is present",
+          "given": "a predecessor plugin may be installed under its published id or its known development-build id",
+          "when": "Calendaric checks whether that predecessor is present",
           "then": [
-            "it probes that single id only"
+            "it probes both the published id and the known development-build id for that predecessor",
+            "the predecessor counts as detected if either id is found"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -5074,17 +5812,41 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-MIG-06.5",
+          "given": "Calendaric is refusing to manage a granularity because a predecessor still owns it",
+          "when": "the user disables the predecessor for that granularity, or picks Calendaric as the owner from the notice",
+          "then": [
+            "Calendaric resumes creating, templating and modifying notes for that granularity"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
           "evidence": null
         }
       ],
       "decisions": [
         {
           "id": "DEC-04",
-          "title": "Probe exactly one canonical plugin id per predecessor",
-          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin by one canonical id each, to offer a one-time import and to warn when a predecessor is still managing the same notes. The paired development-build id probe is not carried forward. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity.",
-          "rationale": "The dual-id probe existed only to let a development build and a store build of the same plugin coexist in one vault. The merged plugin removes that situation. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, goes with it.",
+          "title": "Detect each predecessor by both its published id and its development-build id",
+          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
+          "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-25",
+          "title": "Calendaric does not manage a granularity a predecessor still owns",
+          "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
+          "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
+          "decided_on": "2026-09-11"
         }
+      ],
+      "resolves": [
+        "OBS-67",
+        "OBS-91"
       ]
     },
     {
@@ -5114,7 +5876,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-07.2",
@@ -5128,7 +5891,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-07.3",
@@ -5142,7 +5906,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-07.4",
@@ -5155,7 +5920,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-MIG-07.5",
@@ -5168,7 +5934,8 @@
           "verifies": "data",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -5179,6 +5946,11 @@
           "rationale": "Same principle as preserving an unused named configuration group: running an older build once must not silently destroy settings, so that downgrading and upgrading again is safe.",
           "decided_on": "2026-09-10"
         }
+      ],
+      "resolves": [
+        "pn:hasMigratedDailyNoteSettings",
+        "pn:hasMigratedWeeklyNoteSettings",
+        "pn:installedVersion"
       ]
     },
     {
@@ -5248,7 +6020,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-01.5",
@@ -5263,6 +6036,9 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "resolves": [
+        "OBS-08"
       ]
     },
     {
@@ -5283,10 +6059,11 @@
       "acceptance_criteria": [
         {
           "id": "AC-ARCH-02.1",
-          "given": "the set of supported period granularities (day, week, month, quarter, year)",
+          "given": "day, week, month and year make up the first release's supported set of period granularities, and quarter is a reserved value that is not part of that release set",
           "when": "that set is declared as a type",
           "then": [
             "exactly one module owns the declaration",
+            "the declaration names quarter as reserved rather than as a supported release granularity",
             "every other module that needs the type imports it from that one module",
             "no module independently redeclares an equivalent type"
           ],
@@ -5344,8 +6121,21 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
+        }
+      ],
+      "resolves": [
+        "OBS-46"
       ]
     },
     {
@@ -5401,7 +6191,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-03.4",
@@ -5425,7 +6216,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -5496,7 +6288,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-04.5",
@@ -5509,7 +6302,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -5566,7 +6360,8 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-05.4",
@@ -5625,12 +6420,12 @@
         },
         {
           "id": "AC-ARCH-06.2",
-          "given": "manifest.json ahead of a release",
-          "when": "the release is prepared",
+          "given": "manifest.json's id and version, and versions.json, ahead of a release",
+          "when": "the release's static checks run",
           "then": [
-            "its id is unchanged from the previous release",
-            "its version follows semantic versioning and matches the release tag exactly, with no leading \"v\"",
-            "its minAppVersion is accurate for the Obsidian APIs that release actually uses"
+            "manifest.json's id is unchanged from the previous release",
+            "manifest.json's version follows semantic versioning",
+            "versions.json records this exact version mapped to the same minAppVersion declared in manifest.json"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -5639,6 +6434,31 @@
         },
         {
           "id": "AC-ARCH-06.3",
+          "given": "a release has been tagged",
+          "when": "the release tag is compared against manifest.json",
+          "then": [
+            "the tag matches manifest.json's version exactly, with no leading \"v\""
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.4",
+          "given": "manifest.json's minAppVersion for a release",
+          "when": "it is checked against the Obsidian APIs that release's code actually calls",
+          "then": [
+            "a cited minimum-version source (Obsidian's own changelog or its API type definitions) justifies that minAppVersion",
+            "no API used by the release requires a newer Obsidian version than minAppVersion declares"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.5",
           "given": "the build runs type-checking, linting, and the test suite",
           "when": "any one of those three fails",
           "then": [
@@ -5648,10 +6468,11 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
-          "id": "AC-ARCH-06.4",
+          "id": "AC-ARCH-06.6",
           "given": "one of the three gates cannot run because of a tooling defect",
           "when": "the build is invoked",
           "then": [
@@ -5661,10 +6482,11 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
-          "id": "AC-ARCH-06.5",
+          "id": "AC-ARCH-06.7",
           "given": "the plugin or any of its internal packages is installed directly from source rather than from a published release",
           "when": "that install happens",
           "then": [
@@ -5707,7 +6529,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-07.2",
@@ -5734,7 +6557,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-07.4",
@@ -5749,6 +6573,10 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "resolves": [
+        "OBS-29",
+        "OBS-76"
       ]
     },
     {
@@ -5818,6 +6646,20 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-ARCH-08.5",
+          "given": "the guide describes a setting, command, or behaviour that no longer exists in the current settings schema or command list",
+          "when": "the guide is checked against the current implementation",
+          "then": [
+            "the mismatch is detected before the release ships",
+            "the guide is corrected, or the removed item is restored, before the release ships"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -5857,7 +6699,10 @@
         "SET epic: the per-granularity settings model and settings-UI row renderer must already be generic over 'whichever granularities exist' so a quarter row can be added without a new UI component."
       ],
       "revisit_when": "The user turns quarter notes on in her own settings, or starts wanting a genuine quarterly review note distinct from the existing Templater-driven '_04 1on1' folder, which already covers a quarterly-ish cadence entirely outside this plugin.",
-      "risk_of_deferring": "Nothing — no current note, template, or workflow depends on quarter notes existing."
+      "risk_of_deferring": "Nothing — no current note, template, or workflow depends on quarter notes existing.",
+      "resolves": [
+        "vault:calendarSets[].quarter.{enabled,format,folder,templatePath}"
+      ]
     },
     {
       "id": "ICE-02",
@@ -5886,7 +6731,10 @@
         "NOTE and CAL epics: every place that resolves 'the' folder, format or template for a granularity must resolve it through 'the active calendar set', not a hardcoded single settings reference, so switching sets later changes behaviour everywhere automatically instead of requiring each call site to be found and rewritten."
       ],
       "revisit_when": "The user wants a genuinely separate calendar configuration — different active granularities, formats or folders per context — rather than today's folder-plus-suffix convention, for example if she takes on a second, unrelated vault-like context inside the same vault.",
-      "risk_of_deferring": "If the SET epic's first release hard-codes a single implicit set instead of an array, adding calendar sets later becomes a migration of every existing user's settings JSON rather than a feature switch-on. This is the one item in this icebox where the architecture choice made now has a real, avoidable later cost."
+      "risk_of_deferring": "If the SET epic's first release hard-codes a single implicit set instead of an array, adding calendar sets later becomes a migration of every existing user's settings JSON rather than a feature switch-on. This is the one item in this icebox where the architecture choice made now has a real, avoidable later cost.",
+      "resolves": [
+        "vault:activeCalendarSet"
+      ]
     },
     {
       "id": "ICE-03",
@@ -5913,39 +6761,29 @@
     },
     {
       "id": "ICE-04",
-      "title": "Timeline complication",
-      "kind": "deferred-feature",
-      "covers": [
-        "pn:timeline-complication-render",
-        "pn:timeline-lifecycle-per-leaf",
-        "pn:relative-date-humanization"
-      ],
+      "title": "Timeline complication (deferral reversed)",
+      "kind": "reversed",
+      "covers": [],
       "what_it_does": "Shows a small floating badge in the corner of any open periodic note with a relative-date label such as 'Today' or 'Last week' (plus an arrow if the note was only an inexact match); clicking it expands into a 7-day strip for jumping to a nearby day without leaving the note. It would mount and unmount itself automatically as markdown panes are opened and closed.",
-      "why_deferred": "The user's live configuration has this feature's toggle turned on, but nothing in her actual templates, dataview queries or note content references or uses a timeline view — the setting is on, but the feature it promises has never been exercised.",
-      "evidence": [
-        "vault: enableTimelineComplication=true in the live periodic-notes-anks config, but no template, dataview query, or note content in the readable vault references a timeline view — enabled but unused"
-      ],
+      "why_deferred": "Reversed. This entry deferred an active feature on evidence that did not say what it was read to say. The map observation reported only that no template, dataview query or note content references a timeline view, and flagged that a UI check was outside its scope. This entry turned that into 'enabled but unused'. TimelineManager is constructed on every plugin load, mounts a Timeline component into every open markdown view, and the component reads enableTimelineComplication, which is true in the live vault. The three capabilities moved to CAL and are built.",
+      "evidence": "obsidian-periodic-notes/src/main.ts:82 constructs TimelineManager unconditionally; src/timeline/manager.ts:14-63 mounts one component per open MarkdownView; src/timeline/Timeline.svelte:26-27,101 gates rendering on the setting; .obsidian/plugins/periodic-notes-anks/data.json:51 has enableTimelineComplication true.",
       "cost_to_add_later": "medium",
       "cost_rationale": "It needs its own mount/unmount lifecycle manager reacting to workspace layout-change events across every open leaf, plus a small interactive UI component and the relative-date-formatting helper it depends on — a self-contained vertical slice, bounded but not trivial.",
-      "blocks_if_omitted": [],
-      "revisit_when": "The user notices she wants faster day-to-day navigation from inside an already-open note without returning to the calendar view, or the 'enabled but does nothing' mismatch in her own config prompts an explicit decision either way.",
-      "risk_of_deferring": "Nothing — today the setting is a switch that promises a feature nobody has built or missed."
+      "blocks_if_omitted": "Not omitted.",
+      "revisit_when": "Done — see the CAL stories that cover the three capabilities.",
+      "risk_of_deferring": "Not deferred."
     },
     {
       "id": "ICE-05",
-      "title": "Related-files and natural-language date switchers",
+      "title": "Related-files switcher",
       "kind": "deferred-feature",
       "covers": [
         "pn:get-periodic-notes-related",
-        "pn:nl-date-navigator",
         "pn:related-files-switcher-tab-handoff"
       ],
       "what_it_does": "Lets a user type a free-text date query — 'next monday', 'in 3 weeks', 'last month' — into a modal and jump straight to that period's note; pressing Tab hands off to a second list of every cached note related to that period, optionally including finer granularities, for example every daily note inside a chosen month.",
-      "why_deferred": "This whole capability only activates when the third-party nldates-obsidian plugin is installed, and the vault's confirmed list of enabled community plugins does not include it — building this today would ship a command that never appears.",
-      "evidence": [
-        "vault: community-plugins.json's confirmed enabled list is calendar-anks and periodic-notes-anks only — nldates-obsidian is absent",
-        "map: pn:nl-date-navigator only registers its command when app.plugins.getPlugin('nldates-obsidian') exists — the whole capability is inert without that plugin installed"
-      ],
+      "why_deferred": "The related-files list and its tab hand-off are a second surface inside the date-switcher modal, and nothing in the vault shows either being used. The natural-language date jump that shared that modal is not deferred: nldates-obsidian is installed and enabled, so that command does appear, and it moved to CMD.",
+      "evidence": ".obsidian/community-plugins.json lists nldates-obsidian among the enabled plugins, and obsidian-periodic-notes/src/main.ts:90-101 registers 'Show date switcher...' whenever that plugin is present. An earlier version of this entry claimed the plugin was absent; it is not.",
       "cost_to_add_later": "high",
       "cost_rationale": "The source material itself flags the hand-off between the two modals — closing one, opening the other, replaying the typed query via a synthetic input event — as untested, fragile glue, and its keyboard shortcut reaches into an unexposed, undocumented Obsidian modal internal (the private `chooser` field); building this well means redesigning that hand-off, not porting it as-is.",
       "blocks_if_omitted": [
@@ -5992,6 +6830,20 @@
       ],
       "revisit_when": "Never in its current unscoped form. Revisit only if there is a real request for a folder-scoped loose-match fallback as a genuinely new, bounded feature — at which point it should be designed fresh against FMT's real parsing rules, not ported from this code.",
       "risk_of_deferring": "None — leaving this out removes a source of miscategorized notes; no value is lost by not rebuilding it."
+    },
+    {
+      "id": "ICE-08",
+      "title": "Mobile support",
+      "kind": "deferred-feature",
+      "covers": [],
+      "what_it_does": "Running Calendaric on a phone or tablet.",
+      "why_deferred": "DEC-24 declares isDesktopOnly true for the first release, which stops Obsidian installing the plugin on mobile at all. Desktop first was the stated position, and one desktop-only call is what stands in the way.",
+      "evidence": "The guide-opening path calls an Electron API. DEC-03 already requires every desktop-only call to sit behind a single adapter, so mobile support means replacing that adapter, not reworking the views.",
+      "cost_to_add_later": "small",
+      "cost_rationale": "One adapter to replace, one manifest flag to flip, plus a pass over every hover-only surface. DEC-24 already requires those surfaces to have a pointer-free path on desktop, so that pass should find little.",
+      "blocks_if_omitted": "Nothing in this release. No story may promise phone behaviour while DEC-24 stands.",
+      "revisit_when": "The user wants the calendar on a phone, or the desktop-only call is gone anyway.",
+      "risk_of_deferring": "low"
     }
   ],
   "assignment": {
@@ -6500,8 +7352,8 @@
       "role": "build"
     },
     "pn:relative-date-humanization": {
-      "epic": "ICE",
-      "role": "icebox"
+      "epic": "CAL",
+      "role": "build"
     },
     "pn:settings-router-navigation": {
       "epic": "SET",
@@ -6540,8 +7392,8 @@
       "role": "build"
     },
     "pn:nl-date-navigator": {
-      "epic": "ICE",
-      "role": "icebox"
+      "epic": "CMD",
+      "role": "build"
     },
     "pn:related-files-switcher-tab-handoff": {
       "epic": "ICE",
@@ -6556,12 +7408,12 @@
       "role": "build"
     },
     "pn:timeline-complication-render": {
-      "epic": "ICE",
-      "role": "icebox"
+      "epic": "CAL",
+      "role": "build"
     },
     "pn:timeline-lifecycle-per-leaf": {
-      "epic": "ICE",
-      "role": "icebox"
+      "epic": "CAL",
+      "role": "build"
     },
     "calendaric:open-calendar-view": {
       "epic": "CMD",
@@ -6808,9 +7660,9 @@
     },
     {
       "id": "DEC-04",
-      "title": "Probe exactly one canonical plugin id per predecessor",
-      "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin by one canonical id each, to offer a one-time import and to warn when a predecessor is still managing the same notes. The paired development-build id probe is not carried forward. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity.",
-      "rationale": "The dual-id probe existed only to let a development build and a store build of the same plugin coexist in one vault. The merged plugin removes that situation. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, goes with it.",
+      "title": "Detect each predecessor by both its published id and its development-build id",
+      "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
+      "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
       "decided_on": "2026-09-10"
     },
     {
@@ -6871,23 +7723,23 @@
     },
     {
       "id": "DEC-13",
-      "title": "Templates are applied only to files the plugin creates",
-      "decision": "A periodic-shaped empty file that already existed before the plugin started is indexed but never templated. Applying a template is limited to files the plugin creates while running.",
-      "rationale": "The alternative means the first index build after installing writes into files the plugin has never seen. Writing to someone's existing notes as a side effect of installing is not a behaviour to reintroduce.",
+      "title": "Startup indexes without templating; anything appearing later is templated",
+      "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
+      "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
       "decided_on": "2026-09-10"
     },
     {
       "id": "DEC-14",
-      "title": "Candidate formats are tried in declaration order, and that order is documented",
-      "decision": "When more than one candidate format validly matches the same file, the first in declaration order wins. The order is defined and documented rather than incidental.",
-      "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Any deterministic rule beats that; declaration order is the one a user can predict.",
+      "title": "The configured format is tried before the basename-only format derived from it",
+      "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
+      "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
       "decided_on": "2026-09-10"
     },
     {
       "id": "DEC-15",
-      "title": "Week-number disambiguation applies whenever a day token is present",
-      "decision": "The rule that separates a week number from a month-or-day value applies when the format carries a day token, whether or not it also carries a month token.",
-      "rationale": "The narrower variant only triggered when both were present, so a format like DD slipped through and parsed as a week number. The wider rule catches the case the narrow one was written to catch.",
+      "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
+      "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
+      "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
       "decided_on": "2026-09-10"
     },
     {
@@ -6899,9 +7751,9 @@
     },
     {
       "id": "DEC-17",
-      "title": "An import with nothing to import is not offered",
-      "decision": "When a predecessor plugin's configuration is empty for every field the importer would read, that import is not offered at all.",
-      "rationale": "In this vault the Calendar plugin's weekly fields are blank because weekly configuration lives in Periodic Notes. Offering to import nothing is noise that teaches users to dismiss the import prompt without reading it.",
+      "title": "An import is offered when any field it would read carries a value",
+      "decision": "A predecessor's import is offered when at least one field the importer reads carries a value, counting display and behaviour settings such as the week-start day, the create-confirmation toggle, the word-count threshold and the locale override, not only note format, folder and template. The import is suppressed only when every field it reads is unset.",
+      "rationale": "In this vault the Calendar plugin's weekly format, folder and template are blank because weekly configuration lives in Periodic Notes, but week start, create confirmation, words per dot and locale override all carry real values. Suppressing the import there would silently drop settings the user chose. Offering to import literally nothing stays suppressed, which is the noise the original decision was aimed at.",
       "decided_on": "2026-09-10"
     },
     {
@@ -6924,19 +7776,70 @@
       "decision": "Once published, the contract a calendar indicator implements only gains optional members. Removing or repurposing an existing member is a breaking change that requires a new contract alongside the old one.",
       "rationale": "The previous indicator contract was rewritten in a single version bump and broke every implementation at once. An additive-only rule is the cheapest guarantee that keeps that from repeating.",
       "decided_on": "2026-09-10"
+    },
+    {
+      "id": "DEC-21",
+      "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
+      "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
+      "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
+      "decided_on": "2026-09-11"
+    },
+    {
+      "id": "DEC-22",
+      "title": "Words per dot is a global setting with a default of 250",
+      "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+      "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+      "decided_on": "2026-09-11"
+    },
+    {
+      "id": "DEC-23",
+      "title": "The first release supports day, week, month and year; quarter is reserved",
+      "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+      "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+      "decided_on": "2026-09-11"
+    },
+    {
+      "id": "DEC-24",
+      "title": "The first release is desktop only, and says so in the manifest",
+      "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
+      "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
+      "decided_on": "2026-09-11"
+    },
+    {
+      "id": "DEC-25",
+      "title": "Calendaric does not manage a granularity a predecessor still owns",
+      "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
+      "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
+      "decided_on": "2026-09-11"
     }
   ],
   "coverage": {
-    "build_total": 153,
-    "build_covered": 152,
+    "build_total": 157,
+    "build_covered": 156,
     "build_excused": 1,
-    "icebox_total": 26,
-    "icebox_covered": 26,
+    "icebox_total": 22,
+    "icebox_covered": 22,
     "excused": [
       {
         "uid": "pn:settings-router-navigation",
         "reason": "This is the breadcrumb router that moved the settings screen between a calendar-set list page and a calendar-set detail page. With calendar sets in the icebox and exactly one implicit configuration group (US-SET-01), the settings screen has one page and nothing to navigate between; the router's own behaviour (for example that it always resets to the dashboard on close) has no equivalent to carry forward."
       }
-    ]
+    ],
+    "setting": {
+      "total": 80,
+      "uncovered": 0
+    },
+    "command": {
+      "total": 14,
+      "uncovered": 0
+    },
+    "flow": {
+      "total": 58,
+      "uncovered": 0
+    },
+    "p1_observation": {
+      "total": 15,
+      "uncovered": 0
+    }
   }
 }

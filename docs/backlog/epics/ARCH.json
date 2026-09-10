@@ -70,7 +70,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-01.5",
@@ -85,6 +86,9 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "resolves": [
+        "OBS-08"
       ]
     },
     {
@@ -105,10 +109,11 @@
       "acceptance_criteria": [
         {
           "id": "AC-ARCH-02.1",
-          "given": "the set of supported period granularities (day, week, month, quarter, year)",
+          "given": "day, week, month and year make up the first release's supported set of period granularities, and quarter is a reserved value that is not part of that release set",
           "when": "that set is declared as a type",
           "then": [
             "exactly one module owns the declaration",
+            "the declaration names quarter as reserved rather than as a supported release granularity",
             "every other module that needs the type imports it from that one module",
             "no module independently redeclares an equivalent type"
           ],
@@ -166,8 +171,21 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-23",
+          "title": "The first release supports day, week, month and year; quarter is reserved",
+          "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
+          "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
+          "decided_on": "2026-09-11"
+        }
+      ],
+      "resolves": [
+        "OBS-46"
       ]
     },
     {
@@ -223,7 +241,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-03.4",
@@ -247,7 +266,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -318,7 +338,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-04.5",
@@ -331,7 +352,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -388,7 +410,8 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-05.4",
@@ -447,12 +470,12 @@
         },
         {
           "id": "AC-ARCH-06.2",
-          "given": "manifest.json ahead of a release",
-          "when": "the release is prepared",
+          "given": "manifest.json's id and version, and versions.json, ahead of a release",
+          "when": "the release's static checks run",
           "then": [
-            "its id is unchanged from the previous release",
-            "its version follows semantic versioning and matches the release tag exactly, with no leading \"v\"",
-            "its minAppVersion is accurate for the Obsidian APIs that release actually uses"
+            "manifest.json's id is unchanged from the previous release",
+            "manifest.json's version follows semantic versioning",
+            "versions.json records this exact version mapped to the same minAppVersion declared in manifest.json"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -461,6 +484,31 @@
         },
         {
           "id": "AC-ARCH-06.3",
+          "given": "a release has been tagged",
+          "when": "the release tag is compared against manifest.json",
+          "then": [
+            "the tag matches manifest.json's version exactly, with no leading \"v\""
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.4",
+          "given": "manifest.json's minAppVersion for a release",
+          "when": "it is checked against the Obsidian APIs that release's code actually calls",
+          "then": [
+            "a cited minimum-version source (Obsidian's own changelog or its API type definitions) justifies that minAppVersion",
+            "no API used by the release requires a newer Obsidian version than minAppVersion declares"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-06.5",
           "given": "the build runs type-checking, linting, and the test suite",
           "when": "any one of those three fails",
           "then": [
@@ -470,10 +518,11 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
-          "id": "AC-ARCH-06.4",
+          "id": "AC-ARCH-06.6",
           "given": "one of the three gates cannot run because of a tooling defect",
           "when": "the build is invoked",
           "then": [
@@ -483,10 +532,11 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
-          "id": "AC-ARCH-06.5",
+          "id": "AC-ARCH-06.7",
           "given": "the plugin or any of its internal packages is installed directly from source rather than from a published release",
           "when": "that install happens",
           "then": [
@@ -529,7 +579,8 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-07.2",
@@ -556,7 +607,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-ARCH-07.4",
@@ -571,6 +623,10 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "resolves": [
+        "OBS-29",
+        "OBS-76"
       ]
     },
     {
@@ -640,6 +696,20 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-ARCH-08.5",
+          "given": "the guide describes a setting, command, or behaviour that no longer exists in the current settings schema or command list",
+          "when": "the guide is checked against the current implementation",
+          "then": [
+            "the mismatch is detected before the release ships",
+            "the guide is corrected, or the removed item is restored, before the release ships"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [

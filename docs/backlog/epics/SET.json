@@ -65,7 +65,8 @@
           "verifies": "data",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-01.4",
@@ -151,6 +152,42 @@
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-SET-02.4",
+          "given": "the settings screen",
+          "when": "it is opened",
+          "then": [
+            "a control for the word-count threshold that decides how many dots a day shows is visible among the global settings",
+            "on a fresh install, that control shows a default value of 250"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-SET-02.5",
+          "given": "the user enters a value into the word-count threshold field that is not a positive whole number, for example zero, a negative number, or text",
+          "when": "the value is saved",
+          "then": [
+            "the stored word-count threshold falls back to the default of 250",
+            "the settings field shows a message explaining that the value fell back to the default"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-22",
+          "title": "Words per dot is a global setting with a default of 250",
+          "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+          "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -245,7 +282,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -286,7 +324,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.2",
@@ -299,7 +338,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.3",
@@ -312,7 +352,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-04.4",
@@ -339,6 +380,19 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-SET-04.6",
+          "given": "the plugin's manifest.json",
+          "when": "it is inspected",
+          "then": [
+            "isDesktopOnly is declared true",
+            "no criterion in this settings area promises the plugin installs or runs on a mobile Obsidian client"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
         }
       ],
       "decisions": [
@@ -348,6 +402,13 @@
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-24",
+          "title": "The first release is desktop only, and says so in the manifest",
+          "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
+          "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -422,7 +483,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -482,7 +544,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-06.4",
@@ -495,7 +558,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-SET-06.5",
@@ -583,7 +647,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     }

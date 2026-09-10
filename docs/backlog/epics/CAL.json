@@ -66,7 +66,7 @@
           "when": "the grid renders",
           "then": [
             "each week row shows a week-number cell at the start of the row",
-            "the week number itself comes from the shared week-numbering rules, not from this view's own calculation"
+            "every displayed week number agrees with the week number shown elsewhere for the same date and the same settings"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -95,8 +95,13 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "OBS-11",
+        "OBS-14"
       ]
     },
     {
@@ -167,7 +172,21 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-02.5",
+          "given": "the grid is showing December of any year",
+          "when": "the user activates the 'next month' control",
+          "then": [
+            "the grid shows January of the following year"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -207,7 +226,7 @@
           "given": "a day cell already has a note",
           "when": "the user clicks it",
           "then": [
-            "the request to open that note is issued for the active pane"
+            "the existing note opens in the active pane"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -219,7 +238,7 @@
           "given": "a day cell has no note yet and creating without confirmation is configured",
           "when": "the user clicks it",
           "then": [
-            "the request to create and open that day's note is issued immediately, with no confirmation step"
+            "the note is created and opens in the active pane, with no confirmation step"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -238,14 +257,15 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-03.4",
           "given": "a day cell (with or without a note)",
           "when": "the user clicks it while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -262,7 +282,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-03.6",
@@ -306,7 +327,7 @@
           "given": "a week already has a note",
           "when": "the user clicks its week-number cell",
           "then": [
-            "the request to open that week's note is issued for the active pane"
+            "the existing note opens in the active pane"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -330,7 +351,7 @@
           "given": "a week-number cell (with or without a note)",
           "when": "the user clicks it while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -347,7 +368,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -387,7 +409,7 @@
           "given": "monthly periodic notes are configured and available",
           "when": "the user clicks the month header",
           "then": [
-            "the request to open or create the displayed month's note is issued for the active pane",
+            "the displayed month's note opens in the active pane, being created first if it did not already exist",
             "the displayed month on the grid does not change because of this click"
           ],
           "verifies": "behaviour",
@@ -400,7 +422,7 @@
           "given": "monthly periodic notes are configured and available",
           "when": "the user clicks the month header while holding the split-pane modifier key",
           "then": [
-            "the open or create request is issued for a new split instead of the active pane"
+            "the note opens in a new split instead of the active pane, being created first if it did not already exist"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -417,7 +439,8 @@
           "verifies": "compat",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-05.4",
@@ -453,6 +476,9 @@
           "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
           "decided_on": "2026-09-10"
         }
+      ],
+      "resolves": [
+        "OBS-13"
       ]
     },
     {
@@ -498,7 +524,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-06.3",
@@ -562,7 +589,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-07.2",
@@ -578,50 +606,65 @@
         },
         {
           "id": "AC-CAL-07.3",
-          "given": "a note's word count crosses the configured thresholds for additional dot segments",
+          "given": "the configured word-count threshold (default 250) is a positive whole number and a note's word count crosses one or more multiples of it",
           "when": "its cell renders",
           "then": [
-            "more of the dot's segments are shown filled, up to the maximum",
-            "the fill never exceeds the maximum regardless of how long the note is"
+            "one additional dot segment is filled for each multiple of the threshold the word count has crossed, up to the maximum",
+            "the fill never exceeds the maximum regardless of how long the note is",
+            "when the configured threshold value is not a positive whole number, the default of 250 is used to decide segment fill instead"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-07.4",
-          "given": "the plugin, or another installed plugin, registers more than one indicator source",
-          "when": "a cell with data from multiple sources renders",
+          "given": "a cell has data for both built-in indicator sources that ship in this release: note existence and word count",
+          "when": "the cell renders",
           "then": [
-            "each source's dot appears on the cell alongside the others",
-            "each source's dot is visually distinguishable from the others (for example by colour)"
+            "the note-exists dot and the word-count dot both appear on the cell",
+            "each dot is visually distinguishable from the other (for example by colour)"
           ],
           "verifies": "behaviour",
-          "testable_by": "integration",
+          "testable_by": "unit",
           "status": "unverified",
           "evidence": null
         },
         {
           "id": "AC-CAL-07.5",
-          "given": "a registered indicator source has nothing to say about a given cell (for example, no note exists yet)",
+          "given": "one of the two built-in dots (note-exists or word-count) has nothing to show for a given cell (for example, no note exists yet)",
           "when": "that cell renders",
           "then": [
-            "that source contributes no dot for that cell, while other sources are unaffected"
+            "that dot does not appear for that cell, while the other built-in dot is unaffected"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-22",
+          "title": "Words per dot is a global setting with a default of 250",
+          "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
+          "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
+          "decided_on": "2026-09-11"
+        }
+      ],
+      "resolves": [
+        "OBS-12"
       ]
     },
     {
       "id": "US-CAL-08",
       "epic": "CAL",
       "title": "See indicator detail without needing to hover",
-      "story": "As someone using the calendar on both a laptop and a phone, I want to see the full detail behind a cell's indicators, so that I get the same information whether or not my device supports hovering.",
-      "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must work the same on touch devices.",
+      "story": "As someone using the calendar on a keyboard or a touchscreen laptop, I want to see the full detail behind a cell's indicators without needing to hover, so that I get the same information a mouse user gets from hovering.",
+      "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must be reachable without a pointer, from a keyboard or a touchscreen laptop.",
       "priority": "should",
       "status": "todo",
       "covers": [
@@ -663,10 +706,11 @@
         },
         {
           "id": "AC-CAL-08.3",
-          "given": "a cell has one or more indicators and the device does not support hovering",
+          "given": "a cell has one or more indicators, on a touchscreen laptop",
           "when": "the user taps the cell",
           "then": [
-            "the same detail information is shown, without requiring a hover gesture"
+            "the same detail information hover shows is displayed",
+            "no hover gesture is required to see it"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -676,14 +720,37 @@
         {
           "id": "AC-CAL-08.4",
           "given": "a cell has no indicator data at all",
-          "when": "it is hovered or tapped",
+          "when": "it is hovered, given keyboard focus, or tapped",
           "then": [
             "no detail view appears"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-08.5",
+          "given": "a cell has one or more indicators",
+          "when": "the user moves keyboard focus to that cell",
+          "then": [
+            "the same detail information hover shows is displayed",
+            "the detail view is reachable and readable using only the keyboard, with no pointer involved"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-24",
+          "title": "The first release is desktop only, and says so in the manifest",
+          "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
+          "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -744,7 +811,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-09.4",
@@ -815,7 +883,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-10.3",
@@ -899,7 +968,8 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -931,7 +1001,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-12.2",
@@ -943,7 +1014,8 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-CAL-12.3",
@@ -969,6 +1041,19 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-CAL-12.5",
+          "given": "an overlay is open and its trigger element is removed from the page while the overlay is still showing (for example, the grid re-renders)",
+          "when": "that happens",
+          "then": [
+            "the overlay closes rather than being left anchored to nothing"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -980,6 +1065,120 @@
           "decided_on": "2026-09-10"
         }
       ]
+    },
+    {
+      "id": "US-CAL-13",
+      "epic": "CAL",
+      "title": "Show which period an open note belongs to, and move between days from inside it",
+      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is and let me step to a neighbouring day, so that I do not have to decode the filename or go back to the calendar.",
+      "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:timeline-complication-render",
+        "pn:timeline-lifecycle-per-leaf",
+        "pn:relative-date-humanization"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-03"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-13.1",
+          "given": "the feature is enabled and a note for a recognised period is open",
+          "when": "the note is displayed",
+          "then": [
+            "a label in the note names the period in words, such as Today or Last week",
+            "the label follows the note's own date, not the current date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.2",
+          "given": "the feature is enabled and a file that is not a periodic note is open",
+          "when": "the note is displayed",
+          "then": [
+            "no label appears",
+            "the note's own content is unchanged"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-13.3",
+          "given": "the feature is disabled in settings",
+          "when": "a note for a recognised period is displayed",
+          "then": [
+            "no label appears in any open note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-13.4",
+          "given": "the label is shown on an open daily note",
+          "when": "the user activates it",
+          "then": [
+            "a strip of the seven days of that note's week appears",
+            "the note's own day is marked, and today is marked when it falls in that week",
+            "the week starts on the configured start-of-week day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.5",
+          "given": "the day strip is open",
+          "when": "the user activates a day that has no note",
+          "then": [
+            "the note for that day is created and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-13.6",
+          "given": "several notes are open in separate panes and one pane is closed",
+          "when": "the layout settles",
+          "then": [
+            "each remaining open periodic note still shows its own label",
+            "the closed pane leaves no label behind"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view."
+      ],
+      "resolves": [
+        "vault:enableTimelineComplication"
+      ]
     }
   ],
   "uncovered": [],
@@ -987,7 +1186,7 @@
     "Almost every acceptance criterion in this epic is DOM/interaction-driven (click, hover, contextmenu, live vault events) and is only testable_by 'manual' or 'integration'. The exceptions are pure grid/date math and word-count-to-dot-fill logic (US-CAL-01, most of US-CAL-07), which are testable_by 'unit'.",
     "US-CAL-03, US-CAL-04 and US-CAL-05 depend on NOTE's 'open or create a note for a date' capability and on FMT's/SET's resolution of where and how that note is named; this epic owns only the click/hover/menu request that triggers it and the resulting view-level effect (which pane, whether the grid navigates), never the file operation itself. Exact NOTE story IDs were not guessed and are left out of depends_on.",
     "The conflict between 'open the month note' and 'reset to today' on the month header is resolved in US-CAL-05: the header always tries to open/create the displayed month's note when monthly notes are available, and only falls back to resetting to today when they are not. Returning to today on demand (when monthly notes ARE available) has its own separate, always-present control, covered in US-CAL-02, so the two gestures never compete for the same click.",
-    "The vault's real-world indicator is the word-count dot (US-CAL-07); the streak, tags and tasks indicator sources seen in the old plugin are in the icebox (epic ICE) and are intentionally not covered here. US-CAL-07's multi-source acceptance criterion (AC-CAL-07.4) keeps the door open for the icebox sources, or any other future source, without naming an interface.",
+    "The vault's real-world indicator is the word-count dot (US-CAL-07); the streak, tags and tasks indicator sources seen in the old plugin are in the icebox (epic ICE) and are intentionally not covered here. AC-CAL-07.4 and AC-CAL-07.5 cover only the two built-in dot sources that ship in this release (note existence and word count); ICE-03 defers the registration surface an external source would need, so no public extension point is promised here.",
     "pn:text-input-suggest-popper-positioning (US-CAL-12) is mapped from a settings text-input autocomplete in the source plugins, but is written here as the generic overlay-positioning behaviour this epic's own hover popover (US-CAL-08) needs; whether it ends up as one shared mechanism with SET's inputs or a duplicated implementation is flagged as an open question rather than assumed."
   ]
 }

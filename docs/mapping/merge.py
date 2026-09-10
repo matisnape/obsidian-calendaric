@@ -249,6 +249,15 @@ def main() -> int:
         refs = flow.get("capabilities") or []
         flow["capabilities"] = [
             f"{flow['source']}:{r}" if f"{flow['source']}:{r}" in by_uid else r for r in refs]
+    # Settings and commands name the capabilities they reach the same way.
+    for setting in out["settings"]:
+        refs = setting.get("affects") or []
+        setting["affects"] = [
+            f"{setting['source']}:{r}" if f"{setting['source']}:{r}" in by_uid else r for r in refs]
+    for command in out["commands"]:
+        refs = command.get("calls") or []
+        command["calls"] = [
+            f"{command['source']}:{r}" if f"{command['source']}:{r}" in by_uid else r for r in refs]
 
     for mod in out["modules"]:
         mod["uid"] = f"{mod['source']}:{mod['id']}"

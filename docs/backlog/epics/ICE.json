@@ -28,7 +28,10 @@
         "SET epic: the per-granularity settings model and settings-UI row renderer must already be generic over 'whichever granularities exist' so a quarter row can be added without a new UI component."
       ],
       "revisit_when": "The user turns quarter notes on in her own settings, or starts wanting a genuine quarterly review note distinct from the existing Templater-driven '_04 1on1' folder, which already covers a quarterly-ish cadence entirely outside this plugin.",
-      "risk_of_deferring": "Nothing — no current note, template, or workflow depends on quarter notes existing."
+      "risk_of_deferring": "Nothing — no current note, template, or workflow depends on quarter notes existing.",
+      "resolves": [
+        "vault:calendarSets[].quarter.{enabled,format,folder,templatePath}"
+      ]
     },
     {
       "id": "ICE-02",
@@ -57,7 +60,10 @@
         "NOTE and CAL epics: every place that resolves 'the' folder, format or template for a granularity must resolve it through 'the active calendar set', not a hardcoded single settings reference, so switching sets later changes behaviour everywhere automatically instead of requiring each call site to be found and rewritten."
       ],
       "revisit_when": "The user wants a genuinely separate calendar configuration — different active granularities, formats or folders per context — rather than today's folder-plus-suffix convention, for example if she takes on a second, unrelated vault-like context inside the same vault.",
-      "risk_of_deferring": "If the SET epic's first release hard-codes a single implicit set instead of an array, adding calendar sets later becomes a migration of every existing user's settings JSON rather than a feature switch-on. This is the one item in this icebox where the architecture choice made now has a real, avoidable later cost."
+      "risk_of_deferring": "If the SET epic's first release hard-codes a single implicit set instead of an array, adding calendar sets later becomes a migration of every existing user's settings JSON rather than a feature switch-on. This is the one item in this icebox where the architecture choice made now has a real, avoidable later cost.",
+      "resolves": [
+        "vault:activeCalendarSet"
+      ]
     },
     {
       "id": "ICE-03",
@@ -84,39 +90,29 @@
     },
     {
       "id": "ICE-04",
-      "title": "Timeline complication",
-      "kind": "deferred-feature",
-      "covers": [
-        "pn:timeline-complication-render",
-        "pn:timeline-lifecycle-per-leaf",
-        "pn:relative-date-humanization"
-      ],
+      "title": "Timeline complication (deferral reversed)",
+      "kind": "reversed",
+      "covers": [],
       "what_it_does": "Shows a small floating badge in the corner of any open periodic note with a relative-date label such as 'Today' or 'Last week' (plus an arrow if the note was only an inexact match); clicking it expands into a 7-day strip for jumping to a nearby day without leaving the note. It would mount and unmount itself automatically as markdown panes are opened and closed.",
-      "why_deferred": "The user's live configuration has this feature's toggle turned on, but nothing in her actual templates, dataview queries or note content references or uses a timeline view — the setting is on, but the feature it promises has never been exercised.",
-      "evidence": [
-        "vault: enableTimelineComplication=true in the live periodic-notes-anks config, but no template, dataview query, or note content in the readable vault references a timeline view — enabled but unused"
-      ],
+      "why_deferred": "Reversed. This entry deferred an active feature on evidence that did not say what it was read to say. The map observation reported only that no template, dataview query or note content references a timeline view, and flagged that a UI check was outside its scope. This entry turned that into 'enabled but unused'. TimelineManager is constructed on every plugin load, mounts a Timeline component into every open markdown view, and the component reads enableTimelineComplication, which is true in the live vault. The three capabilities moved to CAL and are built.",
+      "evidence": "obsidian-periodic-notes/src/main.ts:82 constructs TimelineManager unconditionally; src/timeline/manager.ts:14-63 mounts one component per open MarkdownView; src/timeline/Timeline.svelte:26-27,101 gates rendering on the setting; .obsidian/plugins/periodic-notes-anks/data.json:51 has enableTimelineComplication true.",
       "cost_to_add_later": "medium",
       "cost_rationale": "It needs its own mount/unmount lifecycle manager reacting to workspace layout-change events across every open leaf, plus a small interactive UI component and the relative-date-formatting helper it depends on — a self-contained vertical slice, bounded but not trivial.",
-      "blocks_if_omitted": [],
-      "revisit_when": "The user notices she wants faster day-to-day navigation from inside an already-open note without returning to the calendar view, or the 'enabled but does nothing' mismatch in her own config prompts an explicit decision either way.",
-      "risk_of_deferring": "Nothing — today the setting is a switch that promises a feature nobody has built or missed."
+      "blocks_if_omitted": "Not omitted.",
+      "revisit_when": "Done — see the CAL stories that cover the three capabilities.",
+      "risk_of_deferring": "Not deferred."
     },
     {
       "id": "ICE-05",
-      "title": "Related-files and natural-language date switchers",
+      "title": "Related-files switcher",
       "kind": "deferred-feature",
       "covers": [
         "pn:get-periodic-notes-related",
-        "pn:nl-date-navigator",
         "pn:related-files-switcher-tab-handoff"
       ],
       "what_it_does": "Lets a user type a free-text date query — 'next monday', 'in 3 weeks', 'last month' — into a modal and jump straight to that period's note; pressing Tab hands off to a second list of every cached note related to that period, optionally including finer granularities, for example every daily note inside a chosen month.",
-      "why_deferred": "This whole capability only activates when the third-party nldates-obsidian plugin is installed, and the vault's confirmed list of enabled community plugins does not include it — building this today would ship a command that never appears.",
-      "evidence": [
-        "vault: community-plugins.json's confirmed enabled list is calendar-anks and periodic-notes-anks only — nldates-obsidian is absent",
-        "map: pn:nl-date-navigator only registers its command when app.plugins.getPlugin('nldates-obsidian') exists — the whole capability is inert without that plugin installed"
-      ],
+      "why_deferred": "The related-files list and its tab hand-off are a second surface inside the date-switcher modal, and nothing in the vault shows either being used. The natural-language date jump that shared that modal is not deferred: nldates-obsidian is installed and enabled, so that command does appear, and it moved to CMD.",
+      "evidence": ".obsidian/community-plugins.json lists nldates-obsidian among the enabled plugins, and obsidian-periodic-notes/src/main.ts:90-101 registers 'Show date switcher...' whenever that plugin is present. An earlier version of this entry claimed the plugin was absent; it is not.",
       "cost_to_add_later": "high",
       "cost_rationale": "The source material itself flags the hand-off between the two modals — closing one, opening the other, replaying the typed query via a synthetic input event — as untested, fragile glue, and its keyboard shortcut reaches into an unexposed, undocumented Obsidian modal internal (the private `chooser` field); building this well means redesigning that hand-off, not porting it as-is.",
       "blocks_if_omitted": [
@@ -163,6 +159,20 @@
       ],
       "revisit_when": "Never in its current unscoped form. Revisit only if there is a real request for a folder-scoped loose-match fallback as a genuinely new, bounded feature — at which point it should be designed fresh against FMT's real parsing rules, not ported from this code.",
       "risk_of_deferring": "None — leaving this out removes a source of miscategorized notes; no value is lost by not rebuilding it."
+    },
+    {
+      "id": "ICE-08",
+      "title": "Mobile support",
+      "kind": "deferred-feature",
+      "covers": [],
+      "what_it_does": "Running Calendaric on a phone or tablet.",
+      "why_deferred": "DEC-24 declares isDesktopOnly true for the first release, which stops Obsidian installing the plugin on mobile at all. Desktop first was the stated position, and one desktop-only call is what stands in the way.",
+      "evidence": "The guide-opening path calls an Electron API. DEC-03 already requires every desktop-only call to sit behind a single adapter, so mobile support means replacing that adapter, not reworking the views.",
+      "cost_to_add_later": "small",
+      "cost_rationale": "One adapter to replace, one manifest flag to flip, plus a pass over every hover-only surface. DEC-24 already requires those surfaces to have a pointer-free path on desktop, so that pass should find little.",
+      "blocks_if_omitted": "Nothing in this release. No story may promise phone behaviour while DEC-24 stands.",
+      "revisit_when": "The user wants the calendar on a phone, or the desktop-only call is gone anyway.",
+      "risk_of_deferring": "low"
     }
   ],
   "uncovered": [],

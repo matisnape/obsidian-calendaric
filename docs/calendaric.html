@@ -213,6 +213,7 @@ function storyBlock(s, open) {
       <div class="ac">
         <span class="acid">${esc(a.id)}</span> ${bdg(a.status, a.status)}
         ${bdg("neutral", a.testable_by || "?")} ${bdg("neutral", a.verifies || "?")}
+        ${a.failure_path ? bdg("blocked", "failure path") : ""}
         <div class="gwt"><b>Given</b> ${esc(a.given)}</div>
         <div class="gwt"><b>When</b> ${esc(a.when)}</div>
         <div class="gwt"><b>Then</b> ${(a.then || []).map(esc).join("<br><b></b>")}</div>
@@ -222,6 +223,7 @@ function storyBlock(s, open) {
       ${(s.covers || []).length ? `<span>covers ${s.covers.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
       ${(s.constrained_by || []).length ? `<span>constrained by ${s.constrained_by.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
       ${(s.depends_on || []).length ? `<span>after ${s.depends_on.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
+      ${(s.resolves || []).length ? `<span>resolves ${s.resolves.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
     </div>
     ${(s.decisions || []).map(d => `<div class="note" style="border-left:2px solid var(--p3); padding-left:10px; margin-top:8px">
       <b>${esc(d.id)} &middot; ${esc(d.title)}</b><br>${esc(d.decision)}

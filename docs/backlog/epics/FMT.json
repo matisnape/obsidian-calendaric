@@ -73,7 +73,35 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-01.5",
+          "given": "a filename format contains the token {{funday:DD.MM}}, where \"funday\" is not one of the seven weekday names",
+          "when": "the filename is generated",
+          "then": [
+            "the token appears in the generated filename as literal text, exactly as typed, rather than resolving to a date"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-01.6",
+          "given": "the same format string containing {{funday:DD.MM}} is entered in the format editor",
+          "when": "the user saves the format",
+          "then": [
+            "the editor shows a warning naming \"funday\" as the token it did not recognise",
+            "the format still saves, and the save is not blocked by the warning"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -83,6 +111,13 @@
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
           "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-21",
+          "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
+          "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
+          "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -144,7 +179,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-02.4",
@@ -157,6 +193,20 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-FMT-02.5",
+          "given": "the displayed month is December, so the trailing days needed to complete the grid's last row fall in January of the following year",
+          "when": "the grid is computed",
+          "then": [
+            "those trailing days carry the following year, not the same year as the displayed December",
+            "the grid still contains exactly 6 rows of 7 days"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -228,7 +278,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-03.5",
@@ -240,8 +291,13 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
+      ],
+      "resolves": [
+        "pn:localeOverride (ISettings field)",
+        "pn:weekStart (ISettings field)"
       ]
     },
     {
@@ -310,7 +366,8 @@
           "verifies": "compat",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-04.4",
@@ -339,10 +396,10 @@
         },
         {
           "id": "AC-FMT-04.6",
-          "given": "the vault already contains 219 daily notes named in the pattern \"YYYY-MM-DD, dddd\", 60 weekly notes named \"YYYY-Wnn, DD.MM - DD.MM\", 21 monthly notes named \"YYYY-MM Month\", and 25 monthly-work notes named \"YYYY-MM Month - Work\"",
+          "given": "the vault already contains 211 daily notes named in the current pattern \"YYYY-MM-DD, dddd\", 60 weekly notes named \"YYYY-Wnn, DD.MM - DD.MM\", 21 monthly notes named \"YYYY-MM Month\", and 25 monthly-work notes named \"YYYY-MM Month - Work\"",
           "when": "the matching format strings are configured for each granularity and the vault is scanned",
           "then": [
-            "every one of these existing notes is recognised as the note for its date and granularity"
+            "every one of these 211 daily, 60 weekly, 21 monthly, and 25 monthly-work notes is recognised as the note for its date and granularity"
           ],
           "verifies": "compat",
           "testable_by": "integration",
@@ -351,43 +408,25 @@
         },
         {
           "id": "AC-FMT-04.7",
-          "given": "7 daily notes exist in an older bare \"YYYY-MM-DD.md\" shape that predates the vault's current daily format",
+          "given": "8 daily notes exist that do not match the current daily format \"YYYY-MM-DD, dddd\": 7 in an older bare \"YYYY-MM-DD.md\" shape, and 1 whose date uses an en dash instead of a hyphen between the month and the day",
           "when": "the current format \"YYYY-MM-DD, dddd\" is configured, with prefix matching left at its default of disabled",
           "then": [
-            "these 7 files are not recognised as daily notes, matching the vault's behaviour before this rewrite rather than introducing a new gap"
+            "the 7 bare-date files are not recognised as daily notes, matching the vault's behaviour before this rewrite rather than introducing a new gap",
+            "the 1 en-dash file is also not recognised as a daily note, because its punctuation does not exactly match the configured format, the same rule that excludes any other filename whose characters do not match"
           ],
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
-        },
-        {
-          "id": "AC-FMT-04.8",
-          "given": "two different files in the vault both resolve to the same date and granularity, one as an exact match and one as a prefix match",
-          "when": "the plugin looks up the note for that period",
-          "then": [
-            "the exact match is treated as the note for that period",
-            "the prefix-matched file is not silently treated as an equally valid alternative for the same period"
-          ],
-          "verifies": "behaviour",
-          "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
         {
-          "id": "DEC-14",
-          "title": "Candidate formats are tried in declaration order, and that order is documented",
-          "decision": "When more than one candidate format validly matches the same file, the first in declaration order wins. The order is defined and documented rather than incidental.",
-          "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Any deterministic rule beats that; declaration order is the one a user can predict.",
-          "decided_on": "2026-09-10"
-        },
-        {
           "id": "DEC-15",
-          "title": "Week-number disambiguation applies whenever a day token is present",
-          "decision": "The rule that separates a week number from a month-or-day value applies when the format carries a day token, whether or not it also carries a month token.",
-          "rationale": "The narrower variant only triggered when both were present, so a format like DD slipped through and parsed as a week number. The wider rule catches the case the narrow one was written to catch.",
+          "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
+          "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
+          "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
           "decided_on": "2026-09-10"
         }
       ]
@@ -424,7 +463,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.2",
@@ -436,7 +476,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.3",
@@ -449,7 +490,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-05.4",
@@ -461,7 +503,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -542,7 +585,21 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-06.5",
+          "given": "two date values that fall a few milliseconds apart but on opposite sides of local midnight, so they belong to two different calendar days",
+          "when": "the day-granularity identity is computed for both",
+          "then": [
+            "the two identities are different values, so a moment just after midnight is never merged into the previous day"
+          ],
+          "verifies": "data",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -570,7 +627,7 @@
       "acceptance_criteria": [
         {
           "id": "AC-FMT-07.1",
-          "given": "a file's name matches a valid daily-note filename",
+          "given": "a Markdown file whose filename matches the daily format and whose path is under the configured daily folder",
           "when": "its date identity is resolved",
           "then": [
             "it is recognised as that day's note"
@@ -602,7 +659,8 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": null,
+          "failure_path": true
         },
         {
           "id": "AC-FMT-07.4",
@@ -615,6 +673,19 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-FMT-07.5",
+          "given": "a file with the same filename as AC-FMT-07.1, but located outside the configured daily folder",
+          "when": "its date identity is resolved",
+          "then": [
+            "it is not recognised as that day's note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -625,6 +696,69 @@
           "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
           "decided_on": "2026-09-10"
         }
+      ]
+    },
+    {
+      "id": "US-FMT-08",
+      "epic": "FMT",
+      "title": "Resolve a filename the same way every time when more than one candidate matches",
+      "story": "As someone whose vault holds notes written under more than one naming habit, I want one predictable winner when a filename could be read in more than one way, so that the same file never resolves to a different date after an unrelated change.",
+      "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently between runs.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-FMT-04"
+      ],
+      "open_questions": [],
+      "decisions": [
+        {
+          "id": "DEC-14",
+          "title": "The configured format is tried before the basename-only format derived from it",
+          "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
+          "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
+          "decided_on": "2026-09-10"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "AC-FMT-08.1",
+          "given": "two different files in the vault both resolve to the same date and granularity, one as an exact match and one as a prefix match",
+          "when": "the plugin looks up the note for that period",
+          "then": [
+            "the exact match is treated as the note for that period",
+            "the prefix-matched file is not silently treated as an equally valid alternative for the same period"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-FMT-08.2",
+          "given": "a granularity's configured format contains a folder segment, and a file's relative path matches the full configured format for one date while the file's basename alone also matches the derived basename-only format for a different date",
+          "when": "the plugin resolves the file's date for that granularity",
+          "then": [
+            "the date produced by the full configured format is used",
+            "the date the basename-only format would have produced on its own is not used"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "notes": [
+        "Split out of US-FMT-04, which reached nine criteria. Covers no capability of its own: the parsing capabilities stay on US-FMT-04 and this story constrains how they choose between results."
       ]
     }
   ],

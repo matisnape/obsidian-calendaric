@@ -52,7 +52,10 @@ Ids are permanent. They appear in validation reports, so never renumber.
   "constrained_by": ["vault:create-weekly-note-rename-move"],
   "granularity": ["day", "week", "month", "year"],
   "depends_on": ["US-FMT-01"],
-  "open_questions": ["Should an existing empty note be templated, or left alone?"],
+  "resolves": ["OBS-07", "pn:daily-notes.format"],
+  "open_questions": [
+    {"id": "Q-NOTE-03.1", "question": "Should an existing empty note be templated, or left alone?"}
+  ],
   "acceptance_criteria": [ ... ]
 }
 ```
@@ -66,7 +69,8 @@ Field rules:
 - `constrained_by` — `vault:*` uids whose real-world behaviour this story must not break. Empty array when none apply.
 - `granularity` — which periods the story applies to, or `["n-a"]`.
 - `depends_on` — story ids, including ids in other epics when you are sure of them (`US-FMT-01` etc.). Leave empty rather than guess a number.
-- `open_questions` — a real decision a human must make. Do not invent one to fill the field; `[]` is the common case.
+- `resolves` — mapped settings, commands, flows and P1 observations this story accounts for, which no capability of its own reaches. A setting is written `<source>:<key>`, a command and a flow `<source>:<id>`, an observation by its `OBS-nn` id. Most stories need none: the validator already treats a setting as covered when the story covers a capability the setting affects.
+- `open_questions` — a real decision a human must make. Do not invent one to fill the field; `[]` is the common case. Each entry is an object with a stable `id` (`Q-<EPIC>-<nn>.<m>`) and the `question` itself, so a decision can name the exact question it answers and remove only that one.
 
 ## Acceptance criteria
 
@@ -91,11 +95,11 @@ Rules that decide whether an AC is any good:
 
 1. **One `given`, one `when`.** Multiple outcomes go in `then[]`. Two triggers means two criteria.
 2. **Observable only.** Every `then` names something a test or a user can see: a file exists, a value is returned, an error is shown, a pane changes. "The service is called" is not observable.
-3. **No implementation.** No module names, no function names, no framework names. `verifies: "architecture"` criteria are the single exception — those are allowed to name boundaries and file layout, because that is what they are about.
-4. **Cover the failure paths.** For every story, at least one criterion covers what happens when it goes wrong: the folder is missing, the format is invalid, the file already exists, the template is absent, the date is unparseable. A story with only happy paths is incomplete.
+3. **No implementation.** No module names, no function names, no framework names. `verifies: "architecture"` criteria are the single exception — those are allowed to name boundaries and file layout, because that is what they are about. The exception follows the marker, not the epic: an `architecture` criterion is allowed in any epic, and a `behaviour` criterion in ARCH is not exempt. The rule covers criteria only; a `decisions` entry may describe structure freely.
+4. **Cover the failure paths.** For every story, at least one criterion covers what happens when it goes wrong: the folder is missing, the format is invalid, the file already exists, the template is absent, the date is unparseable. A story with only happy paths is incomplete. Mark each such criterion `"failure_path": true`. The validator requires at least one marked criterion per story and does not read prose to find them.
 5. **`testable_by`** — `unit`, `integration` (needs a vault or the Obsidian API), or `manual` (needs a human to look). Prefer `unit`. If most of an epic is `manual`, say so in `notes`.
 6. **`verifies`** — `behaviour` (what the user gets), `data` (what is written to disk or config), `architecture` (structure and boundaries), `compat` (an existing vault keeps working).
-7. **`status`** is always `"unverified"` and `evidence` always `null`. The validating agent fills these in later.
+7. **`status`** is always `"unverified"` and `evidence` always `null`. The validating agent fills these in later. Once it does, a status other than `unverified` needs non-empty `evidence`, and `n-a` also needs `not_applicable_because`. A story reaches `done` only when every one of its criteria is `pass` or a justified `n-a`.
 
 Aim for 3–6 criteria per story. More than 8 means the story should be split.
 

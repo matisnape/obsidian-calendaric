@@ -42,11 +42,14 @@ OVERRIDE = {
     "pn:settings-dashboard-list-and-add": "ICE",
     "pn:settings-details-rename-and-toggle-granularities": "ICE",
     # --- icebox: surfaces nothing in the vault uses ---
-    "pn:timeline-complication-render": "ICE", "pn:timeline-lifecycle-per-leaf": "ICE",
     "pn:related-files-switcher-tab-handoff": "ICE",
-    "pn:nl-date-navigator": "ICE",
     "pn:get-periodic-notes-related": "ICE",
-    "pn:relative-date-humanization": "ICE",
+    # The Timeline complication is enabled in the live vault and mounts into every
+    # open markdown view, so deferring it would remove a feature that runs today.
+    "pn:timeline-complication-render": "CAL", "pn:timeline-lifecycle-per-leaf": "CAL",
+    "pn:relative-date-humanization": "CAL",
+    # nldates-obsidian is installed and enabled, so this command does appear.
+    "pn:nl-date-navigator": "CMD",
     "cal:metadata-source-streak": "ICE", "cal:metadata-source-tags": "ICE",
     "cal:metadata-source-tasks": "ICE",
     "cal:extend-metadata-sources-via-event": "ICE",

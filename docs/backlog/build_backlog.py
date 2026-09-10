@@ -138,6 +138,10 @@ def main() -> int:
                 problems.append(f"{sid}: criterion numbers are not 1..n without gaps ({sorted(ac_nums)})")
 
             acs = story.get("acceptance_criteria") or []
+            # BACKLOG-SCHEMA.md rule 4. Guessing this from prose is how eleven
+            # stories were reported as happy-path only when five were not.
+            if not any(a.get("failure_path") for a in acs):
+                problems.append(f"{sid}: no criterion marked failure_path")
             if story["status"] == "done":
                 open_acs = [a["id"] for a in acs if a.get("status") not in ("pass", "n-a")]
                 if open_acs:
@@ -225,6 +229,45 @@ def main() -> int:
         if by_uid.get(uid, {}).get("role") == "build" and len(owners) > 2:
             warnings.append(f"{uid} is claimed by {len(owners)} stories: {', '.join(owners)}")
 
+    # --- settings, commands, flows and P1 observations -----------------------
+    # Each is covered when a story covers a capability it reaches, or when a
+    # story or icebox entry names it in resolves[], or when an epic excuses it.
+    resolved = defaultdict(list)
+    for owner in stories + icebox:
+        for ref in owner.get("resolves") or []:
+            resolved[ref].append(owner["id"])
+
+    aux = {"setting": ("settings", "key", "affects"),
+           "command": ("commands", "id", "calls"),
+           "flow": ("flows", "id", "capabilities")}
+    aux_counts = {}
+    for kind, (array, id_key, link) in aux.items():
+        total = missing_here = 0
+        for rec in cap_map[array]:
+            total += 1
+            ref = f"{rec['source']}:{rec[id_key]}"
+            if any(uid in covered for uid in rec.get(link) or []):
+                continue
+            if ref in resolved or ref in excused:
+                continue
+            missing_here += 1
+            problems.append(f"{kind} {ref} reaches no covered capability, "
+                            f"and no story, icebox entry or excuse names it")
+        aux_counts[kind] = {"total": total, "uncovered": missing_here}
+
+    p1 = [o for o in cap_map["observations"] if o.get("severity") == "P1"]
+    for obs in p1:
+        if obs["id"] not in resolved and obs["id"] not in excused:
+            problems.append(f"P1 observation {obs['id']} names no story or icebox entry "
+                            f"that resolves it: {obs['what'][:80]}")
+    aux_counts["p1_observation"] = {
+        "total": len(p1),
+        "uncovered": sum(1 for o in p1 if o["id"] not in resolved and o["id"] not in excused)}
+
+    for ref in resolved:
+        if ref in excused:
+            problems.append(f"{ref} is both resolved by {resolved[ref][0]} and excused")
+
     # --- dependencies -------------------------------------------------------
     story_ids = {s["id"] for s in stories}
     for story in stories:
@@ -260,6 +303,7 @@ def main() -> int:
             "icebox_total": len(ice_uids),
             "icebox_covered": len(ice_uids & set(covered)),
             "excused": [{"uid": u, "reason": r} for u, r in sorted(excused.items())],
+            **aux_counts,
         },
     }
     if not (problems or missing):
@@ -285,6 +329,9 @@ def main() -> int:
     print(f"\ncoverage: {c['build_covered']}/{c['build_total']} build capabilities have a story, "
           f"{c['build_excused']} excused with a reason; "
           f"icebox {c['icebox_covered']}/{c['icebox_total']}")
+    for kind in ("setting", "command", "flow", "p1_observation"):
+        k = c[kind]
+        print(f"  {kind + 's':<17} {k['total'] - k['uncovered']}/{k['total']} resolved")
 
     if warnings:
         print(f"\n{len(warnings)} WARNINGS:")
