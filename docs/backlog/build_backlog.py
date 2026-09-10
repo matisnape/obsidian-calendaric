@@ -13,6 +13,7 @@ import json
 import pathlib
 import re
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import date
 
@@ -183,13 +184,18 @@ def main() -> int:
             problems.append(f"ICE: entry numbers are not 01..nn without gaps ({sorted(nums)})")
 
     # --- coverage -----------------------------------------------------------
+    def has_text(value):
+        """True when a string still has a visible character once formatting goes."""
+        return any(unicodedata.category(ch) not in ("Cf", "Cc", "Zs", "Zl", "Zp")
+                   for ch in str(value or ""))
+
     covered = defaultdict(list)
-    for story in stories:
-        for uid in story.get("covers") or []:
-            covered[uid].append(story["id"])
-    for entry in icebox:
-        for uid in entry.get("covers") or []:
-            covered[uid].append(entry["id"])
+    for owner in stories + icebox:
+        uids = owner.get("covers") or []
+        for uid in {u for u in uids if uids.count(u) > 1}:
+            problems.append(f"{owner['id']} lists {uid} in covers[] {uids.count(uid)} times")
+        for uid in dict.fromkeys(uids):
+            covered[uid].append(owner["id"])
 
     story_epic = {s["id"]: s["epic"] for s in stories}
 
@@ -242,11 +248,11 @@ def main() -> int:
     # is allowed, but each owner has to say why it shares.
     owner_story = {s["id"]: s for s in stories}
     for uid, owners in covered.items():
-        if len(owners) < 2:
+        if len(set(owners)) < 2:
             continue
         for owner in owners:
             reason = (owner_story.get(owner, {}).get("shared_coverage") or {}).get(uid, "")
-            if not reason.strip():
+            if not has_text(reason):
                 problems.append(
                     f"{uid} is covered by {len(owners)} owners ({', '.join(owners)}) and "
                     f"{owner} gives no shared_coverage reason for it")

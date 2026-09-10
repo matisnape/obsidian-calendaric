@@ -215,14 +215,15 @@ def parse_line_spec(lines):
 GIT_REFS = {"HEAD", "ORIG_HEAD", "FETCH_HEAD"}
 
 
-def cite(owner, source, text, problems, module_ids=()):
+def cite(owner, source, text, problems, own_modules=(), sibling_repos=()):
     """Split one observation `where` entry into a checkable (path, lines) pair.
 
-    The real grammar in the sources is
-    `[<module-id>|<repo-dir>:]<path>[:<lines>][@<sha>][ (prose)]`.
-    Prose and sha are dropped; the module id is dropped; a repo directory
-    becomes the first path segment. A git ref stands for the repository, so it
-    is checked as that directory rather than as a file.
+    The grammar the sources use is
+    `[<module-id>|<sibling-repo>:]<path>[:<lines>][@<sha>][ (prose)]`.
+    The prose and the sha are dropped. A module id must belong to the citing
+    source — a module id from another source, or a bare directory name, is not a
+    qualifier and is rejected. A sibling repository must be one of the declared
+    source roots; only then may the path leave this source's own root.
     """
     if not isinstance(text, str) or not text.strip():
         problems.append(f"{owner} has a citation that is not a path: {text!r}")
@@ -236,15 +237,20 @@ def cite(owner, source, text, problems, module_ids=()):
     if not text:
         return []
 
-    root = pathlib.Path(ROOTS.get(source) or ".")
     parts = text.split(":")
-    prefix = ""
+    sibling = None
     if len(parts) > 1:
         head = parts[0].strip()
-        if head in module_ids:
+        if head in own_modules:
             parts = parts[1:]
-        elif (root / head).is_dir() or (root.parent / head).is_dir():
-            prefix, parts = head + "/", parts[1:]
+        elif head in sibling_repos:
+            sibling, parts = head, parts[1:]
+        elif "/" not in head and not head.endswith((".ts", ".js", ".json", ".md", ".svelte",
+                                                    ".mjs", ".base", ".lock", ".yml")):
+            problems.append(
+                f"{owner} cites {text!r}: {head!r} is neither a module of {source} nor a "
+                f"declared sibling repository")
+            return []
 
     lines = None
     if len(parts) > 1:
@@ -259,8 +265,8 @@ def cite(owner, source, text, problems, module_ids=()):
         return []
     if path in GIT_REFS:
         # Names the repository at a revision, not a file in it.
-        return [(owner, source, prefix or "./", None)] if prefix else []
-    return [(owner, source, prefix + path, lines)]
+        return [(owner, sibling or source, "./", None, True)] if sibling else []
+    return [(owner, sibling or source, path, lines, True)]
 
 
 def check_citations(out):
@@ -272,7 +278,12 @@ def check_citations(out):
         if not isinstance(root, str) or not root or not pathlib.Path(root).is_dir():
             problems.append(f"source {src['id']} has no readable root path: {root!r}")
     # Every record type that carries a path, not only capabilities.
-    module_ids = {m["id"] for m in out["modules"]}
+    own_modules = {}
+    for m in out["modules"]:
+        own_modules.setdefault(m["source"], set()).add(m["id"])
+    # A sibling repository is a declared source root, named by its directory.
+    sibling_repos = {pathlib.Path(r).name for r in ROOTS.values() if r}
+
     records = []
     for c in out["capabilities"]:
         for d in c.get("defined_in") or []:
@@ -280,15 +291,17 @@ def check_citations(out):
             if not isinstance(path, str):
                 problems.append(f"capability {c['uid']} defined_in path is not a string: {path!r}")
                 continue
-            records.append((c["uid"], c["source"], path, lines))
+            records.append((c["uid"], c["source"], path, lines, False))
     for obs in out["observations"]:
         for where in obs.get("where") or []:
-            records += cite(obs.get("id", "?"), obs["source"], where, problems, module_ids)
+            records += cite(obs.get("id", "?"), obs["source"], where, problems,
+                            own_modules.get(obs["source"], set()), sibling_repos)
     for key, field in (("settings", "key"), ("commands", "id"), ("api_surface", "export")):
         for rec in out.get(key) or []:
             path = rec.get("path")
             owner = f"{rec['source']}:{rec.get(field, '?')}"
             if not isinstance(path, str):
+                problems.append(f"{owner} has a {key[:-1]} path that is not a string: {path!r}")
                 continue
             # One record may cite several files, separated by ';'.
             for segment in path.split(";"):
@@ -297,16 +310,24 @@ def check_citations(out):
                     continue
                 head, sep, tail = segment.rpartition(":")
                 if sep and re.fullmatch(r"[\d,\s-]+", tail):
-                    records.append((owner, rec["source"], head.strip(), tail))
+                    records.append((owner, rec["source"], head.strip(), tail, False))
                 else:
-                    records.append((owner, rec["source"], segment, None))
+                    records.append((owner, rec["source"], segment, None, False))
 
-    for owner, source, path, lines in records:
+    for owner, source, path, lines, may_cross in records:
         root = ROOTS.get(source)
         if not root or not isinstance(path, str) or not path or path in ("—", "-"):
             continue
-        # A citation may name a sibling repository, so try the shared parent too.
-        candidates = [pathlib.Path(root) / path, pathlib.Path(root).parent / path]
+        if pathlib.PurePosixPath(path).is_absolute() or ".." in pathlib.PurePosixPath(path).parts:
+            problems.append(f"{owner} cites {path}, which leaves its source root")
+            continue
+        # A path resolves inside its own source root. Opening with a declared
+        # sibling repository is the only way out of it, and the forks source
+        # already sits at the shared parent, so try the root first either way.
+        base = pathlib.Path(root)
+        candidates = [base / path]
+        if may_cross and path.split("/", 1)[0] in sibling_repos:
+            candidates.append(base.parent / path)
         if path.endswith("/") or path == "./":
             if not any(c.is_dir() for c in candidates):
                 problems.append(f"{owner} cites missing directory {path}")

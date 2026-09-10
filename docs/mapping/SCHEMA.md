@@ -180,10 +180,18 @@ id, a duplicate, and any id whose source or number does not match the required
 form.
 
 Every `where` entry is checked. The form is
-`[<module-id>|<repo-dir>:]<path>[:<lines>]`, optionally followed by `@<sha>` or a
-parenthetical aside, both of which are ignored. The path must exist, relative to
-your source root or to its parent when you cite a sibling repository, and every
-line you cite must exist in it.
+`[<module-id>|<sibling-repo>:]<path>[:<lines>]`, optionally followed by `@<sha>`
+or a parenthetical aside, both of which are ignored.
+
+- a `<module-id>` prefix must name a module **of your own source**. A module id
+  from another source, or a bare directory name that happens to exist, is not a
+  qualifier and fails.
+- a `<sibling-repo>` prefix must name one of the declared source roots. This is
+  the only way a citation may leave your own root, and only an observation may
+  do it — a `defined_in`, setting, command or api path that names another
+  repository is an ownership error.
+- absolute paths and `..` fail.
+- the file must exist and every line you cite must exist in it.
 
 ## Categories
 
