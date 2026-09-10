@@ -234,7 +234,7 @@ def cite(owner, source, text, problems, own_modules=(), sibling_repos=None):
         return []
     raw = text = text.strip()
     if text in ("—", "-", "n/a"):
-        return []
+        return [(owner, source, text, None, True, False)]
     if text.endswith(")") and "(" in text:
         text = text[:text.index("(")].strip()
     text = re.sub(r"@[0-9a-f]{6,40}$", "", text).strip()
@@ -355,8 +355,6 @@ def check_citations(out):
         # already sits at the shared parent, so try the root first either way.
         base = pathlib.Path(root)
         candidates = [base / path]
-        if may_hop and path.split("/", 1)[0] in sibling_repos:
-            candidates.append(base.parent / path)
         if path.endswith("/") or path in ("./", "."):
             if not is_observation:
                 problems.append(f"{owner} cites the directory {path}, but this record must name "

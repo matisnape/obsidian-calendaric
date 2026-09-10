@@ -62,6 +62,7 @@ python3 report.py                # progress per epic, failures, blocked, open qu
 python3 report.py --agent        # every criterion still outstanding, grouped by epic
 python3 report.py --story US-NOTE-03
 python3 set_status.py US-NOTE-03 in-progress   # the board is read-only; this is the write side
+python3 ../test_gates.py                      # every gate, against the case it must reject
 ```
 
 `build_backlog.py` is a gate, not a formatter. It fails when:

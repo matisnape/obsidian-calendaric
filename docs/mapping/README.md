@@ -58,6 +58,11 @@ writer's own source; anything still ambiguous is an error, not a guess. It also
 checks that every `path:line` citation points at a file that exists and a line
 that exists, and refuses to write the map when any of that fails.
 
+`docs/test_gates.py` is how those checks are trusted: 31 cases, each mutating one
+record and requiring the validator to reject it for the stated reason. Every case
+came from an adversarial review that broke an earlier version of the gate. Run it
+after changing either script.
+
 Start with `observations` filtered to `P1`. Those are the things that break a
 naive merge.
 

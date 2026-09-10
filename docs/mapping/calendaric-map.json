@@ -13293,8 +13293,8 @@
       "what": "Despite the role hint that obsidian-periodic-notes 'historically' used this library, the checked-out obsidian-periodic-notes repo does not import 'obsidian-daily-notes-interface' anywhere and is not listed in its package.json dependencies; it instead ships its own independent parser.ts, cache.ts, calendarSetManager.ts, and settings/ implementing equivalent (but not necessarily identical) date-parsing and settings-resolution logic.",
       "where": [
         "obsidian-periodic-notes:package.json",
-        "obsidian-periodic-notes/src/parser.ts",
-        "obsidian-periodic-notes/src/cache.ts"
+        "obsidian-periodic-notes:src/parser.ts",
+        "obsidian-periodic-notes:src/cache.ts"
       ],
       "why_it_matters": "The merge cannot treat obsidian-daily-notes-interface as periodic-notes' current settings/parsing implementation — that logic has diverged into a second, independently-evolved copy that must be diffed against this one (parse.ts especially) rather than assumed compatible. This should be resolved by whichever agent maps obsidian-periodic-notes.",
       "id": "OBS-dni-08",
@@ -13334,8 +13334,8 @@
       "what": "Calendar.svelte's public prop contract was fully rewritten between 0.3.12 and 0.4.0. 0.3.12 exposes six named callback props (onHoverDay, onHoverWeek, onClickDay, onClickWeek, onContextMenuDay, onContextMenuWeek) plus three exported navigation functions (incrementDisplayedMonth, decrementDisplayedMonth, resetDisplayedMonth) and a plain reassignable `export let displayedMonth`. 0.4.0 replaces the six callbacks with one `eventHandlers: CallableFunction[]` array spread onto children (new signature: (granularity, date, file, ...) instead of (date, isMetaPressed)), adds required `plugin: Plugin` and `getSourceSettings` props, removes the three exported nav functions entirely (moved to Nav.svelte, not exposed to the parent), and moves displayedMonth into an internal context store that the exported `displayedMonth` prop is never written back to.",
       "where": [
         "calui-calendar:src/components/Calendar.svelte:20-37",
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Calendar.svelte:14-63 (0.3.12)",
-        "obsidian-calendar-plugin/src/ui/Calendar.svelte:16-77"
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/src/components/Calendar.svelte:14-63 (0.3.12)",
+        "obsidian-calendar-plugin:src/ui/Calendar.svelte:16-77"
       ],
       "why_it_matters": "The real consumer's wrapper (obsidian-calendar-plugin/src/ui/Calendar.svelte) does `bind:displayedMonth` on CalendarBase and relies on that binding for view.ts's `getDisplayedMonth()` (used to open the correct monthly note) and for its own midnight-rollover heartbeat check. In 0.4.0 that bind silently stops tracking navigation (no runtime error, just a stale value) because the exported prop is only used to seed the internal store once.",
       "id": "OBS-calui-01",
@@ -13347,9 +13347,9 @@
       "what": "ICalendarSource / IDayMetadata / IDot were fully rewritten. 0.3.12: ICalendarSource = {getDailyMetadata?, getWeeklyMetadata?} each returning {classes?, dataAttributes?, dots?}; IDot = {className, color, isFilled}. 0.4.0: ICalendarSource = {id, name, description?, getMetadata?(granularity, date, file), defaultSettings, registerSettings?} returning IEvaluatedMetadata {value, goal?, dots, attrs?}; IDot = {isFilled} only (color now lives on ISourceSettings, applied by the parent, not the source).",
       "where": [
         "calui-types:src/types.ts:1-55",
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/types.ts:1-25 (0.3.12)",
-        "obsidian-calendar-plugin/src/ui/sources/streak.ts:15-30",
-        "obsidian-calendar-plugin/src/ui/sources/tasks.ts:20-40"
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/src/types.ts:1-25 (0.3.12)",
+        "obsidian-calendar-plugin:src/ui/sources/streak.ts:15-30",
+        "obsidian-calendar-plugin:src/ui/sources/tasks.ts:20-40"
       ],
       "why_it_matters": "All four of the plugin's real sources (streak, tasks, wordCount, tags in obsidian-calendar-plugin/src/ui/sources/) implement the old getDailyMetadata/getWeeklyMetadata shape verbatim, returning {classes, dots} with IDot {className, color, isFilled}. Porting 0.4.0 wholesale means every source needs a full rewrite (add id/name/defaultSettings, switch to getMetadata(granularity, date, file), change dots to {isFilled} only, move color out to settings) — this is new source code, not a mechanical prop rename.",
       "id": "OBS-calui-02",
@@ -13360,9 +13360,9 @@
       "kind": "divergence",
       "what": "The clickable month-header DOM structure changed. 0.3.12's Nav.svelte renders `<h3 class=\"title\" on:click={resetDisplayedMonth}>`. 0.4.0 moves the title into the new Month.svelte as a non-heading `<div>` (with the on:click/on:contextmenu handlers) wrapping an inner `<span class=\"title\">` used only for styling.",
       "where": [
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Nav.svelte:21 (0.3.12)",
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/src/components/Nav.svelte:21 (0.3.12)",
         "calui-month:src/components/Month.svelte:88-105",
-        "obsidian-calendar-plugin/src/view.ts:126-176"
+        "obsidian-calendar-plugin:src/view.ts:126-176"
       ],
       "why_it_matters": "obsidian-calendar-plugin/src/view.ts's onMonthHeaderClick intercepts capture-phase clicks with `target.closest('h3.title')` specifically because 0.3.12's Calendar has no month-level click prop at all. That selector will never match 0.4.0's markup (no <h3> anywhere), silently disabling 'click month header to open the monthly note'. Meanwhile 0.4.0 ships a native onClick/onContextMenu path for the month header via eventHandlers, but the plugin's current wrapper (src/ui/Calendar.svelte) never threads any handler for granularity 'month' through at all — the merge needs to pick one mechanism, not keep both half-wired.",
       "id": "OBS-calui-03",
@@ -13385,7 +13385,7 @@
       "kind": "version-skew",
       "what": "obsidian-daily-notes-interface is pinned at 0.8.4 for the 0.3.12 line vs 0.9.2 for 0.4.0. fileStore.ts (0.4.0-only) imports getAllMonthlyNotes and appHasMonthlyNotesPluginLoaded from that package.",
       "where": [
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/package.json (0.3.12: obsidian-daily-notes-interface 0.8.4)",
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/package.json (0.3.12: obsidian-daily-notes-interface 0.8.4)",
         "calui-filestore:src/fileStore.ts:3-11 (imports getAllMonthlyNotes, etc.)"
       ],
       "why_it_matters": "Bumping this transitive dependency is a prerequisite for merging in the 0.4.0 fileStore/month code, not optional — the 0.8.4 API surface almost certainly lacks the monthly-note helpers 0.4.0 depends on.",
@@ -13397,7 +13397,7 @@
       "kind": "divergence",
       "what": "The reset-to-today control lost its localized text label. 0.3.12's Nav.svelte showed `today.calendar().split(/\\d|\\s/)[0]` (a locale-aware word, e.g. the translated 'Today'). 0.4.0's reset button is icon-only (a filled Dot) with a hardcoded English aria-label 'Reset to current month'.",
       "where": [
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Nav.svelte:14,32 (0.3.12)",
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/src/components/Nav.svelte:14,32 (0.3.12)",
         "calui-nav:src/components/Nav.svelte:51-58"
       ],
       "why_it_matters": "This vault runs primarily in Polish; a straight merge silently drops the localized 'Dzisiaj'-style label users currently see, replacing it with an icon plus an English-only tooltip.",
@@ -13434,7 +13434,7 @@
       "kind": "divergence",
       "what": "MetadataResolver.svelte gained a pending-state branch in 0.4.0: `{#await metadata}` now renders `<slot metadata={null}/>` while the promise is in flight. 0.3.12's version has no `{#await}` pending branch at all (only `{:then}`), so it renders nothing until the promise resolves.",
       "where": [
-        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/MetadataResolver.svelte:9-11 (0.3.12)",
+        "obsidian-calendar-plugin:node_modules/obsidian-calendar-ui/src/components/MetadataResolver.svelte:9-11 (0.3.12)",
         "calui-metadata-resolver:src/components/MetadataResolver.svelte:9-17"
       ],
       "why_it_matters": "0.4.0 cells will render their 'no metadata yet' state (e.g. empty dots) briefly on every recompute, then flash to the resolved state, where 0.3.12 rendered nothing until resolved. Minor but real visual/behavioral difference to be aware of when comparing screenshots or writing tests across the two versions.",
@@ -13447,7 +13447,7 @@
       "what": "obsidian-calendar-plugin re-implements calui's unexported isMetaPressed helper verbatim, with a comment acknowledging it: 'Mirrors obsidian-calendar-ui's (unexported) isMetaPressed helper so meta-click behaves the same on the month header as it does on day/week cells.'",
       "where": [
         "calui-utils:src/utils.ts:9-11",
-        "obsidian-calendar-plugin/src/view.ts:29-32"
+        "obsidian-calendar-plugin:src/view.ts:29-32"
       ],
       "why_it_matters": "calui never exports isMetaPressed from index.ts even though it's simple, stable, and needed by any host implementing month-header handling itself (as the 0.3.12-era plugin does). Exporting it in the merged library removes a real, currently-necessary duplication.",
       "id": "OBS-calui-10",

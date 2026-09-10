@@ -2639,8 +2639,8 @@
       "what": "Despite the role hint that obsidian-periodic-notes 'historically' used this library, the checked-out obsidian-periodic-notes repo does not import 'obsidian-daily-notes-interface' anywhere and is not listed in its package.json dependencies; it instead ships its own independent parser.ts, cache.ts, calendarSetManager.ts, and settings/ implementing equivalent (but not necessarily identical) date-parsing and settings-resolution logic.",
       "where": [
         "obsidian-periodic-notes:package.json",
-        "obsidian-periodic-notes/src/parser.ts",
-        "obsidian-periodic-notes/src/cache.ts"
+        "obsidian-periodic-notes:src/parser.ts",
+        "obsidian-periodic-notes:src/cache.ts"
       ],
       "why_it_matters": "The merge cannot treat obsidian-daily-notes-interface as periodic-notes' current settings/parsing implementation — that logic has diverged into a second, independently-evolved copy that must be diffed against this one (parse.ts especially) rather than assumed compatible. This should be resolved by whichever agent maps obsidian-periodic-notes.",
       "id": "OBS-dni-08"
