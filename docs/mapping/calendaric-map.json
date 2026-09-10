@@ -2174,6 +2174,54 @@
       "uid": "pn:pn-settings-primitives"
     },
     {
+      "id": "external-moment",
+      "name": "moment.js",
+      "path": "—",
+      "loc": 0,
+      "role": "Date library Obsidian bundles and re-exports; every format, parse and week calculation in these repos goes through it.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-moment"
+    },
+    {
+      "id": "external-obsidian-daily-notes-interface",
+      "name": "obsidian-daily-notes-interface (published)",
+      "path": "—",
+      "loc": 0,
+      "role": "The published package, as consumed from npm by the Calendar plugin. Distinct from the dni-* modules, which map the local checkout of its source.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-obsidian-daily-notes-interface"
+    },
+    {
+      "id": "external-popperjs-svelte",
+      "name": "@popperjs/core",
+      "path": "—",
+      "loc": 0,
+      "role": "Positions the hover popovers in obsidian-calendar-ui.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-popperjs-svelte"
+    },
+    {
+      "id": "external-svelte-portal",
+      "name": "svelte-portal",
+      "path": "—",
+      "loc": 0,
+      "role": "Renders a component into a DOM node outside its parent, used for the popovers.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-svelte-portal"
+    },
+    {
       "id": "ext-obsidian-api",
       "name": "Obsidian API",
       "path": "—",
@@ -13089,22 +13137,24 @@
       "export": "openPeriodicNote",
       "kind": "plugin-instance-field",
       "signature": "(granularity: 'day' | 'week' | 'month' | 'quarter' | 'year', date: Moment, opts?: { inNewSplit?: boolean; calendarSet?: string }) => Promise<void>",
-      "path": "obsidian-calendar-plugin/src/settings.ts:59-63 (fork-local type declaration of this runtime API on the Periodic Notes plugin instance; not itself defined in any of the three forks' diffed source)",
+      "path": "obsidian-calendar-plugin/src/settings.ts:59-63",
       "stability": "accidental",
       "consumers": [
         "obsidian-calendar-plugin"
       ],
+      "notes": "fork-local type declaration of this runtime API on the Periodic Notes plugin instance; not itself defined in any of the three forks' diffed source",
       "source": "forks"
     },
     {
       "export": "calendarSetManager.getActiveGranularities",
       "kind": "plugin-instance-field",
       "signature": "() => Granularity[] (granularities active in the Periodic Notes plugin's active calendar set)",
-      "path": "obsidian-calendar-plugin/src/settings.ts:88-96 (fork-local call site; the method itself lives in obsidian-periodic-notes' own plugin instance, outside this diff's scope)",
+      "path": "obsidian-calendar-plugin/src/settings.ts:88-96",
       "stability": "accidental",
       "consumers": [
         "obsidian-calendar-plugin"
       ],
+      "notes": "fork-local call site; the method itself lives in obsidian-periodic-notes' own plugin instance, outside this diff's scope",
       "source": "forks"
     }
   ],
@@ -13117,8 +13167,8 @@
         "dni-index:src/index.ts:118-124"
       ],
       "why_it_matters": "Any merged code path that routes through the generic dispatcher (rather than calling create*Note directly) will throw a TypeError for quarter/year instead of creating a note. A naive merge that keeps this dispatcher as 'the' generic entry point silently breaks two of the five granularities.",
-      "source": "dni",
-      "id": "OBS-01"
+      "id": "OBS-dni-01",
+      "source": "dni"
     },
     {
       "severity": "P2",
@@ -13130,8 +13180,8 @@
         "dni-index:src/index.ts:38-47"
       ],
       "why_it_matters": "A merge that only updates the shared getPeriodicNotesPlugin() helper (e.g. to add a third plugin id, or change probe order) will miss the two inlined copies in index.ts, silently leaving daily/weekly detection out of sync with monthly/quarterly/yearly.",
-      "source": "dni",
-      "id": "OBS-02"
+      "id": "OBS-dni-02",
+      "source": "dni"
     },
     {
       "severity": "P2",
@@ -13145,8 +13195,8 @@
         "dni-yearly:src/yearly.ts:29-47"
       ],
       "why_it_matters": "A fix or extension to this token syntax (e.g. adding a new unit or fixing a formatting edge case) has to be applied identically in five places; the merge should extract this into one shared function up front rather than porting all five copies.",
-      "source": "dni",
-      "id": "OBS-03"
+      "id": "OBS-dni-03",
+      "source": "dni"
     },
     {
       "severity": "P2",
@@ -13158,8 +13208,8 @@
         "dni-monthly:src/monthly.ts:70-75"
       ],
       "why_it_matters": "If daily notes are effectively 'disabled' but a folder still exists at the configured (possibly stale/default) path, getAllDailyNotes will still scan it and throw DailyNotesFolderMissingError only if the folder is truly absent — it never short-circuits the way the other four granularities do. A merge that unifies getAll*Notes into one generic function must decide whether to add the missing guard to daily or intentionally drop it from the others.",
-      "source": "dni",
-      "id": "OBS-04"
+      "id": "OBS-dni-04",
+      "source": "dni"
     },
     {
       "severity": "P2",
@@ -13173,8 +13223,8 @@
         "src/parse.ts:75"
       ],
       "why_it_matters": "Prefix/loose filename matching (e.g. matching '2026-01-15 Some Title.md' as a daily note) silently cannot work for day/month/quarter/year notes today, even though nothing in parse.ts's logic is week-specific. If the merge wants to offer prefix matching uniformly, each of the four other resolve-*-settings functions needs the same wiring added.",
-      "source": "dni",
-      "id": "OBS-05"
+      "id": "OBS-dni-05",
+      "source": "dni"
     },
     {
       "severity": "P2",
@@ -13184,8 +13234,8 @@
         "dni-index:src/index.ts:32-49"
       ],
       "why_it_matters": "A user who has the Calendar plugin installed but has turned off its weekly-notes feature (if such a toggle exists) will still be reported as 'weekly notes enabled' by this library — a behavior a unified implementation should decide to keep or fix explicitly, not inherit by accident.",
-      "source": "dni",
-      "id": "OBS-06"
+      "id": "OBS-dni-06",
+      "source": "dni"
     },
     {
       "severity": "P3",
@@ -13198,8 +13248,8 @@
         "package.json"
       ],
       "why_it_matters": "Anyone consulting index.d.ts for 'what this library exports' (rather than reading src/index.ts) will believe the *FolderMissingError classes and a narrower settings shape are part of the public API; a merge should treat src/index.ts as the sole source of truth and either delete or regenerate index.d.ts.",
-      "source": "dni",
-      "id": "OBS-07"
+      "id": "OBS-dni-07",
+      "source": "dni"
     },
     {
       "severity": "P1",
@@ -13211,8 +13261,8 @@
         "obsidian-periodic-notes/src/cache.ts"
       ],
       "why_it_matters": "The merge cannot treat obsidian-daily-notes-interface as periodic-notes' current settings/parsing implementation — that logic has diverged into a second, independently-evolved copy that must be diffed against this one (parse.ts especially) rather than assumed compatible. This should be resolved by whichever agent maps obsidian-periodic-notes.",
-      "source": "dni",
-      "id": "OBS-08"
+      "id": "OBS-dni-08",
+      "source": "dni"
     },
     {
       "severity": "P3",
@@ -13224,8 +13274,8 @@
         "dni-index:src/index.ts:127-149"
       ],
       "why_it_matters": "A consumer plugin cannot get the raw Periodic Notes plugin instance (e.g. to read settings for a custom granularity, or to react to its own onload) without reimplementing the dev/production id probe itself — worth deciding whether to make this a first-class public export in the merged library.",
-      "source": "dni",
-      "id": "OBS-09"
+      "id": "OBS-dni-09",
+      "source": "dni"
     },
     {
       "severity": "P3",
@@ -13239,8 +13289,8 @@
         "dni-index:src/index.ts:83-95"
       ],
       "why_it_matters": "This works today because TypeScript/ES module circular imports of pure functions are tolerated, but a restructure during the merge (e.g. splitting index.ts differently, or bundling with stricter tooling) could break at the module-resolution level; the merge should relocate appHasXNotesPluginLoaded next to detect-periodic-notes-plugin in a settings/detection module instead of index.ts to remove the cycle.",
-      "source": "dni",
-      "id": "OBS-10"
+      "id": "OBS-dni-10",
+      "source": "dni"
     },
     {
       "severity": "P1",
@@ -13252,8 +13302,8 @@
         "obsidian-calendar-plugin/src/ui/Calendar.svelte:16-77"
       ],
       "why_it_matters": "The real consumer's wrapper (obsidian-calendar-plugin/src/ui/Calendar.svelte) does `bind:displayedMonth` on CalendarBase and relies on that binding for view.ts's `getDisplayedMonth()` (used to open the correct monthly note) and for its own midnight-rollover heartbeat check. In 0.4.0 that bind silently stops tracking navigation (no runtime error, just a stale value) because the exported prop is only used to seed the internal store once.",
-      "source": "calui",
-      "id": "OBS-11"
+      "id": "OBS-calui-01",
+      "source": "calui"
     },
     {
       "severity": "P1",
@@ -13266,8 +13316,8 @@
         "obsidian-calendar-plugin/src/ui/sources/tasks.ts:20-40"
       ],
       "why_it_matters": "All four of the plugin's real sources (streak, tasks, wordCount, tags in obsidian-calendar-plugin/src/ui/sources/) implement the old getDailyMetadata/getWeeklyMetadata shape verbatim, returning {classes, dots} with IDot {className, color, isFilled}. Porting 0.4.0 wholesale means every source needs a full rewrite (add id/name/defaultSettings, switch to getMetadata(granularity, date, file), change dots to {isFilled} only, move color out to settings) — this is new source code, not a mechanical prop rename.",
-      "source": "calui",
-      "id": "OBS-12"
+      "id": "OBS-calui-02",
+      "source": "calui"
     },
     {
       "severity": "P1",
@@ -13279,8 +13329,8 @@
         "obsidian-calendar-plugin/src/view.ts:126-176"
       ],
       "why_it_matters": "obsidian-calendar-plugin/src/view.ts's onMonthHeaderClick intercepts capture-phase clicks with `target.closest('h3.title')` specifically because 0.3.12's Calendar has no month-level click prop at all. That selector will never match 0.4.0's markup (no <h3> anywhere), silently disabling 'click month header to open the monthly note'. Meanwhile 0.4.0 ships a native onClick/onContextMenu path for the month header via eventHandlers, but the plugin's current wrapper (src/ui/Calendar.svelte) never threads any handler for granularity 'month' through at all — the merge needs to pick one mechanism, not keep both half-wired.",
-      "source": "calui",
-      "id": "OBS-13"
+      "id": "OBS-calui-03",
+      "source": "calui"
     },
     {
       "severity": "P1",
@@ -13291,8 +13341,8 @@
         "calui-month:src/components/Month.svelte"
       ],
       "why_it_matters": "obsidian-calendar-plugin currently implements its own monthly-note handling directly in src/view.ts/src/io (via getMonthlyNotesPeriodicNotesPlugin), independent of calendar-ui. Merging in 0.4.0's native month support is new functionality that can conflict or duplicate with the plugin's existing monthly-note code path, not just a drop-in upgrade.",
-      "source": "calui",
-      "id": "OBS-14"
+      "id": "OBS-calui-04",
+      "source": "calui"
     },
     {
       "severity": "P2",
@@ -13303,8 +13353,8 @@
         "calui-filestore:src/fileStore.ts:3-11 (imports getAllMonthlyNotes, etc.)"
       ],
       "why_it_matters": "Bumping this transitive dependency is a prerequisite for merging in the 0.4.0 fileStore/month code, not optional — the 0.8.4 API surface almost certainly lacks the monthly-note helpers 0.4.0 depends on.",
-      "source": "calui",
-      "id": "OBS-15"
+      "id": "OBS-calui-05",
+      "source": "calui"
     },
     {
       "severity": "P2",
@@ -13315,8 +13365,8 @@
         "calui-nav:src/components/Nav.svelte:51-58"
       ],
       "why_it_matters": "This vault runs primarily in Polish; a straight merge silently drops the localized 'Dzisiaj'-style label users currently see, replacing it with an icon plus an English-only tooltip.",
-      "source": "calui",
-      "id": "OBS-16"
+      "id": "OBS-calui-06",
+      "source": "calui"
     },
     {
       "severity": "P2",
@@ -13327,8 +13377,8 @@
         "calui-calendar:src/components/Calendar.svelte:47-48"
       ],
       "why_it_matters": "Anyone porting or extending this code could reasonably assume passing a different `localeData` to Calendar changes week start/weekday names for that instance; it does not — only a prior call to configureGlobalMomentLocale() (which mutates the shared global) has any effect. Worth fixing (either wire the param through or remove it) rather than carrying the dead parameter into the merged repo.",
-      "source": "calui",
-      "id": "OBS-17"
+      "id": "OBS-calui-07",
+      "source": "calui"
     },
     {
       "severity": "P3",
@@ -13340,8 +13390,8 @@
         "calui-calendar:src/components/Calendar.svelte:34"
       ],
       "why_it_matters": "Harmless today (same global either way, since Calendar always sets context to `plugin.app.isMobile`), but it's an inconsistent pattern within the same 0.4.0 codebase and worth normalizing when merging so mobile-detection has one source of truth.",
-      "source": "calui",
-      "id": "OBS-18"
+      "id": "OBS-calui-08",
+      "source": "calui"
     },
     {
       "severity": "P3",
@@ -13352,8 +13402,8 @@
         "calui-metadata-resolver:src/components/MetadataResolver.svelte:9-17"
       ],
       "why_it_matters": "0.4.0 cells will render their 'no metadata yet' state (e.g. empty dots) briefly on every recompute, then flash to the resolved state, where 0.3.12 rendered nothing until resolved. Minor but real visual/behavioral difference to be aware of when comparing screenshots or writing tests across the two versions.",
-      "source": "calui",
-      "id": "OBS-19"
+      "id": "OBS-calui-09",
+      "source": "calui"
     },
     {
       "severity": "P3",
@@ -13364,8 +13414,8 @@
         "obsidian-calendar-plugin/src/view.ts:29-32"
       ],
       "why_it_matters": "calui never exports isMetaPressed from index.ts even though it's simple, stable, and needed by any host implementing month-header handling itself (as the 0.3.12-era plugin does). Exporting it in the merged library removes a real, currently-necessary duplication.",
-      "source": "calui",
-      "id": "OBS-20"
+      "id": "OBS-calui-10",
+      "source": "calui"
     },
     {
       "severity": "P2",
@@ -13377,8 +13427,8 @@
         "cal-calendar-svelte:src/ui/Calendar.svelte:36-38"
       ],
       "why_it_matters": "Easy to lose silently in a merge/rebase: it's a capture-phase DOM listener racing an upstream bubble-phase handler, plus a new exported Svelte accessor and a new settings.ts function, all introduced across commits 5ed4307 and 39040cd. A naive merge that only carries forward file-level diffs on view.ts could easily drop the Calendar.svelte accessor or the capture/bubble ordering comment, silently breaking the feature or corrupting event handling on the month header for everyone.",
-      "source": "cal",
-      "id": "OBS-21"
+      "id": "OBS-cal-01",
+      "source": "cal"
     },
     {
       "severity": "P2",
@@ -13389,8 +13439,8 @@
         "cal-settings:src/settings.ts:83-86 (sibling fix for context)"
       ],
       "why_it_matters": "If true, `showWeeklyNote`'s legacy settings UI and the 'Open Weekly Note' command's checkCallback may never correctly detect an active Periodic Notes weekly setup, always falling back to this plugin's own (deprecated) weekly-note path even when Periodic Notes is properly configured. Worth verifying against a live Periodic Notes instance before porting this function as-is.",
-      "source": "cal",
-      "id": "OBS-22"
+      "id": "OBS-cal-02",
+      "source": "cal"
     },
     {
       "severity": "P2",
@@ -13400,8 +13450,8 @@
         "package.json:14-22"
       ],
       "why_it_matters": "If the merged obsidian-calendaric repo consolidates on a different obsidian-daily-notes-interface source (e.g. the community version, or a different fork mapped by another agent), this plugin's getDateFromFile/allowPrefixMatch-dependent behavior (see jump-calendar-to-active-note fix) and its dev-id plugin detection pattern may silently regress unless that same fork's changes are ported into whichever DNI implementation is chosen as canonical.",
-      "source": "cal",
-      "id": "OBS-23"
+      "id": "OBS-cal-03",
+      "source": "cal"
     },
     {
       "severity": "P3",
@@ -13412,8 +13462,8 @@
         "cal-view:src/view.ts:321-346"
       ],
       "why_it_matters": "An existing weekly note may open in a different edit/preview mode than the user's configured default, unlike daily notes. Worth deciding intentionally when porting rather than carrying the asymmetry forward silently.",
-      "source": "cal",
-      "id": "OBS-24"
+      "id": "OBS-cal-04",
+      "source": "cal"
     },
     {
       "severity": "P3",
@@ -13424,8 +13474,8 @@
         "cal-io-weekly:src/io/weeklyNotes.ts:14-44"
       ],
       "why_it_matters": "A user who fills these fields expecting them to control weekly note creation gets no effect; they were presumably superseded by Periodic Notes' own settings. A merge should either wire them up or drop them rather than porting dead settings forward.",
-      "source": "cal",
-      "id": "OBS-25"
+      "id": "OBS-cal-05",
+      "source": "cal"
     },
     {
       "severity": "P3",
@@ -13436,8 +13486,8 @@
         "cal-settings:src/settings.ts:74-78"
       ],
       "why_it_matters": "A future dev-plugin-id change (or a third id) has to be updated in two places; this already caused one missed-gap bugfix (commit 7727890) when the id probe was added to only one of the two functions initially.",
-      "source": "cal",
-      "id": "OBS-26"
+      "id": "OBS-cal-06",
+      "source": "cal"
     },
     {
       "severity": "P3",
@@ -13447,8 +13497,8 @@
         "cal-view:src/view.ts:182-218"
       ],
       "why_it_matters": "Whatever hover-preview consumer Obsidian core wires up may attempt to preview `undefined`, showing an empty or erroring popover instead of no popover at all. Minor UX rough edge worth deciding on when porting.",
-      "source": "cal",
-      "id": "OBS-27"
+      "id": "OBS-cal-07",
+      "source": "cal"
     },
     {
       "severity": "P3",
@@ -13458,8 +13508,8 @@
         "cal-utils:src/ui/utils.ts:40-56"
       ],
       "why_it_matters": "Two same-named files in different folders (e.g. a manually created note that happens to match the daily-note date format, outside the daily notes folder) would be indistinguishable by this lookup, potentially mis-highlighting the wrong file as 'active' in the calendar.",
-      "source": "cal",
-      "id": "OBS-28"
+      "id": "OBS-cal-08",
+      "source": "cal"
     },
     {
       "severity": "P1",
@@ -13469,8 +13519,8 @@
         "src/settings/pages/details/Details.svelte:107 (commit 07f0df9)"
       ],
       "why_it_matters": "Obsidian 1.13 changed the settings-modal DOM; without the optional-chaining guard, opening the plugin's settings tab throws ('Cannot read properties of undefined (reading scroll)') and leaves the Svelte component half-mounted, breaking the whole settings UI. A merge must carry this guard forward or the crash reappears on current Obsidian.",
-      "source": "pn",
-      "id": "OBS-29"
+      "id": "OBS-pn-01",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13484,8 +13534,8 @@
         "src/settings/pages/details/PeriodicGroup.svelte:94 (commit e50b8e8)"
       ],
       "why_it_matters": "Not present upstream (liamcain/obsidian-periodic-notes). A merge that starts from upstream code will silently lose prefix-matching for notes whose filenames only start with the configured format (e.g. weekly notes with a trailing date-range suffix).",
-      "source": "pn",
-      "id": "OBS-30"
+      "id": "OBS-pn-02",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13496,8 +13546,8 @@
         ".tool-versions (commit e332ac6)"
       ],
       "why_it_matters": "Node 24 rejects an unattributed JSON module import (ERR_IMPORT_ATTRIBUTE_MISSING); without this change the build breaks on the fork's own pinned toolchain. A merged build script for the whole family must pick one convention for reading manifest.json, and honor (or explicitly override) the Node version pin.",
-      "source": "pn",
-      "id": "OBS-31"
+      "id": "OBS-pn-03",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13507,8 +13557,8 @@
         "package.json:10 (commit b8ff1f4)"
       ],
       "why_it_matters": "svelte-check 2.7.0 can't parse this repo's inline type-only import specifiers ('import { type X }'), a pre-existing toolchain mismatch, so the fork bypassed the gate rather than fixing it. A merged repo needs a working lint/typecheck step or will silently reintroduce type errors.",
-      "source": "pn",
-      "id": "OBS-32"
+      "id": "OBS-pn-04",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13519,8 +13569,8 @@
         "src/calendarSetManager.ts:20-30 (ILegacySettings — has them, but this type is only used by isLegacySettings()/migrateLegacySettingsToCalendarSet(), called exactly once from src/main.ts:177-187 during loadSettings())"
       ],
       "why_it_matters": "A merge that assumes v0.0.17 still reads/writes top-level daily/weekly/... settings (as much older versions of this plugin, and possibly sibling repos in this family, do) will be targeting dead code. The only live, ongoing config surface in this fork is calendarSets[]; the top-level keys are read exactly once, from raw loaded JSON, purely to detect a pre-upgrade vault.",
-      "source": "pn",
-      "id": "OBS-33"
+      "id": "OBS-pn-05",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13531,8 +13581,8 @@
         "src/settings/pages/dashboard/Dashboard.svelte:127"
       ],
       "why_it_matters": "Both the 'Start week on' and 'Locale' dropdowns call app.vault.setConfig('weekStart', val) — the Locale handler is a copy-paste of the week-start handler and never writes 'localeOverride'. Changing Locale in the UI never actually persists a locale override (it just re-writes weekStart with the locale-dropdown's value instead), while configureGlobalMomentLocale() at load time correctly reads 'localeOverride' from vault config — so the bug is invisible until you try to change locale live and reload.",
-      "source": "pn",
-      "id": "OBS-34"
+      "id": "OBS-pn-06",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13544,8 +13594,8 @@
         "src/settings/index.ts:45-46 (localeOverride, weekStart)"
       ],
       "why_it_matters": "Declared and defaulted but never read again anywhere else in the source (confirmed by grep). localeOverride/weekStart are additionally shadowed by the real values living in Obsidian's vault-level config, not plugin data.json. A merge should not port these fields as if they carried live state.",
-      "source": "pn",
-      "id": "OBS-35"
+      "id": "OBS-pn-07",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13557,8 +13607,8 @@
         "src/settings/components/IconButton.svelte"
       ],
       "why_it_matters": "None of the three is reachable from any command, event, or component in this repo (confirmed by grep for each class/component name). Do not port these as capabilities; they are inert leftovers — fileOptionsSwitcher.ts's own 'Delete file' item even has an empty onChooseSuggestion body.",
-      "source": "pn",
-      "id": "OBS-36"
+      "id": "OBS-pn-08",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13568,8 +13618,8 @@
         "src/cache.ts:25"
       ],
       "why_it_matters": "Only 'filename' and 'frontmatter' are ever assigned to matchData.matchType anywhere in the source. Harmless, but a porting agent should not build logic that expects this variant to occur.",
-      "source": "pn",
-      "id": "OBS-37"
+      "id": "OBS-pn-09",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13579,8 +13629,8 @@
         "src/cache.ts:125-171, specifically line 142"
       ],
       "why_it_matters": "resolve() (filename matching) correctly uses getPossibleFormats() + getDateWithPrefixFallback() against the user's configured format. resolveChangedMetadata() (frontmatter matching) instead hard-codes DEFAULT_FORMAT[granularity] for the strict parse. A note identified only via frontmatter (e.g. `day: 2022-02-02`) with a non-default format configured will silently fail to resolve. A merged note-resolution engine should unify these two code paths rather than keep the asymmetry.",
-      "source": "pn",
-      "id": "OBS-38"
+      "id": "OBS-pn-10",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13590,8 +13640,8 @@
         "src/cache.ts:189-258, specifically 235-258"
       ],
       "why_it_matters": "When no active granularity's folder+format matches a file, resolve() falls through to getLooselyMatchedDate(file.basename) with no folder check at all. Any markdown file anywhere in the vault whose basename merely contains a YYYY-MM-DD/YYYY-MM/YYYY-shaped substring (e.g. '2026 Meeting Notes.md') gets cached as an inexact match for every calendar set that has active granularities, which can surface as incorrect '+N related notes' badges and pollute the related-files switcher with unrelated files.",
-      "source": "pn",
-      "id": "OBS-39"
+      "id": "OBS-pn-11",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13604,8 +13654,8 @@
         "src/switcher/relatedFilesSwitcher.ts"
       ],
       "why_it_matters": "A grep for prototype/monkey/patch/QuickSwitcher across src/ found nothing. All four 'switcher' classes are independent SuggestModal/FuzzySuggestModal subclasses (Obsidian's own public modal API), opened from the plugin's own commands — not modifications of core UI. The actual merge hazard is the Tab hand-off between NLDNavigator and RelatedFilesSwitcher (closing one modal, opening the other, and replaying the query string via a synthetic 'input' event) — that chain has no test coverage and is easy to break silently if either constructor's signature changes during a merge.",
-      "source": "pn",
-      "id": "OBS-40"
+      "id": "OBS-pn-12",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13616,8 +13666,8 @@
         "src/utils.ts:197-215 (getDateWithPrefixFallback)"
       ],
       "why_it_matters": "openPeriodicNote is a PeriodicNotesPlugin method in main.ts, not utils.ts. utils.ts does correctly hold getDateWithPrefixFallback and the rest of the date/template helpers. Noted so a porting agent doesn't waste time searching utils.ts for openPeriodicNote.",
-      "source": "pn",
-      "id": "OBS-41"
+      "id": "OBS-pn-13",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13627,8 +13677,8 @@
         "src/main.ts:239 (inline comment: '// TODO: What API do I want for this?')"
       ],
       "why_it_matters": "Treat this method's signature (a boolean includeFinerGranularities flag) as a redesign candidate in the merged plugin rather than a contract that must be preserved exactly.",
-      "source": "pn",
-      "id": "OBS-42"
+      "id": "OBS-pn-14",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13638,8 +13688,8 @@
         "manifest.json:2 (id: 'periodic-notes')"
       ],
       "why_it_matters": "The assignment states this fork is installed under the dev plugin id 'periodic-notes-anks'. Any other plugin (e.g. obsidian-calendar-plugin) calling app.plugins.getPlugin('periodic-notes') gets undefined in this vault, even though the code and its public methods are otherwise present and working. This is an install-time integration risk specific to this vault, not a code bug — worth flagging before testing the merged plugin's cross-plugin API here.",
-      "source": "pn",
-      "id": "OBS-43"
+      "id": "OBS-pn-15",
+      "source": "pn"
     },
     {
       "severity": "P3",
@@ -13651,8 +13701,8 @@
         "src/settings/localization.ts:48-56, 63-85 (weekdays array + overrideGlobalMomentWeekStart)"
       ],
       "why_it_matters": "Three separate hard-coded ['sunday'..'saturday'] arrays with slightly different rotation logic for locale week-start. A merge across this whole plugin family should consolidate on one canonical day-of-week utility rather than porting all three independently.",
-      "source": "pn",
-      "id": "OBS-44"
+      "id": "OBS-pn-16",
+      "source": "pn"
     },
     {
       "severity": "P2",
@@ -13665,8 +13715,8 @@
         "src/settings.ts"
       ],
       "why_it_matters": "The old Svelte components cannot be copied into this repo's DOM-based UI. This records a technology difference, not a blocked requirement: a from-scratch rewrite was always going to re-implement the views. Choose the new UI boundary deliberately and preserve behaviour, not either repository's component structure.",
-      "source": "calendaric",
-      "id": "OBS-45"
+      "id": "OBS-calendaric-01",
+      "source": "calendaric"
     },
     {
       "severity": "P1",
@@ -13678,8 +13728,8 @@
         "src/main.ts:70-91"
       ],
       "why_it_matters": "This is the single most important fact for the port plan: month, quarter, and year note creation/opening/templating/dots/settings-UI all still need to be built from scratch, even though the data shape (PeriodicConfig, DEFAULT_SETTINGS.month/quarter/year) already exists.",
-      "source": "calendaric",
-      "id": "OBS-46"
+      "id": "OBS-calendaric-02",
+      "source": "calendaric"
     },
     {
       "severity": "P2",
@@ -13690,8 +13740,8 @@
         "src/notes/noteUtils.ts:7-15,21-27,51-61"
       ],
       "why_it_matters": "A user who sets 'Start week on: Sunday' will still get {{monday:...}} always meaning ISO Monday, not the first day of their configured week — the documented behaviour and the implemented behaviour disagree. When porting/fixing, decide (and test) which one is correct rather than assuming the doc is accurate.",
-      "source": "calendaric",
-      "id": "OBS-47"
+      "id": "OBS-calendaric-03",
+      "source": "calendaric"
     },
     {
       "severity": "P2",
@@ -13702,8 +13752,8 @@
         "manifest.json:7"
       ],
       "why_it_matters": "This will throw (window.require is undefined) on Obsidian mobile, contradicting AGENTS.md's 'Avoid Node/Electron APIs if you want mobile compatibility' and the plugin's own manifest claim of mobile support.",
-      "source": "calendaric",
-      "id": "OBS-48"
+      "id": "OBS-calendaric-04",
+      "source": "calendaric"
     },
     {
       "severity": "P2",
@@ -13714,8 +13764,8 @@
         "src/settings/dailyNotesImport.ts"
       ],
       "why_it_matters": "The stated goal is to absorb both the Calendar plugin and the Periodic Notes plugin. Users migrating from Periodic Notes (which already has week/month/quarter/year notes configured) currently have no assisted migration path at all — this needs to be built, not just extended.",
-      "source": "calendaric",
-      "id": "OBS-49"
+      "id": "OBS-calendaric-05",
+      "source": "calendaric"
     },
     {
       "severity": "P3",
@@ -13725,8 +13775,8 @@
         "src/settings.ts"
       ],
       "why_it_matters": "Merging in the Svelte-based settings UI/logic from the source repos (which is more feature-rich: month/quarter/year, more granular controls) will make this file worse, not better, unless it's split before or during the merge.",
-      "source": "calendaric",
-      "id": "OBS-50"
+      "id": "OBS-calendaric-06",
+      "source": "calendaric"
     },
     {
       "severity": "P3",
@@ -13736,8 +13786,8 @@
         "tsconfig.json"
       ],
       "why_it_matters": "Code merged in from other repos may rely on strictPropertyInitialization or strictFunctionTypes being on (or off) and behave differently once merged into this config; worth reconciling before merge rather than after a type-error pile-up.",
-      "source": "calendaric",
-      "id": "OBS-51"
+      "id": "OBS-calendaric-07",
+      "source": "calendaric"
     },
     {
       "severity": "P3",
@@ -13753,8 +13803,8 @@
         "src/settings.ts"
       ],
       "why_it_matters": "Anything the port touches in these files has no regression safety net today; the __mocks__/obsidian.ts mock is also minimal (Plugin, PluginSettingTab, Setting only) and would need real expansion (TFile, Vault, MetadataCache, Workspace, ItemView, Modal) before these paths could be tested at all.",
-      "source": "calendaric",
-      "id": "OBS-52"
+      "id": "OBS-calendaric-08",
+      "source": "calendaric"
     },
     {
       "severity": "P3",
@@ -13765,8 +13815,8 @@
         "src/ui/CalendarView.ts:22-24"
       ],
       "why_it_matters": "Source plugins being merged in (the Calendar plugin especially) commonly add a ribbon icon as their primary entry point — a source-parity check should confirm whether a ribbon icon needs to be added here.",
-      "source": "calendaric",
-      "id": "OBS-53"
+      "id": "OBS-calendaric-09",
+      "source": "calendaric"
     },
     {
       "severity": "P3",
@@ -13776,8 +13826,8 @@
         "src/settings.ts:227,377-393"
       ],
       "why_it_matters": "This is pure UI scaffolding for an entirely unbuilt feature (arbitrary/custom periodic note sets, as in the Periodic Notes plugin) — a port plan should treat it as unstarted, not partially built.",
-      "source": "calendaric",
-      "id": "OBS-54"
+      "id": "OBS-calendaric-10",
+      "source": "calendaric"
     },
     {
       "severity": "P2",
@@ -13789,8 +13839,8 @@
         ".obsidian/plugins/templater-obsidian/data.json:17-20"
       ],
       "why_it_matters": "A merged plugin has to decide which of these three config surfaces is authoritative for daily notes; picking wrong, or dropping one silently, changes which plugin creates the file and could break the folder-trigger Templater relies on.",
-      "source": "vault",
-      "id": "OBS-55"
+      "id": "OBS-vault-01",
+      "source": "vault"
     },
     {
       "severity": "P2",
@@ -13800,8 +13850,8 @@
         ".obsidian/plugins/periodic-notes-anks/data.json:47-58"
       ],
       "why_it_matters": "Reading the top-level keys instead of calendarSets[] gives a wrong and specifically misleading answer for month (it looks like a valid config, just the wrong one) rather than an obviously-empty one. Any merge tooling that walks the JSON generically must be pointed at calendarSets[], never the legacy top-level block.",
-      "source": "vault",
-      "id": "OBS-56"
+      "id": "OBS-vault-02",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13811,8 +13861,8 @@
         ".obsidian/plugins/periodic-notes/data.json:20-32"
       ],
       "why_it_matters": "Fully orphaned config from a prior vault layout; safe to ignore entirely for the merge, but worth flagging so nobody mistakes the 'Work' calendar-set pattern there for a currently-used multi-calendar-set feature.",
-      "source": "vault",
-      "id": "OBS-57"
+      "id": "OBS-vault-03",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13822,8 +13872,8 @@
         ".obsidian/plugins/periodic-notes-anks/data.json:29-34"
       ],
       "why_it_matters": "Quarterly-note support can be scoped out of (or deprioritized in) the merged plugin's initial feature set — nothing in this vault depends on it.",
-      "source": "vault",
-      "id": "OBS-58"
+      "id": "OBS-vault-04",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13833,8 +13883,8 @@
         ".obsidian/plugins/periodic-notes-anks/data.json:6-46"
       ],
       "why_it_matters": "The 'Work' vs personal split in this vault is instead implemented ad hoc via a second physical folder + a separate template + a ' - Work' filename suffix, not via periodic-notes' own multi-calendar-set mechanism. A merge should not assume calendar-sets are how 'Work' notes are actually kept separate here.",
-      "source": "vault",
-      "id": "OBS-59"
+      "id": "OBS-vault-05",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13844,8 +13894,8 @@
         ".obsidian/plugins/periodic-notes-anks/data.json:42"
       ],
       "why_it_matters": "Timeline complication can likely be deprioritized as a feature nobody is observed to use, pending a UI check outside this agent's read scope.",
-      "source": "vault",
-      "id": "OBS-60"
+      "id": "OBS-vault-06",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13855,8 +13905,8 @@
         ".obsidian/plugins/calendar-anks/data.json:3"
       ],
       "why_it_matters": "If the merged plugin's calendar view supports pluggable dot sources, only the built-in word-count source needs porting as 'used'; anything more elaborate is unused here.",
-      "source": "vault",
-      "id": "OBS-61"
+      "id": "OBS-vault-07",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13867,8 +13917,8 @@
         "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md:129"
       ],
       "why_it_matters": "These are two independent couplings to the exact folder names in periodic-notes-anks.calendarSets[0] (daily folder, and each view's filename-parsing assumptions about title format). Renaming any planner folder or filename format in the merged plugin requires updating both the Templater scripts and the Bases file's view filters/parsing offsets in lockstep — there is no shared constant.",
-      "source": "vault",
-      "id": "OBS-62"
+      "id": "OBS-vault-08",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13882,8 +13932,8 @@
         "_90 Ekstra/_91 Szablony/Monthly Work Template DEPRECATED.md"
       ],
       "why_it_matters": "Dead weight for the merge — none of their logic needs porting. Confirmed unreferenced by grepping the live config's template paths, not by filename convention alone.",
-      "source": "vault",
-      "id": "OBS-63"
+      "id": "OBS-vault-09",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13894,8 +13944,8 @@
         "_00 Planer/_01 Dziennik/2025-10–10, Friday.md"
       ],
       "why_it_matters": "A merged plugin's daily-note lookup/parsing (regex anchored on 'YYYY-MM-DD' at the start of the title) will not resolve these 8 files as daily notes; that's consistent with current behavior (the live template's own regex would reject them too) so it is not a regression, just worth confirming intentional.",
-      "source": "vault",
-      "id": "OBS-64"
+      "id": "OBS-vault-10",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13905,8 +13955,8 @@
         "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base:21-22,43-44,65-66,86-87,109-110,129-130"
       ],
       "why_it_matters": "This is the tightest possible coupling to exact filename format (pretty weekly title, 'YYYY-MM MMMM' monthly title). Any format change in the merged plugin must recompute every slice offset in this file or these views silently return empty/wrong ranges with no error.",
-      "source": "vault",
-      "id": "OBS-65"
+      "id": "OBS-vault-11",
+      "source": "vault"
     },
     {
       "severity": "P3",
@@ -13917,8 +13967,8 @@
         "_00 Planer/_04 1on1/"
       ],
       "why_it_matters": "If the merge intends periodic-notes to be the single source of all periodic behaviour, this folder is a real-world counter-example already living outside that model — worth an explicit decision (fold into 'quarter', or leave as a Templater-only convention).",
-      "source": "vault",
-      "id": "OBS-66"
+      "id": "OBS-vault-12",
+      "source": "vault"
     },
     {
       "severity": "P1",
@@ -13928,8 +13978,8 @@
         "obsidian-calendar-plugin:src/settings.ts:48-56@7727890"
       ],
       "why_it_matters": "If the dev-id fallback is dropped in the merge, any install running only the dev-id Periodic Notes build regresses to showing dead legacy weekly settings, and a user could reconfigure weekly notes in a UI that no longer does anything.",
-      "source": "forks",
-      "id": "OBS-67"
+      "id": "OBS-forks-01",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -13939,8 +13989,8 @@
         "obsidian-calendar-plugin:src/view.ts:301-320@7727890"
       ],
       "why_it_matters": "Dropping this makes 'reveal active note' silently fail for any prefix-matched weekly note, even though the same note is otherwise fully recognized -- an inconsistent, hard-to-notice regression.",
-      "source": "forks",
-      "id": "OBS-68"
+      "id": "OBS-forks-02",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -13950,8 +14000,8 @@
         "obsidian-calendar-plugin:package.json:1@8e2545b"
       ],
       "why_it_matters": "Documents why the resolutions block exists at all: without it, two divergent copies of obsidian-daily-notes-interface (one carrying the anks fixes, one not) could end up bundled side by side. Superseded in the very next commit by a network-resolvable pin, but the resolutions-block *pattern* must survive.",
-      "source": "forks",
-      "id": "OBS-69"
+      "id": "OBS-forks-03",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -13962,8 +14012,8 @@
         "obsidian-calendar-plugin:package.json:21@102ad6d"
       ],
       "why_it_matters": "This is the load-bearing, portable form of the dependency pin. If a merge collapses these into one repo, this specific pin becomes moot -- but until then, dropping it back to a file:// or machine-local path breaks `yarn install` on any other machine or in CI.",
-      "source": "forks",
-      "id": "OBS-70"
+      "id": "OBS-forks-04",
+      "source": "forks"
     },
     {
       "severity": "P3",
@@ -13973,8 +14023,8 @@
         "obsidian-calendar-plugin:.tool-versions:1@bbdd13c"
       ],
       "why_it_matters": "Build-only convenience; worth carrying into the merged repo's own .tool-versions so contributors don't hit toolchain drift, but nothing breaks at runtime if dropped.",
-      "source": "forks",
-      "id": "OBS-71"
+      "id": "OBS-forks-05",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -13985,8 +14035,8 @@
         "obsidian-calendar-plugin:package.json:21@dc780c0"
       ],
       "why_it_matters": "Encodes that bba664e (not an earlier DNI commit) is the authoritative state of obsidian-daily-notes-interface. Merging an older DNI snapshot silently reintroduces the monthly/quarterly/yearly plugin-detection bug that bba664e fixed.",
-      "source": "forks",
-      "id": "OBS-72"
+      "id": "OBS-forks-06",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -13997,8 +14047,8 @@
         "obsidian-calendar-plugin:src/ui/Calendar.svelte:36-38@5ed4307"
       ],
       "why_it_matters": "No upstream code or documentation describes this. Dropping it silently removes a feature users rely on, with no error: it degrades gracefully back to the old reset-to-current-month click, so the loss would not be noticed until someone asks 'where did month-click-to-open go'.",
-      "source": "forks",
-      "id": "OBS-73"
+      "id": "OBS-forks-07",
+      "source": "forks"
     },
     {
       "severity": "P1",
@@ -14008,8 +14058,8 @@
         "obsidian-calendar-plugin:src/settings.ts:72-111@39040cd"
       ],
       "why_it_matters": "This is the commit that actually makes capability open-monthly-note-from-header work at all. Porting 5ed4307 into a merge without also porting 39040cd ships dead-on-arrival code: the click handler runs but silently no-ops on every click, which is worse than not having the feature because it looks broken rather than absent.",
-      "source": "forks",
-      "id": "OBS-74"
+      "id": "OBS-forks-08",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14020,8 +14070,8 @@
         "obsidian-periodic-notes:src/cache.ts:206-222@e50b8e8"
       ],
       "why_it_matters": "This is the setting the whole allow-prefix-match feature family (this repo and daily-notes-interface) is built around. If dropped, any weekly/monthly/etc. note named with extra suffix text after the date format (e.g. '2026-W07, 09.02 - 15.02.md') silently stops being recognized as a periodic note.",
-      "source": "forks",
-      "id": "OBS-75"
+      "id": "OBS-forks-09",
+      "source": "forks"
     },
     {
       "severity": "P1",
@@ -14031,8 +14081,8 @@
         "obsidian-periodic-notes:src/settings/pages/details/Details.svelte:102-108@07f0df9"
       ],
       "why_it_matters": "Without this guard, the Periodic Notes settings tab hard-crashes on Obsidian 1.13+, making the plugin's settings unusable on any currently-shipping Obsidian version. This is a correctness fix, not a cosmetic one.",
-      "source": "forks",
-      "id": "OBS-76"
+      "id": "OBS-forks-10",
+      "source": "forks"
     },
     {
       "severity": "P3",
@@ -14042,8 +14092,8 @@
         "obsidian-periodic-notes:package.json:12@b8ff1f4"
       ],
       "why_it_matters": "Build-only. If a merge reintroduces a build script that runs lint-before-build (e.g. by copying an older script verbatim), CI/local builds break on a lint false-positive despite correct code.",
-      "source": "forks",
-      "id": "OBS-77"
+      "id": "OBS-forks-11",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14053,8 +14103,8 @@
         "obsidian-periodic-notes:esbuild.config.mjs:1-8@e332ac6"
       ],
       "why_it_matters": "Build-only, but a total build failure on modern Node if reverted. Note this differs from how the other two forks avoid the equivalent class of Node-version issue -- neither of them had a bare JSON import to begin with, so this fix pattern is specific to this repo's esbuild setup and won't automatically transfer if the merge consolidates build tooling.",
-      "source": "forks",
-      "id": "OBS-78"
+      "id": "OBS-forks-12",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14065,8 +14115,8 @@
         "obsidian-daily-notes-interface:src/types.ts:6@c2c96e3"
       ],
       "why_it_matters": "This is the parsing primitive both obsidian-calendar-plugin's revealActiveNote() and the Calendar's own weekly-note dot-indexing depend on. It is independent of, and behaviorally different from, obsidian-periodic-notes' own getDateWithPrefixFallback() (see the duplication observation below), so dropping just one of the two implementations changes behavior only for whichever install path used it.",
-      "source": "forks",
-      "id": "OBS-79"
+      "id": "OBS-forks-13",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14077,8 +14127,8 @@
         "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8"
       ],
       "why_it_matters": "A merge that keeps only one implementation changes which weekly filenames resolve for calendar-plugin-only installs (which go through daily-notes-interface, not periodic-notes) versus periodic-notes-driven installs. This is a silent behavior change for edge-case filenames (e.g. ambiguous week-only formats) depending on which implementation is picked as canonical.",
-      "source": "forks",
-      "id": "OBS-80"
+      "id": "OBS-forks-14",
+      "source": "forks"
     },
     {
       "severity": "P1",
@@ -14089,8 +14139,8 @@
         "obsidian-daily-notes-interface:src/settings.ts:15-97@be90253"
       ],
       "why_it_matters": "This is the load-bearing plugin-detection fix for running a dev build alongside a store build. Without it, daily/weekly note creation and settings resolution silently use the wrong (or no) settings source across every consumer of this library.",
-      "source": "forks",
-      "id": "OBS-81"
+      "id": "OBS-forks-15",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14100,8 +14150,8 @@
         "obsidian-daily-notes-interface:package.json:18@faae012"
       ],
       "why_it_matters": "Not a runtime behavior change but a total install-breaker for any git-URL consumer under the current multi-repo setup. Becomes moot once everything lives in one merged repo (no git-dependency indirection left), but until/unless that happens, dropping this script breaks the whole dependency chain silently (the failure only surfaces as a missing-module error deep in the consumer's build).",
-      "source": "forks",
-      "id": "OBS-82"
+      "id": "OBS-forks-16",
+      "source": "forks"
     },
     {
       "severity": "P3",
@@ -14111,8 +14161,8 @@
         "obsidian-daily-notes-interface:.tool-versions:1@fba3dda"
       ],
       "why_it_matters": "Build-only convenience, matches the same pin applied in the other two forks. Nothing breaks at runtime if dropped.",
-      "source": "forks",
-      "id": "OBS-83"
+      "id": "OBS-forks-17",
+      "source": "forks"
     },
     {
       "severity": "P1",
@@ -14123,8 +14173,8 @@
         "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
       ],
       "why_it_matters": "Same class of bug as be90253, but for three more granularities that be90253 missed. A merge that ports be90253 but not this follow-up commit reintroduces this exact gap for monthly/quarterly/yearly notes.",
-      "source": "forks",
-      "id": "OBS-84"
+      "id": "OBS-forks-18",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14136,8 +14186,8 @@
         "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
       ],
       "why_it_matters": "Three independent copies of the same hardcoded 'periodic-notes-anks' id now exist across the two forks. A merge should consolidate to one; otherwise a future rename of the dev-build id has to be applied correctly in three places instead of one, and it's easy to miss one (as bba664e itself demonstrates happened once already).",
-      "source": "forks",
-      "id": "OBS-85"
+      "id": "OBS-forks-19",
+      "source": "forks"
     },
     {
       "severity": "P2",
@@ -14148,8 +14198,8 @@
         "obsidian-calendar-ui:package.json:3"
       ],
       "why_it_matters": "An agent porting 'what obsidian-calendar-ui does' by reading the local checkout will describe UI behavior (0.4.0 / 2.0-beta.2, e.g. its 'properly unload UI and eventlisteners' and month-metadata-refresh fixes) that is not what is actually bundled into the plugin today (0.3.12). The merge must explicitly decide which calendar-ui version's behavior to carry forward, since the two are not the same code and the newer one was never actually wired in.",
-      "source": "forks",
-      "id": "OBS-86"
+      "id": "OBS-forks-20",
+      "source": "forks"
     },
     {
       "severity": "P3",
@@ -14159,8 +14209,8 @@
         "obsidian-calendar-ui:HEAD"
       ],
       "why_it_matters": "Confirms this repo needs no divergence-preservation work of its own during the merge; the only thing that matters from it is the version-pin mismatch captured in the observation above.",
-      "source": "forks",
-      "id": "OBS-87"
+      "id": "OBS-forks-21",
+      "source": "forks"
     },
     {
       "severity": "P3",
@@ -14173,12 +14223,13 @@
         "obsidian-calendar-ui:HEAD"
       ],
       "why_it_matters": "Confirms this observation list is complete relative to on-disk state: nothing is sitting uncommitted or stashed that would be silently lost on top of what the commit history already captures.",
-      "source": "forks",
-      "id": "OBS-88"
+      "id": "OBS-forks-22",
+      "source": "forks"
     },
     {
       "severity": "P2",
       "kind": "duplication",
+      "id": "OBS-review-01",
       "what": "obsidian-calendaric defines the Granularity type three times, independently.",
       "where": [
         "obsidian-calendaric/src/notes/noteCreate.ts:7",
@@ -14186,12 +14237,12 @@
         "obsidian-calendaric/src/settings.ts:59-60"
       ],
       "why_it_matters": "Widening the type to month/quarter/year means editing three places, and settings.ts already splits it into ActiveGranularity vs Granularity while the other two do not. A partial widening compiles and fails at runtime.",
-      "source": "review",
-      "id": "OBS-89"
+      "source": "review"
     },
     {
       "severity": "P2",
       "kind": "duplication",
+      "id": "OBS-review-02",
       "what": "The hardcoded dev plugin ids appear at six call sites across four functions in two repos, not three as first reported.",
       "where": [
         "obsidian-calendar-plugin/src/settings.ts:53",
@@ -14203,24 +14254,24 @@
         "obsidian-daily-notes-interface/src/index.ts:46"
       ],
       "why_it_matters": "The merged plugin has one id, so every one of these probes must be deleted or repointed. Missing one leaves a lookup that silently resolves to null.",
-      "source": "review",
-      "id": "OBS-90"
+      "source": "review"
     },
     {
       "severity": "P1",
       "kind": "bug",
+      "id": "OBS-review-03",
       "what": "appHasPeriodicNotesPluginLoaded() reads periodicNotes.settings?.weekly?.enabled — the same Svelte-store-as-plain-object bug that commit 39040cd fixed for the monthly path, compounded by 'weekly' being a key Periodic Notes no longer stores.",
       "where": [
         "obsidian-calendar-plugin/src/settings.ts:55",
         "obsidian-calendar-plugin/src/settings.ts:147"
       ],
       "why_it_matters": "It always returns falsy, so the Calendar plugin keeps rendering its own Weekly Note Settings section instead of deferring to Periodic Notes. This is live in the vault today, not only a merge concern.",
-      "source": "review",
-      "id": "OBS-91"
+      "source": "review"
     },
     {
       "severity": "P1",
       "kind": "bug",
+      "id": "OBS-review-04",
       "what": "A prefix-matched note is indexed but cannot be looked up. resolve() stores an entry with matchData.exact false when the strict parse fails and the loose one succeeds, but getPeriodicNote() returns only entries with matchData.exact === true.",
       "where": [
         "obsidian-periodic-notes/src/cache.ts:205-224",
@@ -14228,8 +14279,7 @@
         "obsidian-periodic-notes/src/main.ts:276-282"
       ],
       "why_it_matters": "This is live in the vault: week format gggg-[W]ww with allowPrefixMatch on, and 60 weekly files named 'YYYY-Wnn, DD.MM - DD.MM.md'. Opening such a week finds nothing and creates a second, raw-named file next to the existing one. Prefix matching is only half-wired, so the rewrite must carry the match through lookup and open, not only through indexing.",
-      "source": "review",
-      "id": "OBS-92"
+      "source": "review"
     }
   ],
   "packages": [
@@ -16244,6 +16294,54 @@
       "external": false,
       "source": "pn",
       "uid": "pn:pn-settings-primitives"
+    },
+    {
+      "id": "external-moment",
+      "name": "moment.js",
+      "path": "—",
+      "loc": 0,
+      "role": "Date library Obsidian bundles and re-exports; every format, parse and week calculation in these repos goes through it.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-moment"
+    },
+    {
+      "id": "external-obsidian-daily-notes-interface",
+      "name": "obsidian-daily-notes-interface (published)",
+      "path": "—",
+      "loc": 0,
+      "role": "The published package, as consumed from npm by the Calendar plugin. Distinct from the dni-* modules, which map the local checkout of its source.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-obsidian-daily-notes-interface"
+    },
+    {
+      "id": "external-popperjs-svelte",
+      "name": "@popperjs/core",
+      "path": "—",
+      "loc": 0,
+      "role": "Positions the hover popovers in obsidian-calendar-ui.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-popperjs-svelte"
+    },
+    {
+      "id": "external-svelte-portal",
+      "name": "svelte-portal",
+      "path": "—",
+      "loc": 0,
+      "role": "Renders a component into a DOM node outside its parent, used for the popovers.",
+      "category": "external",
+      "depends_on": [],
+      "external": true,
+      "source": "shared",
+      "uid": "shared:external-svelte-portal"
     },
     {
       "id": "ext-obsidian-api",

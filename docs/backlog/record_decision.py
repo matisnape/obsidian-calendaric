@@ -370,38 +370,67 @@ def main(dec_id: str) -> int:
     if not dec:
         print(f"unknown decision: {dec_id}")
         return 1
-    touched = 0
+
+    # Validate the whole operation before writing anything. A typo used to be
+    # reported as a warning and still exit 0, leaving the decision recorded
+    # against nothing.
+    loaded, problems, targets = {}, [], []
     for epic, story_ids in dec["stories"].items():
         path = EPICS / f"{epic}.json"
-        data = json.loads(path.read_text())
-        for story in data["stories"]:
-            if story["id"] not in story_ids:
-                continue
-            existing = story.setdefault("decisions", [])
-            record = {
-                "id": dec_id,
-                "title": dec["title"],
-                "decision": dec["decision"],
-                "rationale": dec["rationale"],
-            }
-            prior = next((x for x in existing if x["id"] == dec_id), None)
-            if prior:
-                prior.update(record)
+        if not path.exists():
+            problems.append(f"{dec_id} names epic {epic}, which has no file at {path.name}")
+            continue
+        data = loaded.setdefault(epic, json.loads(path.read_text()))
+        by_id = {s["id"]: s for s in data["stories"]}
+        for sid in story_ids:
+            if sid not in by_id:
+                problems.append(f"{dec_id} names story {sid}, which is not in {path.name}")
             else:
-                existing.append({**record, "decided_on": date.today().isoformat()})
+                targets.append((epic, by_id[sid]))
 
-            resolved = set(dec.get("resolves") or [])
-            kept, closed = [], []
-            for q in story.get("open_questions") or []:
-                (closed if q.get("id") in resolved else kept).append(q)
-            story["open_questions"] = kept
-            if resolved and not closed and not prior:
-                unknown = ", ".join(sorted(resolved))
-                print(f"  {story['id']}: {dec_id} claims to resolve {unknown}, "
-                      f"but no such question is open")
-            touched += 1
-        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-    print(f"{dec_id}: recorded against {touched} stories")
+    resolved = list(dec.get("resolves") or [])
+    # A question id is legitimate if it is open now, or if this same decision
+    # already closed it on a previous run. Anything else is a typo, including on
+    # a re-run that only updates the text.
+    open_ids = {q["id"] for _, story in targets for q in story.get("open_questions") or []}
+    closed_by_us = {qid for _, story in targets
+                    for x in story.get("decisions") or [] if x["id"] == dec_id
+                    for qid in x.get("resolves") or []}
+    for qid in resolved:
+        if qid not in open_ids and qid not in closed_by_us:
+            problems.append(f"{dec_id} resolves {qid}, which is not an open question on "
+                            f"{', '.join(s['id'] for _, s in targets)} and was not closed "
+                            f"by {dec_id} before")
+    already = bool(resolved) and not (set(resolved) & open_ids)
+
+    if problems:
+        for text in problems:
+            print(f"  {text}")
+        print(f"{dec_id}: not recorded")
+        return 1
+
+    for _, story in targets:
+        existing = story.setdefault("decisions", [])
+        record = {
+            "id": dec_id,
+            "title": dec["title"],
+            "decision": dec["decision"],
+            "rationale": dec["rationale"],
+            "resolves": resolved,
+        }
+        prior = next((x for x in existing if x["id"] == dec_id), None)
+        if prior:
+            prior.update(record)
+        else:
+            existing.append({**record, "decided_on": date.today().isoformat()})
+        story["open_questions"] = [q for q in story.get("open_questions") or []
+                                   if q["id"] not in set(resolved)]
+
+    for epic, data in loaded.items():
+        (EPICS / f"{epic}.json").write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    print(f"{dec_id}: recorded against {len(targets)} stories"
+          + (" (text update)" if already and resolved else ""))
     return 0
 
 

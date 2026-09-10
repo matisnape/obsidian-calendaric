@@ -43,6 +43,21 @@ EXTERNAL_MODULES = [
      "role": "Generic settings widgets with no periodic-notes logic: Arrow, Breadcrumbs, "
              "Checkmark, Dropdown, Footer, IconButton, SettingItem, Toggle.",
      "category": "ui", "depends_on": [], "external": False},
+    {"id": "external-moment", "name": "moment.js", "path": "—", "loc": 0,
+     "role": "Date library Obsidian bundles and re-exports; every format, parse and week "
+             "calculation in these repos goes through it.",
+     "category": "external", "depends_on": [], "external": True},
+    {"id": "external-obsidian-daily-notes-interface", "name": "obsidian-daily-notes-interface (published)",
+     "path": "—", "loc": 0,
+     "role": "The published package, as consumed from npm by the Calendar plugin. Distinct from "
+             "the dni-* modules, which map the local checkout of its source.",
+     "category": "external", "depends_on": [], "external": True},
+    {"id": "external-popperjs-svelte", "name": "@popperjs/core", "path": "—", "loc": 0,
+     "role": "Positions the hover popovers in obsidian-calendar-ui.",
+     "category": "external", "depends_on": [], "external": True},
+    {"id": "external-svelte-portal", "name": "svelte-portal", "path": "—", "loc": 0,
+     "role": "Renders a component into a DOM node outside its parent, used for the popovers.",
+     "category": "external", "depends_on": [], "external": True},
     {"id": "ext-obsidian-api", "name": "Obsidian API", "path": "—", "loc": 0,
      "role": "App, Vault, Workspace, TFile, metadataCache, Plugin, ItemView.",
      "category": "external", "depends_on": [], "external": True},
@@ -89,6 +104,7 @@ USED_BY_IS_CAPABILITY = {"daily-anchor-link-to-work-heading"}
 # what any single agent reported.
 REVIEW_OBSERVATIONS = [
     {"severity": "P2", "kind": "duplication",
+     "id": "OBS-review-01",
      "what": "obsidian-calendaric defines the Granularity type three times, independently.",
      "where": ["obsidian-calendaric/src/notes/noteCreate.ts:7",
                "obsidian-calendaric/src/notes/templateTokens.ts:5",
@@ -97,6 +113,7 @@ REVIEW_OBSERVATIONS = [
                        "settings.ts already splits it into ActiveGranularity vs Granularity while "
                        "the other two do not. A partial widening compiles and fails at runtime."},
     {"severity": "P2", "kind": "duplication",
+     "id": "OBS-review-02",
      "what": "The hardcoded dev plugin ids appear at six call sites across four functions in two "
              "repos, not three as first reported.",
      "where": ["obsidian-calendar-plugin/src/settings.ts:53",
@@ -109,6 +126,7 @@ REVIEW_OBSERVATIONS = [
      "why_it_matters": "The merged plugin has one id, so every one of these probes must be deleted "
                        "or repointed. Missing one leaves a lookup that silently resolves to null."},
     {"severity": "P1", "kind": "bug",
+     "id": "OBS-review-03",
      "what": "appHasPeriodicNotesPluginLoaded() reads periodicNotes.settings?.weekly?.enabled — the "
              "same Svelte-store-as-plain-object bug that commit 39040cd fixed for the monthly path, "
              "compounded by 'weekly' being a key Periodic Notes no longer stores.",
@@ -118,6 +136,7 @@ REVIEW_OBSERVATIONS = [
                        "Weekly Note Settings section instead of deferring to Periodic Notes. This "
                        "is live in the vault today, not only a merge concern."},
     {"severity": "P1", "kind": "bug",
+     "id": "OBS-review-04",
      "what": "A prefix-matched note is indexed but cannot be looked up. resolve() stores an entry "
              "with matchData.exact false when the strict parse fails and the loose one succeeds, "
              "but getPeriodicNote() returns only entries with matchData.exact === true.",
@@ -166,31 +185,76 @@ def canonicalise(out):
 
 
 ROOTS = {}
+OBS_PROBLEMS = []
+
+
+LINE_SPEC = re.compile(r"\s*(\d+)\s*(?:-\s*(\d+)\s*)?\Z")
+
+
+def parse_line_spec(lines):
+    """Return [(start, end)] for '17', '17-72' or '38-44, 300-322'; None if unparseable.
+
+    An empty or 'n/a' value means the record deliberately cites no line.
+    """
+    if lines is None:
+        return []
+    text = str(lines).strip()
+    if not text or text.lower() in ("n/a", "—", "-"):
+        return []
+    spans = []
+    for part in text.split(","):
+        m = LINE_SPEC.match(part)
+        if not m:
+            return None
+        start = int(m.group(1))
+        end = int(m.group(2)) if m.group(2) else start
+        spans.append((start, end))
+    return spans
 
 
 def check_citations(out):
-    """Every path:line citation must point at a real file and a real line."""
+    """Every path:line citation must point at a real file and real lines."""
     problems = []
-    for cap in out["capabilities"]:
-        root = ROOTS.get(cap["source"])
-        if not root:
+    # Every record type that carries a path, not only capabilities.
+    records = [(c["uid"], c["source"], d.get("path"), d.get("lines"))
+               for c in out["capabilities"] for d in c.get("defined_in") or []]
+    for key, field in (("settings", "key"), ("commands", "id"), ("api_surface", "id")):
+        for rec in out.get(key) or []:
+            path = rec.get("path")
+            owner = f"{rec['source']}:{rec.get(field, '?')}"
+            if not isinstance(path, str):
+                continue
+            # One record may cite several files, separated by ';'.
+            for segment in path.split(";"):
+                segment = segment.strip()
+                if not segment:
+                    continue
+                head, sep, tail = segment.rpartition(":")
+                if sep and re.fullmatch(r"[\d,\s-]+", tail):
+                    records.append((owner, rec["source"], head.strip(), tail))
+                else:
+                    records.append((owner, rec["source"], segment, None))
+
+    for owner, source, path, lines in records:
+        root = ROOTS.get(source)
+        if not root or not isinstance(path, str) or not path or path in ("—", "-"):
             continue
-        for d in cap.get("defined_in") or []:
-            path, lines = d.get("path"), d.get("lines")
-            if not isinstance(path, str) or not path or path == "—":
-                continue
-            fp = pathlib.Path(root) / path
-            if not fp.is_file():
-                problems.append(f"capability {cap['uid']} cites missing file {path}")
-                continue
-            m = re.fullmatch(r"\s*(\d+)\s*-\s*(\d+)\s*", lines or "")
-            if not m:
-                continue
-            end = int(m.group(2))
-            n = len(fp.read_text().splitlines())
-            if end > n:
-                problems.append(
-                    f"capability {cap['uid']} cites {path}:{lines} but the file has {n} lines")
+        if path.endswith("/"):
+            continue
+        fp = pathlib.Path(root) / path
+        if not fp.is_file():
+            problems.append(f"{owner} cites missing file {path}")
+            continue
+        spans = parse_line_spec(lines)
+        if spans is None:
+            problems.append(f"{owner} cites {path} with an unreadable line spec {lines!r}")
+            continue
+        n = len(fp.read_text().splitlines())
+        for start, end in spans:
+            if start < 1 or end < start:
+                problems.append(f"{owner} cites {path}:{lines}, which is not a real range")
+            elif end > n:
+                problems.append(f"{owner} cites {path}:{lines} but the file has {n} lines")
     return problems
 
 
@@ -227,8 +291,15 @@ def main() -> int:
 
     canonicalise(out)
 
-    for n, obs in enumerate(out["observations"], 1):
-        obs["id"] = f"OBS-{n:02d}"
+    seen_obs = set()
+    for obs in out["observations"]:
+        oid = obs.get("id")
+        if not oid:
+            OBS_PROBLEMS.append(f"observation in {obs['source']} has no id: {obs['what'][:60]}")
+        elif oid in seen_obs:
+            OBS_PROBLEMS.append(f"observation id {oid} is used more than once")
+        else:
+            seen_obs.add(oid)
 
     # The workflows viewer expects `packages`; modules are the same thing.
     out["packages"] = out["modules"]
@@ -262,7 +333,8 @@ def main() -> int:
     for mod in out["modules"]:
         mod["uid"] = f"{mod['source']}:{mod['id']}"
 
-    module_uids = {m["uid"] for m in out["modules"]}
+    all_module_uids = [m["uid"] for m in out["modules"]]
+    module_uids = set(all_module_uids)
 
     def module_ref(source, ref):
         """A bare module id means "the one in my own source", when that exists."""
@@ -283,12 +355,14 @@ def main() -> int:
                     step[end] = module_ref(flow["source"], step[end])
 
     module_ids = {m["id"] for m in out["modules"]}
+    duplicate_module_uids = sorted({u for u in all_module_uids if all_module_uids.count(u) > 1})
     ambiguous_modules = {i for i in module_ids
                          if sum(1 for m in out["modules"] if m["id"] == i) > 1}
     cap_ids = {c["id"] for c in out["capabilities"]}
     cap_uids = {c["uid"] for c in out["capabilities"]}
     ambiguous = {i for i in cap_ids if sum(1 for c in out["capabilities"] if c["id"] == i) > 1}
-    problems = []
+    problems = [f"module uid {u} is declared more than once" for u in duplicate_module_uids]
+    problems += OBS_PROBLEMS
 
     def check_module_ref(ref, where):
         if ref in module_uids:
@@ -333,6 +407,10 @@ def main() -> int:
                 problems.append(
                     f"capability {cap['uid']} depends on ambiguous capability id {ref} "
                     f"— use a source-qualified uid")
+
+    for mod in out["modules"]:
+        for ref in mod.get("depends_on") or []:
+            check_module_ref(ref, f"module {mod['uid']} depends_on")
 
     known_cats = {c["id"] for c in CATEGORIES}
     for m in out["modules"]:

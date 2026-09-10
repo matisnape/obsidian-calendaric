@@ -327,14 +327,16 @@
           "title": "An import is offered when any field it would read carries a value",
           "decision": "A predecessor's import is offered when at least one field the importer reads carries a value, counting display and behaviour settings such as the week-start day, the create-confirmation toggle, the word-count threshold and the locale override, not only note format, folder and template. The import is suppressed only when every field it reads is unset.",
           "rationale": "In this vault the Calendar plugin's weekly format, folder and template are blank because weekly configuration lives in Periodic Notes, but week start, create confirmation, words per dot and locale override all carry real values. Suppressing the import there would silently drop settings the user chose. Offering to import literally nothing stays suppressed, which is the noise the original decision was aimed at.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         },
         {
           "id": "DEC-22",
           "title": "Words per dot is a global setting with a default of 250",
           "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
           "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
-          "decided_on": "2026-09-11"
+          "decided_on": "2026-09-11",
+          "resolves": []
         }
       ],
       "resolves": [
@@ -459,7 +461,8 @@
           "title": "Prefix matching is carried across on import",
           "decision": "The per-granularity allow-prefix-matching flag transfers from the Periodic Notes configuration into the imported configuration. It is not dropped.",
           "rationale": "The field has a direct equivalent in the new model. Dropping it silently turns off prefix matching for a vault that depends on it, and this vault does depend on it: its weekly notes are renamed to a longer title after creation and only resolve through a prefix match.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ],
       "resolves": [
@@ -569,13 +572,14 @@
           "title": "Detect each predecessor by both its published id and its development-build id",
           "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
           "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ],
       "resolves": [
-        "OBS-74",
-        "OBS-81",
-        "OBS-84"
+        "OBS-forks-08",
+        "OBS-forks-15",
+        "OBS-forks-18"
       ]
     },
     {
@@ -671,19 +675,21 @@
           "title": "Detect each predecessor by both its published id and its development-build id",
           "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
           "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         },
         {
           "id": "DEC-25",
           "title": "Calendaric does not manage a granularity a predecessor still owns",
           "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
           "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
-          "decided_on": "2026-09-11"
+          "decided_on": "2026-09-11",
+          "resolves": []
         }
       ],
       "resolves": [
-        "OBS-67",
-        "OBS-91"
+        "OBS-forks-01",
+        "OBS-review-03"
       ]
     },
     {
@@ -781,7 +787,8 @@
           "title": "Unrecognised configuration fields survive a round trip",
           "decision": "Configuration written by a newer version keeps its unrecognised fields when an older version loads and saves the file.",
           "rationale": "Same principle as preserving an unused named configuration group: running an older build once must not silently destroy settings, so that downgrading and upgrading again is safe.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ],
       "resolves": [

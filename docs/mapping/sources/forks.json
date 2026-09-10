@@ -641,21 +641,23 @@
       "export": "openPeriodicNote",
       "kind": "plugin-instance-field",
       "signature": "(granularity: 'day' | 'week' | 'month' | 'quarter' | 'year', date: Moment, opts?: { inNewSplit?: boolean; calendarSet?: string }) => Promise<void>",
-      "path": "obsidian-calendar-plugin/src/settings.ts:59-63 (fork-local type declaration of this runtime API on the Periodic Notes plugin instance; not itself defined in any of the three forks' diffed source)",
+      "path": "obsidian-calendar-plugin/src/settings.ts:59-63",
       "stability": "accidental",
       "consumers": [
         "obsidian-calendar-plugin"
-      ]
+      ],
+      "notes": "fork-local type declaration of this runtime API on the Periodic Notes plugin instance; not itself defined in any of the three forks' diffed source"
     },
     {
       "export": "calendarSetManager.getActiveGranularities",
       "kind": "plugin-instance-field",
       "signature": "() => Granularity[] (granularities active in the Periodic Notes plugin's active calendar set)",
-      "path": "obsidian-calendar-plugin/src/settings.ts:88-96 (fork-local call site; the method itself lives in obsidian-periodic-notes' own plugin instance, outside this diff's scope)",
+      "path": "obsidian-calendar-plugin/src/settings.ts:88-96",
       "stability": "accidental",
       "consumers": [
         "obsidian-calendar-plugin"
-      ]
+      ],
+      "notes": "fork-local call site; the method itself lives in obsidian-periodic-notes' own plugin instance, outside this diff's scope"
     }
   ],
   "observations": [
@@ -666,7 +668,8 @@
       "where": [
         "obsidian-calendar-plugin:src/settings.ts:48-56@7727890"
       ],
-      "why_it_matters": "If the dev-id fallback is dropped in the merge, any install running only the dev-id Periodic Notes build regresses to showing dead legacy weekly settings, and a user could reconfigure weekly notes in a UI that no longer does anything."
+      "why_it_matters": "If the dev-id fallback is dropped in the merge, any install running only the dev-id Periodic Notes build regresses to showing dead legacy weekly settings, and a user could reconfigure weekly notes in a UI that no longer does anything.",
+      "id": "OBS-forks-01"
     },
     {
       "severity": "P2",
@@ -675,7 +678,8 @@
       "where": [
         "obsidian-calendar-plugin:src/view.ts:301-320@7727890"
       ],
-      "why_it_matters": "Dropping this makes 'reveal active note' silently fail for any prefix-matched weekly note, even though the same note is otherwise fully recognized -- an inconsistent, hard-to-notice regression."
+      "why_it_matters": "Dropping this makes 'reveal active note' silently fail for any prefix-matched weekly note, even though the same note is otherwise fully recognized -- an inconsistent, hard-to-notice regression.",
+      "id": "OBS-forks-02"
     },
     {
       "severity": "P2",
@@ -684,7 +688,8 @@
       "where": [
         "obsidian-calendar-plugin:package.json:1@8e2545b"
       ],
-      "why_it_matters": "Documents why the resolutions block exists at all: without it, two divergent copies of obsidian-daily-notes-interface (one carrying the anks fixes, one not) could end up bundled side by side. Superseded in the very next commit by a network-resolvable pin, but the resolutions-block *pattern* must survive."
+      "why_it_matters": "Documents why the resolutions block exists at all: without it, two divergent copies of obsidian-daily-notes-interface (one carrying the anks fixes, one not) could end up bundled side by side. Superseded in the very next commit by a network-resolvable pin, but the resolutions-block *pattern* must survive.",
+      "id": "OBS-forks-03"
     },
     {
       "severity": "P2",
@@ -694,7 +699,8 @@
         "obsidian-calendar-plugin:package.json:16@102ad6d",
         "obsidian-calendar-plugin:package.json:21@102ad6d"
       ],
-      "why_it_matters": "This is the load-bearing, portable form of the dependency pin. If a merge collapses these into one repo, this specific pin becomes moot -- but until then, dropping it back to a file:// or machine-local path breaks `yarn install` on any other machine or in CI."
+      "why_it_matters": "This is the load-bearing, portable form of the dependency pin. If a merge collapses these into one repo, this specific pin becomes moot -- but until then, dropping it back to a file:// or machine-local path breaks `yarn install` on any other machine or in CI.",
+      "id": "OBS-forks-04"
     },
     {
       "severity": "P3",
@@ -703,7 +709,8 @@
       "where": [
         "obsidian-calendar-plugin:.tool-versions:1@bbdd13c"
       ],
-      "why_it_matters": "Build-only convenience; worth carrying into the merged repo's own .tool-versions so contributors don't hit toolchain drift, but nothing breaks at runtime if dropped."
+      "why_it_matters": "Build-only convenience; worth carrying into the merged repo's own .tool-versions so contributors don't hit toolchain drift, but nothing breaks at runtime if dropped.",
+      "id": "OBS-forks-05"
     },
     {
       "severity": "P2",
@@ -713,7 +720,8 @@
         "obsidian-calendar-plugin:package.json:16@dc780c0",
         "obsidian-calendar-plugin:package.json:21@dc780c0"
       ],
-      "why_it_matters": "Encodes that bba664e (not an earlier DNI commit) is the authoritative state of obsidian-daily-notes-interface. Merging an older DNI snapshot silently reintroduces the monthly/quarterly/yearly plugin-detection bug that bba664e fixed."
+      "why_it_matters": "Encodes that bba664e (not an earlier DNI commit) is the authoritative state of obsidian-daily-notes-interface. Merging an older DNI snapshot silently reintroduces the monthly/quarterly/yearly plugin-detection bug that bba664e fixed.",
+      "id": "OBS-forks-06"
     },
     {
       "severity": "P2",
@@ -723,7 +731,8 @@
         "obsidian-calendar-plugin:src/view.ts:144-178@5ed4307",
         "obsidian-calendar-plugin:src/ui/Calendar.svelte:36-38@5ed4307"
       ],
-      "why_it_matters": "No upstream code or documentation describes this. Dropping it silently removes a feature users rely on, with no error: it degrades gracefully back to the old reset-to-current-month click, so the loss would not be noticed until someone asks 'where did month-click-to-open go'."
+      "why_it_matters": "No upstream code or documentation describes this. Dropping it silently removes a feature users rely on, with no error: it degrades gracefully back to the old reset-to-current-month click, so the loss would not be noticed until someone asks 'where did month-click-to-open go'.",
+      "id": "OBS-forks-07"
     },
     {
       "severity": "P1",
@@ -732,7 +741,8 @@
       "where": [
         "obsidian-calendar-plugin:src/settings.ts:72-111@39040cd"
       ],
-      "why_it_matters": "This is the commit that actually makes capability open-monthly-note-from-header work at all. Porting 5ed4307 into a merge without also porting 39040cd ships dead-on-arrival code: the click handler runs but silently no-ops on every click, which is worse than not having the feature because it looks broken rather than absent."
+      "why_it_matters": "This is the commit that actually makes capability open-monthly-note-from-header work at all. Porting 5ed4307 into a merge without also porting 39040cd ships dead-on-arrival code: the click handler runs but silently no-ops on every click, which is worse than not having the feature because it looks broken rather than absent.",
+      "id": "OBS-forks-08"
     },
     {
       "severity": "P2",
@@ -742,7 +752,8 @@
         "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8",
         "obsidian-periodic-notes:src/cache.ts:206-222@e50b8e8"
       ],
-      "why_it_matters": "This is the setting the whole allow-prefix-match feature family (this repo and daily-notes-interface) is built around. If dropped, any weekly/monthly/etc. note named with extra suffix text after the date format (e.g. '2026-W07, 09.02 - 15.02.md') silently stops being recognized as a periodic note."
+      "why_it_matters": "This is the setting the whole allow-prefix-match feature family (this repo and daily-notes-interface) is built around. If dropped, any weekly/monthly/etc. note named with extra suffix text after the date format (e.g. '2026-W07, 09.02 - 15.02.md') silently stops being recognized as a periodic note.",
+      "id": "OBS-forks-09"
     },
     {
       "severity": "P1",
@@ -751,7 +762,8 @@
       "where": [
         "obsidian-periodic-notes:src/settings/pages/details/Details.svelte:102-108@07f0df9"
       ],
-      "why_it_matters": "Without this guard, the Periodic Notes settings tab hard-crashes on Obsidian 1.13+, making the plugin's settings unusable on any currently-shipping Obsidian version. This is a correctness fix, not a cosmetic one."
+      "why_it_matters": "Without this guard, the Periodic Notes settings tab hard-crashes on Obsidian 1.13+, making the plugin's settings unusable on any currently-shipping Obsidian version. This is a correctness fix, not a cosmetic one.",
+      "id": "OBS-forks-10"
     },
     {
       "severity": "P3",
@@ -760,7 +772,8 @@
       "where": [
         "obsidian-periodic-notes:package.json:12@b8ff1f4"
       ],
-      "why_it_matters": "Build-only. If a merge reintroduces a build script that runs lint-before-build (e.g. by copying an older script verbatim), CI/local builds break on a lint false-positive despite correct code."
+      "why_it_matters": "Build-only. If a merge reintroduces a build script that runs lint-before-build (e.g. by copying an older script verbatim), CI/local builds break on a lint false-positive despite correct code.",
+      "id": "OBS-forks-11"
     },
     {
       "severity": "P2",
@@ -769,7 +782,8 @@
       "where": [
         "obsidian-periodic-notes:esbuild.config.mjs:1-8@e332ac6"
       ],
-      "why_it_matters": "Build-only, but a total build failure on modern Node if reverted. Note this differs from how the other two forks avoid the equivalent class of Node-version issue -- neither of them had a bare JSON import to begin with, so this fix pattern is specific to this repo's esbuild setup and won't automatically transfer if the merge consolidates build tooling."
+      "why_it_matters": "Build-only, but a total build failure on modern Node if reverted. Note this differs from how the other two forks avoid the equivalent class of Node-version issue -- neither of them had a bare JSON import to begin with, so this fix pattern is specific to this repo's esbuild setup and won't automatically transfer if the merge consolidates build tooling.",
+      "id": "OBS-forks-12"
     },
     {
       "severity": "P2",
@@ -779,7 +793,8 @@
         "obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3",
         "obsidian-daily-notes-interface:src/types.ts:6@c2c96e3"
       ],
-      "why_it_matters": "This is the parsing primitive both obsidian-calendar-plugin's revealActiveNote() and the Calendar's own weekly-note dot-indexing depend on. It is independent of, and behaviorally different from, obsidian-periodic-notes' own getDateWithPrefixFallback() (see the duplication observation below), so dropping just one of the two implementations changes behavior only for whichever install path used it."
+      "why_it_matters": "This is the parsing primitive both obsidian-calendar-plugin's revealActiveNote() and the Calendar's own weekly-note dot-indexing depend on. It is independent of, and behaviorally different from, obsidian-periodic-notes' own getDateWithPrefixFallback() (see the duplication observation below), so dropping just one of the two implementations changes behavior only for whichever install path used it.",
+      "id": "OBS-forks-13"
     },
     {
       "severity": "P2",
@@ -789,7 +804,8 @@
         "obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3",
         "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8"
       ],
-      "why_it_matters": "A merge that keeps only one implementation changes which weekly filenames resolve for calendar-plugin-only installs (which go through daily-notes-interface, not periodic-notes) versus periodic-notes-driven installs. This is a silent behavior change for edge-case filenames (e.g. ambiguous week-only formats) depending on which implementation is picked as canonical."
+      "why_it_matters": "A merge that keeps only one implementation changes which weekly filenames resolve for calendar-plugin-only installs (which go through daily-notes-interface, not periodic-notes) versus periodic-notes-driven installs. This is a silent behavior change for edge-case filenames (e.g. ambiguous week-only formats) depending on which implementation is picked as canonical.",
+      "id": "OBS-forks-14"
     },
     {
       "severity": "P1",
@@ -799,7 +815,8 @@
         "obsidian-daily-notes-interface:src/index.ts:12-49@be90253",
         "obsidian-daily-notes-interface:src/settings.ts:15-97@be90253"
       ],
-      "why_it_matters": "This is the load-bearing plugin-detection fix for running a dev build alongside a store build. Without it, daily/weekly note creation and settings resolution silently use the wrong (or no) settings source across every consumer of this library."
+      "why_it_matters": "This is the load-bearing plugin-detection fix for running a dev build alongside a store build. Without it, daily/weekly note creation and settings resolution silently use the wrong (or no) settings source across every consumer of this library.",
+      "id": "OBS-forks-15"
     },
     {
       "severity": "P2",
@@ -808,7 +825,8 @@
       "where": [
         "obsidian-daily-notes-interface:package.json:18@faae012"
       ],
-      "why_it_matters": "Not a runtime behavior change but a total install-breaker for any git-URL consumer under the current multi-repo setup. Becomes moot once everything lives in one merged repo (no git-dependency indirection left), but until/unless that happens, dropping this script breaks the whole dependency chain silently (the failure only surfaces as a missing-module error deep in the consumer's build)."
+      "why_it_matters": "Not a runtime behavior change but a total install-breaker for any git-URL consumer under the current multi-repo setup. Becomes moot once everything lives in one merged repo (no git-dependency indirection left), but until/unless that happens, dropping this script breaks the whole dependency chain silently (the failure only surfaces as a missing-module error deep in the consumer's build).",
+      "id": "OBS-forks-16"
     },
     {
       "severity": "P3",
@@ -817,7 +835,8 @@
       "where": [
         "obsidian-daily-notes-interface:.tool-versions:1@fba3dda"
       ],
-      "why_it_matters": "Build-only convenience, matches the same pin applied in the other two forks. Nothing breaks at runtime if dropped."
+      "why_it_matters": "Build-only convenience, matches the same pin applied in the other two forks. Nothing breaks at runtime if dropped.",
+      "id": "OBS-forks-17"
     },
     {
       "severity": "P1",
@@ -827,7 +846,8 @@
         "obsidian-daily-notes-interface:src/index.ts:51-64@bba664e",
         "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
       ],
-      "why_it_matters": "Same class of bug as be90253, but for three more granularities that be90253 missed. A merge that ports be90253 but not this follow-up commit reintroduces this exact gap for monthly/quarterly/yearly notes."
+      "why_it_matters": "Same class of bug as be90253, but for three more granularities that be90253 missed. A merge that ports be90253 but not this follow-up commit reintroduces this exact gap for monthly/quarterly/yearly notes.",
+      "id": "OBS-forks-18"
     },
     {
       "severity": "P2",
@@ -838,7 +858,8 @@
         "obsidian-calendar-plugin:src/settings.ts:72-82@5ed4307",
         "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
       ],
-      "why_it_matters": "Three independent copies of the same hardcoded 'periodic-notes-anks' id now exist across the two forks. A merge should consolidate to one; otherwise a future rename of the dev-build id has to be applied correctly in three places instead of one, and it's easy to miss one (as bba664e itself demonstrates happened once already)."
+      "why_it_matters": "Three independent copies of the same hardcoded 'periodic-notes-anks' id now exist across the two forks. A merge should consolidate to one; otherwise a future rename of the dev-build id has to be applied correctly in three places instead of one, and it's easy to miss one (as bba664e itself demonstrates happened once already).",
+      "id": "OBS-forks-19"
     },
     {
       "severity": "P2",
@@ -848,7 +869,8 @@
         "obsidian-calendar-plugin:yarn.lock:3204-3218",
         "obsidian-calendar-ui:package.json:3"
       ],
-      "why_it_matters": "An agent porting 'what obsidian-calendar-ui does' by reading the local checkout will describe UI behavior (0.4.0 / 2.0-beta.2, e.g. its 'properly unload UI and eventlisteners' and month-metadata-refresh fixes) that is not what is actually bundled into the plugin today (0.3.12). The merge must explicitly decide which calendar-ui version's behavior to carry forward, since the two are not the same code and the newer one was never actually wired in."
+      "why_it_matters": "An agent porting 'what obsidian-calendar-ui does' by reading the local checkout will describe UI behavior (0.4.0 / 2.0-beta.2, e.g. its 'properly unload UI and eventlisteners' and month-metadata-refresh fixes) that is not what is actually bundled into the plugin today (0.3.12). The merge must explicitly decide which calendar-ui version's behavior to carry forward, since the two are not the same code and the newer one was never actually wired in.",
+      "id": "OBS-forks-20"
     },
     {
       "severity": "P3",
@@ -857,7 +879,8 @@
       "where": [
         "obsidian-calendar-ui:HEAD"
       ],
-      "why_it_matters": "Confirms this repo needs no divergence-preservation work of its own during the merge; the only thing that matters from it is the version-pin mismatch captured in the observation above."
+      "why_it_matters": "Confirms this repo needs no divergence-preservation work of its own during the merge; the only thing that matters from it is the version-pin mismatch captured in the observation above.",
+      "id": "OBS-forks-21"
     },
     {
       "severity": "P3",
@@ -869,7 +892,8 @@
         "obsidian-daily-notes-interface:HEAD",
         "obsidian-calendar-ui:HEAD"
       ],
-      "why_it_matters": "Confirms this observation list is complete relative to on-disk state: nothing is sitting uncommitted or stashed that would be silently lost on top of what the commit history already captures."
+      "why_it_matters": "Confirms this observation list is complete relative to on-disk state: nothing is sitting uncommitted or stashed that would be silently lost on top of what the commit history already captures.",
+      "id": "OBS-forks-22"
     }
   ]
 }

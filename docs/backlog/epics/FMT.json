@@ -110,14 +110,18 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         },
         {
           "id": "DEC-21",
           "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
           "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
           "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
-          "decided_on": "2026-09-11"
+          "decided_on": "2026-09-11",
+          "resolves": [
+            "Q-FMT-01.1"
+          ]
         }
       ]
     },
@@ -427,7 +431,8 @@
           "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
           "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
           "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ]
     },
@@ -513,7 +518,8 @@
           "title": "Format warnings inform, they do not block",
           "decision": "A format flagged as fragile or non-identifying shows a warning the user can read and dismiss. The value still saves.",
           "rationale": "The check is a heuristic. A user with a deliberate nested-path scheme should not be locked out by it, and a blocked save gives them nowhere to go.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ]
     },
@@ -694,7 +700,8 @@
           "title": "A file is the note for a period only when its folder matches too",
           "decision": "Recognising a file as a periodic note requires both the filename to match the granularity's format and the file to sit under that granularity's configured folder. Filename alone is not sufficient. No vault-wide loose fallback exists.",
           "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ]
     },
@@ -724,7 +731,8 @@
           "title": "The configured format is tried before the basename-only format derived from it",
           "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
           "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
-          "decided_on": "2026-09-10"
+          "decided_on": "2026-09-10",
+          "resolves": []
         }
       ],
       "acceptance_criteria": [

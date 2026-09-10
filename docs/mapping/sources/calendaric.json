@@ -1529,7 +1529,8 @@
         "src/ui/modal.ts",
         "src/settings.ts"
       ],
-      "why_it_matters": "The old Svelte components cannot be copied into this repo's DOM-based UI. This records a technology difference, not a blocked requirement: a from-scratch rewrite was always going to re-implement the views. Choose the new UI boundary deliberately and preserve behaviour, not either repository's component structure."
+      "why_it_matters": "The old Svelte components cannot be copied into this repo's DOM-based UI. This records a technology difference, not a blocked requirement: a from-scratch rewrite was always going to re-implement the views. Choose the new UI boundary deliberately and preserve behaviour, not either repository's component structure.",
+      "id": "OBS-calendaric-01"
     },
     {
       "severity": "P1",
@@ -1540,7 +1541,8 @@
         "src/settings.ts:223-230,377-393",
         "src/main.ts:70-91"
       ],
-      "why_it_matters": "This is the single most important fact for the port plan: month, quarter, and year note creation/opening/templating/dots/settings-UI all still need to be built from scratch, even though the data shape (PeriodicConfig, DEFAULT_SETTINGS.month/quarter/year) already exists."
+      "why_it_matters": "This is the single most important fact for the port plan: month, quarter, and year note creation/opening/templating/dots/settings-UI all still need to be built from scratch, even though the data shape (PeriodicConfig, DEFAULT_SETTINGS.month/quarter/year) already exists.",
+      "id": "OBS-calendaric-02"
     },
     {
       "severity": "P2",
@@ -1550,7 +1552,8 @@
         "docs/guide.md:37",
         "src/notes/noteUtils.ts:7-15,21-27,51-61"
       ],
-      "why_it_matters": "A user who sets 'Start week on: Sunday' will still get {{monday:...}} always meaning ISO Monday, not the first day of their configured week — the documented behaviour and the implemented behaviour disagree. When porting/fixing, decide (and test) which one is correct rather than assuming the doc is accurate."
+      "why_it_matters": "A user who sets 'Start week on: Sunday' will still get {{monday:...}} always meaning ISO Monday, not the first day of their configured week — the documented behaviour and the implemented behaviour disagree. When porting/fixing, decide (and test) which one is correct rather than assuming the doc is accurate.",
+      "id": "OBS-calendaric-03"
     },
     {
       "severity": "P2",
@@ -1560,7 +1563,8 @@
         "src/settings.ts:303-312",
         "manifest.json:7"
       ],
-      "why_it_matters": "This will throw (window.require is undefined) on Obsidian mobile, contradicting AGENTS.md's 'Avoid Node/Electron APIs if you want mobile compatibility' and the plugin's own manifest claim of mobile support."
+      "why_it_matters": "This will throw (window.require is undefined) on Obsidian mobile, contradicting AGENTS.md's 'Avoid Node/Electron APIs if you want mobile compatibility' and the plugin's own manifest claim of mobile support.",
+      "id": "OBS-calendaric-04"
     },
     {
       "severity": "P2",
@@ -1570,7 +1574,8 @@
         "src/settings.ts:114-174",
         "src/settings/dailyNotesImport.ts"
       ],
-      "why_it_matters": "The stated goal is to absorb both the Calendar plugin and the Periodic Notes plugin. Users migrating from Periodic Notes (which already has week/month/quarter/year notes configured) currently have no assisted migration path at all — this needs to be built, not just extended."
+      "why_it_matters": "The stated goal is to absorb both the Calendar plugin and the Periodic Notes plugin. Users migrating from Periodic Notes (which already has week/month/quarter/year notes configured) currently have no assisted migration path at all — this needs to be built, not just extended.",
+      "id": "OBS-calendaric-05"
     },
     {
       "severity": "P3",
@@ -1579,7 +1584,8 @@
       "where": [
         "src/settings.ts"
       ],
-      "why_it_matters": "Merging in the Svelte-based settings UI/logic from the source repos (which is more feature-rich: month/quarter/year, more granular controls) will make this file worse, not better, unless it's split before or during the merge."
+      "why_it_matters": "Merging in the Svelte-based settings UI/logic from the source repos (which is more feature-rich: month/quarter/year, more granular controls) will make this file worse, not better, unless it's split before or during the merge.",
+      "id": "OBS-calendaric-06"
     },
     {
       "severity": "P3",
@@ -1588,7 +1594,8 @@
       "where": [
         "tsconfig.json"
       ],
-      "why_it_matters": "Code merged in from other repos may rely on strictPropertyInitialization or strictFunctionTypes being on (or off) and behave differently once merged into this config; worth reconciling before merge rather than after a type-error pile-up."
+      "why_it_matters": "Code merged in from other repos may rely on strictPropertyInitialization or strictFunctionTypes being on (or off) and behave differently once merged into this config; worth reconciling before merge rather than after a type-error pile-up.",
+      "id": "OBS-calendaric-07"
     },
     {
       "severity": "P3",
@@ -1603,7 +1610,8 @@
         "src/notes/noteCreate.ts",
         "src/settings.ts"
       ],
-      "why_it_matters": "Anything the port touches in these files has no regression safety net today; the __mocks__/obsidian.ts mock is also minimal (Plugin, PluginSettingTab, Setting only) and would need real expansion (TFile, Vault, MetadataCache, Workspace, ItemView, Modal) before these paths could be tested at all."
+      "why_it_matters": "Anything the port touches in these files has no regression safety net today; the __mocks__/obsidian.ts mock is also minimal (Plugin, PluginSettingTab, Setting only) and would need real expansion (TFile, Vault, MetadataCache, Workspace, ItemView, Modal) before these paths could be tested at all.",
+      "id": "OBS-calendaric-08"
     },
     {
       "severity": "P3",
@@ -1613,7 +1621,8 @@
         "src/main.ts",
         "src/ui/CalendarView.ts:22-24"
       ],
-      "why_it_matters": "Source plugins being merged in (the Calendar plugin especially) commonly add a ribbon icon as their primary entry point — a source-parity check should confirm whether a ribbon icon needs to be added here."
+      "why_it_matters": "Source plugins being merged in (the Calendar plugin especially) commonly add a ribbon icon as their primary entry point — a source-parity check should confirm whether a ribbon icon needs to be added here.",
+      "id": "OBS-calendaric-09"
     },
     {
       "severity": "P3",
@@ -1622,7 +1631,8 @@
       "where": [
         "src/settings.ts:227,377-393"
       ],
-      "why_it_matters": "This is pure UI scaffolding for an entirely unbuilt feature (arbitrary/custom periodic note sets, as in the Periodic Notes plugin) — a port plan should treat it as unstarted, not partially built."
+      "why_it_matters": "This is pure UI scaffolding for an entirely unbuilt feature (arbitrary/custom periodic note sets, as in the Periodic Notes plugin) — a port plan should treat it as unstarted, not partially built.",
+      "id": "OBS-calendaric-10"
     }
   ]
 }

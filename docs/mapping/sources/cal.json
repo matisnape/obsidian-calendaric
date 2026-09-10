@@ -1964,7 +1964,8 @@
         "cal-settings:src/settings.ts:58-111",
         "cal-calendar-svelte:src/ui/Calendar.svelte:36-38"
       ],
-      "why_it_matters": "Easy to lose silently in a merge/rebase: it's a capture-phase DOM listener racing an upstream bubble-phase handler, plus a new exported Svelte accessor and a new settings.ts function, all introduced across commits 5ed4307 and 39040cd. A naive merge that only carries forward file-level diffs on view.ts could easily drop the Calendar.svelte accessor or the capture/bubble ordering comment, silently breaking the feature or corrupting event handling on the month header for everyone."
+      "why_it_matters": "Easy to lose silently in a merge/rebase: it's a capture-phase DOM listener racing an upstream bubble-phase handler, plus a new exported Svelte accessor and a new settings.ts function, all introduced across commits 5ed4307 and 39040cd. A naive merge that only carries forward file-level diffs on view.ts could easily drop the Calendar.svelte accessor or the capture/bubble ordering comment, silently breaking the feature or corrupting event handling on the month header for everyone.",
+      "id": "OBS-cal-01"
     },
     {
       "severity": "P2",
@@ -1974,7 +1975,8 @@
         "cal-settings:src/settings.ts:48-56",
         "cal-settings:src/settings.ts:83-86 (sibling fix for context)"
       ],
-      "why_it_matters": "If true, `showWeeklyNote`'s legacy settings UI and the 'Open Weekly Note' command's checkCallback may never correctly detect an active Periodic Notes weekly setup, always falling back to this plugin's own (deprecated) weekly-note path even when Periodic Notes is properly configured. Worth verifying against a live Periodic Notes instance before porting this function as-is."
+      "why_it_matters": "If true, `showWeeklyNote`'s legacy settings UI and the 'Open Weekly Note' command's checkCallback may never correctly detect an active Periodic Notes weekly setup, always falling back to this plugin's own (deprecated) weekly-note path even when Periodic Notes is properly configured. Worth verifying against a live Periodic Notes instance before porting this function as-is.",
+      "id": "OBS-cal-02"
     },
     {
       "severity": "P2",
@@ -1983,7 +1985,8 @@
       "where": [
         "package.json:14-22"
       ],
-      "why_it_matters": "If the merged obsidian-calendaric repo consolidates on a different obsidian-daily-notes-interface source (e.g. the community version, or a different fork mapped by another agent), this plugin's getDateFromFile/allowPrefixMatch-dependent behavior (see jump-calendar-to-active-note fix) and its dev-id plugin detection pattern may silently regress unless that same fork's changes are ported into whichever DNI implementation is chosen as canonical."
+      "why_it_matters": "If the merged obsidian-calendaric repo consolidates on a different obsidian-daily-notes-interface source (e.g. the community version, or a different fork mapped by another agent), this plugin's getDateFromFile/allowPrefixMatch-dependent behavior (see jump-calendar-to-active-note fix) and its dev-id plugin detection pattern may silently regress unless that same fork's changes are ported into whichever DNI implementation is chosen as canonical.",
+      "id": "OBS-cal-03"
     },
     {
       "severity": "P3",
@@ -1993,7 +1996,8 @@
         "cal-view:src/view.ts:348-375",
         "cal-view:src/view.ts:321-346"
       ],
-      "why_it_matters": "An existing weekly note may open in a different edit/preview mode than the user's configured default, unlike daily notes. Worth deciding intentionally when porting rather than carrying the asymmetry forward silently."
+      "why_it_matters": "An existing weekly note may open in a different edit/preview mode than the user's configured default, unlike daily notes. Worth deciding intentionally when porting rather than carrying the asymmetry forward silently.",
+      "id": "OBS-cal-04"
     },
     {
       "severity": "P3",
@@ -2003,7 +2007,8 @@
         "cal-settings:src/settings.ts:17-19,41-43,237-274",
         "cal-io-weekly:src/io/weeklyNotes.ts:14-44"
       ],
-      "why_it_matters": "A user who fills these fields expecting them to control weekly note creation gets no effect; they were presumably superseded by Periodic Notes' own settings. A merge should either wire them up or drop them rather than porting dead settings forward."
+      "why_it_matters": "A user who fills these fields expecting them to control weekly note creation gets no effect; they were presumably superseded by Periodic Notes' own settings. A merge should either wire them up or drop them rather than porting dead settings forward.",
+      "id": "OBS-cal-05"
     },
     {
       "severity": "P3",
@@ -2013,7 +2018,8 @@
         "cal-settings:src/settings.ts:50-54",
         "cal-settings:src/settings.ts:74-78"
       ],
-      "why_it_matters": "A future dev-plugin-id change (or a third id) has to be updated in two places; this already caused one missed-gap bugfix (commit 7727890) when the id probe was added to only one of the two functions initially."
+      "why_it_matters": "A future dev-plugin-id change (or a third id) has to be updated in two places; this already caused one missed-gap bugfix (commit 7727890) when the id probe was added to only one of the two functions initially.",
+      "id": "OBS-cal-06"
     },
     {
       "severity": "P3",
@@ -2022,7 +2028,8 @@
       "where": [
         "cal-view:src/view.ts:182-218"
       ],
-      "why_it_matters": "Whatever hover-preview consumer Obsidian core wires up may attempt to preview `undefined`, showing an empty or erroring popover instead of no popover at all. Minor UX rough edge worth deciding on when porting."
+      "why_it_matters": "Whatever hover-preview consumer Obsidian core wires up may attempt to preview `undefined`, showing an empty or erroring popover instead of no popover at all. Minor UX rough edge worth deciding on when porting.",
+      "id": "OBS-cal-07"
     },
     {
       "severity": "P3",
@@ -2031,7 +2038,8 @@
       "where": [
         "cal-utils:src/ui/utils.ts:40-56"
       ],
-      "why_it_matters": "Two same-named files in different folders (e.g. a manually created note that happens to match the daily-note date format, outside the daily notes folder) would be indistinguishable by this lookup, potentially mis-highlighting the wrong file as 'active' in the calendar."
+      "why_it_matters": "Two same-named files in different folders (e.g. a manually created note that happens to match the daily-note date format, outside the daily notes folder) would be indistinguishable by this lookup, potentially mis-highlighting the wrong file as 'active' in the calendar.",
+      "id": "OBS-cal-08"
     }
   ]
 }

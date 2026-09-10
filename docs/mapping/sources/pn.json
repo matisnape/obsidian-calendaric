@@ -3300,7 +3300,8 @@
       "where": [
         "src/settings/pages/details/Details.svelte:107 (commit 07f0df9)"
       ],
-      "why_it_matters": "Obsidian 1.13 changed the settings-modal DOM; without the optional-chaining guard, opening the plugin's settings tab throws ('Cannot read properties of undefined (reading scroll)') and leaves the Svelte component half-mounted, breaking the whole settings UI. A merge must carry this guard forward or the crash reappears on current Obsidian."
+      "why_it_matters": "Obsidian 1.13 changed the settings-modal DOM; without the optional-chaining guard, opening the plugin's settings tab throws ('Cannot read properties of undefined (reading scroll)') and leaves the Svelte component half-mounted, breaking the whole settings UI. A merge must carry this guard forward or the crash reappears on current Obsidian.",
+      "id": "OBS-pn-01"
     },
     {
       "severity": "P2",
@@ -3313,7 +3314,8 @@
         "src/settings/components/AllowPrefixMatchSetting.svelte (commit e50b8e8)",
         "src/settings/pages/details/PeriodicGroup.svelte:94 (commit e50b8e8)"
       ],
-      "why_it_matters": "Not present upstream (liamcain/obsidian-periodic-notes). A merge that starts from upstream code will silently lose prefix-matching for notes whose filenames only start with the configured format (e.g. weekly notes with a trailing date-range suffix)."
+      "why_it_matters": "Not present upstream (liamcain/obsidian-periodic-notes). A merge that starts from upstream code will silently lose prefix-matching for notes whose filenames only start with the configured format (e.g. weekly notes with a trailing date-range suffix).",
+      "id": "OBS-pn-02"
     },
     {
       "severity": "P2",
@@ -3323,7 +3325,8 @@
         "esbuild.config.mjs (commit e332ac6)",
         ".tool-versions (commit e332ac6)"
       ],
-      "why_it_matters": "Node 24 rejects an unattributed JSON module import (ERR_IMPORT_ATTRIBUTE_MISSING); without this change the build breaks on the fork's own pinned toolchain. A merged build script for the whole family must pick one convention for reading manifest.json, and honor (or explicitly override) the Node version pin."
+      "why_it_matters": "Node 24 rejects an unattributed JSON module import (ERR_IMPORT_ATTRIBUTE_MISSING); without this change the build breaks on the fork's own pinned toolchain. A merged build script for the whole family must pick one convention for reading manifest.json, and honor (or explicitly override) the Node version pin.",
+      "id": "OBS-pn-03"
     },
     {
       "severity": "P3",
@@ -3332,7 +3335,8 @@
       "where": [
         "package.json:10 (commit b8ff1f4)"
       ],
-      "why_it_matters": "svelte-check 2.7.0 can't parse this repo's inline type-only import specifiers ('import { type X }'), a pre-existing toolchain mismatch, so the fork bypassed the gate rather than fixing it. A merged repo needs a working lint/typecheck step or will silently reintroduce type errors."
+      "why_it_matters": "svelte-check 2.7.0 can't parse this repo's inline type-only import specifiers ('import { type X }'), a pre-existing toolchain mismatch, so the fork bypassed the gate rather than fixing it. A merged repo needs a working lint/typecheck step or will silently reintroduce type errors.",
+      "id": "OBS-pn-04"
     },
     {
       "severity": "P2",
@@ -3342,7 +3346,8 @@
         "src/settings/index.ts:20-30 (ISettings — no daily/weekly/monthly/quarterly/yearly fields)",
         "src/calendarSetManager.ts:20-30 (ILegacySettings — has them, but this type is only used by isLegacySettings()/migrateLegacySettingsToCalendarSet(), called exactly once from src/main.ts:177-187 during loadSettings())"
       ],
-      "why_it_matters": "A merge that assumes v0.0.17 still reads/writes top-level daily/weekly/... settings (as much older versions of this plugin, and possibly sibling repos in this family, do) will be targeting dead code. The only live, ongoing config surface in this fork is calendarSets[]; the top-level keys are read exactly once, from raw loaded JSON, purely to detect a pre-upgrade vault."
+      "why_it_matters": "A merge that assumes v0.0.17 still reads/writes top-level daily/weekly/... settings (as much older versions of this plugin, and possibly sibling repos in this family, do) will be targeting dead code. The only live, ongoing config surface in this fork is calendarSets[]; the top-level keys are read exactly once, from raw loaded JSON, purely to detect a pre-upgrade vault.",
+      "id": "OBS-pn-05"
     },
     {
       "severity": "P2",
@@ -3352,7 +3357,8 @@
         "src/settings/pages/dashboard/Dashboard.svelte:109",
         "src/settings/pages/dashboard/Dashboard.svelte:127"
       ],
-      "why_it_matters": "Both the 'Start week on' and 'Locale' dropdowns call app.vault.setConfig('weekStart', val) — the Locale handler is a copy-paste of the week-start handler and never writes 'localeOverride'. Changing Locale in the UI never actually persists a locale override (it just re-writes weekStart with the locale-dropdown's value instead), while configureGlobalMomentLocale() at load time correctly reads 'localeOverride' from vault config — so the bug is invisible until you try to change locale live and reload."
+      "why_it_matters": "Both the 'Start week on' and 'Locale' dropdowns call app.vault.setConfig('weekStart', val) — the Locale handler is a copy-paste of the week-start handler and never writes 'localeOverride'. Changing Locale in the UI never actually persists a locale override (it just re-writes weekStart with the locale-dropdown's value instead), while configureGlobalMomentLocale() at load time correctly reads 'localeOverride' from vault config — so the bug is invisible until you try to change locale live and reload.",
+      "id": "OBS-pn-06"
     },
     {
       "severity": "P3",
@@ -3363,7 +3369,8 @@
         "src/settings/index.ts:24 (installedVersion)",
         "src/settings/index.ts:45-46 (localeOverride, weekStart)"
       ],
-      "why_it_matters": "Declared and defaulted but never read again anywhere else in the source (confirmed by grep). localeOverride/weekStart are additionally shadowed by the real values living in Obsidian's vault-level config, not plugin data.json. A merge should not port these fields as if they carried live state."
+      "why_it_matters": "Declared and defaulted but never read again anywhere else in the source (confirmed by grep). localeOverride/weekStart are additionally shadowed by the real values living in Obsidian's vault-level config, not plugin data.json. A merge should not port these fields as if they carried live state.",
+      "id": "OBS-pn-07"
     },
     {
       "severity": "P3",
@@ -3374,7 +3381,8 @@
         "src/modal.ts:27-74 (PeriodicNoteCreateModal class only — showFileMenu in the same file IS used)",
         "src/settings/components/IconButton.svelte"
       ],
-      "why_it_matters": "None of the three is reachable from any command, event, or component in this repo (confirmed by grep for each class/component name). Do not port these as capabilities; they are inert leftovers — fileOptionsSwitcher.ts's own 'Delete file' item even has an empty onChooseSuggestion body."
+      "why_it_matters": "None of the three is reachable from any command, event, or component in this repo (confirmed by grep for each class/component name). Do not port these as capabilities; they are inert leftovers — fileOptionsSwitcher.ts's own 'Delete file' item even has an empty onChooseSuggestion body.",
+      "id": "OBS-pn-08"
     },
     {
       "severity": "P3",
@@ -3383,7 +3391,8 @@
       "where": [
         "src/cache.ts:25"
       ],
-      "why_it_matters": "Only 'filename' and 'frontmatter' are ever assigned to matchData.matchType anywhere in the source. Harmless, but a porting agent should not build logic that expects this variant to occur."
+      "why_it_matters": "Only 'filename' and 'frontmatter' are ever assigned to matchData.matchType anywhere in the source. Harmless, but a porting agent should not build logic that expects this variant to occur.",
+      "id": "OBS-pn-09"
     },
     {
       "severity": "P2",
@@ -3392,7 +3401,8 @@
       "where": [
         "src/cache.ts:125-171, specifically line 142"
       ],
-      "why_it_matters": "resolve() (filename matching) correctly uses getPossibleFormats() + getDateWithPrefixFallback() against the user's configured format. resolveChangedMetadata() (frontmatter matching) instead hard-codes DEFAULT_FORMAT[granularity] for the strict parse. A note identified only via frontmatter (e.g. `day: 2022-02-02`) with a non-default format configured will silently fail to resolve. A merged note-resolution engine should unify these two code paths rather than keep the asymmetry."
+      "why_it_matters": "resolve() (filename matching) correctly uses getPossibleFormats() + getDateWithPrefixFallback() against the user's configured format. resolveChangedMetadata() (frontmatter matching) instead hard-codes DEFAULT_FORMAT[granularity] for the strict parse. A note identified only via frontmatter (e.g. `day: 2022-02-02`) with a non-default format configured will silently fail to resolve. A merged note-resolution engine should unify these two code paths rather than keep the asymmetry.",
+      "id": "OBS-pn-10"
     },
     {
       "severity": "P2",
@@ -3401,7 +3411,8 @@
       "where": [
         "src/cache.ts:189-258, specifically 235-258"
       ],
-      "why_it_matters": "When no active granularity's folder+format matches a file, resolve() falls through to getLooselyMatchedDate(file.basename) with no folder check at all. Any markdown file anywhere in the vault whose basename merely contains a YYYY-MM-DD/YYYY-MM/YYYY-shaped substring (e.g. '2026 Meeting Notes.md') gets cached as an inexact match for every calendar set that has active granularities, which can surface as incorrect '+N related notes' badges and pollute the related-files switcher with unrelated files."
+      "why_it_matters": "When no active granularity's folder+format matches a file, resolve() falls through to getLooselyMatchedDate(file.basename) with no folder check at all. Any markdown file anywhere in the vault whose basename merely contains a YYYY-MM-DD/YYYY-MM/YYYY-shaped substring (e.g. '2026 Meeting Notes.md') gets cached as an inexact match for every calendar set that has active granularities, which can surface as incorrect '+N related notes' badges and pollute the related-files switcher with unrelated files.",
+      "id": "OBS-pn-11"
     },
     {
       "severity": "P2",
@@ -3413,7 +3424,8 @@
         "src/switcher/fileOptionsSwitcher.ts",
         "src/switcher/relatedFilesSwitcher.ts"
       ],
-      "why_it_matters": "A grep for prototype/monkey/patch/QuickSwitcher across src/ found nothing. All four 'switcher' classes are independent SuggestModal/FuzzySuggestModal subclasses (Obsidian's own public modal API), opened from the plugin's own commands — not modifications of core UI. The actual merge hazard is the Tab hand-off between NLDNavigator and RelatedFilesSwitcher (closing one modal, opening the other, and replaying the query string via a synthetic 'input' event) — that chain has no test coverage and is easy to break silently if either constructor's signature changes during a merge."
+      "why_it_matters": "A grep for prototype/monkey/patch/QuickSwitcher across src/ found nothing. All four 'switcher' classes are independent SuggestModal/FuzzySuggestModal subclasses (Obsidian's own public modal API), opened from the plugin's own commands — not modifications of core UI. The actual merge hazard is the Tab hand-off between NLDNavigator and RelatedFilesSwitcher (closing one modal, opening the other, and replaying the query string via a synthetic 'input' event) — that chain has no test coverage and is easy to break silently if either constructor's signature changes during a merge.",
+      "id": "OBS-pn-12"
     },
     {
       "severity": "P3",
@@ -3423,7 +3435,8 @@
         "src/main.ts:269-287 (openPeriodicNote)",
         "src/utils.ts:197-215 (getDateWithPrefixFallback)"
       ],
-      "why_it_matters": "openPeriodicNote is a PeriodicNotesPlugin method in main.ts, not utils.ts. utils.ts does correctly hold getDateWithPrefixFallback and the rest of the date/template helpers. Noted so a porting agent doesn't waste time searching utils.ts for openPeriodicNote."
+      "why_it_matters": "openPeriodicNote is a PeriodicNotesPlugin method in main.ts, not utils.ts. utils.ts does correctly hold getDateWithPrefixFallback and the rest of the date/template helpers. Noted so a porting agent doesn't waste time searching utils.ts for openPeriodicNote.",
+      "id": "OBS-pn-13"
     },
     {
       "severity": "P3",
@@ -3432,7 +3445,8 @@
       "where": [
         "src/main.ts:239 (inline comment: '// TODO: What API do I want for this?')"
       ],
-      "why_it_matters": "Treat this method's signature (a boolean includeFinerGranularities flag) as a redesign candidate in the merged plugin rather than a contract that must be preserved exactly."
+      "why_it_matters": "Treat this method's signature (a boolean includeFinerGranularities flag) as a redesign candidate in the merged plugin rather than a contract that must be preserved exactly.",
+      "id": "OBS-pn-14"
     },
     {
       "severity": "P2",
@@ -3441,7 +3455,8 @@
       "where": [
         "manifest.json:2 (id: 'periodic-notes')"
       ],
-      "why_it_matters": "The assignment states this fork is installed under the dev plugin id 'periodic-notes-anks'. Any other plugin (e.g. obsidian-calendar-plugin) calling app.plugins.getPlugin('periodic-notes') gets undefined in this vault, even though the code and its public methods are otherwise present and working. This is an install-time integration risk specific to this vault, not a code bug — worth flagging before testing the merged plugin's cross-plugin API here."
+      "why_it_matters": "The assignment states this fork is installed under the dev plugin id 'periodic-notes-anks'. Any other plugin (e.g. obsidian-calendar-plugin) calling app.plugins.getPlugin('periodic-notes') gets undefined in this vault, even though the code and its public methods are otherwise present and working. This is an install-time integration risk specific to this vault, not a code bug — worth flagging before testing the merged plugin's cross-plugin API here.",
+      "id": "OBS-pn-15"
     },
     {
       "severity": "P3",
@@ -3452,7 +3467,8 @@
         "src/settings/utils.ts:163-180 (getWeekStartOptions)",
         "src/settings/localization.ts:48-56, 63-85 (weekdays array + overrideGlobalMomentWeekStart)"
       ],
-      "why_it_matters": "Three separate hard-coded ['sunday'..'saturday'] arrays with slightly different rotation logic for locale week-start. A merge across this whole plugin family should consolidate on one canonical day-of-week utility rather than porting all three independently."
+      "why_it_matters": "Three separate hard-coded ['sunday'..'saturday'] arrays with slightly different rotation logic for locale week-start. A merge across this whole plugin family should consolidate on one canonical day-of-week utility rather than porting all three independently.",
+      "id": "OBS-pn-16"
     }
   ]
 }

@@ -22,6 +22,7 @@ MAP_DIR = HERE.parent / "mapping"
 
 STORY_EPICS = ["NOTE", "FMT", "TPL", "CAL", "SET", "CMD", "MIG", "ARCH"]
 STORY_STATUSES = ["todo", "in-progress", "blocked", "done"]
+ROLES = ["build", "icebox", "evidence"]
 AC_STATUSES = ["unverified", "pass", "fail", "n-a"]
 
 US_RE = re.compile(r"^US-([A-Z]+)-(\d{2})$")
@@ -44,11 +45,19 @@ def main() -> int:
     assignment = json.loads((MAP_DIR / "epic-assignment.json").read_text())
     epic_titles = assignment["epics"]
     by_uid = {r["uid"]: r for r in assignment["assignment"]}
+
+    role_problems = []
+    for r in assignment["assignment"]:
+        if r.get("role") not in ROLES:
+            role_problems.append(f"{r['uid']} has role {r.get('role')!r}, "
+                                 f"which is not one of {ROLES}")
+        if r.get("epic") not in epic_titles:
+            role_problems.append(f"{r['uid']} is assigned to unknown epic {r.get('epic')!r}")
     build_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "build"}
     ice_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "icebox"}
     evidence_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "evidence"}
 
-    problems, warnings, missing = [], [], []
+    problems, warnings, missing = list(role_problems), [], []
 
     # The assignment file is not the universe. Deleting a row from it used to
     # delete the capability from the coverage denominator, so the percentage
@@ -140,7 +149,11 @@ def main() -> int:
             acs = story.get("acceptance_criteria") or []
             # BACKLOG-SCHEMA.md rule 4. Guessing this from prose is how eleven
             # stories were reported as happy-path only when five were not.
-            if not any(a.get("failure_path") for a in acs):
+            for a in acs:
+                if "failure_path" in a and not isinstance(a["failure_path"], bool):
+                    problems.append(f"{a['id']}: failure_path is {a['failure_path']!r}, "
+                                    f"which is not true or false")
+            if not any(a.get("failure_path") is True for a in acs):
                 problems.append(f"{sid}: no criterion marked failure_path")
             if story["status"] == "done":
                 open_acs = [a["id"] for a in acs if a.get("status") not in ("pass", "n-a")]
@@ -277,6 +290,10 @@ def main() -> int:
         for uid in story.get("constrained_by") or []:
             if uid not in by_uid:
                 problems.append(f"{story['id']} is constrained_by {uid}, which is not a mapped capability")
+            elif by_uid[uid]["role"] != "evidence":
+                problems.append(
+                    f"{story['id']} is constrained_by {uid}, which is a {by_uid[uid]['role']} "
+                    f"capability — constrained_by takes evidence capabilities only")
 
     out = {
         "meta": {
