@@ -83,7 +83,7 @@ def overview():
     if qs:
         print(f"\nOPEN QUESTIONS ({len(qs)}):")
         for sid, q in qs:
-            print(f"  {sid:<12} {q}")
+            print(f"  {sid:<12} {q['id']}  {q['question']}")
 
     c = BL["coverage"]
     print(f"\ncoverage: {c['build_covered']}/{c['build_total']} capabilities carried by a story, "

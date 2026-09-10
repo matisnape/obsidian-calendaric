@@ -5,6 +5,15 @@ The question moves out of `open_questions` and into `decisions`, so the
 building agent sees a decision rather than an unresolved choice, and the
 reasoning stays next to the story instead of in a chat log.
 
+A decision names the exact question ids it answers, in `resolves`. Only those
+are removed. Clearing the whole array was how DEC-01 deleted a question it
+never answered, and how applying DEC-14 alone erased the question DEC-15 was
+written for.
+
+Re-running is safe: a decision already on a story is updated in place, so
+editing the text here and running again propagates the edit instead of
+leaving the old copy behind.
+
     python3 record_decision.py DEC-01
 """
 import json
@@ -239,16 +248,27 @@ def main(dec_id: str) -> int:
             if story["id"] not in story_ids:
                 continue
             existing = story.setdefault("decisions", [])
-            if any(x["id"] == dec_id for x in existing):
-                continue
-            existing.append({
+            record = {
                 "id": dec_id,
                 "title": dec["title"],
                 "decision": dec["decision"],
                 "rationale": dec["rationale"],
-                "decided_on": date.today().isoformat(),
-            })
-            story["open_questions"] = []
+            }
+            prior = next((x for x in existing if x["id"] == dec_id), None)
+            if prior:
+                prior.update(record)
+            else:
+                existing.append({**record, "decided_on": date.today().isoformat()})
+
+            resolved = set(dec.get("resolves") or [])
+            kept, closed = [], []
+            for q in story.get("open_questions") or []:
+                (closed if q.get("id") in resolved else kept).append(q)
+            story["open_questions"] = kept
+            if resolved and not closed and not prior:
+                unknown = ", ".join(sorted(resolved))
+                print(f"  {story['id']}: {dec_id} claims to resolve {unknown}, "
+                      f"but no such question is open")
             touched += 1
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     print(f"{dec_id}: recorded against {touched} stories")

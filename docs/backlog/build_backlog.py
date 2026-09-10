@@ -29,6 +29,10 @@ AC_RE = re.compile(r"^AC-([A-Z]+)-(\d{2})\.(\d+)$")
 ICE_RE = re.compile(r"^ICE-(\d{2})$")
 
 
+def story_ids_early(stories):
+    return {s["id"] for s in stories}
+
+
 def load(name):
     path = EPICS_DIR / f"{name}.json"
     if not path.exists():
@@ -42,8 +46,25 @@ def main() -> int:
     by_uid = {r["uid"]: r for r in assignment["assignment"]}
     build_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "build"}
     ice_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "icebox"}
+    evidence_uids = {r["uid"] for r in assignment["assignment"] if r["role"] == "evidence"}
 
     problems, warnings, missing = [], [], []
+
+    # The assignment file is not the universe. Deleting a row from it used to
+    # delete the capability from the coverage denominator, so the percentage
+    # could only ever go up. The map is the universe; the two must agree exactly.
+    cap_map = json.loads((MAP_DIR / "calendaric-map.json").read_text())
+    map_uids = [c["uid"] for c in cap_map["capabilities"]]
+    dupes = sorted({u for u in map_uids if map_uids.count(u) > 1})
+    for uid in dupes:
+        problems.append(f"the map has {map_uids.count(uid)} capabilities with uid {uid}")
+    assigned_uids = [r["uid"] for r in assignment["assignment"]]
+    for uid in sorted({u for u in assigned_uids if assigned_uids.count(u) > 1}):
+        problems.append(f"the assignment lists {uid} more than once")
+    for uid in sorted(set(map_uids) - set(assigned_uids)):
+        problems.append(f"mapped capability {uid} has no epic assignment")
+    for uid in sorted(set(assigned_uids) - set(map_uids)):
+        problems.append(f"the assignment names {uid}, which is not a mapped capability")
     stories, icebox = [], []
     epic_meta = {}
 
@@ -74,6 +95,18 @@ def main() -> int:
             if story["status"] not in STORY_STATUSES:
                 problems.append(f"{sid}: status {story['status']!r} is not one of {STORY_STATUSES}")
 
+            qids = []
+            for question in story.get("open_questions") or []:
+                if not isinstance(question, dict) or not question.get("id") \
+                        or not question.get("question"):
+                    problems.append(
+                        f"{sid}: open_questions entries must be "
+                        f"{{'id': ..., 'question': ...}}, got {question!r}")
+                    continue
+                qids.append(question["id"])
+            for qid in {i for i in qids if qids.count(i) > 1}:
+                problems.append(f"{sid}: open question id {qid} is used more than once")
+
             dec_ids = [d.get("id") for d in story.get("decisions") or []]
             for did in set(dec_ids):
                 if dec_ids.count(did) > 1:
@@ -95,10 +128,22 @@ def main() -> int:
                     problems.append(f"{aid}: status {ac['status']!r} is not one of {AC_STATUSES}")
                 if not ac.get("then"):
                     problems.append(f"{aid}: empty then[]")
+                if ac["status"] != "unverified" and not (ac.get("evidence") or "").strip():
+                    problems.append(f"{aid}: status {ac['status']} with no evidence")
+                if ac["status"] == "n-a" and not (ac.get("not_applicable_because") or "").strip():
+                    problems.append(f"{aid}: n-a with no stated reason")
             if not ac_nums:
                 problems.append(f"{sid}: no acceptance criteria")
             elif sorted(ac_nums) != list(range(1, len(ac_nums) + 1)):
                 problems.append(f"{sid}: criterion numbers are not 1..n without gaps ({sorted(ac_nums)})")
+
+            acs = story.get("acceptance_criteria") or []
+            if story["status"] == "done":
+                open_acs = [a["id"] for a in acs if a.get("status") not in ("pass", "n-a")]
+                if open_acs:
+                    problems.append(
+                        f"{sid}: marked done with {len(open_acs)} criteria not passed "
+                        f"({', '.join(open_acs[:4])})")
             stories.append(story)
 
         if seen_nums and sorted(seen_nums) != list(range(1, len(seen_nums) + 1)):
@@ -129,14 +174,44 @@ def main() -> int:
         for uid in entry.get("covers") or []:
             covered[uid].append(entry["id"])
 
+    story_epic = {s["id"]: s["epic"] for s in stories}
+
     for uid, owners in covered.items():
         if uid not in by_uid:
             problems.append(f"{owners[0]} covers {uid}, which is not a mapped capability")
+            continue
+        # An owner of the wrong kind is how a capability looks covered without
+        # anyone having agreed to build it.
+        role = by_uid[uid]["role"]
+        epic = by_uid[uid]["epic"]
+        for owner in owners:
+            if role == "build":
+                if owner.startswith("ICE-"):
+                    problems.append(f"{uid} is a build capability but is covered by icebox {owner}")
+                elif story_epic.get(owner) != epic:
+                    problems.append(
+                        f"{uid} is assigned to {epic} but is covered by {owner} in "
+                        f"{story_epic.get(owner)}")
+            elif role == "icebox" and not owner.startswith("ICE-"):
+                problems.append(f"{uid} is deferred but is covered by story {owner}")
+            elif role == "evidence":
+                problems.append(
+                    f"{uid} is evidence only and must appear in constrained_by, not in "
+                    f"{owner}'s covers[]")
 
     excused = {}
     for epic, meta in epic_meta.items():
         for row in meta["uncovered"]:
-            excused[row.get("uid")] = row.get("reason", "")
+            uid = row.get("uid")
+            excused[uid] = row.get("reason", "")
+            if not (row.get("reason") or "").strip():
+                problems.append(f"{epic}: {uid} is excused with no reason")
+            if uid in by_uid and by_uid[uid]["epic"] != epic:
+                problems.append(
+                    f"{epic} excuses {uid}, which is assigned to {by_uid[uid]['epic']}")
+            carried = row.get("carried_by")
+            if carried and carried not in story_ids_early(stories):
+                problems.append(f"{epic}: {uid} says it is carried by {carried}, which does not exist")
 
     uncovered_build = sorted(build_uids - set(covered) - set(excused))
     for uid in uncovered_build:
@@ -147,11 +222,8 @@ def main() -> int:
         problems.append(f"icebox capability {uid} appears in no ICE entry")
 
     for uid, owners in covered.items():
-        role = by_uid.get(uid, {}).get("role")
-        if role == "build" and len(owners) > 2:
+        if by_uid.get(uid, {}).get("role") == "build" and len(owners) > 2:
             warnings.append(f"{uid} is claimed by {len(owners)} stories: {', '.join(owners)}")
-        if role == "evidence":
-            warnings.append(f"{uid} is evidence but appears in covers[] of {', '.join(owners)}")
 
     # --- dependencies -------------------------------------------------------
     story_ids = {s["id"] for s in stories}
@@ -190,10 +262,13 @@ def main() -> int:
             "excused": [{"uid": u, "reason": r} for u, r in sorted(excused.items())],
         },
     }
-    (HERE / "backlog.json").write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+    if not (problems or missing):
+        (HERE / "backlog.json").write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+        print(f"wrote {HERE / 'backlog.json'}")
+    else:
+        print("NOT WRITING backlog.json — validation failed")
 
     ac_total = sum(len(s.get("acceptance_criteria") or []) for s in stories)
-    print(f"wrote {HERE / 'backlog.json'}")
     if missing:
         print(f"MISSING EPIC FILES: {', '.join(missing)}")
     print(f"\n{'epic':<6} {'stories':>7} {'AC':>4}  priorities")

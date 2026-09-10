@@ -226,14 +226,20 @@ function storyBlock(s, open) {
     ${(s.decisions || []).map(d => `<div class="note" style="border-left:2px solid var(--p3); padding-left:10px; margin-top:8px">
       <b>${esc(d.id)} &middot; ${esc(d.title)}</b><br>${esc(d.decision)}
       <br><i>Why:</i> ${esc(d.rationale)}</div>`).join("")}
-    ${(s.open_questions || []).length ? `<div class="note"><i>Open:</i>${list(s.open_questions)}</div>` : ""}
+    ${(s.open_questions || []).length ? `<div class="note"><i>Open:</i>${
+      list(s.open_questions.map(q => `${q.id} — ${q.question}`))}</div>` : ""}
   </details></div>`;
 }
 
 const VIEWS = {
   kanban: rows => {
     const cols = BL.meta.story_statuses;
-    return `<div class="board">` + cols.map(st => {
+    return `<div class="note" style="margin-bottom:10px">
+      Read-only. A card shows the story's recorded status and its passed criteria;
+      clicking one opens the story. To change a status, run
+      <code>python3 backlog/set_status.py US-NOTE-03 in-progress</code>, which edits
+      the epic file and re-runs the validator.
+    </div><div class="board">` + cols.map(st => {
       const cards = rows.filter(s => s.status === st);
       return `<div class="col"><h3><span>${st}</span><span>${cards.length}</span></h3>` +
         (cards.length ? cards.map(s => {
