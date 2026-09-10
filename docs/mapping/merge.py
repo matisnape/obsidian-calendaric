@@ -7,6 +7,7 @@ references (module ids used by flows and capabilities must exist).
 """
 import json
 import pathlib
+import re
 import sys
 from datetime import date
 
@@ -116,6 +117,18 @@ REVIEW_OBSERVATIONS = [
      "why_it_matters": "It always returns falsy, so the Calendar plugin keeps rendering its own "
                        "Weekly Note Settings section instead of deferring to Periodic Notes. This "
                        "is live in the vault today, not only a merge concern."},
+    {"severity": "P1", "kind": "bug",
+     "what": "A prefix-matched note is indexed but cannot be looked up. resolve() stores an entry "
+             "with matchData.exact false when the strict parse fails and the loose one succeeds, "
+             "but getPeriodicNote() returns only entries with matchData.exact === true.",
+     "where": ["obsidian-periodic-notes/src/cache.ts:205-224",
+               "obsidian-periodic-notes/src/cache.ts:270-289",
+               "obsidian-periodic-notes/src/main.ts:276-282"],
+     "why_it_matters": "This is live in the vault: week format gggg-[W]ww with allowPrefixMatch on, "
+                       "and 60 weekly files named 'YYYY-Wnn, DD.MM - DD.MM.md'. Opening such a week "
+                       "finds nothing and creates a second, raw-named file next to the existing one. "
+                       "Prefix matching is only half-wired, so the rewrite must carry the match "
+                       "through lookup and open, not only through indexing."},
 ]
 
 
@@ -152,6 +165,35 @@ def canonicalise(out):
         out["observations"].append({**obs, "source": "review"})
 
 
+ROOTS = {}
+
+
+def check_citations(out):
+    """Every path:line citation must point at a real file and a real line."""
+    problems = []
+    for cap in out["capabilities"]:
+        root = ROOTS.get(cap["source"])
+        if not root:
+            continue
+        for d in cap.get("defined_in") or []:
+            path, lines = d.get("path"), d.get("lines")
+            if not isinstance(path, str) or not path or path == "—":
+                continue
+            fp = pathlib.Path(root) / path
+            if not fp.is_file():
+                problems.append(f"capability {cap['uid']} cites missing file {path}")
+                continue
+            m = re.fullmatch(r"\s*(\d+)\s*-\s*(\d+)\s*", lines or "")
+            if not m:
+                continue
+            end = int(m.group(2))
+            n = len(fp.read_text().splitlines())
+            if end > n:
+                problems.append(
+                    f"capability {cap['uid']} cites {path}:{lines} but the file has {n} lines")
+    return problems
+
+
 def main() -> int:
     out = {
         "meta": {
@@ -177,12 +219,16 @@ def main() -> int:
         src.setdefault("id", sid)
         src["counts"] = {k: len(data.get(k) or []) for k in ARRAYS}
         out["sources"].append(src)
+        ROOTS[sid] = src.get("path")
         for key in ARRAYS:
             for rec in data.get(key) or []:
                 rec["source"] = sid
                 out[key].append(rec)
 
     canonicalise(out)
+
+    for n, obs in enumerate(out["observations"], 1):
+        obs["id"] = f"OBS-{n:02d}"
 
     # The workflows viewer expects `packages`; modules are the same thing.
     out["packages"] = out["modules"]
@@ -204,20 +250,52 @@ def main() -> int:
         flow["capabilities"] = [
             f"{flow['source']}:{r}" if f"{flow['source']}:{r}" in by_uid else r for r in refs]
 
+    for mod in out["modules"]:
+        mod["uid"] = f"{mod['source']}:{mod['id']}"
+
+    module_uids = {m["uid"] for m in out["modules"]}
+
+    def module_ref(source, ref):
+        """A bare module id means "the one in my own source", when that exists."""
+        own = f"{source}:{ref}"
+        return own if own in module_uids else ref
+
+    for mod in out["modules"]:
+        mod["depends_on"] = [module_ref(mod["source"], r) for r in mod.get("depends_on") or []]
+    for cap in out["capabilities"]:
+        for dfn in cap.get("defined_in") or []:
+            if dfn.get("module"):
+                dfn["module"] = module_ref(cap["source"], dfn["module"])
+        cap["used_by"] = [module_ref(cap["source"], r) for r in cap.get("used_by") or []]
+    for flow in out["flows"]:
+        for step in flow.get("steps") or []:
+            for end in ("from", "to"):
+                if step.get(end):
+                    step[end] = module_ref(flow["source"], step[end])
+
     module_ids = {m["id"] for m in out["modules"]}
+    ambiguous_modules = {i for i in module_ids
+                         if sum(1 for m in out["modules"] if m["id"] == i) > 1}
     cap_ids = {c["id"] for c in out["capabilities"]}
     cap_uids = {c["uid"] for c in out["capabilities"]}
     ambiguous = {i for i in cap_ids if sum(1 for c in out["capabilities"] if c["id"] == i) > 1}
     problems = []
 
+    def check_module_ref(ref, where):
+        if ref in module_uids:
+            return
+        if ref not in module_ids:
+            problems.append(f"{where} references unknown module {ref}")
+        elif ref in ambiguous_modules:
+            problems.append(f"{where} references ambiguous module id {ref} "
+                            f"— use a source-qualified uid")
+
     for flow in out["flows"]:
         for i, step in enumerate(flow.get("steps") or [], 1):
             for end in ("from", "to"):
                 ref = step.get(end)
-                if ref and ref not in module_ids:
-                    problems.append(
-                        f"flow {flow['source']}:{flow['id']} step {i} {end}={ref} "
-                        f"is not a known module id")
+                if ref:
+                    check_module_ref(ref, f"flow {flow['source']}:{flow['id']} step {i} {end}")
         for ref in flow.get("capabilities") or []:
             if ref in cap_uids:
                 continue
@@ -232,13 +310,10 @@ def main() -> int:
     for cap in out["capabilities"]:
         for d in cap.get("defined_in") or []:
             ref = d.get("module")
-            if ref and ref not in module_ids:
-                problems.append(
-                    f"capability {cap['source']}:{cap['id']} defined_in module {ref} is unknown")
+            if ref:
+                check_module_ref(ref, f"capability {cap['uid']} defined_in")
         for ref in cap.get("used_by") or []:
-            if ref not in module_ids:
-                problems.append(
-                    f"capability {cap['source']}:{cap['id']} used_by {ref} is not a known module id")
+            check_module_ref(ref, f"capability {cap['uid']} used_by")
         for ref in cap.get("depends_on_capability") or []:
             if ref in cap_uids:
                 continue
@@ -253,12 +328,18 @@ def main() -> int:
     known_cats = {c["id"] for c in CATEGORIES}
     for m in out["modules"]:
         if m.get("category") not in known_cats:
-            problems.append(f"module {m['source']}:{m['id']} has unknown category {m.get('category')}")
+            problems.append(f"module {m['uid']} has unknown category {m.get('category')}")
+
+    problems += check_citations(out)
 
     dest = HERE / "calendaric-map.json"
-    dest.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+    if not (problems or missing):
+        dest.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n")
+    else:
+        print("NOT WRITING calendaric-map.json — validation failed\n")
 
-    print(f"wrote {dest}")
+    if not (problems or missing):
+        print(f"wrote {dest}")
     if missing:
         print(f"MISSING SOURCES: {', '.join(missing)}")
     for src in out["sources"]:

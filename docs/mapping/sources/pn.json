@@ -14,7 +14,21 @@
       "role": "Plugin entry point: lifecycle, ribbon/command (re)registration, settings load/migrate, and the public methods other plugins call (openPeriodicNote, createPeriodicNote, getPeriodicNote(s), isPeriodic, findAdjacent, findInCache).",
       "loc": 288,
       "category": "entry",
-      "depends_on": ["pn-cache", "pn-calendar-set-manager", "pn-commands", "pn-icons", "pn-modal", "pn-settings-index", "pn-settings-localization", "pn-settings-utils", "pn-switcher-calendarset", "pn-switcher-nld", "pn-timeline-manager", "pn-types", "pn-utils"],
+      "depends_on": [
+        "pn-cache",
+        "pn-calendar-set-manager",
+        "pn-commands",
+        "pn-icons",
+        "pn-modal",
+        "pn-settings-index",
+        "pn-settings-localization",
+        "pn-settings-utils",
+        "pn-switcher-calendarset",
+        "pn-switcher-nld",
+        "pn-timeline-manager",
+        "pn-types",
+        "pn-utils"
+      ],
       "external": false
     },
     {
@@ -24,7 +38,10 @@
       "role": "Builds the 5 per-granularity commands (open/next/prev/open-next/open-prev) and the adjacent-note jump/open logic that backs them.",
       "loc": 153,
       "category": "entry",
-      "depends_on": ["pn-types", "pn-main"],
+      "depends_on": [
+        "pn-types",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -34,7 +51,10 @@
       "role": "Ribbon right-click context menu (showFileMenu, used) and a PeriodicNoteCreateModal (defined, never used).",
       "loc": 74,
       "category": "ui",
-      "depends_on": ["pn-commands", "pn-main"],
+      "depends_on": [
+        "pn-commands",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -64,7 +84,11 @@
       "role": "CalendarSetManager class (active-set lookup, active/inactive granularities, rename) plus the one-time legacy-settings migration functions and the private ILegacySettings type used only to detect them.",
       "loc": 158,
       "category": "config",
-      "depends_on": ["pn-types", "pn-utils", "pn-main"],
+      "depends_on": [
+        "pn-types",
+        "pn-utils",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -74,7 +98,11 @@
       "role": "ISettings interface, DEFAULT_SETTINGS, DEFAULT_PERIODIC_CONFIG, and the PluginSettingTab that mounts the Svelte settings router.",
       "loc": 84,
       "category": "config",
-      "depends_on": ["pn-calendar-set-manager", "pn-types", "pn-settings-router"],
+      "depends_on": [
+        "pn-calendar-set-manager",
+        "pn-types",
+        "pn-settings-router"
+      ],
       "external": false
     },
     {
@@ -84,7 +112,10 @@
       "role": "Settings-store updater functions (create/delete/rename/set-active calendar set, clearStartupNote, findStartupNoteConfig) and helpers for the core Daily Notes plugin and locale/week-start option lists.",
       "loc": 180,
       "category": "config",
-      "depends_on": ["pn-types", "pn-settings-index"],
+      "depends_on": [
+        "pn-types",
+        "pn-settings-index"
+      ],
       "external": false
     },
     {
@@ -94,7 +125,9 @@
       "role": "Format/folder/template validators plus the 'fragile basename' complexity check and the format-aware getDateInput() used by the cache when matching nested-path formats.",
       "loc": 123,
       "category": "config",
-      "depends_on": ["pn-types"],
+      "depends_on": [
+        "pn-types"
+      ],
       "external": false
     },
     {
@@ -134,7 +167,13 @@
       "role": "Date/template/path grab-bag: template-token expansion, format lookup/fallback helpers, the strict-then-prefix date parser (getDateWithPrefixFallback), note-creation path + folder auto-create, and relative-date humanization.",
       "loc": 359,
       "category": "dates",
-      "depends_on": ["pn-cache", "pn-settings-index", "pn-settings-validation", "pn-types", "pn-constants"],
+      "depends_on": [
+        "pn-cache",
+        "pn-settings-index",
+        "pn-settings-validation",
+        "pn-types",
+        "pn-constants"
+      ],
       "external": false
     },
     {
@@ -144,7 +183,9 @@
       "role": "getLooselyMatchedDate(): regex-only day/month/year guesser used as the cache's last-resort fallback when a file matches no configured folder/format at all.",
       "loc": 70,
       "category": "dates",
-      "depends_on": ["pn-types"],
+      "depends_on": [
+        "pn-types"
+      ],
       "external": false
     },
     {
@@ -154,7 +195,15 @@
       "role": "PeriodicNotesCache: the in-memory index of every file matched to a (calendar set, granularity, date), built on layout-ready, kept live via vault/metadata event listeners, and read by every note-lookup and adjacent-note capability.",
       "loc": 403,
       "category": "state",
-      "depends_on": ["pn-calendar-set-manager", "pn-parser", "pn-settings-validation", "pn-utils", "pn-types", "pn-constants", "pn-main"],
+      "depends_on": [
+        "pn-calendar-set-manager",
+        "pn-parser",
+        "pn-settings-validation",
+        "pn-utils",
+        "pn-types",
+        "pn-constants",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -174,7 +223,13 @@
       "role": "NLDNavigator: a SuggestModal that turns natural-language date queries (via the nldates-obsidian plugin) plus a set of hand-written relative-date regexes into periodic-note suggestions; Tab hands off to RelatedFilesSwitcher.",
       "loc": 237,
       "category": "ui",
-      "depends_on": ["pn-cache", "pn-main", "pn-utils", "pn-switcher-related", "pn-types"],
+      "depends_on": [
+        "pn-cache",
+        "pn-main",
+        "pn-utils",
+        "pn-switcher-related",
+        "pn-types"
+      ],
       "external": false
     },
     {
@@ -184,7 +239,11 @@
       "role": "CalendarSetSuggestModal: a FuzzySuggestModal listing calendar sets by id; choosing one calls setActiveSet.",
       "loc": 26,
       "category": "ui",
-      "depends_on": ["pn-settings-utils", "pn-types", "pn-main"],
+      "depends_on": [
+        "pn-settings-utils",
+        "pn-types",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -204,7 +263,11 @@
       "role": "RelatedFilesSwitcher: lists inexact/prefix-matched notes for a period selected in NLDNavigator; Shift+8 toggles including finer granularities; Tab hands back to NLDNavigator with the query preserved.",
       "loc": 102,
       "category": "ui",
-      "depends_on": ["pn-switcher-nld", "pn-constants", "pn-main"],
+      "depends_on": [
+        "pn-switcher-nld",
+        "pn-constants",
+        "pn-main"
+      ],
       "external": false
     },
     {
@@ -214,7 +277,11 @@
       "role": "TimelineManager: mounts/unmounts one Timeline.svelte component per open MarkdownView, keyed on workspace layout-change events; cleans up on plugin unload.",
       "loc": 64,
       "category": "state",
-      "depends_on": ["pn-cache", "pn-main", "pn-timeline-view"],
+      "depends_on": [
+        "pn-cache",
+        "pn-main",
+        "pn-timeline-view"
+      ],
       "external": false
     },
     {
@@ -224,7 +291,13 @@
       "role": "The floating 'Today'/'Last week'/etc. badge injected top-right of a periodic note's view; click to expand a 7-day strip; clicking a weekday opens/creates that day's note.",
       "loc": 213,
       "category": "ui",
-      "depends_on": ["pn-cache", "pn-main", "pn-utils", "pn-types", "pn-timeline-relative-icon"],
+      "depends_on": [
+        "pn-cache",
+        "pn-main",
+        "pn-utils",
+        "pn-types",
+        "pn-timeline-relative-icon"
+      ],
       "external": false
     },
     {
@@ -244,7 +317,9 @@
       "role": "Generic Suggest/TextInputSuggest base classes: keyboard nav, popper.js-positioned dropdown, abstract getSuggestions/renderSuggestion/selectSuggestion contract used by FileSuggest/FolderSuggest.",
       "loc": 177,
       "category": "ui",
-      "depends_on": ["pn-settings-utils"],
+      "depends_on": [
+        "pn-settings-utils"
+      ],
       "external": false
     },
     {
@@ -254,7 +329,9 @@
       "role": "FileSuggest and FolderSuggest: TextInputSuggest implementations used by the Template and Folder settings fields.",
       "loc": 62,
       "category": "ui",
-      "depends_on": ["pn-ui-suggest"],
+      "depends_on": [
+        "pn-ui-suggest"
+      ],
       "external": false
     },
     {
@@ -264,7 +341,13 @@
       "role": "Top-level Svelte router for the settings tab: renders Breadcrumbs, then either Dashboard (root) or Details (a calendar set selected), keyed off the `router` store.",
       "loc": 37,
       "category": "ui",
-      "depends_on": ["pn-settings-stores", "pn-settings-ui-kit", "pn-settings-dashboard", "pn-settings-details", "pn-settings-localization"],
+      "depends_on": [
+        "pn-settings-stores",
+        "pn-settings-ui-kit",
+        "pn-settings-dashboard",
+        "pn-settings-details",
+        "pn-settings-localization"
+      ],
       "external": false
     },
     {
@@ -274,7 +357,14 @@
       "role": "Settings root page: getting-started banner, grid of calendar-set cards with an 'add' button, the timeline-complication toggle, and the vault-wide week-start/locale dropdowns.",
       "loc": 152,
       "category": "ui",
-      "depends_on": ["pn-settings-stores", "pn-settings-utils", "pn-settings-localization", "pn-settings-getting-started-banner", "pn-settings-calendarset-menuitem", "pn-settings-ui-kit"],
+      "depends_on": [
+        "pn-settings-stores",
+        "pn-settings-utils",
+        "pn-settings-localization",
+        "pn-settings-getting-started-banner",
+        "pn-settings-calendarset-menuitem",
+        "pn-settings-ui-kit"
+      ],
       "external": false
     },
     {
@@ -284,7 +374,9 @@
       "role": "Onboarding banner: detects the core Daily Notes plugin and offers to disable it; explains the plugin when no legacy daily-note settings exist yet.",
       "loc": 61,
       "category": "integration",
-      "depends_on": ["pn-settings-utils"],
+      "depends_on": [
+        "pn-settings-utils"
+      ],
       "external": false
     },
     {
@@ -294,7 +386,14 @@
       "role": "One calendar-set card on the dashboard: shows enabled granularities with checkmarks, an options menu (set active/duplicate/delete), click navigates to Details.",
       "loc": 187,
       "category": "ui",
-      "depends_on": ["pn-settings-stores", "pn-settings-utils", "pn-types", "pn-commands", "pn-calendar-set-manager", "pn-settings-ui-kit"],
+      "depends_on": [
+        "pn-settings-stores",
+        "pn-settings-utils",
+        "pn-types",
+        "pn-commands",
+        "pn-calendar-set-manager",
+        "pn-settings-ui-kit"
+      ],
       "external": false
     },
     {
@@ -304,7 +403,13 @@
       "role": "Detail page for one calendar set: inline-rename title, active/duplicate/delete options menu, and an accordion of PeriodicGroup entries (one per granularity). Contains the local scroll-guard crash fix.",
       "loc": 192,
       "category": "ui",
-      "depends_on": ["pn-settings-stores", "pn-settings-utils", "pn-types", "pn-calendar-set-manager", "pn-settings-periodic-group"],
+      "depends_on": [
+        "pn-settings-stores",
+        "pn-settings-utils",
+        "pn-types",
+        "pn-calendar-set-manager",
+        "pn-settings-periodic-group"
+      ],
       "external": false
     },
     {
@@ -314,7 +419,17 @@
       "role": "One collapsible granularity section inside Details: enable checkbox plus Format/Folder/Template/AllowPrefixMatch/OpenAtStartup sub-settings, using svelte-writable-derived to read/write straight into the parent calendarSets[] array.",
       "loc": 136,
       "category": "ui",
-      "depends_on": ["pn-commands", "pn-setting-note-format", "pn-setting-note-folder", "pn-setting-note-template", "pn-setting-allow-prefix-match", "pn-setting-open-at-startup", "pn-settings-index", "pn-settings-ui-kit", "pn-types"],
+      "depends_on": [
+        "pn-commands",
+        "pn-setting-note-format",
+        "pn-setting-note-folder",
+        "pn-setting-note-template",
+        "pn-setting-allow-prefix-match",
+        "pn-setting-open-at-startup",
+        "pn-settings-index",
+        "pn-settings-ui-kit",
+        "pn-types"
+      ],
       "external": false
     },
     {
@@ -324,7 +439,11 @@
       "role": "The Format text field: live-previews the current moment.js format and shows validation error/complexity warnings as you type.",
       "loc": 94,
       "category": "config",
-      "depends_on": ["pn-settings-validation", "pn-commands", "pn-constants"],
+      "depends_on": [
+        "pn-settings-validation",
+        "pn-commands",
+        "pn-constants"
+      ],
       "external": false
     },
     {
@@ -334,7 +453,11 @@
       "role": "The Note Folder text field, backed by FolderSuggest autocomplete and validateFolder().",
       "loc": 61,
       "category": "config",
-      "depends_on": ["pn-ui-file-suggest", "pn-settings-validation", "pn-commands"],
+      "depends_on": [
+        "pn-ui-file-suggest",
+        "pn-settings-validation",
+        "pn-commands"
+      ],
       "external": false
     },
     {
@@ -344,7 +467,11 @@
       "role": "The Template Path text field, backed by FileSuggest autocomplete and validateTemplate().",
       "loc": 64,
       "category": "config",
-      "depends_on": ["pn-ui-file-suggest", "pn-settings-validation", "pn-commands"],
+      "depends_on": [
+        "pn-ui-file-suggest",
+        "pn-settings-validation",
+        "pn-commands"
+      ],
       "external": false
     },
     {
@@ -354,7 +481,10 @@
       "role": "Local fork's 'Allow prefix matching' toggle, modeled directly on OpenAtStartupSetting.svelte. New, not upstream.",
       "loc": 27,
       "category": "config",
-      "depends_on": ["pn-settings-ui-kit", "pn-commands"],
+      "depends_on": [
+        "pn-settings-ui-kit",
+        "pn-commands"
+      ],
       "external": false
     },
     {
@@ -364,7 +494,12 @@
       "role": "The 'Open on startup' toggle; turning it on calls clearStartupNote to enforce vault-wide exclusivity before setting itself.",
       "loc": 31,
       "category": "config",
-      "depends_on": ["pn-settings-ui-kit", "pn-commands", "pn-settings-utils", "pn-settings-index"],
+      "depends_on": [
+        "pn-settings-ui-kit",
+        "pn-commands",
+        "pn-settings-utils",
+        "pn-settings-index"
+      ],
       "external": false
     },
     {
@@ -374,7 +509,9 @@
       "role": "Reusable, purely presentational building blocks for the settings mini-app (expand arrow, breadcrumb trail, checkmark, dropdown, footer credit, generic setting-item row, toggle switch) plus IconButton.svelte, which is defined but never imported anywhere.",
       "loc": 202,
       "category": "ui",
-      "depends_on": ["pn-settings-stores"],
+      "depends_on": [
+        "pn-settings-stores"
+      ],
       "external": false
     },
     {
@@ -395,18 +532,40 @@
       "category": "config",
       "surface": "api",
       "description": "A CalendarSet is a named bundle (id, ctime) holding one optional PeriodicConfig (enabled, format, folder, templatePath, allowPrefixMatch, openAtStartup) per granularity (day/week/month/quarter/year). ISettings.calendarSets is an array of these; ISettings.activeCalendarSet names the one currently in effect.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-types", "symbol": "CalendarSet, PeriodicConfig", "path": "src/types.ts", "lines": "17-37" },
-        { "module": "pn-settings-index", "symbol": "ISettings", "path": "src/settings/index.ts", "lines": "20-30" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-calendar-set-manager", "pn-cache", "pn-utils", "pn-settings-details", "pn-settings-periodic-group", "pn-settings-dashboard", "pn-settings-calendarset-menuitem"],
+      "defined_in": [
+        {
+          "module": "pn-types",
+          "symbol": "CalendarSet, PeriodicConfig",
+          "path": "src/types.ts",
+          "lines": "17-37"
+        },
+        {
+          "module": "pn-settings-index",
+          "symbol": "ISettings",
+          "path": "src/settings/index.ts",
+          "lines": "20-30"
+        }
+      ],
+      "used_by": [
+        "pn-calendar-set-manager",
+        "pn-cache",
+        "pn-utils",
+        "pn-settings-details",
+        "pn-settings-periodic-group",
+        "pn-settings-dashboard",
+        "pn-settings-calendarset-menuitem"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [
         "This is the ONLY live config surface in v0.0.17 — see observation about the dead top-level daily/weekly/monthly/quarterly/yearly keys.",
         "A calendar set with zero enabled granularities is valid and shown as 'Not configured' in the dashboard card."
       ],
-      "edge_cases": ["Deleting the last remaining calendar set is disabled in the UI (menu item setDisabled when length === 1), but deleteCalendarSet() itself has no such guard if called programmatically."],
+      "edge_cases": [
+        "Deleting the last remaining calendar set is disabled in the UI (menu item setDisabled when length === 1), but deleteCalendarSet() itself has no such guard if called programmatically."
+      ],
       "confidence": "verified"
     },
     {
@@ -415,13 +574,29 @@
       "category": "config",
       "surface": "api",
       "description": "getActiveId()/getActiveSet() read settings.activeCalendarSet and find the matching entry in settings.calendarSets.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-calendar-set-manager", "symbol": "getActiveId, getActiveSet", "path": "src/calendarSetManager.ts", "lines": "90-103" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main", "pn-cache", "pn-switcher-nld", "pn-timeline-view", "pn-settings-calendarset-menuitem", "pn-settings-details"],
+      "defined_in": [
+        {
+          "module": "pn-calendar-set-manager",
+          "symbol": "getActiveId, getActiveSet",
+          "path": "src/calendarSetManager.ts",
+          "lines": "90-103"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-cache",
+        "pn-switcher-nld",
+        "pn-timeline-view",
+        "pn-settings-calendarset-menuitem",
+        "pn-settings-details"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["getActiveSet() throws 'No active calendar set found' if activeCalendarSet doesn't match any entry — there is no fallback-to-first-set here (unlike deleteCalendarSet, which does fall back)."],
+      "behaviour_notes": [
+        "getActiveSet() throws 'No active calendar set found' if activeCalendarSet doesn't match any entry — there is no fallback-to-first-set here (unlike deleteCalendarSet, which does fall back)."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -431,13 +606,28 @@
       "category": "config",
       "surface": "api",
       "description": "getActiveGranularities() and getInactiveGranularities() filter the fixed granularities[] order array by whether the active set's PeriodicConfig.enabled is true.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-calendar-set-manager", "symbol": "getActiveGranularities, getInactiveGranularities", "path": "src/calendarSetManager.ts", "lines": "119-127" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main", "pn-modal", "pn-switcher-nld"],
-      "depends_on_capability": ["get-active-calendar-set"],
-      "behaviour_notes": ["Order is always day, week, month, quarter, year (granularities[] in types.ts) regardless of insertion order in the calendar set — this fixes ribbon-icon and command ordering."],
+      "defined_in": [
+        {
+          "module": "pn-calendar-set-manager",
+          "symbol": "getActiveGranularities, getInactiveGranularities",
+          "path": "src/calendarSetManager.ts",
+          "lines": "119-127"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-modal",
+        "pn-switcher-nld"
+      ],
+      "depends_on_capability": [
+        "get-active-calendar-set"
+      ],
+      "behaviour_notes": [
+        "Order is always day, week, month, quarter, year (granularities[] in types.ts) regardless of insertion order in the calendar set — this fixes ribbon-icon and command ordering."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -447,14 +637,32 @@
       "category": "config",
       "surface": "command",
       "description": "The 'Switch active calendar set...' command opens a FuzzySuggestModal of all calendar sets; choosing one calls setActiveSet(id), which writes settings.activeCalendarSet and triggers the settings-store subscription.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-switcher-calendarset", "symbol": "CalendarSetSuggestModal", "path": "src/switcher/calendarSetSwitcher.ts", "lines": "6-26" },
-        { "module": "pn-settings-utils", "symbol": "setActiveSet", "path": "src/settings/utils.ts", "lines": "58-63" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["dynamic-command-registration"],
-      "behaviour_notes": ["Switching sets re-runs configureCommands()/configureRibbonIcons() and resets the note cache, because onUpdateSettings fires on every settings.subscribe (main.ts:203-210) and cache.reset() listens for the 'periodic-notes:settings-updated' workspace event."],
+      "defined_in": [
+        {
+          "module": "pn-switcher-calendarset",
+          "symbol": "CalendarSetSuggestModal",
+          "path": "src/switcher/calendarSetSwitcher.ts",
+          "lines": "6-26"
+        },
+        {
+          "module": "pn-settings-utils",
+          "symbol": "setActiveSet",
+          "path": "src/settings/utils.ts",
+          "lines": "58-63"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "dynamic-command-registration"
+      ],
+      "behaviour_notes": [
+        "Switching sets re-runs configureCommands()/configureRibbonIcons() and resets the note cache, because onUpdateSettings fires on every settings.subscribe (main.ts:203-210) and cache.reset() listens for the 'periodic-notes:settings-updated' workspace event."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -464,14 +672,32 @@
       "category": "config",
       "surface": "ui",
       "description": "createNewCalendarSet(id, refSettings?) pushes a new CalendarSet built from a default per-granularity config, optionally cloning refSettings (used for duplication). Called both by the dashboard's '+' button (empty defaults) and the 'Duplicate calendar set' menu item (existing set as refSettings).",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-utils", "symbol": "createNewCalendarSet", "path": "src/settings/utils.ts", "lines": "35-52" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-dashboard", "pn-settings-calendarset-menuitem", "pn-settings-details", "pn-main"],
-      "depends_on_capability": ["calendar-set-model"],
-      "behaviour_notes": ["Dashboard auto-generates a unique id 'Calendar set N' by probing for the first free suffix; navigates to the new set's Details page with eState.shouldRename=true so the title is immediately editable."],
-      "edge_cases": ["Also used at plugin-load time to synthesize the very first 'Default' calendar set (see legacy-settings-migration)."],
+      "defined_in": [
+        {
+          "module": "pn-settings-utils",
+          "symbol": "createNewCalendarSet",
+          "path": "src/settings/utils.ts",
+          "lines": "35-52"
+        }
+      ],
+      "used_by": [
+        "pn-settings-dashboard",
+        "pn-settings-calendarset-menuitem",
+        "pn-settings-details",
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "calendar-set-model"
+      ],
+      "behaviour_notes": [
+        "Dashboard auto-generates a unique id 'Calendar set N' by probing for the first free suffix; navigates to the new set's Details page with eState.shouldRename=true so the title is immediately editable."
+      ],
+      "edge_cases": [
+        "Also used at plugin-load time to synthesize the very first 'Default' calendar set (see legacy-settings-migration)."
+      ],
       "confidence": "verified"
     },
     {
@@ -480,14 +706,30 @@
       "category": "config",
       "surface": "ui",
       "description": "The '...' menu on a calendar-set card or Details page's toolbar builds a '<name> copy' id and calls createNewCalendarSet(newId, existingSet), then navigates to it with shouldRename=true.",
-      "granularity": ["any"],
+      "granularity": [
+        "any"
+      ],
       "defined_in": [
-        { "module": "pn-settings-calendarset-menuitem", "symbol": "toggleOptionsMenu", "path": "src/settings/pages/dashboard/CalendarSets/MenuItem.svelte", "lines": "38-72" },
-        { "module": "pn-settings-details", "symbol": "toggleOptionsMenu", "path": "src/settings/pages/details/Details.svelte", "lines": "48-91" }
+        {
+          "module": "pn-settings-calendarset-menuitem",
+          "symbol": "toggleOptionsMenu",
+          "path": "src/settings/pages/dashboard/CalendarSets/MenuItem.svelte",
+          "lines": "38-72"
+        },
+        {
+          "module": "pn-settings-details",
+          "symbol": "toggleOptionsMenu",
+          "path": "src/settings/pages/details/Details.svelte",
+          "lines": "48-91"
+        }
       ],
       "used_by": [],
-      "depends_on_capability": ["create-calendar-set"],
-      "behaviour_notes": ["Thin UI wrapper over create-calendar-set with refSettings — kept as its own capability because it is a distinct, user-visible action (menu item), not because the code differs."],
+      "depends_on_capability": [
+        "create-calendar-set"
+      ],
+      "behaviour_notes": [
+        "Thin UI wrapper over create-calendar-set with refSettings — kept as its own capability because it is a distinct, user-visible action (menu item), not because the code differs."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -497,14 +739,32 @@
       "category": "config",
       "surface": "ui",
       "description": "Details.svelte's title is a contenteditable div; on blur, renameCalendarset(oldId, newId) validates uniqueness/non-empty, updates the CalendarSet.id and activeCalendarSet if it was the active one, then the caller navigates the router to the new id.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-calendar-set-manager", "symbol": "renameCalendarset", "path": "src/calendarSetManager.ts", "lines": "129-157" },
-        { "module": "pn-settings-details", "symbol": "tryToRename", "path": "src/settings/pages/details/Details.svelte", "lines": "29-39" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-details"],
-      "depends_on_capability": ["calendar-set-model"],
-      "behaviour_notes": ["Throws (and the UI catches + refocuses the field) on an empty or duplicate proposed name; a no-op if the name is unchanged."],
+      "defined_in": [
+        {
+          "module": "pn-calendar-set-manager",
+          "symbol": "renameCalendarset",
+          "path": "src/calendarSetManager.ts",
+          "lines": "129-157"
+        },
+        {
+          "module": "pn-settings-details",
+          "symbol": "tryToRename",
+          "path": "src/settings/pages/details/Details.svelte",
+          "lines": "29-39"
+        }
+      ],
+      "used_by": [
+        "pn-settings-details"
+      ],
+      "depends_on_capability": [
+        "calendar-set-model"
+      ],
+      "behaviour_notes": [
+        "Throws (and the UI catches + refocuses the field) on an empty or duplicate proposed name; a no-op if the name is unchanged."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -514,14 +774,28 @@
       "category": "config",
       "surface": "ui",
       "description": "deleteCalendarSet(id) removes the set from settings.calendarSets; if it was the active set, falls back to calendarSets[0].",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-utils", "symbol": "deleteCalendarSet", "path": "src/settings/utils.ts", "lines": "19-33" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-calendarset-menuitem", "pn-settings-details"],
-      "depends_on_capability": ["calendar-set-model"],
+      "defined_in": [
+        {
+          "module": "pn-settings-utils",
+          "symbol": "deleteCalendarSet",
+          "path": "src/settings/utils.ts",
+          "lines": "19-33"
+        }
+      ],
+      "used_by": [
+        "pn-settings-calendarset-menuitem",
+        "pn-settings-details"
+      ],
+      "depends_on_capability": [
+        "calendar-set-model"
+      ],
       "behaviour_notes": [],
-      "edge_cases": ["settings.calendarSets[0] is accessed unconditionally when falling back — deleting the very last calendar set (bypassing the UI's setDisabled guard) would throw on `.id` of undefined."],
+      "edge_cases": [
+        "settings.calendarSets[0] is accessed unconditionally when falling back — deleting the very last calendar set (bypassing the UI's setDisabled guard) would throw on `.id` of undefined."
+      ],
       "confidence": "verified"
     },
     {
@@ -530,15 +804,39 @@
       "category": "config",
       "surface": "integration",
       "description": "On loadSettings(), if calendarSets[] is empty, the plugin checks (in order): (1) does the raw saved data.json look like the pre-calendar-set ILegacySettings shape (top-level daily/weekly/monthly/quarterly/yearly keys)? -> migrateLegacySettingsToCalendarSet builds one 'Default' set from all five. (2) does the core Daily Notes internal plugin have non-empty format/folder/template? -> migrateDailyNoteSettings builds a 'Default' set with only 'day' populated. (3) otherwise create a bare 'Default' set with only 'day' enabled.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-calendar-set-manager", "symbol": "isLegacySettings, migrateLegacySettingsToCalendarSet, migrateDailyNoteSettings", "path": "src/calendarSetManager.ts", "lines": "34-85" },
-        { "module": "pn-main", "symbol": "loadSettings", "path": "src/main.ts", "lines": "170-201" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["create-calendar-set"],
-      "behaviour_notes": ["isLegacySettings() is a structural type-guard on the raw loaded object, not on ISettings — it only fires because ISettings itself no longer declares those fields (see the dead-top-level-keys observation)."],
-      "edge_cases": ["Path (1) and (2) are mutually exclusive (else-if): a vault with both legacy plugin-data AND live core Daily Notes settings only migrates the plugin-data shape."],
+      "defined_in": [
+        {
+          "module": "pn-calendar-set-manager",
+          "symbol": "isLegacySettings, migrateLegacySettingsToCalendarSet, migrateDailyNoteSettings",
+          "path": "src/calendarSetManager.ts",
+          "lines": "34-85"
+        },
+        {
+          "module": "pn-main",
+          "symbol": "loadSettings",
+          "path": "src/main.ts",
+          "lines": "170-201"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "create-calendar-set"
+      ],
+      "behaviour_notes": [
+        "isLegacySettings() is a structural type-guard on the raw loaded object, not on ISettings — it only fires because ISettings itself no longer declares those fields (see the dead-top-level-keys observation)."
+      ],
+      "edge_cases": [
+        "Path (1) and (2) are mutually exclusive (else-if): a vault with both legacy plugin-data AND live core Daily Notes settings only migrates the plugin-data shape."
+      ],
       "confidence": "verified"
     },
     {
@@ -547,14 +845,29 @@
       "category": "entry",
       "surface": "command",
       "description": "configureCommands() removes the 5 commands for every currently-inactive granularity (app.commands.removeCommand) and (re-)adds them for every active one, every time settings change.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-main", "symbol": "configureCommands", "path": "src/main.ts", "lines": "152-168" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["get-active-and-inactive-granularities"],
-      "behaviour_notes": ["Command ids are unprefixed inside commands.ts (e.g. 'open-daily-note') but removeCommand needs the fully-qualified `periodic-notes:open-daily-note` — main.ts hardcodes that prefix, which is the manifest.json plugin id, not the vault's dev-install id (see observation on 'periodic-notes-anks')."],
-      "edge_cases": ["Runs on every settings change (every keystroke that updates a Writable-bound field, since svelte-writable-derived triggers the parent store), not only when granularities actually toggle — cheap because addCommand/removeCommand are idempotent, but worth knowing for a merge that batches settings writes."],
+      "defined_in": [
+        {
+          "module": "pn-main",
+          "symbol": "configureCommands",
+          "path": "src/main.ts",
+          "lines": "152-168"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "get-active-and-inactive-granularities"
+      ],
+      "behaviour_notes": [
+        "Command ids are unprefixed inside commands.ts (e.g. 'open-daily-note') but removeCommand needs the fully-qualified `periodic-notes:open-daily-note` — main.ts hardcodes that prefix, which is the manifest.json plugin id, not the vault's dev-install id (see observation on 'periodic-notes-anks')."
+      ],
+      "edge_cases": [
+        "Runs on every settings change (every keystroke that updates a Writable-bound field, since svelte-writable-derived triggers the parent store), not only when granularities actually toggle — cheap because addCommand/removeCommand are idempotent, but worth knowing for a merge that batches settings writes."
+      ],
       "confidence": "verified"
     },
     {
@@ -563,13 +876,29 @@
       "category": "ui",
       "surface": "ui",
       "description": "configureRibbonIcons() shows exactly one ribbon icon, for the FIRST granularity (in day/week/month/quarter/year order) that is enabled in the active calendar set. Clicking opens/creates today's note for that granularity; meta/cmd-click opens it in a new split; right-click opens a context menu (showFileMenu) listing every active granularity.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-main", "symbol": "configureRibbonIcons", "path": "src/main.ts", "lines": "124-150" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["get-active-and-inactive-granularities", "open-periodic-note", "context-menu-open-note"],
-      "behaviour_notes": ["If no granularity is enabled, no ribbon icon is shown at all.", "Local fork commit a8aa7e4 moved this call out of onLayoutReady into onload() directly so ribbon items register before Obsidian applies its ribbon sort order (upstream fix, already on this branch)."],
+      "defined_in": [
+        {
+          "module": "pn-main",
+          "symbol": "configureRibbonIcons",
+          "path": "src/main.ts",
+          "lines": "124-150"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "get-active-and-inactive-granularities",
+        "open-periodic-note",
+        "context-menu-open-note"
+      ],
+      "behaviour_notes": [
+        "If no granularity is enabled, no ribbon icon is shown at all.",
+        "Local fork commit a8aa7e4 moved this call out of onLayoutReady into onload() directly so ribbon items register before Obsidian applies its ribbon sort order (upstream fix, already on this branch)."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -579,12 +908,24 @@
       "category": "ui",
       "surface": "ui",
       "description": "showFileMenu() builds an Obsidian Menu with one item per active granularity ('Open today's daily note', etc.); clicking opens/creates it.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-modal", "symbol": "showFileMenu", "path": "src/modal.ts", "lines": "6-26" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["get-active-and-inactive-granularities", "open-periodic-note"],
+      "defined_in": [
+        {
+          "module": "pn-modal",
+          "symbol": "showFileMenu",
+          "path": "src/modal.ts",
+          "lines": "6-26"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "get-active-and-inactive-granularities",
+        "open-periodic-note"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -595,14 +936,35 @@
       "category": "notes",
       "surface": "api",
       "description": "createPeriodicNote(granularity, date) formats the filename, reads+expands the configured template, resolves/creates the destination folder, and vault.create()s the file. Returns the created TFile.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-main", "symbol": "createPeriodicNote", "path": "src/main.ts", "lines": "212-229" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main", "pn-timeline-view"],
-      "depends_on_capability": ["template-token-expansion", "note-creation-path-and-folder-autocreate"],
-      "behaviour_notes": ["Uses the ACTIVE calendar set's config/format unconditionally — there is no calendarSet parameter, unlike openPeriodicNote which accepts one."],
-      "edge_cases": ["vault.create() throws if a file already exists at the computed path outside the cache's knowledge (e.g. cache not yet initialized) — no existence check is done here."],
+      "defined_in": [
+        {
+          "module": "pn-main",
+          "symbol": "createPeriodicNote",
+          "path": "src/main.ts",
+          "lines": "212-229"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-timeline-view"
+      ],
+      "depends_on_capability": [
+        "template-token-expansion",
+        "note-creation-path-and-folder-autocreate"
+      ],
+      "behaviour_notes": [
+        "Uses the ACTIVE calendar set's config/format unconditionally — there is no calendarSet parameter, unlike openPeriodicNote which accepts one."
+      ],
+      "edge_cases": [
+        "vault.create() throws if a file already exists at the computed path outside the cache's knowledge (e.g. cache not yet initialized) — no existence check is done here."
+      ],
       "confidence": "verified"
     },
     {
@@ -611,13 +973,36 @@
       "category": "notes",
       "surface": "api",
       "description": "openPeriodicNote(granularity, date, opts?) looks the note up in the cache for the given (or active) calendar set; creates it via createPeriodicNote if missing; opens it in a new split or the current unpinned leaf.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-main", "symbol": "openPeriodicNote", "path": "src/main.ts", "lines": "269-287" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main", "pn-commands", "pn-modal", "pn-switcher-nld", "pn-switcher-related", "pn-timeline-view"],
-      "depends_on_capability": ["get-periodic-note", "create-periodic-note"],
-      "behaviour_notes": ["This method is explicitly rebound in onload (`this.openPeriodicNote = this.openPeriodicNote.bind(this)`) — a deliberate signal it's meant to be destructured and called by other plugins without losing `this`."],
+      "defined_in": [
+        {
+          "module": "pn-main",
+          "symbol": "openPeriodicNote",
+          "path": "src/main.ts",
+          "lines": "269-287"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-commands",
+        "pn-modal",
+        "pn-switcher-nld",
+        "pn-switcher-related",
+        "pn-timeline-view"
+      ],
+      "depends_on_capability": [
+        "get-periodic-note",
+        "create-periodic-note"
+      ],
+      "behaviour_notes": [
+        "This method is explicitly rebound in onload (`this.openPeriodicNote = this.openPeriodicNote.bind(this)`) — a deliberate signal it's meant to be destructured and called by other plugins without losing `this`."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -627,13 +1012,30 @@
       "category": "notes",
       "surface": "api",
       "description": "Cache.getPeriodicNote(calendarSet, granularity, date) linear-scans that calendar set's cache for an EXACT match (matchData.exact === true) whose date isSame(target, granularity); returns the TFile or null. main.ts:getPeriodicNote and the plugin's public getPeriodicNote are thin wrappers.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.getPeriodicNote", "path": "src/cache.ts", "lines": "270-289" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main", "pn-switcher-nld", "pn-timeline-view"],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.getPeriodicNote",
+          "path": "src/cache.ts",
+          "lines": "270-289"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-switcher-nld",
+        "pn-timeline-view"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["Only ever returns a note whose match was exact — inexact/prefix matches are invisible here even if allowPrefixMatch is on; those surface only via get-periodic-notes-related."],
+      "behaviour_notes": [
+        "Only ever returns a note whose match was exact — inexact/prefix matches are invisible here even if allowPrefixMatch is on; those surface only via get-periodic-notes-related."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -643,13 +1045,29 @@
       "category": "notes",
       "surface": "api",
       "description": "Cache.getPeriodicNotes(calendarSet, granularity, date, includeFinerGranularities?) returns every cached entry whose date isSame(target, granularity), either restricted to the requested granularity or (with the flag) any granularity at or finer than it (day <= week <= month <= quarter <= year order via compareGranularity). Used by the related-files switcher and the timeline's '+N' badge.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.getPeriodicNotes, compareGranularity", "path": "src/cache.ts", "lines": "38-44, 300-322" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-switcher-nld", "pn-switcher-related"],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.getPeriodicNotes, compareGranularity",
+          "path": "src/cache.ts",
+          "lines": "38-44, 300-322"
+        }
+      ],
+      "used_by": [
+        "pn-switcher-nld",
+        "pn-switcher-related"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["main.ts:getPeriodicNotes (the plugin's public wrapper) carries the author's own '// TODO: What API do I want for this?' comment — treat the includeFinerGranularities boolean-flag shape as unsettled."],
+      "behaviour_notes": [
+        "main.ts:getPeriodicNotes (the plugin's public wrapper) carries the author's own '// TODO: What API do I want for this?' comment — treat the includeFinerGranularities boolean-flag shape as unsettled."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -659,11 +1077,20 @@
       "category": "notes",
       "surface": "api",
       "description": "Cache.isPeriodic(path, granularity?) scans every calendar set's cache for an entry at that path, optionally filtered to one granularity. Used by every command's checkCallback to decide whether jump/open-adjacent should be enabled.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.isPeriodic", "path": "src/cache.ts", "lines": "338-350" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-commands"],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.isPeriodic",
+          "path": "src/cache.ts",
+          "lines": "338-350"
+        }
+      ],
+      "used_by": [
+        "pn-commands"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [],
       "edge_cases": [],
@@ -675,14 +1102,34 @@
       "category": "notes",
       "surface": "api",
       "description": "Cache.findAdjacent(calendarSet, filePath, direction) sorts that calendar set's same-granularity entries by canonicalDateStr (an ISO string) and returns the neighbour one position forwards or backwards.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.findAdjacent", "path": "src/cache.ts", "lines": "383-402" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-commands", "pn-main"],
-      "depends_on_capability": ["find-note-in-cache"],
-      "behaviour_notes": ["Re-sorts the ENTIRE calendar-set/granularity slice on every call rather than maintaining a sorted structure — fine at personal-vault scale, a hazard if the merged plugin targets much larger vaults."],
-      "edge_cases": ["Includes inexact/prefix matches in the sort, so 'adjacent' can land on a loosely-matched note, not just an exact one."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.findAdjacent",
+          "path": "src/cache.ts",
+          "lines": "383-402"
+        }
+      ],
+      "used_by": [
+        "pn-commands",
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "find-note-in-cache"
+      ],
+      "behaviour_notes": [
+        "Re-sorts the ENTIRE calendar-set/granularity slice on every call rather than maintaining a sorted structure — fine at personal-vault scale, a hazard if the merged plugin targets much larger vaults."
+      ],
+      "edge_cases": [
+        "Includes inexact/prefix matches in the sort, so 'adjacent' can land on a loosely-matched note, not just an exact one."
+      ],
       "confidence": "verified"
     },
     {
@@ -691,13 +1138,32 @@
       "category": "notes",
       "surface": "command",
       "description": "'Jump forwards/backwards to closest <periodicity> note': looks up the active file's cache metadata, calls find-adjacent-note, opens the result if found or shows a Notice ('There's no ... note before/after this') if not.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-commands", "symbol": "jumpToAdjacentNote", "path": "src/commands.ts", "lines": "40-70" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-commands"],
-      "depends_on_capability": ["find-note-in-cache", "find-adjacent-note", "is-periodic"],
-      "behaviour_notes": ["Never creates a note — pure navigation, distinct from open-adjacent-note-command."],
+      "defined_in": [
+        {
+          "module": "pn-commands",
+          "symbol": "jumpToAdjacentNote",
+          "path": "src/commands.ts",
+          "lines": "40-70"
+        }
+      ],
+      "used_by": [
+        "pn-commands"
+      ],
+      "depends_on_capability": [
+        "find-note-in-cache",
+        "find-adjacent-note",
+        "is-periodic"
+      ],
+      "behaviour_notes": [
+        "Never creates a note — pure navigation, distinct from open-adjacent-note-command."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -707,13 +1173,32 @@
       "category": "notes",
       "surface": "command",
       "description": "'Open next/previous <periodicity> note': computes the active file's date +/- 1 unit of its own granularity and calls openPeriodicNote, creating the note if it doesn't exist yet.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-commands", "symbol": "openAdjacentNote", "path": "src/commands.ts", "lines": "72-88" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-commands"],
-      "depends_on_capability": ["find-note-in-cache", "open-periodic-note", "is-periodic"],
-      "behaviour_notes": ["Unlike jump-to-adjacent-note-command, this always succeeds (by creating), which is why an older commit (b517af8, 'jump backwards will create new notes') exists upstream distinguishing the two behaviors."],
+      "defined_in": [
+        {
+          "module": "pn-commands",
+          "symbol": "openAdjacentNote",
+          "path": "src/commands.ts",
+          "lines": "72-88"
+        }
+      ],
+      "used_by": [
+        "pn-commands"
+      ],
+      "depends_on_capability": [
+        "find-note-in-cache",
+        "open-periodic-note",
+        "is-periodic"
+      ],
+      "behaviour_notes": [
+        "Unlike jump-to-adjacent-note-command, this always succeeds (by creating), which is why an older commit (b517af8, 'jump backwards will create new notes') exists upstream distinguishing the two behaviors."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -723,12 +1208,24 @@
       "category": "state",
       "surface": "api",
       "description": "Cache.find(filePath, calendarSet?) looks the path up directly if a calendar set is given; otherwise checks the active set first, then every other set. Wrapped by main.ts's findInCache.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.find", "path": "src/cache.ts", "lines": "352-381" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-commands", "pn-timeline-view"],
-      "depends_on_capability": ["get-active-calendar-set"],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.find",
+          "path": "src/cache.ts",
+          "lines": "352-381"
+        }
+      ],
+      "used_by": [
+        "pn-commands",
+        "pn-timeline-view"
+      ],
+      "depends_on_capability": [
+        "get-active-calendar-set"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -739,14 +1236,37 @@
       "category": "notes",
       "surface": "event",
       "description": "On workspace.onLayoutReady, findStartupNoteConfig() scans every calendar set/granularity for openAtStartup===true and, if found, calls openPeriodicNote for today's date in that calendar set.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-main", "symbol": "onload (startup block)", "path": "src/main.ts", "lines": "114-121" },
-        { "module": "pn-settings-utils", "symbol": "findStartupNoteConfig", "path": "src/settings/utils.ts", "lines": "77-102" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["open-periodic-note", "clear-startup-note-exclusivity"],
-      "behaviour_notes": ["Only the FIRST match found (iterating calendarSets then granularities in fixed order) is opened, which is consistent with clear-startup-note-exclusivity enforcing at most one such flag vault-wide."],
+      "defined_in": [
+        {
+          "module": "pn-main",
+          "symbol": "onload (startup block)",
+          "path": "src/main.ts",
+          "lines": "114-121"
+        },
+        {
+          "module": "pn-settings-utils",
+          "symbol": "findStartupNoteConfig",
+          "path": "src/settings/utils.ts",
+          "lines": "77-102"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "open-periodic-note",
+        "clear-startup-note-exclusivity"
+      ],
+      "behaviour_notes": [
+        "Only the FIRST match found (iterating calendarSets then granularities in fixed order) is opened, which is consistent with clear-startup-note-exclusivity enforcing at most one such flag vault-wide."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -756,14 +1276,31 @@
       "category": "config",
       "surface": "setting",
       "description": "clearStartupNote() walks every calendar set and granularity, clearing openAtStartup wherever it's true. Called by OpenAtStartupSetting.svelte just before setting the newly-toggled one, so turning on one 'Open at startup' switch turns off every other one, across all calendar sets.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-settings-utils", "symbol": "clearStartupNote", "path": "src/settings/utils.ts", "lines": "65-75" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-setting-open-at-startup"],
+      "defined_in": [
+        {
+          "module": "pn-settings-utils",
+          "symbol": "clearStartupNote",
+          "path": "src/settings/utils.ts",
+          "lines": "65-75"
+        }
+      ],
+      "used_by": [
+        "pn-setting-open-at-startup"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["This is a quiet, easy-to-lose-in-a-merge invariant: the setting's own type (PeriodicConfig.openAtStartup: boolean) does not enforce exclusivity; it's enforced only by this call-site convention."],
-      "edge_cases": ["Only invoked from the toggle's onChange when turning it ON — toggling one OFF does not re-run it (no-op needed anyway)."],
+      "behaviour_notes": [
+        "This is a quiet, easy-to-lose-in-a-merge invariant: the setting's own type (PeriodicConfig.openAtStartup: boolean) does not enforce exclusivity; it's enforced only by this call-site convention."
+      ],
+      "edge_cases": [
+        "Only invoked from the toggle's onChange when turning it ON — toggling one OFF does not re-run it (no-op needed anyway)."
+      ],
       "confidence": "verified"
     },
     {
@@ -772,17 +1309,33 @@
       "category": "notes",
       "surface": "template-token",
       "description": "applyTemplateTransformations(filename, granularity, date, format, templateContents) replaces {{date}}/{{time}}/{{title}} always, plus granularity-specific tokens: day gets {{yesterday}}, {{tomorrow}}, and {{date|time (+/-N unit)(:format)}}; week gets {{sunday:fmt}}..{{saturday:fmt}} (day-of-week relative to the note's week); month/quarter/year get {{month|quarter|year (+/-N unit)(:format)}} anchored to startOf(that unit).",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-utils", "symbol": "applyTemplateTransformations", "path": "src/utils.ts", "lines": "40-165" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main", "pn-utils"],
+      "defined_in": [
+        {
+          "module": "pn-utils",
+          "symbol": "applyTemplateTransformations",
+          "path": "src/utils.ts",
+          "lines": "40-165"
+        }
+      ],
+      "used_by": [
+        "pn-main",
+        "pn-utils"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [
         "The +/-N calc tokens borrow the CURRENT wall-clock hour/minute/second (via window.moment() 'now'), not the target date's own time-of-day, before adding the offset.",
         "Also reused for RE-templating on template-file changes via applyPeriodicTemplateToFile (utils.ts:228-247), not just at creation time."
       ],
-      "edge_cases": ["Regexes are case-insensitive and tolerate arbitrary whitespace inside {{ }}, but a malformed calc suffix (e.g. missing unit letter) simply fails to match and passes the token through unexpanded."],
+      "edge_cases": [
+        "Regexes are case-insensitive and tolerate arbitrary whitespace inside {{ }}, but a malformed calc suffix (e.g. missing unit letter) simply fails to match and passes the token through unexpanded."
+      ],
       "confidence": "verified"
     },
     {
@@ -791,14 +1344,27 @@
       "category": "notes",
       "surface": "api",
       "description": "getNoteCreationPath(app, filename, config) joins config.folder + filename (+.md), normalizes it, and ensureFolderExists() creates every missing intermediate folder via vault.createFolder before returning the path.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-utils", "symbol": "getNoteCreationPath, ensureFolderExists, join", "path": "src/utils.ts", "lines": "272-324" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
+      "defined_in": [
+        {
+          "module": "pn-utils",
+          "symbol": "getNoteCreationPath, ensureFolderExists, join",
+          "path": "src/utils.ts",
+          "lines": "272-324"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["join()/basename() are a small hand-rolled path.js (credited to @creationix/path.js in a comment) rather than using Obsidian's normalizePath alone — handles multi-segment folder+filename joining with '.' segment stripping."],
-      "edge_cases": ["ensureFolderExists checks only the immediate parent folder existence in one shot (vault.createFolder can itself create intermediate segments in Obsidian's API), not each ancestor individually."],
+      "behaviour_notes": [
+        "join()/basename() are a small hand-rolled path.js (credited to @creationix/path.js in a comment) rather than using Obsidian's normalizePath alone — handles multi-segment folder+filename joining with '.' segment stripping."
+      ],
+      "edge_cases": [
+        "ensureFolderExists checks only the immediate parent folder existence in one shot (vault.createFolder can itself create intermediate segments in Obsidian's API), not each ancestor individually."
+      ],
       "confidence": "verified"
     },
     {
@@ -807,17 +1373,34 @@
       "category": "dates",
       "surface": "api",
       "description": "For each candidate format (strictest first): try window.moment(input, format, true) (strict mode) and return isExactMatch:true on the first success. If none succeed strictly, retry every format in NON-strict mode; accept the first result where date.format(format) is a PREFIX of the original input string (isExactMatch:false). Returns {date: null, isExactMatch: false} if nothing matches either way.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-utils", "symbol": "getDateWithPrefixFallback", "path": "src/utils.ts", "lines": "197-215" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["possible-formats-nested-path"],
+      "defined_in": [
+        {
+          "module": "pn-utils",
+          "symbol": "getDateWithPrefixFallback",
+          "path": "src/utils.ts",
+          "lines": "197-215"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "possible-formats-nested-path"
+      ],
       "behaviour_notes": [
         "Local fork addition, commit e50b8e8. The canonical example from the commit message: filename '2026-W07, 09.02 - 15.02.md' does not strictly match format 'gggg-[W]ww', but a loose parse reformats to '2026-W07' which IS a prefix of the filename, so it's accepted as an inexact match.",
         "The prefix check is a plain string startsWith on the REFORMATTED date, not a regex against the original format — so it only works when the format's literal/moment output naturally forms a prefix of real filenames (works well for '<date>, <suffix>' naming, not for '<suffix> <date>' naming)."
       ],
-      "edge_cases": ["Whether the inexact-match branch is even allowed to win depends on the caller passing allowPrefixMatch=true (cache.ts gates it, not this function itself — this function always computes and returns the fallback result regardless of the setting)."],
+      "edge_cases": [
+        "Whether the inexact-match branch is even allowed to win depends on the caller passing allowPrefixMatch=true (cache.ts gates it, not this function itself — this function always computes and returns the fallback result regardless of the setting)."
+      ],
       "confidence": "verified"
     },
     {
@@ -826,11 +1409,24 @@
       "category": "dates",
       "surface": "api",
       "description": "getPossibleFormats(calendarSet, granularity) returns [fullFormat] normally, or [fullFormat, basenameOnlyFormat] when the configured format contains a '/' (e.g. 'YYYY/YYYY-MM-DD'), so matching can succeed whether or not the note was later moved out of its dated subfolder.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-utils", "symbol": "getPossibleFormats", "path": "src/utils.ts", "lines": "176-189" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
+      "defined_in": [
+        {
+          "module": "pn-utils",
+          "symbol": "getPossibleFormats",
+          "path": "src/utils.ts",
+          "lines": "176-189"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [],
       "edge_cases": [],
@@ -842,14 +1438,29 @@
       "category": "dates",
       "surface": "api",
       "description": "getLooselyMatchedDate(basename) tries, in order, a full YYYY-MM-DD-ish regex, then a YYYY-MM-ish regex, then a bare 4-digit-year regex, returning the first hit as {date, granularity}. Used by cache.resolve() as a last resort per calendar set when no active granularity's folder+format matched the file.",
-      "granularity": ["day", "month", "year"],
-      "defined_in": [
-        { "module": "pn-parser", "symbol": "getLooselyMatchedDate", "path": "src/parser.ts", "lines": "16-70" }
+      "granularity": [
+        "day",
+        "month",
+        "year"
       ],
-      "used_by": ["pn-cache"],
+      "defined_in": [
+        {
+          "module": "pn-parser",
+          "symbol": "getLooselyMatchedDate",
+          "path": "src/parser.ts",
+          "lines": "16-70"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["A week regex (WEEK_PREFIX) is written but commented out with a TODO about ISO-week ambiguity — week granularity is never guessed loosely."],
-      "edge_cases": ["See observation: this fallback is NOT folder-scoped in the caller (cache.resolve()), so it can match files anywhere in the vault, not just under the calendar set's configured folders."],
+      "behaviour_notes": [
+        "A week regex (WEEK_PREFIX) is written but commented out with a TODO about ISO-week ambiguity — week granularity is never guessed loosely."
+      ],
+      "edge_cases": [
+        "See observation: this fallback is NOT folder-scoped in the caller (cache.resolve()), so it can match files anywhere in the vault, not just under the calendar set's configured folders."
+      ],
       "confidence": "verified"
     },
     {
@@ -858,13 +1469,29 @@
       "category": "config",
       "surface": "setting",
       "description": "validateFormatComplexity(format, granularity) returns 'loose-parsing' if the format doesn't round-trip through a strict parse at all, or 'fragile-basename' if (for day granularity, with a '/' in the format) the basename portion is missing a day/month/year token letter — surfaced as an inline warning with a frontmatter workaround suggestion in NoteFormatSetting.svelte.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-settings-validation", "symbol": "validateFormatComplexity", "path": "src/settings/validation.ts", "lines": "55-82" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-setting-note-format", "pn-cache"],
+      "defined_in": [
+        {
+          "module": "pn-settings-validation",
+          "symbol": "validateFormatComplexity",
+          "path": "src/settings/validation.ts",
+          "lines": "55-82"
+        }
+      ],
+      "used_by": [
+        "pn-setting-note-format",
+        "pn-cache"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["getDateInput() (settings/validation.ts:84-98) is the consumer of this classification in the cache path: when fragile-basename, it reconstructs a multi-segment 'path suffix' string (matching the format's nesting depth) instead of just file.basename before handing it to date parsing."],
+      "behaviour_notes": [
+        "getDateInput() (settings/validation.ts:84-98) is the consumer of this classification in the cache path: when fragile-basename, it reconstructs a multi-segment 'path suffix' string (matching the format's nesting depth) instead of just file.basename before handing it to date parsing."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -874,13 +1501,28 @@
       "category": "config",
       "surface": "setting",
       "description": "validateFormat(format, granularity) rejects illegal filename characters/control chars/reserved Windows names, and (for day granularity only) checks that formatting 'now' and re-parsing strictly round-trips.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-settings-validation", "symbol": "validateFormat, isValidFilename", "path": "src/settings/validation.ts", "lines": "20-53" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-setting-note-format"],
+      "defined_in": [
+        {
+          "module": "pn-settings-validation",
+          "symbol": "validateFormat, isValidFilename",
+          "path": "src/settings/validation.ts",
+          "lines": "20-53"
+        }
+      ],
+      "used_by": [
+        "pn-setting-note-format"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["The strict round-trip check only runs for granularity === 'day' — week/month/quarter/year formats are only checked for illegal characters, not parseability, at input time (parseability issues there surface later via validateFormatComplexity's 'loose-parsing' warning instead)."],
+      "behaviour_notes": [
+        "The strict round-trip check only runs for granularity === 'day' — week/month/quarter/year formats are only checked for illegal characters, not parseability, at input time (parseability issues there surface later via validateFormatComplexity's 'loose-parsing' warning instead)."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -890,13 +1532,24 @@
       "category": "config",
       "surface": "setting",
       "description": "validateFolder(app, folder) accepts empty or '/' as valid (vault root); otherwise checks the normalized path exists in the vault.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-validation", "symbol": "validateFolder", "path": "src/settings/validation.ts", "lines": "113-123" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-setting-note-folder"],
+      "defined_in": [
+        {
+          "module": "pn-settings-validation",
+          "symbol": "validateFolder",
+          "path": "src/settings/validation.ts",
+          "lines": "113-123"
+        }
+      ],
+      "used_by": [
+        "pn-setting-note-folder"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["Only validates existence, not creatability — actual folder creation happens lazily at note-creation time (ensureFolderExists), so a not-yet-existing folder is a UI warning, not a hard block."],
+      "behaviour_notes": [
+        "Only validates existence, not creatability — actual folder creation happens lazily at note-creation time (ensureFolderExists), so a not-yet-existing folder is a UI warning, not a hard block."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -906,11 +1559,20 @@
       "category": "config",
       "surface": "setting",
       "description": "validateTemplate(app, template) resolves the path via metadataCache.getFirstLinkpathDest and reports 'Template file not found' if it doesn't resolve.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-validation", "symbol": "validateTemplate", "path": "src/settings/validation.ts", "lines": "100-111" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-setting-note-template"],
+      "defined_in": [
+        {
+          "module": "pn-settings-validation",
+          "symbol": "validateTemplate",
+          "path": "src/settings/validation.ts",
+          "lines": "100-111"
+        }
+      ],
+      "used_by": [
+        "pn-setting-note-template"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [],
       "edge_cases": [],
@@ -922,14 +1584,30 @@
       "category": "state",
       "surface": "event",
       "description": "PeriodicNotesCache.initialize() walks, for every calendar set and every active granularity's configured folder, the folder's file tree (memoized recursion) and runs resolve()+resolveChangedMetadata() on each file, populating cachedFiles: Map<calendarSetId, Map<filePath, metadata>>.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.initialize", "path": "src/cache.ts", "lines": "89-123" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["cache-resolve-on-file-create", "cache-resolve-frontmatter"],
-      "behaviour_notes": ["Runs once at workspace.onLayoutReady, not at plugin onload — avoids racing Obsidian's own initial vault/metadata indexing."],
-      "edge_cases": ["A folder path that doesn't exist yet (getAbstractFileByPath returns null/undefined) is silently skipped by the memoized recursor's `if (!rootFolder) return` guard."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.initialize",
+          "path": "src/cache.ts",
+          "lines": "89-123"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "cache-resolve-on-file-create",
+        "cache-resolve-frontmatter"
+      ],
+      "behaviour_notes": [
+        "Runs once at workspace.onLayoutReady, not at plugin onload — avoids racing Obsidian's own initial vault/metadata indexing."
+      ],
+      "edge_cases": [
+        "A folder path that doesn't exist yet (getAbstractFileByPath returns null/undefined) is silently skipped by the memoized recursor's `if (!rootFolder) return` guard."
+      ],
       "confidence": "verified"
     },
     {
@@ -938,14 +1616,36 @@
       "category": "state",
       "surface": "event",
       "description": "resolve(file, reason) checks each calendar set (skipping if a frontmatter match already exists for that path), then each active granularity: folder-prefix match, then strict-then-prefix date parsing gated by allowPrefixMatch, then (if nothing matched for any granularity in that set) the vault-wide loose fallback. On a match it caches the metadata, fires 'periodic-notes:resolve', and — if this is a brand-new EMPTY file — auto-applies the granularity's template.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolve", "path": "src/cache.ts", "lines": "182-260" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["strict-then-prefix-date-parsing", "loose-date-parsing-fallback-global", "allow-prefix-match-gate", "auto-apply-template-on-empty-manual-file"],
-      "behaviour_notes": ["Registered on vault 'create' — fires for every new file in the vault, not just ones under a configured folder; the folder-prefix check (`file.path.startsWith(folder)`) is the actual filter."],
-      "edge_cases": ["'frontmatter supersedes filename': if a path already has a frontmatter-sourced cache entry for this calendar set, the filename-matching branch is skipped entirely for that set (continue calendarsets) — but a NEW filename match can still overwrite an existing filename-sourced entry."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.resolve",
+          "path": "src/cache.ts",
+          "lines": "182-260"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "strict-then-prefix-date-parsing",
+        "loose-date-parsing-fallback-global",
+        "allow-prefix-match-gate",
+        "auto-apply-template-on-empty-manual-file"
+      ],
+      "behaviour_notes": [
+        "Registered on vault 'create' — fires for every new file in the vault, not just ones under a configured folder; the folder-prefix check (`file.path.startsWith(folder)`) is the actual filter."
+      ],
+      "edge_cases": [
+        "'frontmatter supersedes filename': if a path already has a frontmatter-sourced cache entry for this calendar set, the filename-matching branch is skipped entirely for that set (continue calendarsets) — but a NEW filename match can still overwrite an existing filename-sourced entry."
+      ],
       "confidence": "verified"
     },
     {
@@ -954,13 +1654,26 @@
       "category": "state",
       "surface": "event",
       "description": "resolveRename(file, oldPath) deletes the old path from every calendar-set cache and re-runs resolve() on the new path.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolveRename", "path": "src/cache.ts", "lines": "173-180" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["cache-resolve-on-file-create"],
-      "behaviour_notes": ["Iterates ALL calendar-set caches to delete oldPath (not just the one(s) it was cached under) — harmless but O(n) over calendar sets per rename."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.resolveRename",
+          "path": "src/cache.ts",
+          "lines": "173-180"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "cache-resolve-on-file-create"
+      ],
+      "behaviour_notes": [
+        "Iterates ALL calendar-set caches to delete oldPath (not just the one(s) it was cached under) — harmless but O(n) over calendar sets per rename."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -970,14 +1683,31 @@
       "category": "state",
       "surface": "event",
       "description": "resolveChangedMetadata(file, _, cache) is registered on metadataCache 'changed'. For each calendar set/active granularity whose folder prefixes the file path, if the frontmatter has a string entry keyed by the granularity name (e.g. `day: 2022-02-02`), it's parsed STRICTLY against DEFAULT_FORMAT[granularity] (not the calendar set's configured format) and cached as an exact, matchType:'frontmatter' entry.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolveChangedMetadata", "path": "src/cache.ts", "lines": "125-171" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.resolveChangedMetadata",
+          "path": "src/cache.ts",
+          "lines": "125-171"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["This is the path referenced by NoteFormatSetting.svelte's warning text ('include `<granularity>: <DEFAULT_FORMAT>` in your template frontmatter') for loose-parsing/fragile-basename formats."],
-      "edge_cases": ["Ignores the calendar set's own configured format and its allowPrefixMatch flag entirely — see observation on the asymmetry with the filename-based resolve() path."],
+      "behaviour_notes": [
+        "This is the path referenced by NoteFormatSetting.svelte's warning text ('include `<granularity>: <DEFAULT_FORMAT>` in your template frontmatter') for loose-parsing/fragile-basename formats."
+      ],
+      "edge_cases": [
+        "Ignores the calendar set's own configured format and its allowPrefixMatch flag entirely — see observation on the asymmetry with the filename-based resolve() path."
+      ],
       "confidence": "verified"
     },
     {
@@ -986,13 +1716,26 @@
       "category": "state",
       "surface": "event",
       "description": "The cache listens for the 'periodic-notes:settings-updated' workspace event (fired on every settings.subscribe callback, i.e. every save) and calls reset(), which clears cachedFiles and re-runs initialize().",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.reset", "path": "src/cache.ts", "lines": "83-87" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["cache-index-build-on-load"],
-      "behaviour_notes": ["A full vault-tree rescan on every settings save (including a single keystroke in a format field, since PeriodicGroup's writable-derived store writes through to the parent settings store on each bound input) — a performance hazard on large vaults that a merge should consider debouncing."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.reset",
+          "path": "src/cache.ts",
+          "lines": "83-87"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "cache-index-build-on-load"
+      ],
+      "behaviour_notes": [
+        "A full vault-tree rescan on every settings save (including a single keystroke in a format field, since PeriodicGroup's writable-derived store writes through to the parent settings store on each bound input) — a performance hazard on large vaults that a merge should consider debouncing."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1002,13 +1745,30 @@
       "category": "config",
       "surface": "setting",
       "description": "In cache.resolve(), a filename's inexact/prefix match (isExactMatch===false from getDateWithPrefixFallback) is only accepted into the cache if that granularity's PeriodicConfig.allowPrefixMatch is true; an exact match is always accepted regardless.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolve (allowPrefixMatch check)", "path": "src/cache.ts", "lines": "205-212" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["strict-then-prefix-date-parsing"],
-      "behaviour_notes": ["Local fork addition, commit e50b8e8, default false — off by default so existing vaults don't suddenly start absorbing loosely-named files."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.resolve (allowPrefixMatch check)",
+          "path": "src/cache.ts",
+          "lines": "205-212"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "strict-then-prefix-date-parsing"
+      ],
+      "behaviour_notes": [
+        "Local fork addition, commit e50b8e8, default false — off by default so existing vaults don't suddenly start absorbing loosely-named files."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1018,15 +1778,39 @@
       "category": "notes",
       "surface": "event",
       "description": "When resolve() is triggered by vault 'create' (not 'initialize') and the newly created file is empty (file.stat.size === 0), applyPeriodicTemplateToFile() renders and writes the granularity's template into it — so creating an empty file by hand with the right name (e.g. via 'New note') gets templated exactly as if openPeriodicNote had created it.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolve (template auto-apply)", "path": "src/cache.ts", "lines": "226-228" },
-        { "module": "pn-utils", "symbol": "applyPeriodicTemplateToFile", "path": "src/utils.ts", "lines": "228-247" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-cache"],
-      "depends_on_capability": ["template-token-expansion"],
-      "behaviour_notes": ["A quiet behavior easy to lose in a merge: this is the ONLY path that templates a file NOT created through createPeriodicNote/openPeriodicNote."],
-      "edge_cases": ["Does not fire during initialize() (reason !== 'create'), so pre-existing empty files at startup are never auto-templated, only ones created while the plugin is running."],
+      "defined_in": [
+        {
+          "module": "pn-cache",
+          "symbol": "PeriodicNotesCache.resolve (template auto-apply)",
+          "path": "src/cache.ts",
+          "lines": "226-228"
+        },
+        {
+          "module": "pn-utils",
+          "symbol": "applyPeriodicTemplateToFile",
+          "path": "src/utils.ts",
+          "lines": "228-247"
+        }
+      ],
+      "used_by": [
+        "pn-cache"
+      ],
+      "depends_on_capability": [
+        "template-token-expansion"
+      ],
+      "behaviour_notes": [
+        "A quiet behavior easy to lose in a merge: this is the ONLY path that templates a file NOT created through createPeriodicNote/openPeriodicNote."
+      ],
+      "edge_cases": [
+        "Does not fire during initialize() (reason !== 'create'), so pre-existing empty files at startup are never auto-templated, only ones created while the plugin is running."
+      ],
       "confidence": "verified"
     },
     {
@@ -1035,13 +1819,24 @@
       "category": "config",
       "surface": "setting",
       "description": "overrideGlobalMomentWeekStart(weekStart) saves the bundled locale's original week-spec once (window._bundledLocaleWeekSpec), then calls moment.updateLocale to either restore it ('locale') or force a specific day-of-week as dow.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-localization", "symbol": "overrideGlobalMomentWeekStart", "path": "src/settings/localization.ts", "lines": "63-85" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-localization"],
+      "defined_in": [
+        {
+          "module": "pn-settings-localization",
+          "symbol": "overrideGlobalMomentWeekStart",
+          "path": "src/settings/localization.ts",
+          "lines": "63-85"
+        }
+      ],
+      "used_by": [
+        "pn-settings-localization"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["This mutates the GLOBAL moment.js locale object shared by the whole Obsidian process — it affects every other plugin's date formatting too, and the settings UI says so explicitly ('may impact other plugins as well')."],
+      "behaviour_notes": [
+        "This mutates the GLOBAL moment.js locale object shared by the whole Obsidian process — it affects every other plugin's date formatting too, and the settings UI says so explicitly ('may impact other plugins as well')."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1051,13 +1846,26 @@
       "category": "config",
       "surface": "setting",
       "description": "configureGlobalMomentLocale(localeOverride, weekStart) maps Obsidian's UI language (or the user's explicit override, or a more-specific system locale) to a moment.js locale string and calls moment.locale(); initializeLocaleConfigOnce guards this to run only once per session via window._hasConfiguredLocale, regardless of how many times the plugin reloads.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-localization", "symbol": "configureGlobalMomentLocale, initializeLocaleConfigOnce", "path": "src/settings/localization.ts", "lines": "93-130" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["localization-week-start-override"],
-      "behaviour_notes": ["The window._hasConfiguredLocale guard means DISABLING and RE-ENABLING the plugin within the same Obsidian session will not re-apply a changed localeOverride until a full reload — a subtle staleness trap."],
+      "defined_in": [
+        {
+          "module": "pn-settings-localization",
+          "symbol": "configureGlobalMomentLocale, initializeLocaleConfigOnce",
+          "path": "src/settings/localization.ts",
+          "lines": "93-130"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "localization-week-start-override"
+      ],
+      "behaviour_notes": [
+        "The window._hasConfiguredLocale guard means DISABLING and RE-ENABLING the plugin within the same Obsidian session will not re-apply a changed localeOverride until a full reload — a subtle staleness trap."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1067,11 +1875,25 @@
       "category": "dates",
       "surface": "api",
       "description": "getRelativeDate(granularity, date): for 'week', special-cases this/last/next week then falls back to moment.duration(...).humanize(true); for 'day', uses moment's calendar() with custom lastWeek/lastDay/sameDay/nextDay/nextWeek/sameElse formatters; for month/quarter/year, plain date.format(HUMANIZE_FORMAT[granularity]).",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-utils", "symbol": "getRelativeDate", "path": "src/utils.ts", "lines": "326-354" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-switcher-nld", "pn-timeline-view"],
+      "defined_in": [
+        {
+          "module": "pn-utils",
+          "symbol": "getRelativeDate",
+          "path": "src/utils.ts",
+          "lines": "326-354"
+        }
+      ],
+      "used_by": [
+        "pn-switcher-nld",
+        "pn-timeline-view"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [],
       "edge_cases": [],
@@ -1083,13 +1905,28 @@
       "category": "state",
       "surface": "ui",
       "description": "The `router` writable store holds a breadcrumb path (['Periodic Notes'] or ['Periodic Notes', <calendarSetId>]) plus an eState bag; navigate()/reset() drive which page Router.svelte renders and can carry one-shot flags (e.g. shouldRename) read by the destination page's onMount.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-stores", "symbol": "createRouter, router", "path": "src/settings/stores.ts", "lines": "8-30" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-router", "pn-settings-dashboard", "pn-settings-details", "pn-settings-calendarset-menuitem", "pn-settings-ui-kit"],
+      "defined_in": [
+        {
+          "module": "pn-settings-stores",
+          "symbol": "createRouter, router",
+          "path": "src/settings/stores.ts",
+          "lines": "8-30"
+        }
+      ],
+      "used_by": [
+        "pn-settings-router",
+        "pn-settings-dashboard",
+        "pn-settings-details",
+        "pn-settings-calendarset-menuitem",
+        "pn-settings-ui-kit"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["reset() is called from Router.svelte's onDestroy, i.e. whenever the settings tab is closed — so reopening settings always starts back at the dashboard, never resumes on the last-viewed calendar set."],
+      "behaviour_notes": [
+        "reset() is called from Router.svelte's onDestroy, i.e. whenever the settings tab is closed — so reopening settings always starts back at the dashboard, never resumes on the last-viewed calendar set."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1099,12 +1936,25 @@
       "category": "ui",
       "surface": "ui",
       "description": "Dashboard.svelte shows the getting-started banner (if not dismissed), a grid of calendar-set cards with a '+' to add one, the 'enable timeline complication' toggle, and the vault-wide week-start/locale dropdowns.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-dashboard", "symbol": "Dashboard.svelte", "path": "src/settings/pages/dashboard/Dashboard.svelte", "lines": "1-153" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-router"],
-      "depends_on_capability": ["create-calendar-set", "settings-router-navigation", "localization-week-start-override"],
+      "defined_in": [
+        {
+          "module": "pn-settings-dashboard",
+          "symbol": "Dashboard.svelte",
+          "path": "src/settings/pages/dashboard/Dashboard.svelte",
+          "lines": "1-152"
+        }
+      ],
+      "used_by": [
+        "pn-settings-router"
+      ],
+      "depends_on_capability": [
+        "create-calendar-set",
+        "settings-router-navigation",
+        "localization-week-start-override"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1115,13 +1965,29 @@
       "category": "ui",
       "surface": "ui",
       "description": "Details.svelte for one calendar set: inline-editable title (rename), an 'Active' badge, an options menu (set active / duplicate / delete, delete disabled if it's the only set), and one PeriodicGroup accordion row per granularity.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-settings-details", "symbol": "Details.svelte", "path": "src/settings/pages/details/Details.svelte", "lines": "1-192" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-settings-router"],
-      "depends_on_capability": ["rename-calendar-set", "switch-active-calendar-set", "duplicate-calendar-set", "delete-calendar-set"],
-      "behaviour_notes": ["Contains the local fork's scroll-guard crash fix (see observation) at onMount."],
+      "defined_in": [
+        {
+          "module": "pn-settings-details",
+          "symbol": "Details.svelte",
+          "path": "src/settings/pages/details/Details.svelte",
+          "lines": "1-192"
+        }
+      ],
+      "used_by": [
+        "pn-settings-router"
+      ],
+      "depends_on_capability": [
+        "rename-calendar-set",
+        "switch-active-calendar-set",
+        "duplicate-calendar-set",
+        "delete-calendar-set"
+      ],
+      "behaviour_notes": [
+        "Contains the local fork's scroll-guard crash fix (see observation) at onMount."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1131,12 +1997,28 @@
       "category": "config",
       "surface": "setting",
       "description": "NoteFormatSetting.svelte: text input bound to calendarSets[].<g>.format; shows a live moment.js preview and validation error/complexity warning.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-setting-note-format", "symbol": "NoteFormatSetting.svelte", "path": "src/settings/components/NoteFormatSetting.svelte", "lines": "1-95" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-settings-periodic-group"],
-      "depends_on_capability": ["format-validation", "fragile-basename-detection"],
+      "defined_in": [
+        {
+          "module": "pn-setting-note-format",
+          "symbol": "NoteFormatSetting.svelte",
+          "path": "src/settings/components/NoteFormatSetting.svelte",
+          "lines": "1-94"
+        }
+      ],
+      "used_by": [
+        "pn-settings-periodic-group"
+      ],
+      "depends_on_capability": [
+        "format-validation",
+        "fragile-basename-detection"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1147,12 +2029,28 @@
       "category": "config",
       "surface": "setting",
       "description": "NoteFolderSetting.svelte: text input with FolderSuggest autocomplete, bound to calendarSets[].<g>.folder, validated on blur.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-setting-note-folder", "symbol": "NoteFolderSetting.svelte", "path": "src/settings/components/NoteFolderSetting.svelte", "lines": "1-62" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-settings-periodic-group"],
-      "depends_on_capability": ["folder-validation", "text-input-suggest-popper-positioning"],
+      "defined_in": [
+        {
+          "module": "pn-setting-note-folder",
+          "symbol": "NoteFolderSetting.svelte",
+          "path": "src/settings/components/NoteFolderSetting.svelte",
+          "lines": "1-61"
+        }
+      ],
+      "used_by": [
+        "pn-settings-periodic-group"
+      ],
+      "depends_on_capability": [
+        "folder-validation",
+        "text-input-suggest-popper-positioning"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1163,12 +2061,28 @@
       "category": "config",
       "surface": "setting",
       "description": "NoteTemplateSetting.svelte: text input with FileSuggest autocomplete, bound to calendarSets[].<g>.templatePath, validated on blur.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-setting-note-template", "symbol": "NoteTemplateSetting.svelte", "path": "src/settings/components/NoteTemplateSetting.svelte", "lines": "1-65" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-settings-periodic-group"],
-      "depends_on_capability": ["template-validation", "text-input-suggest-popper-positioning"],
+      "defined_in": [
+        {
+          "module": "pn-setting-note-template",
+          "symbol": "NoteTemplateSetting.svelte",
+          "path": "src/settings/components/NoteTemplateSetting.svelte",
+          "lines": "1-64"
+        }
+      ],
+      "used_by": [
+        "pn-settings-periodic-group"
+      ],
+      "depends_on_capability": [
+        "template-validation",
+        "text-input-suggest-popper-positioning"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1179,12 +2093,27 @@
       "category": "config",
       "surface": "setting",
       "description": "OpenAtStartupSetting.svelte: toggle bound to calendarSets[].<g>.openAtStartup; turning it on first calls clearStartupNote across the whole settings tree.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-setting-open-at-startup", "symbol": "OpenAtStartupSetting.svelte", "path": "src/settings/components/OpenAtStartupSetting.svelte", "lines": "1-32" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-settings-periodic-group"],
-      "depends_on_capability": ["clear-startup-note-exclusivity"],
+      "defined_in": [
+        {
+          "module": "pn-setting-open-at-startup",
+          "symbol": "OpenAtStartupSetting.svelte",
+          "path": "src/settings/components/OpenAtStartupSetting.svelte",
+          "lines": "1-31"
+        }
+      ],
+      "used_by": [
+        "pn-settings-periodic-group"
+      ],
+      "depends_on_capability": [
+        "clear-startup-note-exclusivity"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1195,13 +2124,30 @@
       "category": "config",
       "surface": "setting",
       "description": "AllowPrefixMatchSetting.svelte: toggle bound to calendarSets[].<g>.allowPrefixMatch, with an inline example in its description.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-setting-allow-prefix-match", "symbol": "AllowPrefixMatchSetting.svelte", "path": "src/settings/components/AllowPrefixMatchSetting.svelte", "lines": "1-28" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-settings-periodic-group"],
-      "depends_on_capability": ["allow-prefix-match-gate"],
-      "behaviour_notes": ["Local fork addition (commit e50b8e8), modeled directly on OpenAtStartupSetting.svelte's structure; no upstream equivalent."],
+      "defined_in": [
+        {
+          "module": "pn-setting-allow-prefix-match",
+          "symbol": "AllowPrefixMatchSetting.svelte",
+          "path": "src/settings/components/AllowPrefixMatchSetting.svelte",
+          "lines": "1-27"
+        }
+      ],
+      "used_by": [
+        "pn-settings-periodic-group"
+      ],
+      "depends_on_capability": [
+        "allow-prefix-match-gate"
+      ],
+      "behaviour_notes": [
+        "Local fork addition (commit e50b8e8), modeled directly on OpenAtStartupSetting.svelte's structure; no upstream equivalent."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1211,12 +2157,23 @@
       "category": "integration",
       "surface": "integration",
       "description": "GettingStartedBanner.svelte checks isDailyNotesPluginEnabled()/hasLegacyDailyNoteSettings() and, if the core plugin is enabled, offers a 'Disable' button (disableDailyNotesPlugin) with a reminder to update hotkeys.",
-      "granularity": ["day"],
-      "defined_in": [
-        { "module": "pn-settings-getting-started-banner", "symbol": "GettingStartedBanner.svelte", "path": "src/settings/pages/dashboard/GettingStartedBanner.svelte", "lines": "1-61" }
+      "granularity": [
+        "day"
       ],
-      "used_by": ["pn-settings-dashboard"],
-      "depends_on_capability": ["legacy-settings-migration"],
+      "defined_in": [
+        {
+          "module": "pn-settings-getting-started-banner",
+          "symbol": "GettingStartedBanner.svelte",
+          "path": "src/settings/pages/dashboard/GettingStartedBanner.svelte",
+          "lines": "1-61"
+        }
+      ],
+      "used_by": [
+        "pn-settings-dashboard"
+      ],
+      "depends_on_capability": [
+        "legacy-settings-migration"
+      ],
       "behaviour_notes": [],
       "edge_cases": [],
       "confidence": "verified"
@@ -1227,17 +2184,37 @@
       "category": "integration",
       "surface": "command",
       "description": "'Show date switcher...' opens NLDNavigator, a SuggestModal that (a) tries a small set of hand-written regex shortcuts (next/last/this <weekday|week|month|year>, 'in N units'/'N units ago', and bare today/yesterday/tomorrow/this-last-next week/month/year), filtered to active granularities and startsWith-matched against the query; (b) otherwise defers to the nldates-obsidian plugin's parseDate() for free-text parsing, then infers a granularity from the query text (week/month/quarter/year keyword, else day).",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-switcher-nld", "symbol": "NLDNavigator", "path": "src/switcher/switcher.ts", "lines": "34-237" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["get-active-and-inactive-granularities", "get-periodic-note", "get-periodic-notes-related", "open-periodic-note"],
+      "defined_in": [
+        {
+          "module": "pn-switcher-nld",
+          "symbol": "NLDNavigator",
+          "path": "src/switcher/switcher.ts",
+          "lines": "34-237"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "get-active-and-inactive-granularities",
+        "get-periodic-note",
+        "get-periodic-notes-related",
+        "open-periodic-note"
+      ],
       "behaviour_notes": [
         "Only registered as a command when app.plugins.getPlugin('nldates-obsidian') exists (checked in checkCallback) — this whole capability is inert without that third-party plugin installed.",
         "Cmd/Ctrl+Enter opens the selected item without closing the modal chooser's own key handling — implemented by reaching into the private, unexposed `this.chooser` via an `any` cast (obsidian.d.ts doesn't type it), a fragile dependency on Obsidian's internal SuggestModal implementation."
       ],
-      "edge_cases": ["Quarter suggestions are commented out throughout ('TODO include once nldates supports quarters') — quarter notes are reachable only via the calendar sets UI/commands, not via this switcher's quick suggestions."],
+      "edge_cases": [
+        "Quarter suggestions are commented out throughout ('TODO include once nldates supports quarters') — quarter notes are reachable only via the calendar sets UI/commands, not via this switcher's quick suggestions."
+      ],
       "confidence": "verified"
     },
     {
@@ -1246,14 +2223,37 @@
       "category": "ui",
       "surface": "ui",
       "description": "Pressing Tab inside NLDNavigator closes it and opens RelatedFilesSwitcher scoped to the currently-selected date/granularity, listing every inexact-matched note for that period (optionally including finer granularities via Shift+8). Pressing Tab again closes it and reopens NLDNavigator, replaying the original query text via a synthetic 'input' event.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-switcher-nld", "symbol": "NLDNavigator (Tab handler)", "path": "src/switcher/switcher.ts", "lines": "50-59" },
-        { "module": "pn-switcher-related", "symbol": "RelatedFilesSwitcher", "path": "src/switcher/relatedFilesSwitcher.ts", "lines": "14-102" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-switcher-nld"],
-      "depends_on_capability": ["get-periodic-notes-related", "nl-date-navigator"],
-      "behaviour_notes": ["This chain (close-modal-A, open-modal-B, replay-query-via-synthetic-event) is stateful UI glue with no test coverage visible in the repo — a straightforward place to silently break during a merge if either modal's constructor signature or the 'Tab' scope registration changes."],
+      "defined_in": [
+        {
+          "module": "pn-switcher-nld",
+          "symbol": "NLDNavigator (Tab handler)",
+          "path": "src/switcher/switcher.ts",
+          "lines": "50-59"
+        },
+        {
+          "module": "pn-switcher-related",
+          "symbol": "RelatedFilesSwitcher",
+          "path": "src/switcher/relatedFilesSwitcher.ts",
+          "lines": "14-102"
+        }
+      ],
+      "used_by": [
+        "pn-switcher-nld"
+      ],
+      "depends_on_capability": [
+        "get-periodic-notes-related",
+        "nl-date-navigator"
+      ],
+      "behaviour_notes": [
+        "This chain (close-modal-A, open-modal-B, replay-query-via-synthetic-event) is stateful UI glue with no test coverage visible in the repo — a straightforward place to silently break during a merge if either modal's constructor signature or the 'Tab' scope registration changes."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1263,13 +2263,26 @@
       "category": "ui",
       "surface": "command",
       "description": "CalendarSetSuggestModal (a FuzzySuggestModal) lists all calendar sets by id; selecting one calls setActiveSet.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-switcher-calendarset", "symbol": "CalendarSetSuggestModal", "path": "src/switcher/calendarSetSwitcher.ts", "lines": "6-26" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["switch-active-calendar-set"],
-      "behaviour_notes": ["getItemText() calls `item.toString()` on a CalendarSet object (relying on default Object toString / '[object Object]' fallback quirks are avoided only because Obsidian's FuzzySuggestModal actually calls getItemText for both matching AND fallback rendering) — this looks like it should be `item.id`; works today only because renderSuggestion overrides the visible text."],
+      "defined_in": [
+        {
+          "module": "pn-switcher-calendarset",
+          "symbol": "CalendarSetSuggestModal",
+          "path": "src/switcher/calendarSetSwitcher.ts",
+          "lines": "6-26"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "switch-active-calendar-set"
+      ],
+      "behaviour_notes": [
+        "getItemText() calls `item.toString()` on a CalendarSet object (relying on default Object toString / '[object Object]' fallback quirks are avoided only because Obsidian's FuzzySuggestModal actually calls getItemText for both matching AND fallback rendering) — this looks like it should be `item.id`; works today only because renderSuggestion overrides the visible text."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1279,14 +2292,31 @@
       "category": "ui",
       "surface": "ui",
       "description": "TextInputSuggest (abstract base) plus FileSuggest/FolderSuggest: wires an input's focus/input/blur events to a Suggest dropdown positioned via @popperjs/core, with arrow-key navigation and a shared Obsidian Scope pushed/popped on open/close.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-ui-suggest", "symbol": "Suggest, TextInputSuggest", "path": "src/ui/suggest.ts", "lines": "5-177" },
-        { "module": "pn-ui-file-suggest", "symbol": "FileSuggest, FolderSuggest", "path": "src/ui/file-suggest.ts", "lines": "5-62" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-setting-note-folder", "pn-setting-note-template"],
+      "defined_in": [
+        {
+          "module": "pn-ui-suggest",
+          "symbol": "Suggest, TextInputSuggest",
+          "path": "src/ui/suggest.ts",
+          "lines": "5-177"
+        },
+        {
+          "module": "pn-ui-file-suggest",
+          "symbol": "FileSuggest, FolderSuggest",
+          "path": "src/ui/file-suggest.ts",
+          "lines": "5-62"
+        }
+      ],
+      "used_by": [
+        "pn-setting-note-folder",
+        "pn-setting-note-template"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["FileSuggest/FolderSuggest do no fuzzy ranking — plain case-insensitive substring `contains()` filtering, unbounded (renders every match, no result cap), which could get slow in very large vaults."],
+      "behaviour_notes": [
+        "FileSuggest/FolderSuggest do no fuzzy ranking — plain case-insensitive substring `contains()` filtering, unbounded (renders every match, no result cap), which could get slow in very large vaults."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -1296,14 +2326,33 @@
       "category": "ui",
       "surface": "ui",
       "description": "Timeline.svelte renders a small badge (relative date label, e.g. 'Today'/'Last week', plus a forward-arrow icon if the note was only inexactly matched) fixed top-right of any open periodic note; clicking expands a 7-day strip (starting the note's locale week) with the note's own day highlighted and today marked; clicking a day opens/creates that day's note. Controlled by the enableTimelineComplication setting and re-checked on file-open and cache-resolve events.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "defined_in": [
-        { "module": "pn-timeline-view", "symbol": "Timeline.svelte", "path": "src/timeline/Timeline.svelte", "lines": "1-214" }
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
-      "used_by": ["pn-timeline-manager"],
-      "depends_on_capability": ["find-note-in-cache", "relative-date-humanization", "open-periodic-note"],
+      "defined_in": [
+        {
+          "module": "pn-timeline-view",
+          "symbol": "Timeline.svelte",
+          "path": "src/timeline/Timeline.svelte",
+          "lines": "1-213"
+        }
+      ],
+      "used_by": [
+        "pn-timeline-manager"
+      ],
+      "depends_on_capability": [
+        "find-note-in-cache",
+        "relative-date-humanization",
+        "open-periodic-note"
+      ],
       "behaviour_notes": [],
-      "edge_cases": ["Nothing renders at all if the current view's file isn't found in the cache (cache.find returns null) — periodicData stays null and the {#if} guard hides the whole complication."],
+      "edge_cases": [
+        "Nothing renders at all if the current view's file isn't found in the cache (cache.find returns null) — periodicData stays null and the {#if} guard hides the whole complication."
+      ],
       "confidence": "verified"
     },
     {
@@ -1312,14 +2361,29 @@
       "category": "state",
       "surface": "event",
       "description": "TimelineManager listens for workspace 'layout-change', diffs the set of open MarkdownView containerEls against its own tracked Svelte component instances, destroys ones whose leaf closed, and mounts a new Timeline into any view that doesn't have one yet.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "pn-timeline-manager", "symbol": "TimelineManager.onLayoutChange, cleanup", "path": "src/timeline/manager.ts", "lines": "8-64" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["pn-main"],
-      "depends_on_capability": ["timeline-complication-render"],
-      "behaviour_notes": ["cleanup() (called from plugin.unload) destroys every tracked component but does NOT unregister the 'layout-change' listener itself directly — that's handled by Obsidian's registerEvent auto-cleanup on plugin unload, not by this class."],
-      "edge_cases": ["Matching a Svelte component to its leaf is done by comparing `$$.root` (an internal Svelte instance field) to the view's containerEl — relies on undocumented Svelte internals rather than a public API."],
+      "defined_in": [
+        {
+          "module": "pn-timeline-manager",
+          "symbol": "TimelineManager.onLayoutChange, cleanup",
+          "path": "src/timeline/manager.ts",
+          "lines": "8-64"
+        }
+      ],
+      "used_by": [
+        "pn-main"
+      ],
+      "depends_on_capability": [
+        "timeline-complication-render"
+      ],
+      "behaviour_notes": [
+        "cleanup() (called from plugin.unload) destroys every tracked component but does NOT unregister the 'layout-change' listener itself directly — that's handled by Obsidian's registerEvent auto-cleanup on plugin unload, not by this class."
+      ],
+      "edge_cases": [
+        "Matching a Svelte component to its leaf is done by comparing `$$.root` (an internal Svelte instance field) to the view's containerEl — relies on undocumented Svelte internals rather than a public API."
+      ],
       "confidence": "verified"
     }
   ],
@@ -1330,12 +2394,38 @@
       "description": "User clicks the single ribbon icon shown for the first active granularity; if today's note for that granularity doesn't exist yet it is created (with template applied) before opening.",
       "trigger": "user clicks the ribbon icon (or meta/cmd-clicks to open in a new split)",
       "steps": [
-        { "from": "pn-main", "to": "pn-calendar-set-manager", "action": "getActiveGranularities() to know which icon to show", "payload": "—" },
-        { "from": "pn-main", "to": "pn-cache", "action": "look up today's note for the active calendar set", "payload": "(calendarSetId, granularity, today)" },
-        { "from": "pn-main", "to": "pn-main", "action": "createPeriodicNote() if not found, applying the template", "payload": "(granularity, today)" },
-        { "from": "pn-main", "to": "obsidian-api", "action": "leaf.openFile()", "payload": "TFile" }
+        {
+          "from": "pn-main",
+          "to": "pn-calendar-set-manager",
+          "action": "getActiveGranularities() to know which icon to show",
+          "payload": "—"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-cache",
+          "action": "look up today's note for the active calendar set",
+          "payload": "(calendarSetId, granularity, today)"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-main",
+          "action": "createPeriodicNote() if not found, applying the template",
+          "payload": "(granularity, today)"
+        },
+        {
+          "from": "pn-main",
+          "to": "obsidian-api",
+          "action": "leaf.openFile()",
+          "payload": "TFile"
+        }
       ],
-      "capabilities": ["ribbon-icon-single-granularity", "open-periodic-note", "create-periodic-note", "get-periodic-note", "template-token-expansion"],
+      "capabilities": [
+        "ribbon-icon-single-granularity",
+        "open-periodic-note",
+        "create-periodic-note",
+        "get-periodic-note",
+        "template-token-expansion"
+      ],
       "confidence": "verified"
     },
     {
@@ -1344,12 +2434,37 @@
       "description": "User runs 'Show date switcher...' and types a free-text date; the plugin resolves it (via its own regex shortcuts or the nldates-obsidian plugin) and opens/creates the corresponding periodic note.",
       "trigger": "user runs the 'Show date switcher...' command and types e.g. 'next friday'",
       "steps": [
-        { "from": "pn-main", "to": "pn-switcher-nld", "action": "open NLDNavigator (only if nldates-obsidian is installed)", "payload": "—" },
-        { "from": "pn-switcher-nld", "to": "obsidian-api", "action": "nldates-obsidian plugin: parseDate(query)", "payload": "query string" },
-        { "from": "pn-switcher-nld", "to": "pn-main", "action": "openPeriodicNote(granularity, date)", "payload": "(Granularity, Moment)" },
-        { "from": "pn-main", "to": "pn-utils", "action": "applyTemplateTransformations() while creating the file", "payload": "template contents" }
+        {
+          "from": "pn-main",
+          "to": "pn-switcher-nld",
+          "action": "open NLDNavigator (only if nldates-obsidian is installed)",
+          "payload": "—"
+        },
+        {
+          "from": "pn-switcher-nld",
+          "to": "obsidian-api",
+          "action": "nldates-obsidian plugin: parseDate(query)",
+          "payload": "query string"
+        },
+        {
+          "from": "pn-switcher-nld",
+          "to": "pn-main",
+          "action": "openPeriodicNote(granularity, date)",
+          "payload": "(Granularity, Moment)"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-utils",
+          "action": "applyTemplateTransformations() while creating the file",
+          "payload": "template contents"
+        }
       ],
-      "capabilities": ["nl-date-navigator", "open-periodic-note", "create-periodic-note", "template-token-expansion"],
+      "capabilities": [
+        "nl-date-navigator",
+        "open-periodic-note",
+        "create-periodic-note",
+        "template-token-expansion"
+      ],
       "confidence": "verified"
     },
     {
@@ -1358,13 +2473,43 @@
       "description": "User runs 'Switch active calendar set...', picks another set from the fuzzy list; the active set changes, commands/ribbon are re-registered for the new set's granularities, and the note cache is rebuilt.",
       "trigger": "user runs the 'Switch active calendar set...' command",
       "steps": [
-        { "from": "pn-main", "to": "pn-switcher-calendarset", "action": "open CalendarSetSuggestModal", "payload": "—" },
-        { "from": "pn-switcher-calendarset", "to": "pn-settings-utils", "action": "setActiveSet(id) updater", "payload": "calendar set id" },
-        { "from": "pn-settings-utils", "to": "pn-main", "action": "settings store write triggers onUpdateSettings", "payload": "ISettings" },
-        { "from": "pn-main", "to": "pn-main", "action": "configureCommands() + configureRibbonIcons() for the new active set", "payload": "—" },
-        { "from": "pn-main", "to": "pn-cache", "action": "cache.reset() via the 'periodic-notes:settings-updated' workspace event", "payload": "—" }
+        {
+          "from": "pn-main",
+          "to": "pn-switcher-calendarset",
+          "action": "open CalendarSetSuggestModal",
+          "payload": "—"
+        },
+        {
+          "from": "pn-switcher-calendarset",
+          "to": "pn-settings-utils",
+          "action": "setActiveSet(id) updater",
+          "payload": "calendar set id"
+        },
+        {
+          "from": "pn-settings-utils",
+          "to": "pn-main",
+          "action": "settings store write triggers onUpdateSettings",
+          "payload": "ISettings"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-main",
+          "action": "configureCommands() + configureRibbonIcons() for the new active set",
+          "payload": "—"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-cache",
+          "action": "cache.reset() via the 'periodic-notes:settings-updated' workspace event",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["switch-active-calendar-set", "dynamic-command-registration", "ribbon-icon-single-granularity", "cache-reset-on-settings-change"],
+      "capabilities": [
+        "switch-active-calendar-set",
+        "dynamic-command-registration",
+        "ribbon-icon-single-granularity",
+        "cache-reset-on-settings-change"
+      ],
       "confidence": "verified"
     },
     {
@@ -1373,14 +2518,49 @@
       "description": "User opens the plugin's settings tab, drills into a calendar set, expands a granularity's group, and edits the Format field; validation runs live, the change is written straight into calendarSets[], and the cache rebuilds.",
       "trigger": "user opens Settings > Periodic Notes > a calendar set > expands e.g. 'Daily Notes' > edits Format",
       "steps": [
-        { "from": "pn-settings-index", "to": "pn-settings-router", "action": "mount SettingsRouter into the settings tab", "payload": "app, manager, settings store" },
-        { "from": "pn-settings-router", "to": "pn-settings-details", "action": "render Details for the selected calendar set", "payload": "selectedCalendarSet id" },
-        { "from": "pn-settings-details", "to": "pn-settings-periodic-group", "action": "render one PeriodicGroup per granularity", "payload": "granularity" },
-        { "from": "pn-settings-periodic-group", "to": "pn-setting-note-format", "action": "render NoteFormatSetting bound to a writable-derived config store", "payload": "Readable<PeriodicConfig>" },
-        { "from": "pn-setting-note-format", "to": "pn-settings-validation", "action": "validateFormat()/validateFormatComplexity() on change", "payload": "format string" },
-        { "from": "pn-main", "to": "pn-cache", "action": "cache.reset() fires on the resulting settings-updated event", "payload": "—" }
+        {
+          "from": "pn-settings-index",
+          "to": "pn-settings-router",
+          "action": "mount SettingsRouter into the settings tab",
+          "payload": "app, manager, settings store"
+        },
+        {
+          "from": "pn-settings-router",
+          "to": "pn-settings-details",
+          "action": "render Details for the selected calendar set",
+          "payload": "selectedCalendarSet id"
+        },
+        {
+          "from": "pn-settings-details",
+          "to": "pn-settings-periodic-group",
+          "action": "render one PeriodicGroup per granularity",
+          "payload": "granularity"
+        },
+        {
+          "from": "pn-settings-periodic-group",
+          "to": "pn-setting-note-format",
+          "action": "render NoteFormatSetting bound to a writable-derived config store",
+          "payload": "Readable<PeriodicConfig>"
+        },
+        {
+          "from": "pn-setting-note-format",
+          "to": "pn-settings-validation",
+          "action": "validateFormat()/validateFormatComplexity() on change",
+          "payload": "format string"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-cache",
+          "action": "cache.reset() fires on the resulting settings-updated event",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["settings-per-granularity-format-editor", "format-validation", "fragile-basename-detection", "cache-reset-on-settings-change"],
+      "capabilities": [
+        "settings-per-granularity-format-editor",
+        "format-validation",
+        "fragile-basename-detection",
+        "cache-reset-on-settings-change"
+      ],
       "confidence": "verified"
     },
     {
@@ -1389,11 +2569,29 @@
       "description": "From the natural-language date switcher, pressing Tab opens a second modal listing every inexactly-matched ('related') note for the selected period, optionally widened to finer granularities.",
       "trigger": "user presses Tab while a date suggestion is highlighted in NLDNavigator",
       "steps": [
-        { "from": "pn-switcher-nld", "to": "pn-switcher-related", "action": "close self, open RelatedFilesSwitcher with the selected item + query", "payload": "DateNavigationItem, query string" },
-        { "from": "pn-switcher-related", "to": "pn-main", "action": "getPeriodicNotes(granularity, date, includeFinerGranularities)", "payload": "—" },
-        { "from": "pn-switcher-related", "to": "obsidian-api", "action": "leaf.openFile() on the chosen related note", "payload": "TFile" }
+        {
+          "from": "pn-switcher-nld",
+          "to": "pn-switcher-related",
+          "action": "close self, open RelatedFilesSwitcher with the selected item + query",
+          "payload": "DateNavigationItem, query string"
+        },
+        {
+          "from": "pn-switcher-related",
+          "to": "pn-main",
+          "action": "getPeriodicNotes(granularity, date, includeFinerGranularities)",
+          "payload": "—"
+        },
+        {
+          "from": "pn-switcher-related",
+          "to": "obsidian-api",
+          "action": "leaf.openFile() on the chosen related note",
+          "payload": "TFile"
+        }
       ],
-      "capabilities": ["related-files-switcher-tab-handoff", "get-periodic-notes-related"],
+      "capabilities": [
+        "related-files-switcher-tab-handoff",
+        "get-periodic-notes-related"
+      ],
       "confidence": "verified"
     },
     {
@@ -1402,11 +2600,30 @@
       "description": "Every open periodic note shows a small relative-date badge top-right; clicking it expands a 7-day strip, and clicking a day opens (or creates) that day's note.",
       "trigger": "user clicks the timeline badge on an open periodic note, then clicks a weekday",
       "steps": [
-        { "from": "pn-timeline-manager", "to": "pn-timeline-view", "action": "instantiate Timeline.svelte into the view's containerEl on layout-change", "payload": "plugin, cache, view" },
-        { "from": "pn-timeline-view", "to": "pn-cache", "action": "cache.find(view.file.path) to get the relative label and week", "payload": "file path" },
-        { "from": "pn-timeline-view", "to": "pn-main", "action": "createPeriodicNote()/getPeriodicNote() when a weekday is clicked", "payload": "(day, date)" }
+        {
+          "from": "pn-timeline-manager",
+          "to": "pn-timeline-view",
+          "action": "instantiate Timeline.svelte into the view's containerEl on layout-change",
+          "payload": "plugin, cache, view"
+        },
+        {
+          "from": "pn-timeline-view",
+          "to": "pn-cache",
+          "action": "cache.find(view.file.path) to get the relative label and week",
+          "payload": "file path"
+        },
+        {
+          "from": "pn-timeline-view",
+          "to": "pn-main",
+          "action": "createPeriodicNote()/getPeriodicNote() when a weekday is clicked",
+          "payload": "(day, date)"
+        }
       ],
-      "capabilities": ["timeline-lifecycle-per-leaf", "timeline-complication-render", "open-periodic-note"],
+      "capabilities": [
+        "timeline-lifecycle-per-leaf",
+        "timeline-complication-render",
+        "open-periodic-note"
+      ],
       "confidence": "verified"
     },
     {
@@ -1415,11 +2632,30 @@
       "description": "From an existing periodic note, run 'Jump forwards/backwards to closest <periodicity> note' to navigate to the nearest existing note of the same granularity in that direction, without creating anything if none exists.",
       "trigger": "user runs 'Jump forwards to closest daily note' on an active periodic note",
       "steps": [
-        { "from": "pn-commands", "to": "pn-main", "action": "findInCache(activeFile.path)", "payload": "file path" },
-        { "from": "pn-commands", "to": "pn-main", "action": "findAdjacent(calendarSet, path, 'forwards')", "payload": "—" },
-        { "from": "pn-commands", "to": "obsidian-api", "action": "leaf.openFile() if found, else Notice()", "payload": "TFile | none" }
+        {
+          "from": "pn-commands",
+          "to": "pn-main",
+          "action": "findInCache(activeFile.path)",
+          "payload": "file path"
+        },
+        {
+          "from": "pn-commands",
+          "to": "pn-main",
+          "action": "findAdjacent(calendarSet, path, 'forwards')",
+          "payload": "—"
+        },
+        {
+          "from": "pn-commands",
+          "to": "obsidian-api",
+          "action": "leaf.openFile() if found, else Notice()",
+          "payload": "TFile | none"
+        }
       ],
-      "capabilities": ["jump-to-adjacent-note-command", "find-adjacent-note", "find-note-in-cache"],
+      "capabilities": [
+        "jump-to-adjacent-note-command",
+        "find-adjacent-note",
+        "find-note-in-cache"
+      ],
       "confidence": "verified"
     },
     {
@@ -1428,10 +2664,24 @@
       "description": "From an existing periodic note, run 'Open next daily note' to always land on that date's note, creating it (with template) if it doesn't exist.",
       "trigger": "user runs 'Open next daily note' on an active periodic note",
       "steps": [
-        { "from": "pn-commands", "to": "pn-main", "action": "findInCache(activeFile.path), compute date +/- 1 unit", "payload": "file path" },
-        { "from": "pn-commands", "to": "pn-main", "action": "openPeriodicNote(granularity, adjacentDate)", "payload": "—" }
+        {
+          "from": "pn-commands",
+          "to": "pn-main",
+          "action": "findInCache(activeFile.path), compute date +/- 1 unit",
+          "payload": "file path"
+        },
+        {
+          "from": "pn-commands",
+          "to": "pn-main",
+          "action": "openPeriodicNote(granularity, adjacentDate)",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["open-adjacent-note-command", "open-periodic-note", "create-periodic-note"],
+      "capabilities": [
+        "open-adjacent-note-command",
+        "open-periodic-note",
+        "create-periodic-note"
+      ],
       "confidence": "verified"
     },
     {
@@ -1440,10 +2690,23 @@
       "description": "If any granularity in any calendar set has 'Open at startup' enabled, that note is opened (created if missing) as soon as the workspace layout is ready.",
       "trigger": "Obsidian finishes loading the vault's workspace layout",
       "steps": [
-        { "from": "pn-main", "to": "pn-settings-utils", "action": "findStartupNoteConfig(settings)", "payload": "—" },
-        { "from": "pn-main", "to": "pn-main", "action": "openPeriodicNote(granularity, today, {calendarSet})", "payload": "—" }
+        {
+          "from": "pn-main",
+          "to": "pn-settings-utils",
+          "action": "findStartupNoteConfig(settings)",
+          "payload": "—"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-main",
+          "action": "openPeriodicNote(granularity, today, {calendarSet})",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["startup-note-auto-open", "open-periodic-note"],
+      "capabilities": [
+        "startup-note-auto-open",
+        "open-periodic-note"
+      ],
       "confidence": "verified"
     },
     {
@@ -1452,11 +2715,30 @@
       "description": "User clicks '+' next to 'Calendar Sets' on the dashboard, is dropped straight into the new set's Details page with the title ready to rename, then enables and configures a granularity.",
       "trigger": "user clicks the '+' icon in the settings dashboard",
       "steps": [
-        { "from": "pn-settings-dashboard", "to": "pn-settings-utils", "action": "createNewCalendarSet(autoGeneratedId)", "payload": "id" },
-        { "from": "pn-settings-dashboard", "to": "pn-settings-stores", "action": "router.navigate(['Periodic Notes', id], {shouldRename: true})", "payload": "—" },
-        { "from": "pn-settings-router", "to": "pn-settings-details", "action": "mount Details, focus the rename field on mount", "payload": "—" }
+        {
+          "from": "pn-settings-dashboard",
+          "to": "pn-settings-utils",
+          "action": "createNewCalendarSet(autoGeneratedId)",
+          "payload": "id"
+        },
+        {
+          "from": "pn-settings-dashboard",
+          "to": "pn-settings-stores",
+          "action": "router.navigate(['Periodic Notes', id], {shouldRename: true})",
+          "payload": "—"
+        },
+        {
+          "from": "pn-settings-router",
+          "to": "pn-settings-details",
+          "action": "mount Details, focus the rename field on mount",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["create-calendar-set", "settings-router-navigation", "settings-details-rename-and-toggle-granularities"],
+      "capabilities": [
+        "create-calendar-set",
+        "settings-router-navigation",
+        "settings-details-rename-and-toggle-granularities"
+      ],
       "confidence": "verified"
     },
     {
@@ -1465,10 +2747,22 @@
       "description": "User edits the contenteditable title on a calendar set's Details page and blurs it; the id is validated and updated, and (if it was the active set) activeCalendarSet is updated too.",
       "trigger": "user clicks the calendar-set title in Details, edits the text, clicks elsewhere",
       "steps": [
-        { "from": "pn-settings-details", "to": "pn-calendar-set-manager", "action": "renameCalendarset(oldId, newId)", "payload": "—" },
-        { "from": "pn-settings-details", "to": "pn-settings-stores", "action": "router.navigate to the new id on success", "payload": "—" }
+        {
+          "from": "pn-settings-details",
+          "to": "pn-calendar-set-manager",
+          "action": "renameCalendarset(oldId, newId)",
+          "payload": "—"
+        },
+        {
+          "from": "pn-settings-details",
+          "to": "pn-settings-stores",
+          "action": "router.navigate to the new id on success",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["rename-calendar-set"],
+      "capabilities": [
+        "rename-calendar-set"
+      ],
       "confidence": "verified"
     },
     {
@@ -1477,11 +2771,29 @@
       "description": "The very first time the plugin loads with no calendarSets[] saved, it inspects the raw saved data and the core Daily Notes plugin to synthesize a starting 'Default' calendar set instead of starting empty.",
       "trigger": "plugin loads for the first time (or after data.json was reset) with an empty calendarSets[]",
       "steps": [
-        { "from": "pn-main", "to": "pn-calendar-set-manager", "action": "isLegacySettings(savedSettings)?", "payload": "raw saved data" },
-        { "from": "pn-main", "to": "pn-calendar-set-manager", "action": "migrateLegacySettingsToCalendarSet() or migrateDailyNoteSettings(), else a bare default", "payload": "—" },
-        { "from": "pn-main", "to": "pn-settings-utils", "action": "setActiveSet(DEFAULT_CALENDARSET_ID)", "payload": "—" }
+        {
+          "from": "pn-main",
+          "to": "pn-calendar-set-manager",
+          "action": "isLegacySettings(savedSettings)?",
+          "payload": "raw saved data"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-calendar-set-manager",
+          "action": "migrateLegacySettingsToCalendarSet() or migrateDailyNoteSettings(), else a bare default",
+          "payload": "—"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-settings-utils",
+          "action": "setActiveSet(DEFAULT_CALENDARSET_ID)",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["legacy-settings-migration", "create-calendar-set"],
+      "capabilities": [
+        "legacy-settings-migration",
+        "create-calendar-set"
+      ],
       "confidence": "verified"
     },
     {
@@ -1490,11 +2802,31 @@
       "description": "A file like '2026-W07, 09.02 - 15.02.md' doesn't strictly match the configured weekly format 'gggg-[W]ww'. Enabling 'Allow prefix matching' for that granularity makes the cache accept it as that week's note.",
       "trigger": "user toggles 'Allow prefix matching' on for the weekly granularity",
       "steps": [
-        { "from": "pn-setting-allow-prefix-match", "to": "pn-settings-index", "action": "sets calendarSets[].week.allowPrefixMatch = true", "payload": "—" },
-        { "from": "pn-main", "to": "pn-cache", "action": "cache.reset() rebuilds the index", "payload": "—" },
-        { "from": "pn-cache", "to": "pn-utils", "action": "getDateWithPrefixFallback() now allowed to win for this granularity", "payload": "filename, formats" }
+        {
+          "from": "pn-setting-allow-prefix-match",
+          "to": "pn-settings-index",
+          "action": "sets calendarSets[].week.allowPrefixMatch = true",
+          "payload": "—"
+        },
+        {
+          "from": "pn-main",
+          "to": "pn-cache",
+          "action": "cache.reset() rebuilds the index",
+          "payload": "—"
+        },
+        {
+          "from": "pn-cache",
+          "to": "pn-utils",
+          "action": "getDateWithPrefixFallback() now allowed to win for this granularity",
+          "payload": "filename, formats"
+        }
       ],
-      "capabilities": ["settings-per-granularity-allow-prefix-match-toggle", "allow-prefix-match-gate", "strict-then-prefix-date-parsing", "cache-resolve-on-file-create"],
+      "capabilities": [
+        "settings-per-granularity-allow-prefix-match-toggle",
+        "allow-prefix-match-gate",
+        "strict-then-prefix-date-parsing",
+        "cache-resolve-on-file-create"
+      ],
       "confidence": "verified"
     },
     {
@@ -1503,10 +2835,23 @@
       "description": "User opens the '...' menu on a calendar-set card and picks 'Duplicate calendar set'; a new set with a '<name> copy' id and the same per-granularity config is created and opened for renaming.",
       "trigger": "user clicks '...' on a calendar-set card, then 'Duplicate calendar set'",
       "steps": [
-        { "from": "pn-settings-calendarset-menuitem", "to": "pn-settings-utils", "action": "createNewCalendarSet(newId, existingSet)", "payload": "—" },
-        { "from": "pn-settings-calendarset-menuitem", "to": "pn-settings-stores", "action": "router.navigate to the new set with shouldRename: true", "payload": "—" }
+        {
+          "from": "pn-settings-calendarset-menuitem",
+          "to": "pn-settings-utils",
+          "action": "createNewCalendarSet(newId, existingSet)",
+          "payload": "—"
+        },
+        {
+          "from": "pn-settings-calendarset-menuitem",
+          "to": "pn-settings-stores",
+          "action": "router.navigate to the new set with shouldRename: true",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["duplicate-calendar-set", "settings-router-navigation"],
+      "capabilities": [
+        "duplicate-calendar-set",
+        "settings-router-navigation"
+      ],
       "confidence": "verified"
     }
   ],
@@ -1518,7 +2863,12 @@
       "default": false,
       "scope": "per-granularity",
       "path": "src/types.ts:18",
-      "affects": ["get-active-and-inactive-granularities", "dynamic-command-registration", "ribbon-icon-single-granularity", "cache-index-build-on-load"],
+      "affects": [
+        "get-active-and-inactive-granularities",
+        "dynamic-command-registration",
+        "ribbon-icon-single-granularity",
+        "cache-index-build-on-load"
+      ],
       "notes": null
     },
     {
@@ -1528,7 +2878,11 @@
       "default": "",
       "scope": "per-granularity",
       "path": "src/types.ts:21",
-      "affects": ["settings-per-granularity-format-editor", "strict-then-prefix-date-parsing", "template-token-expansion"],
+      "affects": [
+        "settings-per-granularity-format-editor",
+        "strict-then-prefix-date-parsing",
+        "template-token-expansion"
+      ],
       "notes": "Empty string falls back to DEFAULT_FORMAT[granularity] (src/constants.ts) via getFormat()/getConfig()."
     },
     {
@@ -1538,7 +2892,10 @@
       "default": "",
       "scope": "per-granularity",
       "path": "src/types.ts:22",
-      "affects": ["note-creation-path-and-folder-autocreate", "cache-index-build-on-load"],
+      "affects": [
+        "note-creation-path-and-folder-autocreate",
+        "cache-index-build-on-load"
+      ],
       "notes": "Empty string means vault root ('/') via getFolder()."
     },
     {
@@ -1548,7 +2905,10 @@
       "default": null,
       "scope": "per-granularity",
       "path": "src/types.ts:23",
-      "affects": ["template-token-expansion", "settings-per-granularity-template-editor"],
+      "affects": [
+        "template-token-expansion",
+        "settings-per-granularity-template-editor"
+      ],
       "notes": null
     },
     {
@@ -1558,7 +2918,10 @@
       "default": false,
       "scope": "per-granularity",
       "path": "src/types.ts:19",
-      "affects": ["startup-note-auto-open", "clear-startup-note-exclusivity"],
+      "affects": [
+        "startup-note-auto-open",
+        "clear-startup-note-exclusivity"
+      ],
       "notes": "Mutually exclusive across the entire vault: enabling one flag clears every other set/granularity's flag (settings/utils.ts:65-75)."
     },
     {
@@ -1568,7 +2931,10 @@
       "default": false,
       "scope": "per-granularity",
       "path": "src/types.ts:24",
-      "affects": ["allow-prefix-match-gate", "strict-then-prefix-date-parsing"],
+      "affects": [
+        "allow-prefix-match-gate",
+        "strict-then-prefix-date-parsing"
+      ],
       "notes": "Local fork addition, commit e50b8e8. Not present upstream."
     },
     {
@@ -1578,7 +2944,10 @@
       "default": "Default",
       "scope": "global",
       "path": "src/settings/index.ts:26",
-      "affects": ["get-active-calendar-set", "switch-active-calendar-set"],
+      "affects": [
+        "get-active-calendar-set",
+        "switch-active-calendar-set"
+      ],
       "notes": null
     },
     {
@@ -1588,7 +2957,9 @@
       "default": [],
       "scope": "global",
       "path": "src/settings/index.ts:27",
-      "affects": ["calendar-set-model"],
+      "affects": [
+        "calendar-set-model"
+      ],
       "notes": "The ONLY live store of per-granularity config in v0.0.17. Older top-level daily/weekly/monthly/quarterly/yearly keys are NOT part of ISettings — see observations."
     },
     {
@@ -1598,7 +2969,9 @@
       "default": true,
       "scope": "global",
       "path": "src/settings/index.ts:21",
-      "affects": ["getting-started-banner-daily-notes-detection"],
+      "affects": [
+        "getting-started-banner-daily-notes-detection"
+      ],
       "notes": null
     },
     {
@@ -1608,7 +2981,9 @@
       "default": true,
       "scope": "global",
       "path": "src/settings/index.ts:29",
-      "affects": ["timeline-complication-render"],
+      "affects": [
+        "timeline-complication-render"
+      ],
       "notes": null
     },
     {
@@ -1668,7 +3043,9 @@
       "default": "locale",
       "scope": "global",
       "path": "src/settings/localization.ts:134",
-      "affects": ["localization-week-start-override"],
+      "affects": [
+        "localization-week-start-override"
+      ],
       "notes": "Obsidian vault-wide config, not scoped to this plugin's own data.json; shared with every other plugin that reads it."
     },
     {
@@ -1678,7 +3055,9 @@
       "default": "system-default",
       "scope": "global",
       "path": "src/settings/localization.ts:133",
-      "affects": ["localization-locale-override"],
+      "affects": [
+        "localization-locale-override"
+      ],
       "notes": "Currently unreachable from the settings UI due to the Dashboard.svelte:127 bug — the Locale dropdown's onChange always writes 'weekStart' instead of 'localeOverride'."
     }
   ],
@@ -1688,7 +3067,9 @@
       "name": "Open today's daily note",
       "kind": "command",
       "path": "src/commands.ts:98-102",
-      "calls": ["open-periodic-note"],
+      "calls": [
+        "open-periodic-note"
+      ],
       "condition": "generated per active granularity as open-<periodicity>-note; only registered while that granularity is enabled in the active calendar set (src/main.ts:163-167)"
     },
     {
@@ -1696,7 +3077,10 @@
       "name": "Jump forwards to closest daily note",
       "kind": "command",
       "path": "src/commands.ts:104-115",
-      "calls": ["jump-to-adjacent-note-command", "find-adjacent-note"],
+      "calls": [
+        "jump-to-adjacent-note-command",
+        "find-adjacent-note"
+      ],
       "condition": "checkCallback enables it only when the active file is itself a periodic note of this granularity (isPeriodic)"
     },
     {
@@ -1704,7 +3088,10 @@
       "name": "Jump backwards to closest daily note",
       "kind": "command",
       "path": "src/commands.ts:116-127",
-      "calls": ["jump-to-adjacent-note-command", "find-adjacent-note"],
+      "calls": [
+        "jump-to-adjacent-note-command",
+        "find-adjacent-note"
+      ],
       "condition": "same as next-daily-note"
     },
     {
@@ -1712,7 +3099,10 @@
       "name": "Open next daily note",
       "kind": "command",
       "path": "src/commands.ts:128-139",
-      "calls": ["open-adjacent-note-command", "open-periodic-note"],
+      "calls": [
+        "open-adjacent-note-command",
+        "open-periodic-note"
+      ],
       "condition": "same as next-daily-note"
     },
     {
@@ -1720,7 +3110,10 @@
       "name": "Open previous daily note",
       "kind": "command",
       "path": "src/commands.ts:140-151",
-      "calls": ["open-adjacent-note-command", "open-periodic-note"],
+      "calls": [
+        "open-adjacent-note-command",
+        "open-periodic-note"
+      ],
       "condition": "same as next-daily-note"
     },
     {
@@ -1728,7 +3121,9 @@
       "name": "Show date switcher...",
       "kind": "command",
       "path": "src/main.ts:90-103",
-      "calls": ["nl-date-navigator"],
+      "calls": [
+        "nl-date-navigator"
+      ],
       "condition": "only available when the nldates-obsidian plugin is installed (checkCallback returns false otherwise)"
     },
     {
@@ -1736,7 +3131,10 @@
       "name": "Switch active calendar set...",
       "kind": "command",
       "path": "src/main.ts:105-112",
-      "calls": ["switch-active-calendar-set", "calendar-set-quick-switch-modal"],
+      "calls": [
+        "switch-active-calendar-set",
+        "calendar-set-quick-switch-modal"
+      ],
       "condition": null
     },
     {
@@ -1744,7 +3142,10 @@
       "name": "(dynamic: e.g. \"Open today's daily note\") — the first active granularity's ribbon icon",
       "kind": "ribbon",
       "path": "src/main.ts:124-149",
-      "calls": ["ribbon-icon-single-granularity", "open-periodic-note"],
+      "calls": [
+        "ribbon-icon-single-granularity",
+        "open-periodic-note"
+      ],
       "condition": "only shown when at least one granularity is enabled in the active calendar set; shows the FIRST enabled one only (day/week/month/quarter/year order)"
     },
     {
@@ -1752,7 +3153,10 @@
       "name": "Right-click ribbon icon → open any active granularity's note",
       "kind": "context-menu",
       "path": "src/main.ts:142-148",
-      "calls": ["context-menu-open-note", "open-periodic-note"],
+      "calls": [
+        "context-menu-open-note",
+        "open-periodic-note"
+      ],
       "condition": null
     }
   ],
@@ -1763,7 +3167,9 @@
       "signature": "PeriodicNotesPlugin.calendarSetManager: CalendarSetManager",
       "path": "src/main.ts:58",
       "stability": "accidental",
-      "consumers": ["obsidian-calendar-plugin (per family context; not directly verified in this repo)"]
+      "consumers": [
+        "obsidian-calendar-plugin (per family context; not directly verified in this repo)"
+      ]
     },
     {
       "export": "settings",
@@ -1779,7 +3185,9 @@
       "signature": "(granularity: Granularity, date: Moment, opts?: { inNewSplit?: boolean; calendarSet?: string }) => Promise<void>",
       "path": "src/main.ts:269-287",
       "stability": "public",
-      "consumers": ["obsidian-calendar-plugin (per family context)"]
+      "consumers": [
+        "obsidian-calendar-plugin (per family context)"
+      ]
     },
     {
       "export": "createPeriodicNote",
@@ -1795,7 +3203,9 @@
       "signature": "(granularity: Granularity, date: Moment) => TFile | null",
       "path": "src/main.ts:231-237",
       "stability": "public",
-      "consumers": ["obsidian-calendar-plugin (per family context)"]
+      "consumers": [
+        "obsidian-calendar-plugin (per family context)"
+      ]
     },
     {
       "export": "getPeriodicNotes",
@@ -1867,7 +3277,9 @@
       "signature": "Workspace.trigger('periodic-notes:settings-updated'); Workspace.on('periodic-notes:settings-updated', () => void)",
       "path": "src/main.ts:209; src/obsidian.d.ts:16-21",
       "stability": "public",
-      "consumers": ["obsidian-calendar-plugin (per family context)"]
+      "consumers": [
+        "obsidian-calendar-plugin (per family context)"
+      ]
     },
     {
       "export": "periodic-notes:resolve",
@@ -1875,7 +3287,9 @@
       "signature": "Workspace.trigger('periodic-notes:resolve', granularity, file); Workspace.on('periodic-notes:resolve', () => void)",
       "path": "src/cache.ts:230,252; src/obsidian.d.ts:22-27",
       "stability": "internal",
-      "consumers": ["pn-timeline-view (internal use only, not called out as a public contract anywhere in the source)"]
+      "consumers": [
+        "pn-timeline-view (internal use only, not called out as a public contract anywhere in the source)"
+      ]
     }
   ],
   "observations": [
@@ -1883,7 +3297,9 @@
       "severity": "P1",
       "kind": "divergence",
       "what": "Local fork guards the settings-tab scroll call against a missing '.vertical-tab-content' element.",
-      "where": ["src/settings/pages/details/Details.svelte:107 (commit 07f0df9)"],
+      "where": [
+        "src/settings/pages/details/Details.svelte:107 (commit 07f0df9)"
+      ],
       "why_it_matters": "Obsidian 1.13 changed the settings-modal DOM; without the optional-chaining guard, opening the plugin's settings tab throws ('Cannot read properties of undefined (reading scroll)') and leaves the Svelte component half-mounted, breaking the whole settings UI. A merge must carry this guard forward or the crash reappears on current Obsidian."
     },
     {
@@ -1903,14 +3319,19 @@
       "severity": "P2",
       "kind": "divergence",
       "what": "Local fork replaced a bare JSON module import with fs.readFileSync + JSON.parse in the esbuild config, and pinned Node 24.12.0.",
-      "where": ["esbuild.config.mjs (commit e332ac6)", ".tool-versions (commit e332ac6)"],
+      "where": [
+        "esbuild.config.mjs (commit e332ac6)",
+        ".tool-versions (commit e332ac6)"
+      ],
       "why_it_matters": "Node 24 rejects an unattributed JSON module import (ERR_IMPORT_ATTRIBUTE_MISSING); without this change the build breaks on the fork's own pinned toolchain. A merged build script for the whole family must pick one convention for reading manifest.json, and honor (or explicitly override) the Node version pin."
     },
     {
       "severity": "P3",
       "kind": "divergence",
       "what": "Local fork dropped 'yarn run lint' from the production build script.",
-      "where": ["package.json:10 (commit b8ff1f4)"],
+      "where": [
+        "package.json:10 (commit b8ff1f4)"
+      ],
       "why_it_matters": "svelte-check 2.7.0 can't parse this repo's inline type-only import specifiers ('import { type X }'), a pre-existing toolchain mismatch, so the fork bypassed the gate rather than fixing it. A merged repo needs a working lint/typecheck step or will silently reintroduce type errors."
     },
     {
@@ -1927,7 +3348,10 @@
       "severity": "P2",
       "kind": "bug",
       "what": "The Locale dropdown in the settings dashboard writes its value to the wrong Obsidian vault-config key.",
-      "where": ["src/settings/pages/dashboard/Dashboard.svelte:109", "src/settings/pages/dashboard/Dashboard.svelte:127"],
+      "where": [
+        "src/settings/pages/dashboard/Dashboard.svelte:109",
+        "src/settings/pages/dashboard/Dashboard.svelte:127"
+      ],
       "why_it_matters": "Both the 'Start week on' and 'Locale' dropdowns call app.vault.setConfig('weekStart', val) — the Locale handler is a copy-paste of the week-start handler and never writes 'localeOverride'. Changing Locale in the UI never actually persists a locale override (it just re-writes weekStart with the locale-dropdown's value instead), while configureGlobalMomentLocale() at load time correctly reads 'localeOverride' from vault config — so the bug is invisible until you try to change locale live and reload."
     },
     {
@@ -1945,56 +3369,78 @@
       "severity": "P3",
       "kind": "dead-code",
       "what": "FileOptionsSwitcher, PeriodicNoteCreateModal and IconButton.svelte are defined but never instantiated or imported anywhere in the source.",
-      "where": ["src/switcher/fileOptionsSwitcher.ts:18-49", "src/modal.ts:27-74 (PeriodicNoteCreateModal class only — showFileMenu in the same file IS used)", "src/settings/components/IconButton.svelte"],
+      "where": [
+        "src/switcher/fileOptionsSwitcher.ts:18-49",
+        "src/modal.ts:27-74 (PeriodicNoteCreateModal class only — showFileMenu in the same file IS used)",
+        "src/settings/components/IconButton.svelte"
+      ],
       "why_it_matters": "None of the three is reachable from any command, event, or component in this repo (confirmed by grep for each class/component name). Do not port these as capabilities; they are inert leftovers — fileOptionsSwitcher.ts's own 'Delete file' item even has an empty onChooseSuggestion body."
     },
     {
       "severity": "P3",
       "kind": "dead-code",
       "what": "MatchType's 'date-prefixed' variant is declared but never produced.",
-      "where": ["src/cache.ts:25"],
+      "where": [
+        "src/cache.ts:25"
+      ],
       "why_it_matters": "Only 'filename' and 'frontmatter' are ever assigned to matchData.matchType anywhere in the source. Harmless, but a porting agent should not build logic that expects this variant to occur."
     },
     {
       "severity": "P2",
       "kind": "bug",
       "what": "Frontmatter-based note resolution ignores the calendar set's configured format and its allowPrefixMatch flag, unlike the filename-based path.",
-      "where": ["src/cache.ts:125-171, specifically line 142"],
+      "where": [
+        "src/cache.ts:125-171, specifically line 142"
+      ],
       "why_it_matters": "resolve() (filename matching) correctly uses getPossibleFormats() + getDateWithPrefixFallback() against the user's configured format. resolveChangedMetadata() (frontmatter matching) instead hard-codes DEFAULT_FORMAT[granularity] for the strict parse. A note identified only via frontmatter (e.g. `day: 2022-02-02`) with a non-default format configured will silently fail to resolve. A merged note-resolution engine should unify these two code paths rather than keep the asymmetry."
     },
     {
       "severity": "P2",
       "kind": "bug",
       "what": "The vault-wide loose date-fallback in cache.resolve() is not scoped to any calendar set's configured folder.",
-      "where": ["src/cache.ts:189-258, specifically 235-258"],
+      "where": [
+        "src/cache.ts:189-258, specifically 235-258"
+      ],
       "why_it_matters": "When no active granularity's folder+format matches a file, resolve() falls through to getLooselyMatchedDate(file.basename) with no folder check at all. Any markdown file anywhere in the vault whose basename merely contains a YYYY-MM-DD/YYYY-MM/YYYY-shaped substring (e.g. '2026 Meeting Notes.md') gets cached as an inexact match for every calendar set that has active granularities, which can surface as incorrect '+N related notes' badges and pollute the related-files switcher with unrelated files."
     },
     {
       "severity": "P2",
       "kind": "coupling",
       "what": "No monkey-patching of Obsidian's built-in Quick Switcher exists anywhere in src/switcher/*; the real hazard is the stateful hand-off between two custom modals.",
-      "where": ["src/switcher/switcher.ts", "src/switcher/calendarSetSwitcher.ts", "src/switcher/fileOptionsSwitcher.ts", "src/switcher/relatedFilesSwitcher.ts"],
+      "where": [
+        "src/switcher/switcher.ts",
+        "src/switcher/calendarSetSwitcher.ts",
+        "src/switcher/fileOptionsSwitcher.ts",
+        "src/switcher/relatedFilesSwitcher.ts"
+      ],
       "why_it_matters": "A grep for prototype/monkey/patch/QuickSwitcher across src/ found nothing. All four 'switcher' classes are independent SuggestModal/FuzzySuggestModal subclasses (Obsidian's own public modal API), opened from the plugin's own commands — not modifications of core UI. The actual merge hazard is the Tab hand-off between NLDNavigator and RelatedFilesSwitcher (closing one modal, opening the other, and replaying the query string via a synthetic 'input' event) — that chain has no test coverage and is easy to break silently if either constructor's signature changes during a merge."
     },
     {
       "severity": "P3",
       "kind": "gap",
       "what": "The assignment's description of where openPeriodicNote/getDateWithPrefixFallback live doesn't match the code exactly.",
-      "where": ["src/main.ts:269-287 (openPeriodicNote)", "src/utils.ts:197-215 (getDateWithPrefixFallback)"],
+      "where": [
+        "src/main.ts:269-287 (openPeriodicNote)",
+        "src/utils.ts:197-215 (getDateWithPrefixFallback)"
+      ],
       "why_it_matters": "openPeriodicNote is a PeriodicNotesPlugin method in main.ts, not utils.ts. utils.ts does correctly hold getDateWithPrefixFallback and the rest of the date/template helpers. Noted so a porting agent doesn't waste time searching utils.ts for openPeriodicNote."
     },
     {
       "severity": "P3",
       "kind": "gap",
       "what": "getPeriodicNotes' own author flags its shape as unsettled.",
-      "where": ["src/main.ts:239 (inline comment: '// TODO: What API do I want for this?')"],
+      "where": [
+        "src/main.ts:239 (inline comment: '// TODO: What API do I want for this?')"
+      ],
       "why_it_matters": "Treat this method's signature (a boolean includeFinerGranularities flag) as a redesign candidate in the merged plugin rather than a contract that must be preserved exactly."
     },
     {
       "severity": "P2",
       "kind": "gap",
       "what": "Cross-plugin lookup by manifest id will fail for this specific vault install.",
-      "where": ["manifest.json:2 (id: 'periodic-notes')"],
+      "where": [
+        "manifest.json:2 (id: 'periodic-notes')"
+      ],
       "why_it_matters": "The assignment states this fork is installed under the dev plugin id 'periodic-notes-anks'. Any other plugin (e.g. obsidian-calendar-plugin) calling app.plugins.getPlugin('periodic-notes') gets undefined in this vault, even though the code and its public methods are otherwise present and working. This is an install-time integration risk specific to this vault, not a code bug — worth flagging before testing the merged plugin's cross-plugin API here."
     },
     {

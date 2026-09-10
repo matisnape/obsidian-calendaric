@@ -8,29 +8,35 @@
   },
   "modules": [
     {
-      "id": "ocp-settings",
+      "id": "forks-ocp-settings",
       "name": "settings.ts",
-      "path": "src/settings.ts",
+      "path": "obsidian-calendar-plugin/src/settings.ts",
       "role": "Calendar plugin settings tab + periodic-notes plugin lookup helpers (dev-id fallback, monthly-note plugin resolution)",
       "loc": 299,
       "category": "config",
-      "depends_on": ["obsidian-api"],
+      "depends_on": [
+        "obsidian-api"
+      ],
       "external": false
     },
     {
-      "id": "ocp-view",
+      "id": "forks-ocp-view",
       "name": "view.ts",
-      "path": "src/view.ts",
+      "path": "obsidian-calendar-plugin/src/view.ts",
       "role": "Calendar ItemView: day/week click handlers plus (locally added) a capture-phase month-header click that opens the periodic monthly note",
       "loc": 376,
       "category": "ui",
-      "depends_on": ["ocp-settings", "ocp-calendar-svelte", "obsidian-api"],
+      "depends_on": [
+        "forks-ocp-settings",
+        "forks-ocp-calendar-svelte",
+        "obsidian-api"
+      ],
       "external": false
     },
     {
-      "id": "ocp-calendar-svelte",
+      "id": "forks-ocp-calendar-svelte",
       "name": "Calendar.svelte",
-      "path": "src/ui/Calendar.svelte",
+      "path": "obsidian-calendar-plugin/src/ui/Calendar.svelte",
       "role": "Svelte wrapper around obsidian-calendar-ui's CalendarBase; locally exports getDisplayedMonth()",
       "loc": 77,
       "category": "ui",
@@ -38,9 +44,9 @@
       "external": false
     },
     {
-      "id": "ocp-pkg",
+      "id": "forks-ocp-pkg",
       "name": "package.json / yarn.lock",
-      "path": "package.json",
+      "path": "obsidian-calendar-plugin/package.json",
       "role": "Build/dependency manifest; pins obsidian-daily-notes-interface to the anks fork via a github: URL plus a yarn resolutions block so the dependency dedupes to one copy",
       "loc": 63,
       "category": "config",
@@ -48,9 +54,9 @@
       "external": false
     },
     {
-      "id": "ocp-toolversions",
+      "id": "forks-ocp-toolversions",
       "name": ".tool-versions",
-      "path": ".tool-versions",
+      "path": "obsidian-calendar-plugin/.tool-versions",
       "role": "Pins Node 24.12.0 via mise for reproducible builds",
       "loc": 1,
       "category": "config",
@@ -58,9 +64,9 @@
       "external": false
     },
     {
-      "id": "pn-utils",
+      "id": "forks-pn-utils",
       "name": "utils.ts",
-      "path": "src/utils.ts",
+      "path": "obsidian-periodic-notes/src/utils.ts",
       "role": "Date/format utilities; locally adds getDateWithPrefixFallback() for prefix-matched periodic note filenames",
       "loc": 359,
       "category": "dates",
@@ -68,19 +74,22 @@
       "external": false
     },
     {
-      "id": "pn-cache",
+      "id": "forks-pn-cache",
       "name": "cache.ts",
-      "path": "src/cache.ts",
+      "path": "obsidian-periodic-notes/src/cache.ts",
       "role": "In-memory periodic-notes cache; resolve() now calls the prefix-fallback parser, gated per-granularity by the new allowPrefixMatch setting",
       "loc": 403,
       "category": "state",
-      "depends_on": ["pn-utils", "pn-types"],
+      "depends_on": [
+        "forks-pn-utils",
+        "forks-pn-types"
+      ],
       "external": false
     },
     {
-      "id": "pn-types",
+      "id": "forks-pn-types",
       "name": "types.ts",
-      "path": "src/types.ts",
+      "path": "obsidian-periodic-notes/src/types.ts",
       "role": "PeriodicConfig type; adds optional allowPrefixMatch field",
       "loc": 33,
       "category": "config",
@@ -88,49 +97,57 @@
       "external": false
     },
     {
-      "id": "pn-settings-index",
+      "id": "forks-pn-settings-index",
       "name": "settings/index.ts",
-      "path": "src/settings/index.ts",
+      "path": "obsidian-periodic-notes/src/settings/index.ts",
       "role": "Settings tab + default PeriodicConfig; adds allowPrefixMatch: false to the default config",
       "loc": 84,
       "category": "config",
-      "depends_on": ["pn-types"],
+      "depends_on": [
+        "forks-pn-types"
+      ],
       "external": false
     },
     {
-      "id": "pn-periodic-group",
+      "id": "forks-pn-periodic-group",
       "name": "PeriodicGroup.svelte",
-      "path": "src/settings/pages/details/PeriodicGroup.svelte",
+      "path": "obsidian-periodic-notes/src/settings/pages/details/PeriodicGroup.svelte",
       "role": "Per-granularity settings group in the Periodic Notes settings UI; wires in the new AllowPrefixMatchSetting toggle",
       "loc": 136,
       "category": "ui",
-      "depends_on": ["pn-allow-prefix-setting"],
+      "depends_on": [
+        "forks-pn-allow-prefix-setting"
+      ],
       "external": false
     },
     {
-      "id": "pn-allow-prefix-setting",
+      "id": "forks-pn-allow-prefix-setting",
       "name": "AllowPrefixMatchSetting.svelte",
-      "path": "src/settings/components/AllowPrefixMatchSetting.svelte",
+      "path": "obsidian-periodic-notes/src/settings/components/AllowPrefixMatchSetting.svelte",
       "role": "New Svelte toggle component for the allowPrefixMatch setting, modeled on OpenAtStartupSetting.svelte",
       "loc": 27,
       "category": "ui",
-      "depends_on": ["pn-types"],
+      "depends_on": [
+        "forks-pn-types"
+      ],
       "external": false
     },
     {
-      "id": "pn-details-svelte",
+      "id": "forks-pn-details-svelte",
       "name": "Details.svelte",
-      "path": "src/settings/pages/details/Details.svelte",
+      "path": "obsidian-periodic-notes/src/settings/pages/details/Details.svelte",
       "role": "Settings-tab detail pane; guards the vertical-tab-content scroll call against the element being absent (Obsidian 1.13+ DOM change)",
       "loc": 192,
       "category": "ui",
-      "depends_on": ["obsidian-api"],
+      "depends_on": [
+        "obsidian-api"
+      ],
       "external": false
     },
     {
-      "id": "pn-pkg",
+      "id": "forks-pn-pkg",
       "name": "package.json",
-      "path": "package.json",
+      "path": "obsidian-periodic-notes/package.json",
       "role": "Build scripts; drops the lint step from the production build (svelte-check parser incompatibility)",
       "loc": 50,
       "category": "config",
@@ -138,9 +155,9 @@
       "external": false
     },
     {
-      "id": "pn-esbuild-config",
+      "id": "forks-pn-esbuild-config",
       "name": "esbuild.config.mjs",
-      "path": "esbuild.config.mjs",
+      "path": "obsidian-periodic-notes/esbuild.config.mjs",
       "role": "esbuild config; reads manifest.json via fs.readFileSync instead of a bare JSON module import (Node 24 compat)",
       "loc": 70,
       "category": "config",
@@ -148,9 +165,9 @@
       "external": false
     },
     {
-      "id": "pn-toolversions",
+      "id": "forks-pn-toolversions",
       "name": ".tool-versions",
-      "path": ".tool-versions",
+      "path": "obsidian-periodic-notes/.tool-versions",
       "role": "Pins Node 24.12.0 via mise",
       "loc": 1,
       "category": "config",
@@ -158,39 +175,47 @@
       "external": false
     },
     {
-      "id": "dni-index",
+      "id": "forks-dni-index",
       "name": "index.ts",
-      "path": "src/index.ts",
+      "path": "obsidian-daily-notes-interface/src/index.ts",
       "role": "Public API surface: appHas*NotesPluginLoaded checks now prefer a side-installed dev-id plugin before falling back to the community-store id",
       "loc": 150,
       "category": "integration",
-      "depends_on": ["dni-settings", "obsidian-api"],
+      "depends_on": [
+        "forks-dni-settings",
+        "obsidian-api"
+      ],
       "external": false
     },
     {
-      "id": "dni-settings",
+      "id": "forks-dni-settings",
       "name": "settings.ts",
-      "path": "src/settings.ts",
+      "path": "obsidian-daily-notes-interface/src/settings.ts",
       "role": "Resolves daily/weekly/monthly/quarterly/yearly settings from periodic-notes/calendar plugin instances; adds getPeriodicNotesPlugin(), a dev-id-first lookup reused by every getter, plus a calendar-anks fallback",
       "loc": 160,
       "category": "integration",
-      "depends_on": ["obsidian-api"],
+      "depends_on": [
+        "obsidian-api"
+      ],
       "external": false
     },
     {
-      "id": "dni-parse",
+      "id": "forks-dni-parse",
       "name": "parse.ts",
-      "path": "src/parse.ts",
+      "path": "obsidian-daily-notes-interface/src/parse.ts",
       "role": "Filename/frontmatter -> date parsing; getDateFromFilename() adds an opt-in prefix-match fallback for weekly note filenames",
       "loc": 113,
       "category": "dates",
-      "depends_on": ["dni-settings", "dni-types"],
+      "depends_on": [
+        "forks-dni-settings",
+        "forks-dni-types"
+      ],
       "external": false
     },
     {
-      "id": "dni-types",
+      "id": "forks-dni-types",
       "name": "types.ts",
-      "path": "src/types.ts",
+      "path": "obsidian-daily-notes-interface/src/types.ts",
       "role": "IPeriodicNoteSettings type; adds optional allowPrefixMatch field",
       "loc": 7,
       "category": "config",
@@ -198,9 +223,9 @@
       "external": false
     },
     {
-      "id": "dni-pkg",
+      "id": "forks-dni-pkg",
       "name": "package.json",
-      "path": "package.json",
+      "path": "obsidian-daily-notes-interface/package.json",
       "role": "Adds a 'prepare' script so a git-URL install self-builds dist/main.js before being linked into a consumer",
       "loc": 55,
       "category": "config",
@@ -208,9 +233,9 @@
       "external": false
     },
     {
-      "id": "dni-toolversions",
+      "id": "forks-dni-toolversions",
       "name": ".tool-versions",
-      "path": ".tool-versions",
+      "path": "obsidian-daily-notes-interface/.tool-versions",
       "role": "Pins Node 24.12.0 via mise",
       "loc": 1,
       "category": "config",
@@ -225,26 +250,77 @@
       "category": "integration",
       "surface": "integration",
       "description": "Every cross-plugin lookup across the three forks tries a side-installed dev-build plugin id first ('periodic-notes-anks', 'calendar-anks') before falling back to the community-store id ('periodic-notes', 'calendar'). This lets a locally built dev copy of Periodic Notes/Calendar coexist with the store copy and still be recognized by every settings getter and feature-availability check in all three plugins.",
-      "granularity": ["any"],
-      "defined_in": [
-        { "module": "dni-index", "symbol": "appHasDailyNotesPluginLoaded", "path": "src/index.ts", "lines": "12-26" },
-        { "module": "dni-index", "symbol": "appHasWeeklyNotesPluginLoaded", "path": "src/index.ts", "lines": "32-49" },
-        { "module": "dni-index", "symbol": "appHasMonthlyNotesPluginLoaded", "path": "src/index.ts", "lines": "51-54" },
-        { "module": "dni-index", "symbol": "appHasQuarterlyNotesPluginLoaded", "path": "src/index.ts", "lines": "56-59" },
-        { "module": "dni-index", "symbol": "appHasYearlyNotesPluginLoaded", "path": "src/index.ts", "lines": "61-64" },
-        { "module": "dni-settings", "symbol": "getPeriodicNotesPlugin", "path": "src/settings.ts", "lines": "15-23" },
-        { "module": "dni-settings", "symbol": "getWeeklyNoteSettings (calendar-anks fallback)", "path": "src/settings.ts", "lines": "67-97" },
-        { "module": "ocp-settings", "symbol": "appHasPeriodicNotesPluginLoaded", "path": "src/settings.ts", "lines": "48-56" },
-        { "module": "ocp-settings", "symbol": "getMonthlyNotesPeriodicNotesPlugin (dev-id lookup)", "path": "src/settings.ts", "lines": "72-82" }
+      "granularity": [
+        "any"
       ],
-      "used_by": ["ocp-view"],
+      "defined_in": [
+        {
+          "module": "forks-dni-index",
+          "symbol": "appHasDailyNotesPluginLoaded",
+          "path": "obsidian-daily-notes-interface/src/index.ts",
+          "lines": "12-26"
+        },
+        {
+          "module": "forks-dni-index",
+          "symbol": "appHasWeeklyNotesPluginLoaded",
+          "path": "obsidian-daily-notes-interface/src/index.ts",
+          "lines": "32-49"
+        },
+        {
+          "module": "forks-dni-index",
+          "symbol": "appHasMonthlyNotesPluginLoaded",
+          "path": "obsidian-daily-notes-interface/src/index.ts",
+          "lines": "51-54"
+        },
+        {
+          "module": "forks-dni-index",
+          "symbol": "appHasQuarterlyNotesPluginLoaded",
+          "path": "obsidian-daily-notes-interface/src/index.ts",
+          "lines": "56-59"
+        },
+        {
+          "module": "forks-dni-index",
+          "symbol": "appHasYearlyNotesPluginLoaded",
+          "path": "obsidian-daily-notes-interface/src/index.ts",
+          "lines": "61-64"
+        },
+        {
+          "module": "forks-dni-settings",
+          "symbol": "getPeriodicNotesPlugin",
+          "path": "obsidian-daily-notes-interface/src/settings.ts",
+          "lines": "15-23"
+        },
+        {
+          "module": "forks-dni-settings",
+          "symbol": "getWeeklyNoteSettings (calendar-anks fallback)",
+          "path": "obsidian-daily-notes-interface/src/settings.ts",
+          "lines": "67-97"
+        },
+        {
+          "module": "forks-ocp-settings",
+          "symbol": "appHasPeriodicNotesPluginLoaded",
+          "path": "obsidian-calendar-plugin/src/settings.ts",
+          "lines": "48-56"
+        },
+        {
+          "module": "forks-ocp-settings",
+          "symbol": "getMonthlyNotesPeriodicNotesPlugin (dev-id lookup)",
+          "path": "obsidian-calendar-plugin/src/settings.ts",
+          "lines": "72-82"
+        }
+      ],
+      "used_by": [
+        "forks-ocp-view"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [
         "dni-settings.getPeriodicNotesPlugin() is exported (since bba664e) and re-exported from dni-index; obsidian-calendar-plugin does NOT import it, it keeps its own duplicate copy of the same lookup in ocp-settings.",
         "The dev id is hardcoded per file as the literal string 'periodic-notes-anks' / 'calendar-anks' in three separate places; a merge must keep this id (or make it configurable) in every place or dev-build detection silently breaks in whichever copy was missed.",
         "History across commits: be90253 first applied the fallback to daily/weekly checks and the calendar lookup in dni; 7727890 applied the same fix to ocp's own periodic-notes lookup; bba664e finally closed the gap for dni's monthly/quarterly/yearly checks, which be90253 had missed."
       ],
-      "edge_cases": ["If both a dev and a store copy of periodic-notes/calendar are installed, the dev copy always wins; there is no user-facing way to prefer the store copy."],
+      "edge_cases": [
+        "If both a dev and a store copy of periodic-notes/calendar are installed, the dev copy always wins; there is no user-facing way to prefer the store copy."
+      ],
       "confidence": "verified"
     },
     {
@@ -253,18 +329,29 @@
       "category": "dates",
       "surface": "setting",
       "description": "obsidian-daily-notes-interface's getDateFromFilename() accepts a weekly note filename that only starts with (a prefix of) the configured moment format, not just an exact match, when the weekly settings' allowPrefixMatch flag is true. E.g. a file named '2026-W07, 09.02 - 15.02.md' resolves against format 'gggg-[W]ww'.",
-      "granularity": ["week"],
-      "defined_in": [
-        { "module": "dni-parse", "symbol": "getDateFromFilename", "path": "src/parse.ts", "lines": "61-113" }
+      "granularity": [
+        "week"
       ],
-      "used_by": ["ocp-view"],
+      "defined_in": [
+        {
+          "module": "forks-dni-parse",
+          "symbol": "getDateFromFilename",
+          "path": "obsidian-daily-notes-interface/src/parse.ts",
+          "lines": "61-113"
+        }
+      ],
+      "used_by": [
+        "forks-ocp-view"
+      ],
       "depends_on_capability": [],
       "behaviour_notes": [
         "allowPrefixMatch is read off IPeriodicNoteSettings (dni-types), populated in getWeeklyNoteSettings() from Periodic Notes' weekly settings; always false when the settings source is the Calendar plugin's own (non-periodic-notes) weekly config, since Calendar has no such field.",
         "ocp's revealActiveNote() was fixed in commit 7727890 to call getDateFromFile(file, 'week') instead of an inline strict-only moment() parse, so 'reveal active note' now also works for a prefix-matched weekly note; before that fix the note correctly showed as a dot on the calendar but jump-to-note failed for it.",
         "Only tries the single format resolved for the requested granularity, and preserves the pre-existing ambiguous-week-format special case (isFormatAmbiguous) only in the exact-match branch. This differs from obsidian-periodic-notes' own getDateWithPrefixFallback(), which loops over every possible format and has no ambiguous-format handling. The two implementations are independent and can diverge (see observations)."
       ],
-      "edge_cases": ["An ambiguous week-only format (e.g. one using only 'W'/'w' tokens) is only disambiguated on exact match; the prefix-match branch does not apply the same disambiguation."],
+      "edge_cases": [
+        "An ambiguous week-only format (e.g. one using only 'W'/'w' tokens) is only disambiguated on exact match; the prefix-match branch does not apply the same disambiguation."
+      ],
       "confidence": "verified"
     },
     {
@@ -273,11 +360,32 @@
       "category": "config",
       "surface": "setting",
       "description": "obsidian-periodic-notes gets a new opt-in toggle per calendar-set granularity ('Allow prefix matching'). When enabled, PeriodicNotesCache.resolve() accepts a file whose name only starts with the configured format, via the new getDateWithPrefixFallback() helper, instead of requiring an exact filename match.",
-      "granularity": ["day", "week", "month", "quarter", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
       "defined_in": [
-        { "module": "pn-utils", "symbol": "getDateWithPrefixFallback", "path": "src/utils.ts", "lines": "197-215" },
-        { "module": "pn-cache", "symbol": "PeriodicNotesCache.resolve (prefix-match branch)", "path": "src/cache.ts", "lines": "206-222" },
-        { "module": "pn-allow-prefix-setting", "symbol": "AllowPrefixMatchSetting.svelte", "path": "src/settings/components/AllowPrefixMatchSetting.svelte", "lines": "1-27" }
+        {
+          "module": "forks-pn-utils",
+          "symbol": "getDateWithPrefixFallback",
+          "path": "obsidian-periodic-notes/src/utils.ts",
+          "lines": "197-215"
+        },
+        {
+          "module": "forks-pn-cache",
+          "symbol": "PeriodicNotesCache.resolve (prefix-match branch)",
+          "path": "obsidian-periodic-notes/src/cache.ts",
+          "lines": "206-222"
+        },
+        {
+          "module": "forks-pn-allow-prefix-setting",
+          "symbol": "AllowPrefixMatchSetting.svelte",
+          "path": "obsidian-periodic-notes/src/settings/components/AllowPrefixMatchSetting.svelte",
+          "lines": "1-27"
+        }
       ],
       "used_by": [],
       "depends_on_capability": [],
@@ -286,7 +394,9 @@
         "cache.ts records matchData.exact = isExactMatch, so a prefix-matched note is cached as a non-exact match (existing frontmatter-vs-filename priority logic elsewhere in resolve() already branches on match type/exactness).",
         "Default is false (src/settings/index.ts:56 and src/types.ts:24), so existing vaults are unaffected until a user opts in per granularity."
       ],
-      "edge_cases": ["This is a separate, independently written implementation from daily-notes-interface's weekly-only prefix match; see the duplication observation."],
+      "edge_cases": [
+        "This is a separate, independently written implementation from daily-notes-interface's weekly-only prefix match; see the duplication observation."
+      ],
       "confidence": "verified"
     },
     {
@@ -295,22 +405,48 @@
       "category": "ui",
       "surface": "ui",
       "description": "In the Calendar sidebar, clicking the month header (the 'h3.title' element, e.g. 'Oct 2026') opens or creates that month's periodic note via the Periodic Notes plugin's openPeriodicNote('month', ...) API, instead of only resetting the calendar view to the current month. Meta-click (Cmd on macOS, Ctrl elsewhere) opens it in a new split.",
-      "granularity": ["month"],
+      "granularity": [
+        "month"
+      ],
       "defined_in": [
-        { "module": "ocp-view", "symbol": "onMonthHeaderClick", "path": "src/view.ts", "lines": "144-178" },
-        { "module": "ocp-view", "symbol": "isMetaPressed", "path": "src/view.ts", "lines": "30-33" },
-        { "module": "ocp-calendar-svelte", "symbol": "getDisplayedMonth", "path": "src/ui/Calendar.svelte", "lines": "36-38" },
-        { "module": "ocp-settings", "symbol": "getMonthlyNotesPeriodicNotesPlugin", "path": "src/settings.ts", "lines": "72-111" }
+        {
+          "module": "forks-ocp-view",
+          "symbol": "onMonthHeaderClick",
+          "path": "obsidian-calendar-plugin/src/view.ts",
+          "lines": "144-178"
+        },
+        {
+          "module": "forks-ocp-view",
+          "symbol": "isMetaPressed",
+          "path": "obsidian-calendar-plugin/src/view.ts",
+          "lines": "30-33"
+        },
+        {
+          "module": "forks-ocp-calendar-svelte",
+          "symbol": "getDisplayedMonth",
+          "path": "obsidian-calendar-plugin/src/ui/Calendar.svelte",
+          "lines": "36-38"
+        },
+        {
+          "module": "forks-ocp-settings",
+          "symbol": "getMonthlyNotesPeriodicNotesPlugin",
+          "path": "obsidian-calendar-plugin/src/settings.ts",
+          "lines": "72-111"
+        }
       ],
       "used_by": [],
-      "depends_on_capability": ["dev-plugin-id-fallback"],
+      "depends_on_capability": [
+        "dev-plugin-id-fallback"
+      ],
       "behaviour_notes": [
         "Registered as a capture-phase click listener on the view's contentEl (src/view.ts:136-141) so it runs before obsidian-calendar-ui's own bubble-phase h3.title handler (resetDisplayedMonth); when this handler can act it calls preventDefault/stopPropagation so the library's reset does not also fire for the same click.",
         "Falls through to the existing reset-to-current-month behavior whenever Periodic Notes is missing, monthly notes are disabled/unavailable, or the displayed month can't be read from Calendar.svelte -- i.e. purely additive over upstream behavior, never a hard replacement.",
         "getMonthlyNotesPeriodicNotesPlugin() (ocp-settings) was buggy when first introduced in commit 5ed4307: it read periodicNotes.settings.monthly, but settings is a Svelte writable store, not a plain object, so the check always evaluated to undefined/falsy and the function always returned null -- the whole feature never actually fired. Fixed one commit later (39040cd) to check the plugin's calendarSetManager.getActiveGranularities() instead, with fail-closed behavior if that API is unavailable, and to also verify openPeriodicNote exists before returning the plugin instance.",
         "obsidian-calendar-ui stays pinned at its existing version for this feature; no changes were made to it."
       ],
-      "edge_cases": ["If calendarSetManager or getActiveGranularities() is absent on the installed Periodic Notes build, the feature silently disables itself (fails closed) instead of risking an openPeriodicNote/createPeriodicNote call for a granularity that might be disabled or unconfigured."],
+      "edge_cases": [
+        "If calendarSetManager or getActiveGranularities() is absent on the installed Periodic Notes build, the feature silently disables itself (fails closed) instead of risking an openPeriodicNote/createPeriodicNote call for a granularity that might be disabled or unconfigured."
+      ],
       "confidence": "verified"
     },
     {
@@ -319,13 +455,22 @@
       "category": "ui",
       "surface": "ui",
       "description": "Periodic Notes' settings detail pane no longer throws when Obsidian's settings-modal DOM lacks a '.vertical-tab-content' element at mount time (a DOM change introduced in Obsidian 1.13). Previously this threw 'Cannot read properties of undefined (reading scroll)', with a follow-on 'Cannot read properties of null (reading insertBefore)', leaving the Svelte settings pane half-mounted.",
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "defined_in": [
-        { "module": "pn-details-svelte", "symbol": "onMount handler", "path": "src/settings/pages/details/Details.svelte", "lines": "102-108" }
+        {
+          "module": "forks-pn-details-svelte",
+          "symbol": "onMount handler",
+          "path": "obsidian-periodic-notes/src/settings/pages/details/Details.svelte",
+          "lines": "102-108"
+        }
       ],
       "used_by": [],
       "depends_on_capability": [],
-      "behaviour_notes": ["The fix is a single optional-chaining operator (`?.scroll(0, 0)`) turning a hard crash into a no-op when the element is missing."],
+      "behaviour_notes": [
+        "The fix is a single optional-chaining operator (`?.scroll(0, 0)`) turning a hard crash into a no-op when the element is missing."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     },
@@ -335,13 +480,24 @@
       "category": "config",
       "surface": "integration",
       "description": "package.json's new 'prepare' script (rollup -c) runs automatically after yarn/npm clones this package as a git dependency, so dist/main.js (the package's declared 'main' entry) exists before it is linked into a consumer's node_modules. Without it, a git-URL install ships only TypeScript sources and breaks any consumer that resolves the built output.",
-      "granularity": ["n-a"],
-      "defined_in": [
-        { "module": "dni-pkg", "symbol": "scripts.prepare", "path": "package.json", "lines": "18" }
+      "granularity": [
+        "n-a"
       ],
-      "used_by": ["ocp-pkg"],
+      "defined_in": [
+        {
+          "module": "forks-dni-pkg",
+          "symbol": "scripts.prepare",
+          "path": "obsidian-daily-notes-interface/package.json",
+          "lines": "18"
+        }
+      ],
+      "used_by": [
+        "forks-ocp-pkg"
+      ],
       "depends_on_capability": [],
-      "behaviour_notes": ["Exists specifically because obsidian-calendar-plugin now consumes this package via a github:matisnape/... pinned dependency rather than a published npm release."],
+      "behaviour_notes": [
+        "Exists specifically because obsidian-calendar-plugin now consumes this package via a github:matisnape/... pinned dependency rather than a published npm release."
+      ],
       "edge_cases": [],
       "confidence": "verified"
     }
@@ -353,12 +509,35 @@
       "description": "Clicking the calendar sidebar's month header opens/creates the displayed month's periodic note instead of resetting to the current month.",
       "trigger": "user clicks the 'h3.title' month header in the Calendar view (capture phase, before obsidian-calendar-ui's own bubble-phase reset handler)",
       "steps": [
-        { "from": "ocp-view", "to": "ocp-calendar-svelte", "action": "read the currently displayed month via getDisplayedMonth()", "payload": "—" },
-        { "from": "ocp-view", "to": "ocp-settings", "action": "resolve the Periodic Notes plugin, gated on 'month' being an active granularity", "payload": "—" },
-        { "from": "ocp-settings", "to": "obsidian-api", "action": "look up app.plugins for 'periodic-notes-anks' then 'periodic-notes'; query its calendarSetManager.getActiveGranularities()", "payload": "—" },
-        { "from": "ocp-view", "to": "obsidian-api", "action": "call periodicNotes.openPeriodicNote('month', displayedMonth.clone(), { inNewSplit })", "payload": "Moment date + inNewSplit flag" }
+        {
+          "from": "forks-ocp-view",
+          "to": "forks-ocp-calendar-svelte",
+          "action": "read the currently displayed month via getDisplayedMonth()",
+          "payload": "—"
+        },
+        {
+          "from": "forks-ocp-view",
+          "to": "forks-ocp-settings",
+          "action": "resolve the Periodic Notes plugin, gated on 'month' being an active granularity",
+          "payload": "—"
+        },
+        {
+          "from": "forks-ocp-settings",
+          "to": "obsidian-api",
+          "action": "look up app.plugins for 'periodic-notes-anks' then 'periodic-notes'; query its calendarSetManager.getActiveGranularities()",
+          "payload": "—"
+        },
+        {
+          "from": "forks-ocp-view",
+          "to": "obsidian-api",
+          "action": "call periodicNotes.openPeriodicNote('month', displayedMonth.clone(), { inNewSplit })",
+          "payload": "Moment date + inNewSplit flag"
+        }
       ],
-      "capabilities": ["open-monthly-note-from-header", "dev-plugin-id-fallback"],
+      "capabilities": [
+        "open-monthly-note-from-header",
+        "dev-plugin-id-fallback"
+      ],
       "confidence": "verified"
     },
     {
@@ -367,11 +546,28 @@
       "description": "Any of the three forks needing to check plugin availability or read cross-plugin settings tries the side-installed dev-id plugin before the store one.",
       "trigger": "a settings getter or an appHas*PluginLoaded() availability check runs",
       "steps": [
-        { "from": "dni-settings", "to": "obsidian-api", "action": "app.plugins.getPlugin('periodic-notes-anks')", "payload": "—" },
-        { "from": "dni-settings", "to": "obsidian-api", "action": "fallback: app.plugins.getPlugin('periodic-notes')", "payload": "—" },
-        { "from": "dni-index", "to": "dni-settings", "action": "reuse getPeriodicNotesPlugin() inside every appHas*NotesPluginLoaded() check", "payload": "—" }
+        {
+          "from": "forks-dni-settings",
+          "to": "obsidian-api",
+          "action": "app.plugins.getPlugin('periodic-notes-anks')",
+          "payload": "—"
+        },
+        {
+          "from": "forks-dni-settings",
+          "to": "obsidian-api",
+          "action": "fallback: app.plugins.getPlugin('periodic-notes')",
+          "payload": "—"
+        },
+        {
+          "from": "forks-dni-index",
+          "to": "forks-dni-settings",
+          "action": "reuse getPeriodicNotesPlugin() inside every appHas*NotesPluginLoaded() check",
+          "payload": "—"
+        }
       ],
-      "capabilities": ["dev-plugin-id-fallback"],
+      "capabilities": [
+        "dev-plugin-id-fallback"
+      ],
       "confidence": "verified"
     },
     {
@@ -380,11 +576,28 @@
       "description": "Indexing or revealing the active file recognizes a weekly note even when its filename only starts with the configured moment format, when the feature is enabled.",
       "trigger": "the vault is reindexed, or the user asks the calendar to reveal the active note",
       "steps": [
-        { "from": "dni-parse", "to": "dni-settings", "action": "read allowPrefixMatch from the resolved weekly note settings", "payload": "—" },
-        { "from": "dni-parse", "to": "dni-parse", "action": "strict moment parse fails; retry loosely and accept only if filename.startsWith(reformatted date)", "payload": "filename string" },
-        { "from": "ocp-view", "to": "dni-parse", "action": "revealActiveNote() calls getDateFromFile(file, 'week') instead of an inline strict-only parse", "payload": "TFile" }
+        {
+          "from": "forks-dni-parse",
+          "to": "forks-dni-settings",
+          "action": "read allowPrefixMatch from the resolved weekly note settings",
+          "payload": "—"
+        },
+        {
+          "from": "forks-dni-parse",
+          "to": "forks-dni-parse",
+          "action": "strict moment parse fails; retry loosely and accept only if filename.startsWith(reformatted date)",
+          "payload": "filename string"
+        },
+        {
+          "from": "forks-ocp-view",
+          "to": "forks-dni-parse",
+          "action": "revealActiveNote() calls getDateFromFile(file, 'week') instead of an inline strict-only parse",
+          "payload": "TFile"
+        }
       ],
-      "capabilities": ["weekly-note-prefix-match"],
+      "capabilities": [
+        "weekly-note-prefix-match"
+      ],
       "confidence": "verified"
     }
   ],
@@ -396,7 +609,9 @@
       "default": false,
       "scope": "per-granularity",
       "path": "obsidian-periodic-notes/src/types.ts:24",
-      "affects": ["periodic-note-prefix-match-setting"],
+      "affects": [
+        "periodic-note-prefix-match-setting"
+      ],
       "notes": "Also defaulted in obsidian-periodic-notes/src/settings/index.ts:56. Local addition; does not exist upstream."
     },
     {
@@ -406,7 +621,9 @@
       "default": false,
       "scope": "per-granularity",
       "path": "obsidian-daily-notes-interface/src/types.ts:6",
-      "affects": ["weekly-note-prefix-match"],
+      "affects": [
+        "weekly-note-prefix-match"
+      ],
       "notes": "Only ever populated for the weekly granularity, via getWeeklyNoteSettings() (obsidian-daily-notes-interface/src/settings.ts:67-97); the daily/monthly/quarterly/yearly getters never read or set this field. Local addition; does not exist upstream."
     }
   ],
@@ -426,7 +643,9 @@
       "signature": "(granularity: 'day' | 'week' | 'month' | 'quarter' | 'year', date: Moment, opts?: { inNewSplit?: boolean; calendarSet?: string }) => Promise<void>",
       "path": "obsidian-calendar-plugin/src/settings.ts:59-63 (fork-local type declaration of this runtime API on the Periodic Notes plugin instance; not itself defined in any of the three forks' diffed source)",
       "stability": "accidental",
-      "consumers": ["obsidian-calendar-plugin"]
+      "consumers": [
+        "obsidian-calendar-plugin"
+      ]
     },
     {
       "export": "calendarSetManager.getActiveGranularities",
@@ -434,7 +653,9 @@
       "signature": "() => Granularity[] (granularities active in the Periodic Notes plugin's active calendar set)",
       "path": "obsidian-calendar-plugin/src/settings.ts:88-96 (fork-local call site; the method itself lives in obsidian-periodic-notes' own plugin instance, outside this diff's scope)",
       "stability": "accidental",
-      "consumers": ["obsidian-calendar-plugin"]
+      "consumers": [
+        "obsidian-calendar-plugin"
+      ]
     }
   ],
   "observations": [
@@ -442,154 +663,212 @@
       "severity": "P1",
       "kind": "bug",
       "what": "appHasPeriodicNotesPluginLoaded() (used by the Calendar plugin's own settings tab to decide whether to show deprecated weekly-note settings) only checked the community-store 'periodic-notes' plugin id. With only a dev-id build installed, it wrongly reported Periodic Notes as absent and kept showing the deprecated weekly-note settings UI.",
-      "where": ["obsidian-calendar-plugin:src/settings.ts:48-56@7727890"],
+      "where": [
+        "obsidian-calendar-plugin:src/settings.ts:48-56@7727890"
+      ],
       "why_it_matters": "If the dev-id fallback is dropped in the merge, any install running only the dev-id Periodic Notes build regresses to showing dead legacy weekly settings, and a user could reconfigure weekly notes in a UI that no longer does anything."
     },
     {
       "severity": "P2",
       "kind": "bug",
       "what": "revealActiveNote() bypassed the shared date parser for weekly notes, calling an inline strict-only moment(filename, format, true) parse. A weekly note whose filename only prefix-matches its format was correctly indexed and shown as a dot on the calendar, but 'reveal active note' failed to jump to it. Fixed by routing through getDateFromFile(file, \"week\") instead.",
-      "where": ["obsidian-calendar-plugin:src/view.ts:301-320@7727890"],
+      "where": [
+        "obsidian-calendar-plugin:src/view.ts:301-320@7727890"
+      ],
       "why_it_matters": "Dropping this makes 'reveal active note' silently fail for any prefix-matched weekly note, even though the same note is otherwise fully recognized -- an inconsistent, hard-to-notice regression."
     },
     {
       "severity": "P2",
       "kind": "coupling",
       "what": "package.json/yarn.lock originally pinned obsidian-daily-notes-interface via a machine-local git+file:// URL, duplicated in both 'dependencies' and a yarn 'resolutions' block, specifically to force yarn to dedupe the plugin's own direct dependency and the copy obsidian-calendar-ui pulls in transitively onto a single installed instance.",
-      "where": ["obsidian-calendar-plugin:package.json:1@8e2545b"],
+      "where": [
+        "obsidian-calendar-plugin:package.json:1@8e2545b"
+      ],
       "why_it_matters": "Documents why the resolutions block exists at all: without it, two divergent copies of obsidian-daily-notes-interface (one carrying the anks fixes, one not) could end up bundled side by side. Superseded in the very next commit by a network-resolvable pin, but the resolutions-block *pattern* must survive."
     },
     {
       "severity": "P2",
       "kind": "bug",
       "what": "The git+file:// URL for obsidian-daily-notes-interface only resolves on the machine it was authored on. Replaced with a github:matisnape/obsidian-daily-notes-interface#<sha> pinned ref (in both 'dependencies' and 'resolutions') so the repo installs anywhere.",
-      "where": ["obsidian-calendar-plugin:package.json:16@102ad6d", "obsidian-calendar-plugin:package.json:21@102ad6d"],
+      "where": [
+        "obsidian-calendar-plugin:package.json:16@102ad6d",
+        "obsidian-calendar-plugin:package.json:21@102ad6d"
+      ],
       "why_it_matters": "This is the load-bearing, portable form of the dependency pin. If a merge collapses these into one repo, this specific pin becomes moot -- but until then, dropping it back to a file:// or machine-local path breaks `yarn install` on any other machine or in CI."
     },
     {
       "severity": "P3",
       "kind": "bug",
       "what": "Pinned Node to 24.12.0 via .tool-versions (mise); the build already worked cleanly on it, this just avoids requiring an older toolchain.",
-      "where": ["obsidian-calendar-plugin:.tool-versions:1@bbdd13c"],
+      "where": [
+        "obsidian-calendar-plugin:.tool-versions:1@bbdd13c"
+      ],
       "why_it_matters": "Build-only convenience; worth carrying into the merged repo's own .tool-versions so contributors don't hit toolchain drift, but nothing breaks at runtime if dropped."
     },
     {
       "severity": "P2",
       "kind": "version-skew",
       "what": "Re-pinned the obsidian-daily-notes-interface dependency and resolutions entry from an earlier sha to bba664e, to pick up the monthly/quarterly/yearly dev-id-fallback fix landed in that commit.",
-      "where": ["obsidian-calendar-plugin:package.json:16@dc780c0", "obsidian-calendar-plugin:package.json:21@dc780c0"],
+      "where": [
+        "obsidian-calendar-plugin:package.json:16@dc780c0",
+        "obsidian-calendar-plugin:package.json:21@dc780c0"
+      ],
       "why_it_matters": "Encodes that bba664e (not an earlier DNI commit) is the authoritative state of obsidian-daily-notes-interface. Merging an older DNI snapshot silently reintroduces the monthly/quarterly/yearly plugin-detection bug that bba664e fixed."
     },
     {
       "severity": "P2",
       "kind": "divergence",
       "what": "New feature: clicking the calendar sidebar's month header (h3.title) opens/creates that month's periodic note via Periodic Notes' openPeriodicNote('month', ...), instead of only resetting the view to the current month. Meta/Ctrl-click opens a new split. Implemented via a capture-phase click listener on the view container plus a new Calendar.svelte export, getDisplayedMonth().",
-      "where": ["obsidian-calendar-plugin:src/view.ts:144-178@5ed4307", "obsidian-calendar-plugin:src/ui/Calendar.svelte:36-38@5ed4307"],
+      "where": [
+        "obsidian-calendar-plugin:src/view.ts:144-178@5ed4307",
+        "obsidian-calendar-plugin:src/ui/Calendar.svelte:36-38@5ed4307"
+      ],
       "why_it_matters": "No upstream code or documentation describes this. Dropping it silently removes a feature users rely on, with no error: it degrades gracefully back to the old reset-to-current-month click, so the loss would not be noticed until someone asks 'where did month-click-to-open go'."
     },
     {
       "severity": "P1",
       "kind": "bug",
       "what": "getMonthlyNotesPeriodicNotesPlugin() (added in 5ed4307) read periodicNotes.settings.monthly, but 'settings' is a Svelte writable store, not a plain object, so that property access was always undefined and the guard always returned null -- the month-header-click feature from the previous commit never actually fired for any user. Fixed by checking the plugin's public calendarSetManager.getActiveGranularities() instead, failing closed if that API is unavailable, and verifying openPeriodicNote exists before returning the plugin.",
-      "where": ["obsidian-calendar-plugin:src/settings.ts:72-111@39040cd"],
+      "where": [
+        "obsidian-calendar-plugin:src/settings.ts:72-111@39040cd"
+      ],
       "why_it_matters": "This is the commit that actually makes capability open-monthly-note-from-header work at all. Porting 5ed4307 into a merge without also porting 39040cd ships dead-on-arrival code: the click handler runs but silently no-ops on every click, which is worse than not having the feature because it looks broken rather than absent."
     },
     {
       "severity": "P2",
       "kind": "divergence",
       "what": "New opt-in 'Allow prefix matching' setting per calendar-set granularity in Periodic Notes. PeriodicNotesCache.resolve() now accepts filenames that only start with the configured format via the new getDateWithPrefixFallback(), which tries every possible format for the granularity strictly first, then loosely, requiring the reformatted date to be a prefix of the filename.",
-      "where": ["obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8", "obsidian-periodic-notes:src/cache.ts:206-222@e50b8e8"],
+      "where": [
+        "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8",
+        "obsidian-periodic-notes:src/cache.ts:206-222@e50b8e8"
+      ],
       "why_it_matters": "This is the setting the whole allow-prefix-match feature family (this repo and daily-notes-interface) is built around. If dropped, any weekly/monthly/etc. note named with extra suffix text after the date format (e.g. '2026-W07, 09.02 - 15.02.md') silently stops being recognized as a periodic note."
     },
     {
       "severity": "P1",
       "kind": "bug",
       "what": "Details.svelte's onMount crashed with 'Cannot read properties of undefined (reading scroll)' (with a follow-on 'Cannot read properties of null (reading insertBefore)' leaving the settings pane half-mounted), because Obsidian 1.13 changed the settings-modal DOM and '.vertical-tab-content' can be absent at mount time. Fixed with optional chaining.",
-      "where": ["obsidian-periodic-notes:src/settings/pages/details/Details.svelte:102-108@07f0df9"],
+      "where": [
+        "obsidian-periodic-notes:src/settings/pages/details/Details.svelte:102-108@07f0df9"
+      ],
       "why_it_matters": "Without this guard, the Periodic Notes settings tab hard-crashes on Obsidian 1.13+, making the plugin's settings unusable on any currently-shipping Obsidian version. This is a correctness fix, not a cosmetic one."
     },
     {
       "severity": "P3",
       "kind": "bug",
       "what": "svelte-check 2.7.0 cannot parse inline type-only import specifiers already used in this repo's .svelte files ('import { type X }'), failing the lint step with spurious parser errors even though esbuild compiles the same TS 4.6-valid code fine. Dropped 'yarn run lint &&' from the production build script; lint remains runnable standalone via 'npm run lint'.",
-      "where": ["obsidian-periodic-notes:package.json:12@b8ff1f4"],
+      "where": [
+        "obsidian-periodic-notes:package.json:12@b8ff1f4"
+      ],
       "why_it_matters": "Build-only. If a merge reintroduces a build script that runs lint-before-build (e.g. by copying an older script verbatim), CI/local builds break on a lint false-positive despite correct code."
     },
     {
       "severity": "P2",
       "kind": "bug",
       "what": "esbuild.config.mjs's bare 'import manifest from \"./manifest.json\"' fails under Node >=17 without an import attribute (ERR_IMPORT_ATTRIBUTE_MISSING), which this file never had. Replaced with 'JSON.parse(readFileSync(\"./manifest.json\", \"utf8\"))'. Node pinned to 24.12.0 via .tool-versions.",
-      "where": ["obsidian-periodic-notes:esbuild.config.mjs:1-8@e332ac6"],
+      "where": [
+        "obsidian-periodic-notes:esbuild.config.mjs:1-8@e332ac6"
+      ],
       "why_it_matters": "Build-only, but a total build failure on modern Node if reverted. Note this differs from how the other two forks avoid the equivalent class of Node-version issue -- neither of them had a bare JSON import to begin with, so this fix pattern is specific to this repo's esbuild setup and won't automatically transfer if the merge consolidates build tooling."
     },
     {
       "severity": "P2",
       "kind": "divergence",
       "what": "New opt-in prefix-match fallback for weekly note filenames in obsidian-daily-notes-interface: getDateFromFilename() retries with a loose (non-strict) moment parse, accepted only if the reformatted date is a prefix of the filename, but only when settings.allowPrefixMatch is true (plumbed from Periodic Notes' weekly settings; always false when the settings source is the Calendar plugin's own non-periodic-notes weekly config).",
-      "where": ["obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3", "obsidian-daily-notes-interface:src/types.ts:6@c2c96e3"],
+      "where": [
+        "obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3",
+        "obsidian-daily-notes-interface:src/types.ts:6@c2c96e3"
+      ],
       "why_it_matters": "This is the parsing primitive both obsidian-calendar-plugin's revealActiveNote() and the Calendar's own weekly-note dot-indexing depend on. It is independent of, and behaviorally different from, obsidian-periodic-notes' own getDateWithPrefixFallback() (see the duplication observation below), so dropping just one of the two implementations changes behavior only for whichever install path used it."
     },
     {
       "severity": "P2",
       "kind": "duplication",
       "what": "obsidian-daily-notes-interface's getDateFromFilename() prefix-match branch and obsidian-periodic-notes' getDateWithPrefixFallback() independently implement the same 'accept a filename that only starts with the format' idea, but differently: daily-notes-interface only tries the single format resolved for the requested granularity and preserves the pre-existing ambiguous-week-format special case (isFormatAmbiguous) only on its exact-match branch; periodic-notes tries every possible format for the granularity (getPossibleFormats) and has no ambiguous-format handling at all.",
-      "where": ["obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3", "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8"],
+      "where": [
+        "obsidian-daily-notes-interface:src/parse.ts:61-113@c2c96e3",
+        "obsidian-periodic-notes:src/utils.ts:197-215@e50b8e8"
+      ],
       "why_it_matters": "A merge that keeps only one implementation changes which weekly filenames resolve for calendar-plugin-only installs (which go through daily-notes-interface, not periodic-notes) versus periodic-notes-driven installs. This is a silent behavior change for edge-case filenames (e.g. ambiguous week-only formats) depending on which implementation is picked as canonical."
     },
     {
       "severity": "P1",
       "kind": "bug",
       "what": "appHasDailyNotesPluginLoaded(), appHasWeeklyNotesPluginLoaded(), and the Calendar-plugin lookup inside getWeeklyNoteSettings() only checked the community-store plugin ids ('periodic-notes', 'calendar'). With a side-installed dev-id build ('periodic-notes-anks'/'calendar-anks') present instead of the store copy, these wrongly reported daily/weekly notes as unavailable. New getPeriodicNotesPlugin() helper (dev id tried first) is now used by every getter in this file.",
-      "where": ["obsidian-daily-notes-interface:src/index.ts:12-49@be90253", "obsidian-daily-notes-interface:src/settings.ts:15-97@be90253"],
+      "where": [
+        "obsidian-daily-notes-interface:src/index.ts:12-49@be90253",
+        "obsidian-daily-notes-interface:src/settings.ts:15-97@be90253"
+      ],
       "why_it_matters": "This is the load-bearing plugin-detection fix for running a dev build alongside a store build. Without it, daily/weekly note creation and settings resolution silently use the wrong (or no) settings source across every consumer of this library."
     },
     {
       "severity": "P2",
       "kind": "gap",
       "what": "package.json had no 'prepare' script; npm/yarn only ran 'build' (lint + rollup) on an explicit invocation, not automatically after a git-URL clone. A consumer installing this package via a github: dependency (as obsidian-calendar-plugin now does) got only TypeScript sources with no dist/main.js, breaking module resolution entirely. Added 'prepare': 'rollup -c'.",
-      "where": ["obsidian-daily-notes-interface:package.json:18@faae012"],
+      "where": [
+        "obsidian-daily-notes-interface:package.json:18@faae012"
+      ],
       "why_it_matters": "Not a runtime behavior change but a total install-breaker for any git-URL consumer under the current multi-repo setup. Becomes moot once everything lives in one merged repo (no git-dependency indirection left), but until/unless that happens, dropping this script breaks the whole dependency chain silently (the failure only surfaces as a missing-module error deep in the consumer's build)."
     },
     {
       "severity": "P3",
       "kind": "bug",
       "what": "Pinned Node to 24.12.0 via .tool-versions (mise); build already worked cleanly on it.",
-      "where": ["obsidian-daily-notes-interface:.tool-versions:1@fba3dda"],
+      "where": [
+        "obsidian-daily-notes-interface:.tool-versions:1@fba3dda"
+      ],
       "why_it_matters": "Build-only convenience, matches the same pin applied in the other two forks. Nothing breaks at runtime if dropped."
     },
     {
       "severity": "P1",
       "kind": "bug",
       "what": "appHasMonthlyNotesPluginLoaded, appHasQuarterlyNotesPluginLoaded, and appHasYearlyNotesPluginLoaded still inlined app.plugins.getPlugin('periodic-notes') directly, missing the dev-id fallback that be90253 had already applied to the daily/weekly checks -- so with only a dev-id Periodic Notes build installed, monthly/quarterly/yearly note-availability detection wrongly reported the plugin as unavailable. Now export and reuse getPeriodicNotesPlugin() from settings.ts in all three.",
-      "where": ["obsidian-daily-notes-interface:src/index.ts:51-64@bba664e", "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"],
+      "where": [
+        "obsidian-daily-notes-interface:src/index.ts:51-64@bba664e",
+        "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
+      ],
       "why_it_matters": "Same class of bug as be90253, but for three more granularities that be90253 missed. A merge that ports be90253 but not this follow-up commit reintroduces this exact gap for monthly/quarterly/yearly notes."
     },
     {
       "severity": "P2",
       "kind": "duplication",
       "what": "obsidian-calendar-plugin re-implements the dev-id-then-store-id plugin lookup inline in its own src/settings.ts (appHasPeriodicNotesPluginLoaded, getMonthlyNotesPeriodicNotesPlugin) instead of importing daily-notes-interface's now-exported getPeriodicNotesPlugin() (public since bba664e), even though obsidian-calendar-plugin already depends on obsidian-daily-notes-interface directly.",
-      "where": ["obsidian-calendar-plugin:src/settings.ts:48-56@7727890", "obsidian-calendar-plugin:src/settings.ts:72-82@5ed4307", "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"],
+      "where": [
+        "obsidian-calendar-plugin:src/settings.ts:48-56@7727890",
+        "obsidian-calendar-plugin:src/settings.ts:72-82@5ed4307",
+        "obsidian-daily-notes-interface:src/settings.ts:15-23@bba664e"
+      ],
       "why_it_matters": "Three independent copies of the same hardcoded 'periodic-notes-anks' id now exist across the two forks. A merge should consolidate to one; otherwise a future rename of the dev-build id has to be applied correctly in three places instead of one, and it's easy to miss one (as bba664e itself demonstrates happened once already)."
     },
     {
       "severity": "P2",
       "kind": "version-skew",
       "what": "The obsidian-calendar-ui dependency actually built into obsidian-calendar-plugin is the published npm package version 0.3.12 (resolved from registry.yarnpkg.com per yarn.lock), NOT the locally checked-out /Users/anna.nowak/projects/obsidian/obsidian-calendar-ui repo. That local checkout's package.json reports version 0.4.0, and its HEAD commit message ('Fixes for 2.0-beta.2 ...') indicates a later, unreleased development line. The local checkout carries no local (anks) commits -- HEAD equals origin/master exactly -- so it is faithful to liamcain's own repo, but it is a different, newer version of the code than what the plugin actually consumes at build time.",
-      "where": ["obsidian-calendar-plugin:yarn.lock:3204-3218", "obsidian-calendar-ui:package.json:3"],
+      "where": [
+        "obsidian-calendar-plugin:yarn.lock:3204-3218",
+        "obsidian-calendar-ui:package.json:3"
+      ],
       "why_it_matters": "An agent porting 'what obsidian-calendar-ui does' by reading the local checkout will describe UI behavior (0.4.0 / 2.0-beta.2, e.g. its 'properly unload UI and eventlisteners' and month-metadata-refresh fixes) that is not what is actually bundled into the plugin today (0.3.12). The merge must explicitly decide which calendar-ui version's behavior to carry forward, since the two are not the same code and the newer one was never actually wired in."
     },
     {
       "severity": "P3",
       "kind": "gap",
       "what": "obsidian-calendar-ui carries no fork-local modifications: HEAD (c275987) is byte-identical to origin/master, and its only configured remote, 'origin', already points at liamcain/obsidian-calendar-ui -- there is no separate matisnape fork or 'upstream' remote for this repo. git status and git stash list are both empty.",
-      "where": ["obsidian-calendar-ui:HEAD"],
+      "where": [
+        "obsidian-calendar-ui:HEAD"
+      ],
       "why_it_matters": "Confirms this repo needs no divergence-preservation work of its own during the merge; the only thing that matters from it is the version-pin mismatch captured in the observation above."
     },
     {
       "severity": "P3",
       "kind": "gap",
       "what": "All four repos (obsidian-calendar-plugin, obsidian-periodic-notes, obsidian-daily-notes-interface, obsidian-calendar-ui) have completely clean working trees ('git status --porcelain' empty) and empty stash lists ('git stash list' empty) as of the analysis date.",
-      "where": ["obsidian-calendar-plugin:HEAD", "obsidian-periodic-notes:HEAD", "obsidian-daily-notes-interface:HEAD", "obsidian-calendar-ui:HEAD"],
+      "where": [
+        "obsidian-calendar-plugin:HEAD",
+        "obsidian-periodic-notes:HEAD",
+        "obsidian-daily-notes-interface:HEAD",
+        "obsidian-calendar-ui:HEAD"
+      ],
       "why_it_matters": "Confirms this observation list is complete relative to on-disk state: nothing is sitting uncommitted or stashed that would be silently lost on top of what the commit history already captures."
     }
   ]
