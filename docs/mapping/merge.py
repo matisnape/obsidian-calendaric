@@ -182,6 +182,9 @@ def canonicalise(out):
 
     for obs in REVIEW_OBSERVATIONS:
         out["observations"].append({**obs, "source": "review"})
+    # Its citations name each repository from the directory that holds them all,
+    # which is exactly the forks source's root.
+    ROOTS["review"] = ROOTS.get("forks")
 
 
 ROOTS = {}
@@ -215,7 +218,7 @@ def parse_line_spec(lines):
 GIT_REFS = {"HEAD", "ORIG_HEAD", "FETCH_HEAD"}
 
 
-def cite(owner, source, text, problems, own_modules=(), sibling_repos=()):
+def cite(owner, source, text, problems, own_modules=(), sibling_repos=None):
     """Split one observation `where` entry into a checkable (path, lines) pair.
 
     The grammar the sources use is
@@ -225,16 +228,18 @@ def cite(owner, source, text, problems, own_modules=(), sibling_repos=()):
     qualifier and is rejected. A sibling repository must be one of the declared
     source roots; only then may the path leave this source's own root.
     """
+    sibling_repos = sibling_repos or {}
     if not isinstance(text, str) or not text.strip():
         problems.append(f"{owner} has a citation that is not a path: {text!r}")
         return []
-    text = text.strip()
+    raw = text = text.strip()
     if text in ("—", "-", "n/a"):
         return []
     if text.endswith(")") and "(" in text:
         text = text[:text.index("(")].strip()
     text = re.sub(r"@[0-9a-f]{6,40}$", "", text).strip()
     if not text:
+        problems.append(f"{owner} cites {raw!r}, which names nothing once the revision is removed")
         return []
 
     parts = text.split(":")
@@ -244,7 +249,7 @@ def cite(owner, source, text, problems, own_modules=(), sibling_repos=()):
         if head in own_modules:
             parts = parts[1:]
         elif head in sibling_repos:
-            sibling, parts = head, parts[1:]
+            sibling, parts = sibling_repos[head], parts[1:]
         elif "/" not in head and not head.endswith((".ts", ".js", ".json", ".md", ".svelte",
                                                     ".mjs", ".base", ".lock", ".yml")):
             problems.append(
@@ -264,8 +269,12 @@ def cite(owner, source, text, problems, own_modules=(), sibling_repos=()):
         problems.append(f"{owner} cites {text!r}, which names no file")
         return []
     if path in GIT_REFS:
-        # Names the repository at a revision, not a file in it.
-        return [(owner, sibling or source, "./", None, True)] if sibling else []
+        # `<sibling-repo>:HEAD` names that repository at a revision. A bare git
+        # ref names nothing the schema knows about.
+        if not sibling:
+            problems.append(f"{owner} cites {raw!r}, which is a bare git ref, not a path")
+            return []
+        return [(owner, sibling, ".", None, True)]
     return [(owner, sibling or source, path, lines, True)]
 
 
@@ -282,7 +291,7 @@ def check_citations(out):
     for m in out["modules"]:
         own_modules.setdefault(m["source"], set()).add(m["id"])
     # A sibling repository is a declared source root, named by its directory.
-    sibling_repos = {pathlib.Path(r).name for r in ROOTS.values() if r}
+    sibling_repos = {pathlib.Path(r).name: sid for sid, r in ROOTS.items() if r}
 
     records = []
     for c in out["capabilities"]:
@@ -296,27 +305,38 @@ def check_citations(out):
         for where in obs.get("where") or []:
             records += cite(obs.get("id", "?"), obs["source"], where, problems,
                             own_modules.get(obs["source"], set()), sibling_repos)
+    observation_owners = {r[0] for r in records}
     for key, field in (("settings", "key"), ("commands", "id"), ("api_surface", "export")):
         for rec in out.get(key) or []:
             path = rec.get("path")
             owner = f"{rec['source']}:{rec.get(field, '?')}"
-            if not isinstance(path, str):
-                problems.append(f"{owner} has a {key[:-1]} path that is not a string: {path!r}")
+            if not isinstance(path, str) or not path.strip():
+                problems.append(f"{owner} has a {key[:-1]} path that is not a path: {path!r}")
                 continue
             # One record may cite several files, separated by ';'.
             for segment in path.split(";"):
                 segment = segment.strip()
                 if not segment:
+                    problems.append(f"{owner} has an empty segment in its path {path!r}")
                     continue
                 head, sep, tail = segment.rpartition(":")
                 if sep and re.fullmatch(r"[\d,\s-]+", tail):
+                    if not head.strip():
+                        problems.append(f"{owner} cites {segment!r}, which names no file")
+                        continue
                     records.append((owner, rec["source"], head.strip(), tail, False))
                 else:
                     records.append((owner, rec["source"], segment, None, False))
 
     for owner, source, path, lines, may_cross in records:
+        if path in ("—", "-", "n/a"):
+            continue        # explicit marker: this record cites no file on purpose
+        if not isinstance(path, str) or not path.strip():
+            problems.append(f"{owner} has a citation with no path: {path!r}")
+            continue
         root = ROOTS.get(source)
-        if not root or not isinstance(path, str) or not path or path in ("—", "-"):
+        if not root:
+            problems.append(f"{owner} cites source {source}, which has no root")
             continue
         if pathlib.PurePosixPath(path).is_absolute() or ".." in pathlib.PurePosixPath(path).parts:
             problems.append(f"{owner} cites {path}, which leaves its source root")
@@ -328,8 +348,11 @@ def check_citations(out):
         candidates = [base / path]
         if may_cross and path.split("/", 1)[0] in sibling_repos:
             candidates.append(base.parent / path)
-        if path.endswith("/") or path == "./":
-            if not any(c.is_dir() for c in candidates):
+        if path.endswith("/") or path in ("./", "."):
+            if not may_cross:
+                problems.append(f"{owner} cites the directory {path}, but this record must name "
+                                f"the file that defines it")
+            elif not any(c.is_dir() for c in candidates):
                 problems.append(f"{owner} cites missing directory {path}")
             continue
         fp = next((c for c in candidates if c.is_file()), None)

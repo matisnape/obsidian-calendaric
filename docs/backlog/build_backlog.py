@@ -184,10 +184,16 @@ def main() -> int:
             problems.append(f"ICE: entry numbers are not 01..nn without gaps ({sorted(nums)})")
 
     # --- coverage -----------------------------------------------------------
+    # A reason has to be prose. A number, a zero-width space and a combining mark
+    # each satisfied the earlier version of this check.
+    INVISIBLE = ("Cc", "Cf", "Cs", "Co", "Cn", "Zs", "Zl", "Zp", "Mn", "Me")
+
     def has_text(value):
-        """True when a string still has a visible character once formatting goes."""
-        return any(unicodedata.category(ch) not in ("Cf", "Cc", "Zs", "Zl", "Zp")
-                   for ch in str(value or ""))
+        """True for a string carrying at least one visible base character."""
+        if not isinstance(value, str):
+            return False
+        return any(unicodedata.category(ch) not in INVISIBLE
+                   for ch in unicodedata.normalize("NFKC", value))
 
     covered = defaultdict(list)
     for owner in stories + icebox:
