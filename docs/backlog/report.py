@@ -87,7 +87,8 @@ def overview():
 
     c = BL["coverage"]
     print(f"\ncoverage: {c['build_covered']}/{c['build_total']} capabilities carried by a story, "
-          f"{c['build_excused']} folded into another story; icebox {c['icebox_covered']}/{c['icebox_total']}")
+          f"{c['build_excused']} accounted for without a separate story; "
+          f"icebox {c['icebox_covered']}/{c['icebox_total']}")
 
 
 def agent_view():

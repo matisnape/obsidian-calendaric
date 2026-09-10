@@ -372,9 +372,9 @@
     {
       "id": "US-TPL-05",
       "epic": "TPL",
-      "title": "Guarantee what happens to a created note's content once an external template engine takes over",
-      "story": "As someone whose real templates hand off renaming, moving, and further content generation to a full template engine, I want this plugin's own token substitution to happen exactly once and never fight or repeat itself, so that the engine's later changes stick instead of being reverted or duplicated.",
-      "rationale": "Every real template in this vault relies on a second engine doing the heavy lifting after creation; if this plugin ever re-applies its own template or assumes the file stays where and how it left it, that hand-off breaks.",
+      "title": "Do not reapply a template after note creation",
+      "story": "As someone whose templates use another plugin to rename, move, or add content to a new note, I want Calendaric to apply its own template only once, so that later changes are not reverted or duplicated.",
+      "rationale": "Every template in this vault hands later changes to another plugin. Reapplying Calendaric's template would overwrite or duplicate those changes.",
       "priority": "must",
       "status": "todo",
       "covers": [],

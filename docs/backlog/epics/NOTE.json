@@ -74,7 +74,8 @@
           "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a lookup is requested for it",
           "then": [
-            "a clear, actionable error is reported instead of an incorrect or silent result"
+            "the error names the requested granularity and says it is not supported in this release",
+            "no file is returned"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -329,7 +330,8 @@
           "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a note creation is requested for it",
           "then": [
-            "a clear, actionable error is reported naming the unsupported granularity, instead of an internal or unhandled failure"
+            "the error names the requested granularity and says it is not supported in this release",
+            "no file is created"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -371,7 +373,7 @@
           "given": "the exact path a new note would occupy is taken by something that is not a markdown note (for example a folder)",
           "when": "a create is requested for that period",
           "then": [
-            "the create fails with a clear, actionable error naming the conflict",
+            "the error names the occupied path and says it is not a Markdown note",
             "nothing at that path is altered or deleted"
           ],
           "verifies": "behaviour",
@@ -644,7 +646,7 @@
           "given": "creating the note for the activated period fails",
           "when": "that period is activated",
           "then": [
-            "a clear, actionable error is shown",
+            "the error names the period and says the note could not be created",
             "no blank or broken pane is left open in place of a real note"
           ],
           "verifies": "behaviour",
@@ -834,8 +836,8 @@
     {
       "id": "US-NOTE-10",
       "epic": "NOTE",
-      "title": "Auto-apply the template to a manually created periodic-shaped file",
-      "story": "As someone who sometimes creates a file by hand and names it to match my daily format instead of using a command, I want that file to get the same template as one the plugin created for me, so that I never end up with an untemplated gap in my journal just because of how the file came to exist.",
+      "title": "Template a manually created file that matches note settings",
+      "story": "As someone who creates note files by hand, I want an empty file whose folder and filename match a configured periodic-note folder and format to receive the configured template, so that manually created notes match notes created by Calendaric.",
       "rationale": "A note's origin should not change what it looks like once it is recognised as a period's note.",
       "priority": "should",
       "status": "todo",
@@ -883,7 +885,7 @@
         },
         {
           "id": "AC-NOTE-10.3",
-          "given": "an empty, periodic-shaped file already existed in the vault before Calendaric first started",
+          "given": "an empty file whose folder and filename match a configured periodic-note folder and format already existed before Calendaric first started",
           "when": "that startup lookup resolves the file",
           "then": [
             "the template is not retroactively applied to it",
@@ -899,9 +901,9 @@
       "decisions": [
         {
           "id": "DEC-13",
-          "title": "Startup indexes without templating; anything appearing later is templated",
+          "title": "Leave matching files unchanged at startup; template later arrivals",
           "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
-          "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
+          "rationale": "A matching file has a folder and filename that match a configured periodic-note folder and format. The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
           "resolves": [
             "Q-NOTE-10.1"
           ],

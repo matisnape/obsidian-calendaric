@@ -1,9 +1,23 @@
-# Shared output schema — Calendaric merge mapping
+# Source-mapping schema
 
-You are one of several agents mapping a family of Obsidian plugins/libraries.
-The end goal (context only, not your task): merge them into a single plugin repo
-`obsidian-calendaric`. Your output must be mechanical enough that another agent
-can port a feature from it without re-reading the original repo.
+## TL;DR
+
+The goal is to preserve useful behaviour in a new Calendaric plugin, not to
+merge the old code. Record enough source evidence for an agent to reimplement
+and verify each behaviour without rereading the original repository.
+
+You are mapping one of several related Obsidian plugins or libraries. Write one
+JSON file that follows this schema.
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **Capability** | One behaviour a user or another piece of code can rely on. |
+| **Flow** | An ordered path from a user action to its result. |
+| **Module** | The smallest source-code unit worth naming, usually one file or a focused folder. |
+| **Observation** | A risk or constraint that does not fit the other record types. |
+| **Source root** | The top directory of the repository or vault being mapped. |
 
 Write **one JSON file** to the path given in your assignment. Nothing else is
 written anywhere. Do not modify any repository.
@@ -29,8 +43,9 @@ written anywhere. Do not modify any repository.
 }
 ```
 
-Every array is required. Use `[]` when a section genuinely does not apply
-(e.g. a pure library has no `commands`). Do not invent entries to fill a section.
+Every array is required. Use `[]` when a section genuinely does not apply. For
+example, a pure library may have no `commands`. Do not invent entries to fill a
+section.
 
 ## modules[]
 
@@ -53,7 +68,7 @@ one source file or one tight folder.
 ## capabilities[]
 
 One discrete piece of behaviour a user or a caller can rely on. This is the
-most important array — it becomes the port checklist.
+most important array — it becomes the reimplementation checklist.
 
 ```json
 {
@@ -61,7 +76,7 @@ most important array — it becomes the port checklist.
   "name": "Create a daily note",
   "category": "notes",
   "surface": "api",                  // api | command | ui | setting | event | integration | template-token
-  "description": "1-2 sentences, concrete. What happens, and what the caller gets back.",
+  "description": "One or two concrete sentences: what happens and what the caller gets back.",
   "granularity": ["day"],            // day|week|month|quarter|year|any|n-a  (array)
   "defined_in": [
     { "module": "dni-daily", "symbol": "createDailyNote", "path": "src/daily.ts", "lines": "31-73" }
@@ -79,7 +94,7 @@ most important array — it becomes the port checklist.
 
 Rules for `capabilities[]`:
 - Split by *behaviour*, not by function count. A 5-line wrapper that adds nothing is not its own capability — fold it into the one it wraps and say so in `behaviour_notes`.
-- Do include quiet behaviour: caching, invalidation, error paths, migrations, locale handling, event emission. These are the things a merge loses silently.
+- Do include quiet behaviour: caching, invalidation, error paths, migrations, locale handling, event emission. These are the things a rewrite can miss silently.
 - `lines` must be real. If you did not open the file, set `confidence: "inferred"` and omit `lines`.
 
 ## flows[]
@@ -90,7 +105,7 @@ Ordered end-to-end paths, in the shape the repo-workflows viewer expects.
 {
   "id": "open-todays-note-from-ribbon",
   "title": "Open today's note from the ribbon icon",
-  "description": "1-2 sentences.",
+  "description": "One or two sentences.",
   "trigger": "user clicks the ribbon icon",     // what starts it
   "steps": [
     { "from": "cal-main", "to": "cal-view", "action": "reveal the calendar leaf", "payload": "—" },
@@ -102,7 +117,7 @@ Ordered end-to-end paths, in the shape the repo-workflows viewer expects.
 ```
 
 `from` / `to` must be module ids you declared in `modules[]`, or an id from
-another source if you are sure of it (prefix it, e.g. `obsidian-api`). Self-steps
+another source if you are sure of it (prefix it, for example `obsidian-api`). Self-steps
 (`from == to`) are allowed for internal state updates.
 
 Aim for the flows a *user* would name, not one flow per function. 6-12 per source
@@ -158,14 +173,14 @@ Only for units other code imports (libraries, or a plugin exposing an object on
 
 ## observations[]
 
-Anything a merge should know that does not fit above: duplicated logic between
+Anything a rewrite should know that does not fit above: duplicated logic between
 repos, dead code, version skew, a bug, an API that two repos implement
 differently, a place where the fork diverges.
 
 ```json
 {
   "id": "OBS-dni-01",                 // OBS-<your source id>-<nn>, numbered from 01 within your file
-  "severity": "P1",                   // P1 blocks the merge | P2 causes rework | P3 worth knowing
+  "severity": "P1",                   // P1 blocks the rewrite | P2 causes rework | P3 worth knowing
   "kind": "duplication",              // duplication | dead-code | version-skew | bug | divergence | gap | coupling
   "what": "Both repos implement week-number parsing, with different locale handling.",
   "where": ["dni-parse:src/parse.ts:20", "pn-parser:src/parser.ts:112"],
@@ -195,7 +210,7 @@ or a parenthetical aside, both of which are ignored.
 
 ## Categories
 
-Use exactly these ids so the outputs merge cleanly. Pick the closest fit.
+Use exactly these ids so the outputs combine cleanly. Pick the closest fit.
 
 | id | label | what belongs here |
 |---|---|---|

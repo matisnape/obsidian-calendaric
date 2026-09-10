@@ -29,3 +29,58 @@ Do not silently discard marker-only citations in `cite`. Preserve enough record 
 ## Is this loop still paying
 
 No. Fix the two small citation-parser gaps above, add their exact mutation regressions, and stop the open-ended adversarial rounds. The stories, acceptance criteria, and decisions have remained clean since round four; every later finding has required deliberately malformed schema data, and each round is now uncovering narrower variants of validator hardening rather than defects in the deliverable. With trusted agents following the documented schema, the remaining risk is smaller than the cost of another full round; after the targeted fixes, proceed to the W1–W16 writing-style pass.
+
+## Writing-style pass
+
+Files edited:
+
+- `docs/mapping/SCHEMA.md`
+- `docs/mapping/BACKLOG-SCHEMA.md`
+- `docs/mapping/README.md`
+- `docs/backlog/README.md`
+- `docs/backlog/epics/ARCH.json`
+- `docs/backlog/epics/CAL.json`
+- `docs/backlog/epics/CMD.json`
+- `docs/backlog/epics/FMT.json`
+- `docs/backlog/epics/ICE.json`
+- `docs/backlog/epics/MIG.json`
+- `docs/backlog/epics/NOTE.json`
+- `docs/backlog/epics/SET.json`
+- `docs/backlog/epics/TPL.json`
+- `docs/backlog/record_decision.py`
+- `docs/backlog/report.py`
+- `docs/backlog/backlog.json` (regenerated)
+- `docs/calendaric.html`
+- `docs/reviews/codex-round7.md`
+
+W1. Reframed the mapping schema as evidence for a fresh implementation, not a code merge.
+
+W2. Added an up-front backlog glossary for epic, granularity, coverage, and icebox.
+
+W3. Replaced “canonical identity” in US-FMT-06 with concrete note-date language.
+
+W4. Replaced the overloaded ARCH summary with two short boundary statements.
+
+W5. Reduced the ICE summary to its release decision, reversed deferral, and one data-model constraint.
+
+W6. Defined a matching periodic-note file in US-NOTE-10 and DEC-13 instead of calling it “periodic-shaped.”
+
+W7. Renamed and simplified US-TPL-05 around the observable rule: do not reapply a template.
+
+W8. Named the unstable dependencies in US-ARCH-07 and replaced “platform-specific surface” with “desktop-only API” in DEC-03.
+
+W9. Replaced “port interfaces” and “composition root” with descriptions of what those boundaries do.
+
+W10. Explained state containers through their accessor or subscription API instead of assuming “reactive store” knowledge.
+
+W11. Replaced four vague errors with required messages and explicit no-file outcomes.
+
+W12. Replaced “shortly after” with the mapped 250 ms dismissal delay.
+
+W13. Replaced “folded in” with “accounted for without a separate story” in reports, the viewer, and epic notes.
+
+W14. Shortened US-MIG-05 to “Choose one import source per granularity.”
+
+W15. Reduced the US-ARCH-06 story to one reproducible-build outcome.
+
+W16. Replaced “Timeline complication” in ICE-04 with “Timeline badge and seven-day navigator.”

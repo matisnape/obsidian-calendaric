@@ -1,4 +1,21 @@
-# Contract — writing the Calendaric backlog
+# Calendaric backlog writing contract
+
+## TL;DR
+
+Write observable user outcomes for one group of related work. Use the capability
+map as evidence, cover every assigned behaviour, and state at least one failure
+case for every story. Do not copy the old code structure into the backlog.
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **Acceptance criterion** | A testable condition that says when a story is complete. |
+| **Capability** | One mapped behaviour that the new plugin must preserve or explicitly defer. |
+| **Epic** | A group of related user stories. |
+| **Granularity** | A note period: day, week, month, quarter, or year. |
+| **Icebox** | Behaviour deliberately excluded from the first release. |
+| **UID** | A capability identifier in `<source>:<id>` form. |
 
 You are writing user stories and acceptance criteria for **one epic** of a
 rewrite. Another agent will later build the feature, and a third will read your
@@ -20,11 +37,11 @@ learn what the features do, then write what they are for.
 
 ## Input
 
-- `calendaric-map.json` — every mapped capability, setting, command, flow and observation.
-- `epic-assignment.json` — which capability `uid`s belong to your epic, and with what `role`:
-  - `build` — turn it into stories. Every `build` uid must be covered by at least one story.
-  - `evidence` — a real-world constraint from the user's vault. Not a story. Your stories must not contradict it, and where it pins behaviour down, cite it.
-  - `icebox` — not yours; another agent handles those.
+- `calendaric-map.json` — every mapped capability, setting, command, flow and observation
+- `epic-assignment.json` — which capability UIDs belong to your epic, and with what `role`:
+  - `build` — turn it into stories; every `build` UID must be covered by at least one story
+  - `evidence` — a real-world constraint from the user's vault; cite it when it fixes the required behaviour
+  - `icebox` — behaviour assigned to the separate icebox pass
 
 Read a capability's `defined_in` paths when the map's description is not enough.
 Reading the old code to understand the behaviour is right. Copying its structure
@@ -65,7 +82,7 @@ Field rules:
 - `story` — one sentence, "As … I want … so that …". The "so that" must carry real value; if it only repeats the "I want", the story is too small or too vague.
 - `priority` — `must` (the vault depends on it today), `should` (a source plugin has it and it is clearly worth keeping), `could` (nice, no evidence of use).
 - `status` — always `"todo"`. A later pass sets it from what Calendaric already implements.
-- `covers` — capability uids, exactly as written in `epic-assignment.json`. This is how coverage is reported, so it must be exact.
+- `covers` — capability UIDs, exactly as written in `epic-assignment.json`. This is how coverage is reported, so it must be exact.
 - `constrained_by` — `vault:*` uids whose real-world behaviour this story must not break. Empty array when none apply.
 - `granularity` — which periods the story applies to, or `["n-a"]`.
 - `depends_on` — story ids, including ids in other epics when you are sure of them (`US-FMT-01` etc.). Leave empty rather than guess a number.
@@ -122,8 +139,8 @@ One JSON file at the path your assignment names:
 }
 ```
 
-`uncovered[]` is how you account for a `build` uid that got no story of its own.
-Every `build` uid must appear either in some story's `covers[]` or in
+`uncovered[]` is how you account for a `build` UID that got no story of its own.
+Every `build` UID must appear either in some story's `covers[]` or in
 `uncovered[]` with a reason. A validator checks this, so an omission fails.
 
 ## Rules that apply to every agent

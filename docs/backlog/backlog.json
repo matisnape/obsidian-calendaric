@@ -40,7 +40,7 @@
       "notes": [
         "Rival implementation decision: US-FMT-04 adopts the 'try every candidate format' structure (the one that already expands nested-path formats into a full-path and a basename-only candidate), because that structure is required anyway to support nested folder formats. Layered on top, it keeps the week-number-vs-month/day disambiguation from the single-format implementation, but applies it consistently to both the exact-match and the prefix-match branch, fixing an inconsistency present in the old single-format implementation (which only disambiguated on its exact-match branch). The undecided residue (candidate tie-break order, and how narrowly the disambiguation rule is scoped) is listed in US-FMT-04's open_questions.",
         "pn:loose-date-parsing-fallback-global (a vault-wide loose date guess when no configured format matches at all) is icebox, not part of this epic; US-FMT-04's failure paths intentionally stop at 'not recognised' rather than falling back to a global guess.",
-        "forks:weekly-note-prefix-match and forks:periodic-note-prefix-match-setting describe the same prefix-matching feature family as pn:strict-then-prefix-date-parsing and pn:allow-prefix-match-gate, just observed from the other historical codebase; they are folded into the same story (US-FMT-04) rather than duplicated into a second one.",
+        "forks:weekly-note-prefix-match and forks:periodic-note-prefix-match-setting describe the same prefix-matching feature family as pn:strict-then-prefix-date-parsing and pn:allow-prefix-match-gate, just observed from the other historical codebase; US-FMT-04 accounts for all four without a duplicate story.",
         "Most acceptance criteria in this epic are unit-testable in isolation (pure date math), which is why testable_by is almost always 'unit' rather than 'integration' or 'manual'; the two 'integration' criteria in US-FMT-04 are the ones that assert against the real shape of the user's existing vault, and the one 'manual' criterion in US-FMT-03 covers a live-reload UX check that is hard to assert purely in a unit test.",
         "SET owns the settings UI for the format field, the prefix-match toggle, and the locale/week-start dropdowns; this epic owns only what those stored values must cause to happen. NOTE owns what happens once a note is found or not found (create, open, index); this epic only decides whether a given filename counts as a match. TPL owns the same {{weekday:fmt}} token syntax inside the note body; this epic owns only its use inside the filename format field, sharing the day-of-week resolution mechanism (dni:get-day-of-week-numerical-value) with TPL as a cross-epic dependency rather than a duplicated rule."
       ],
@@ -95,7 +95,7 @@
       "title": "Commands, ribbon, menus and startup behaviour",
       "summary": "This epic owns every way to reach a periodic note without opening the calendar view first: the command palette, the ribbon icon and its context menu, and automatic note-opening at vault startup. It also owns the calendar view's own entry point (opening and auto-revealing it) and reveal-in-calendar shortcuts. It does not own what a note operation actually does when triggered (NOTE), the calendar view's own grid and interactions once open (CAL), or which granularities are enabled and which note is configured to open at startup (SET) - it only owns how the command surface reacts to those choices.",
       "notes": [
-        "Every build uid assigned to CMD is covered by a story; nothing was folded into 'uncovered'.",
+        "Every build UID assigned to CMD is covered by a story; none is accounted for without a separate story.",
         "Most acceptance criteria in this epic need Obsidian's workspace, command and hotkey APIs to observe (testable_by: integration), because the epic is almost entirely about entry points into the host application rather than pure logic. The exceptions are the two per-command id-stability criteria in US-CMD-05 (snapshot-testable as plain string comparisons) and the startup-exclusivity criterion in US-CMD-09 (a pure settings transform, already unit-tested in one source plugin).",
         "US-CMD-06 and US-CMD-07 are written as separate stories on purpose: 'jump' never creates a note and reports when there is nothing to jump to, while 'open next/previous' always succeeds by creating the note. Their acceptance criteria show this contrast rather than stating it as a cross-command comparison.",
         "Commands that call into note creation or lookup (US-CMD-04, US-CMD-06, US-CMD-07, US-CMD-08, US-CMD-09) treat that creation/lookup as a black box owned by NOTE; this epic's criteria only cover whether the command is offered, and what the user sees at the entry point, not how the note itself is built."
@@ -117,7 +117,7 @@
     {
       "id": "ARCH",
       "title": "Architecture, boundaries, testability and release quality",
-      "summary": "This epic defines the architectural skeleton the other epics build inside: what layers exist, which way dependencies may point, what must be provable by a test without Obsidian running, and what a release must guarantee before it ships. Its boundary with the other epics is that it never describes user-visible behaviour itself — it constrains how the behaviour described elsewhere is allowed to be built, tested, documented and shipped.",
+      "summary": "ARCH defines module boundaries, test seams, and release gates. User-visible behaviour belongs to the other epics.",
       "notes": [
         "The two capability uids assigned to ARCH (forks:settings-tab-crash-guard-1.13, forks:git-dependency-self-build) are both single-defect fixes; every other criterion in this epic is derived directly from observations in calendaric-map.json rather than from a capability, per the schema's allowance for observation-derived criteria with covers left empty.",
         "US-ARCH-05 (extensibility) and parts of US-ARCH-06 (release quality) are marked testable_by \"manual\" because verifying them means actually attempting the exercise (add a granularity, add an indicator, break a tooling gate) and reviewing the result's shape, not running an existing automated check.",
@@ -199,7 +199,8 @@
           "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a lookup is requested for it",
           "then": [
-            "a clear, actionable error is reported instead of an incorrect or silent result"
+            "the error names the requested granularity and says it is not supported in this release",
+            "no file is returned"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -454,7 +455,8 @@
           "given": "a granularity outside the release set of day, week, month, and year (quarter is reserved and not enabled, per DEC-23)",
           "when": "a note creation is requested for it",
           "then": [
-            "a clear, actionable error is reported naming the unsupported granularity, instead of an internal or unhandled failure"
+            "the error names the requested granularity and says it is not supported in this release",
+            "no file is created"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -496,7 +498,7 @@
           "given": "the exact path a new note would occupy is taken by something that is not a markdown note (for example a folder)",
           "when": "a create is requested for that period",
           "then": [
-            "the create fails with a clear, actionable error naming the conflict",
+            "the error names the occupied path and says it is not a Markdown note",
             "nothing at that path is altered or deleted"
           ],
           "verifies": "behaviour",
@@ -769,7 +771,7 @@
           "given": "creating the note for the activated period fails",
           "when": "that period is activated",
           "then": [
-            "a clear, actionable error is shown",
+            "the error names the period and says the note could not be created",
             "no blank or broken pane is left open in place of a real note"
           ],
           "verifies": "behaviour",
@@ -959,8 +961,8 @@
     {
       "id": "US-NOTE-10",
       "epic": "NOTE",
-      "title": "Auto-apply the template to a manually created periodic-shaped file",
-      "story": "As someone who sometimes creates a file by hand and names it to match my daily format instead of using a command, I want that file to get the same template as one the plugin created for me, so that I never end up with an untemplated gap in my journal just because of how the file came to exist.",
+      "title": "Template a manually created file that matches note settings",
+      "story": "As someone who creates note files by hand, I want an empty file whose folder and filename match a configured periodic-note folder and format to receive the configured template, so that manually created notes match notes created by Calendaric.",
       "rationale": "A note's origin should not change what it looks like once it is recognised as a period's note.",
       "priority": "should",
       "status": "todo",
@@ -1008,7 +1010,7 @@
         },
         {
           "id": "AC-NOTE-10.3",
-          "given": "an empty, periodic-shaped file already existed in the vault before Calendaric first started",
+          "given": "an empty file whose folder and filename match a configured periodic-note folder and format already existed before Calendaric first started",
           "when": "that startup lookup resolves the file",
           "then": [
             "the template is not retroactively applied to it",
@@ -1024,9 +1026,9 @@
       "decisions": [
         {
           "id": "DEC-13",
-          "title": "Startup indexes without templating; anything appearing later is templated",
+          "title": "Leave matching files unchanged at startup; template later arrivals",
           "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
-          "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
+          "rationale": "A matching file has a folder and filename that match a configured periodic-note folder and format. The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
           "resolves": [
             "Q-NOTE-10.1"
           ],
@@ -1685,9 +1687,9 @@
     {
       "id": "US-FMT-06",
       "epic": "FMT",
-      "title": "Canonical identity for a date and granularity",
-      "story": "As the system matching notes and calendar cells to periods, I want a single date and granularity to always produce the same canonical identity, so that two references to \"this week\" or \"this day\" are recognised as the same period regardless of the exact time of day carried by the underlying date value.",
-      "rationale": "Every lookup and duplicate-detection path in the plugin needs a stable way to say two dates mean the same period; this is the shared foundation the rest of FMT and NOTE build on.",
+      "title": "Treat dates in the same period as the same note date",
+      "story": "As the system matching notes and calendar cells to periods, I want dates in the same period to share one note date, so that a time-of-day difference cannot make one day or week look like two.",
+      "rationale": "Note lookup and duplicate detection need one consistent date for each period.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -1706,9 +1708,9 @@
         {
           "id": "AC-FMT-06.1",
           "given": "two date values representing different times of day on the same calendar day",
-          "when": "the day-granularity identity is computed for both",
+          "when": "both are converted to a day-note date",
           "then": [
-            "both produce the identical identity value"
+            "both produce the same note date"
           ],
           "verifies": "data",
           "testable_by": "unit",
@@ -1717,8 +1719,8 @@
         },
         {
           "id": "AC-FMT-06.2",
-          "given": "a date value is passed in to compute an identity",
-          "when": "the identity is computed",
+          "given": "a date value is passed in for conversion to a note date",
+          "when": "the note date is produced",
           "then": [
             "the original date value is not mutated by the computation"
           ],
@@ -1730,9 +1732,9 @@
         {
           "id": "AC-FMT-06.3",
           "given": "the same date value, but two different granularities such as day and the week containing that date",
-          "when": "identities are computed for each granularity",
+          "when": "a note date is produced for each granularity",
           "then": [
-            "the two identities are different values",
+            "the two note dates are different values",
             "a day-note and a week-note covering the same date are never confused with each other because of this"
           ],
           "verifies": "data",
@@ -1742,10 +1744,10 @@
         },
         {
           "id": "AC-FMT-06.4",
-          "given": "no granularity is specified when requesting an identity",
-          "when": "the identity is computed",
+          "given": "no granularity is specified when requesting a note date",
+          "when": "the note date is produced",
           "then": [
-            "it defaults to the day-granularity identity for that date"
+            "day is used as the granularity for that date"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -1756,9 +1758,9 @@
         {
           "id": "AC-FMT-06.5",
           "given": "two date values that fall a few milliseconds apart but on opposite sides of local midnight, so they belong to two different calendar days",
-          "when": "the day-granularity identity is computed for both",
+          "when": "both are converted to a day-note date",
           "then": [
-            "the two identities are different values, so a moment just after midnight is never merged into the previous day"
+            "the two note dates are different values, so a moment just after midnight is never merged into the previous day"
           ],
           "verifies": "data",
           "testable_by": "unit",
@@ -2301,9 +2303,9 @@
     {
       "id": "US-TPL-05",
       "epic": "TPL",
-      "title": "Guarantee what happens to a created note's content once an external template engine takes over",
-      "story": "As someone whose real templates hand off renaming, moving, and further content generation to a full template engine, I want this plugin's own token substitution to happen exactly once and never fight or repeat itself, so that the engine's later changes stick instead of being reverted or duplicated.",
-      "rationale": "Every real template in this vault relies on a second engine doing the heavy lifting after creation; if this plugin ever re-applies its own template or assumes the file stays where and how it left it, that hand-off breaks.",
+      "title": "Do not reapply a template after note creation",
+      "story": "As someone whose templates use another plugin to rename, move, or add content to a new note, I want Calendaric to apply its own template only once, so that later changes are not reverted or duplicated.",
+      "rationale": "Every template in this vault hands later changes to another plugin. Reapplying Calendaric's template would overwrite or duplicate those changes.",
       "priority": "must",
       "status": "todo",
       "covers": [],
@@ -3224,7 +3226,7 @@
           "given": "the detail view is showing for a cell",
           "when": "the pointer leaves that cell and does not move onto the detail view itself",
           "then": [
-            "the detail view closes shortly after"
+            "the detail view closes within the 250 ms dismissal delay"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -4177,7 +4179,7 @@
       "decisions": [
         {
           "id": "DEC-03",
-          "title": "Desktop first, with the platform-specific surface behind one boundary",
+          "title": "Desktop first, with every desktop-only API behind one boundary",
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
           "resolves": [
@@ -5863,7 +5865,7 @@
     {
       "id": "US-MIG-05",
       "epic": "MIG",
-      "title": "Choose which predecessor plugin's configuration governs a granularity when more than one is active",
+      "title": "Choose one import source per granularity",
       "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
       "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
       "priority": "must",
@@ -6229,7 +6231,7 @@
           "given": "a module in the view layer (calendar rendering, settings tab, modals)",
           "when": "its imports are inspected",
           "then": [
-            "it imports only from the domain layer and from port interfaces the domain layer defines",
+            "it imports only from the domain layer and from interfaces that layer defines for date, note, and settings logic",
             "it contains no import of the vault-IO adapter layer",
             "it contains no import of the cross-plugin-integration layer"
           ],
@@ -6253,11 +6255,11 @@
         },
         {
           "id": "AC-ARCH-01.3",
-          "given": "the plugin's composition root (the module responsible for lifecycle wiring)",
+          "given": "the plugin lifecycle module where dependencies are connected",
           "when": "the dependency graph is generated",
           "then": [
             "it is the only module allowed to import from every layer",
-            "no other module imports the composition root"
+            "no other module imports the plugin lifecycle module"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -6547,7 +6549,7 @@
         },
         {
           "id": "AC-ARCH-04.4",
-          "given": "a companion plugin's object does not match the expected shape at runtime (a missing method, a reactive store where a plain value was expected, an absent property)",
+          "given": "a companion plugin's object does not match the expected shape at runtime (a missing method, a state container that requires an accessor instead of a direct property read, or an absent property)",
           "when": "the plugin's code reads it",
           "then": [
             "the read is detected as invalid and handled explicitly",
@@ -6663,7 +6665,7 @@
       "id": "US-ARCH-06",
       "epic": "ARCH",
       "title": "A reproducible release build with every gate actually enforced",
-      "story": "As the person cutting a Calendaric release, I want one build to reliably produce the exact release artefacts on a clean checkout while running every quality gate every time, so that a release is never assembled from an inconsistent local state or from a check that quietly stopped running.",
+      "story": "As a release owner, I want one clean build to run every gate and produce every release artifact, so that releases are reproducible.",
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
       "status": "todo",
@@ -6775,9 +6777,9 @@
     {
       "id": "US-ARCH-07",
       "epic": "ARCH",
-      "title": "Resilient to surfaces the plugin does not own",
+      "title": "Handle changes to Obsidian UI and other plugin APIs",
       "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
-      "rationale": "Two separate P1 defects came from exactly this: Obsidian's 1.13 settings-modal DOM change crashed the Periodic Notes settings pane outright, and separate code that read a companion plugin's settings as a plain object rather than the reactive store it actually was silently and permanently returned nothing, so a shipped feature never worked for any user.",
+      "rationale": "Two P1 defects show why this matters. An Obsidian 1.13 change to the settings dialog crashed the Periodic Notes settings pane. Another integration read a state container as a plain object instead of using its accessor or subscription API, so a shipped feature always returned nothing.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -6807,7 +6809,7 @@
         {
           "id": "AC-ARCH-07.2",
           "given": "the plugin reads state exposed by a companion plugin (a settings object, a store, a cache)",
-          "when": "that state is a reactive store rather than a plain value",
+          "when": "that state is a container that must be read through its accessor or subscription API, not as a plain object",
           "then": [
             "the plugin reads it through that store's own subscription or accessor mechanism",
             "the plugin never treats it as a plain object with a direct property read"
@@ -7038,11 +7040,11 @@
     },
     {
       "id": "ICE-04",
-      "title": "Timeline complication (deferral reversed)",
+      "title": "Timeline badge and seven-day navigator (deferral reversed)",
       "kind": "reversed",
       "covers": [],
       "what_it_does": "Shows a small floating badge in the corner of any open periodic note with a relative-date label such as 'Today' or 'Last week' (plus an arrow if the note was only an inexact match); clicking it expands into a 7-day strip for jumping to a nearby day without leaving the note. It would mount and unmount itself automatically as markdown panes are opened and closed.",
-      "why_deferred": "Reversed. This entry deferred an active feature on evidence that did not say what it was read to say. The map observation reported only that no template, dataview query or note content references a timeline view, and flagged that a UI check was outside its scope. This entry turned that into 'enabled but unused'. TimelineManager is constructed on every plugin load, mounts a Timeline component into every open markdown view, and the component reads enableTimelineComplication, which is true in the live vault. The three capabilities moved to CAL and are built.",
+      "why_deferred": "Reversed. This entry deferred an active feature after overstating its evidence. The map said only that no template, Dataview query, or note content references the badge; it also said that checking the UI was outside its scope. TimelineManager runs on every plugin load, mounts the badge in every open Markdown view, and reads the enabled `enableTimelineComplication` setting. The three capabilities moved to CAL and are built.",
       "evidence": "obsidian-periodic-notes/src/main.ts:82 constructs TimelineManager unconditionally; src/timeline/manager.ts:14-63 mounts one component per open MarkdownView; src/timeline/Timeline.svelte:26-27,101 gates rendering on the setting; .obsidian/plugins/periodic-notes-anks/data.json:51 has enableTimelineComplication true.",
       "cost_to_add_later": "medium",
       "cost_rationale": "It needs its own mount/unmount lifecycle manager reacting to workspace layout-change events across every open leaf, plus a small interactive UI component and the relative-date-formatting helper it depends on — a self-contained vertical slice, bounded but not trivial.",
@@ -7945,7 +7947,7 @@
     },
     {
       "id": "DEC-03",
-      "title": "Desktop first, with the platform-specific surface behind one boundary",
+      "title": "Desktop first, with every desktop-only API behind one boundary",
       "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
       "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
       "resolves": [
@@ -8046,9 +8048,9 @@
     },
     {
       "id": "DEC-13",
-      "title": "Startup indexes without templating; anything appearing later is templated",
+      "title": "Leave matching files unchanged at startup; template later arrivals",
       "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
-      "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
+      "rationale": "A matching file has a folder and filename that match a configured periodic-note folder and format. The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
       "resolves": [
         "Q-NOTE-10.1"
       ],

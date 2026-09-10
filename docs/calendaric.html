@@ -290,7 +290,7 @@ const VIEWS = {
       ["Covered by", r => {
         const os = owners[r.uid] || [];
         if (os.length) return os.map(o => `<code>${esc(o.id)}</code>`).join(" ");
-        if (excused[r.uid]) return bdg("neutral", "folded in") + `<div class="note">${esc(excused[r.uid])}</div>`;
+        if (excused[r.uid]) return bdg("neutral", "no separate story") + `<div class="note">${esc(excused[r.uid])}</div>`;
         const role = (BL.assignment || {})[r.uid]?.role;
         if (role === "evidence") return bdg("neutral", "evidence") +
           `<div class="note">Real-world constraint, not a feature to build.</div>`;

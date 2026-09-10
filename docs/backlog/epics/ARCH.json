@@ -1,7 +1,7 @@
 {
   "epic": "ARCH",
   "epic_title": "Architecture, boundaries, testability and release quality",
-  "summary": "This epic defines the architectural skeleton the other epics build inside: what layers exist, which way dependencies may point, what must be provable by a test without Obsidian running, and what a release must guarantee before it ships. Its boundary with the other epics is that it never describes user-visible behaviour itself — it constrains how the behaviour described elsewhere is allowed to be built, tested, documented and shipped.",
+  "summary": "ARCH defines module boundaries, test seams, and release gates. User-visible behaviour belongs to the other epics.",
   "stories": [
     {
       "id": "US-ARCH-01",
@@ -24,7 +24,7 @@
           "given": "a module in the view layer (calendar rendering, settings tab, modals)",
           "when": "its imports are inspected",
           "then": [
-            "it imports only from the domain layer and from port interfaces the domain layer defines",
+            "it imports only from the domain layer and from interfaces that layer defines for date, note, and settings logic",
             "it contains no import of the vault-IO adapter layer",
             "it contains no import of the cross-plugin-integration layer"
           ],
@@ -48,11 +48,11 @@
         },
         {
           "id": "AC-ARCH-01.3",
-          "given": "the plugin's composition root (the module responsible for lifecycle wiring)",
+          "given": "the plugin lifecycle module where dependencies are connected",
           "when": "the dependency graph is generated",
           "then": [
             "it is the only module allowed to import from every layer",
-            "no other module imports the composition root"
+            "no other module imports the plugin lifecycle module"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -342,7 +342,7 @@
         },
         {
           "id": "AC-ARCH-04.4",
-          "given": "a companion plugin's object does not match the expected shape at runtime (a missing method, a reactive store where a plain value was expected, an absent property)",
+          "given": "a companion plugin's object does not match the expected shape at runtime (a missing method, a state container that requires an accessor instead of a direct property read, or an absent property)",
           "when": "the plugin's code reads it",
           "then": [
             "the read is detected as invalid and handled explicitly",
@@ -458,7 +458,7 @@
       "id": "US-ARCH-06",
       "epic": "ARCH",
       "title": "A reproducible release build with every gate actually enforced",
-      "story": "As the person cutting a Calendaric release, I want one build to reliably produce the exact release artefacts on a clean checkout while running every quality gate every time, so that a release is never assembled from an inconsistent local state or from a check that quietly stopped running.",
+      "story": "As a release owner, I want one clean build to run every gate and produce every release artifact, so that releases are reproducible.",
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
       "status": "todo",
@@ -570,9 +570,9 @@
     {
       "id": "US-ARCH-07",
       "epic": "ARCH",
-      "title": "Resilient to surfaces the plugin does not own",
+      "title": "Handle changes to Obsidian UI and other plugin APIs",
       "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
-      "rationale": "Two separate P1 defects came from exactly this: Obsidian's 1.13 settings-modal DOM change crashed the Periodic Notes settings pane outright, and separate code that read a companion plugin's settings as a plain object rather than the reactive store it actually was silently and permanently returned nothing, so a shipped feature never worked for any user.",
+      "rationale": "Two P1 defects show why this matters. An Obsidian 1.13 change to the settings dialog crashed the Periodic Notes settings pane. Another integration read a state container as a plain object instead of using its accessor or subscription API, so a shipped feature always returned nothing.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -602,7 +602,7 @@
         {
           "id": "AC-ARCH-07.2",
           "given": "the plugin reads state exposed by a companion plugin (a settings object, a store, a cache)",
-          "when": "that state is a reactive store rather than a plain value",
+          "when": "that state is a container that must be read through its accessor or subscription API, not as a plain object",
           "then": [
             "the plugin reads it through that store's own subscription or accessor mechanism",
             "the plugin never treats it as a plain object with a direct property read"

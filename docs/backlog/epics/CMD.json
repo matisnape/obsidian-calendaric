@@ -951,7 +951,7 @@
   ],
   "uncovered": [],
   "notes": [
-    "Every build uid assigned to CMD is covered by a story; nothing was folded into 'uncovered'.",
+    "Every build UID assigned to CMD is covered by a story; none is accounted for without a separate story.",
     "Most acceptance criteria in this epic need Obsidian's workspace, command and hotkey APIs to observe (testable_by: integration), because the epic is almost entirely about entry points into the host application rather than pure logic. The exceptions are the two per-command id-stability criteria in US-CMD-05 (snapshot-testable as plain string comparisons) and the startup-exclusivity criterion in US-CMD-09 (a pure settings transform, already unit-tested in one source plugin).",
     "US-CMD-06 and US-CMD-07 are written as separate stories on purpose: 'jump' never creates a note and reports when there is nothing to jump to, while 'open next/previous' always succeeds by creating the note. Their acceptance criteria show this contrast rather than stating it as a cross-command comparison.",
     "Commands that call into note creation or lookup (US-CMD-04, US-CMD-06, US-CMD-07, US-CMD-08, US-CMD-09) treat that creation/lookup as a black box owned by NOTE; this epic's criteria only cover whether the command is offered, and what the user sees at the entry point, not how the note itself is built."

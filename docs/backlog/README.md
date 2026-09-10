@@ -15,6 +15,15 @@ cd docs && python3 -m http.server 8973
 open http://localhost:8973/calendaric.html
 ```
 
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **Epic** | A group of related stories. |
+| **Granularity** | A note period: day, week, month, quarter, or year. |
+| **Coverage** | Mapped behaviour accounted for by a story or an explicit deferral. |
+| **Icebox** | Behaviour deliberately excluded from the first release. |
+
 ## Identifiers
 
 | Shape | Example | What it names |
@@ -108,7 +117,8 @@ The stories surfaced 24 open questions. All 24 are now answered. There are 25
 decisions, `DEC-01` … `DEC-25`: 21 of them answer one or more of those questions
 and name the ids in `resolves`, and four came out of the adversarial review
 rather than from a recorded question, so their `resolves` is empty. They are
-recorded on the stories they settle rather than in a chat log. A story carrying one shows the decision, the reasoning and the date; a
+recorded on the stories they settle rather than in a chat log. A story carrying
+one shows the decision, the reasoning and the date; a
 decision that settles the same question in several epics is recorded on each of
 them, which is why 25 decisions appear on more stories than that.
 

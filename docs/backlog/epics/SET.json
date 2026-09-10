@@ -399,7 +399,7 @@
       "decisions": [
         {
           "id": "DEC-03",
-          "title": "Desktop first, with the platform-specific surface behind one boundary",
+          "title": "Desktop first, with every desktop-only API behind one boundary",
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
           "resolves": [

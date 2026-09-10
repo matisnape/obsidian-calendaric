@@ -747,7 +747,7 @@
           "given": "the detail view is showing for a cell",
           "when": "the pointer leaves that cell and does not move onto the detail view itself",
           "then": [
-            "the detail view closes shortly after"
+            "the detail view closes within the 250 ms dismissal delay"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",

@@ -59,7 +59,7 @@ DECISIONS = {
         },
     },
     "DEC-03": {
-        "title": "Desktop first, with the platform-specific surface behind one boundary",
+        "title": "Desktop first, with every desktop-only API behind one boundary",
         "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API "
                     "lives behind a single adapter, so supporting mobile later means replacing that "
                     "adapter rather than reworking the views.",
@@ -155,12 +155,14 @@ DECISIONS = {
         "stories": {"NOTE": ["US-NOTE-04"]},
     },
     "DEC-13": {
-        "title": "Startup indexes without templating; anything appearing later is templated",
+        "title": "Leave matching files unchanged at startup; template later arrivals",
         "decision": "A matching empty file found while the index is first built is "
                     "indexed and left untouched. A matching empty file that appears "
                     "while Calendaric is running is templated, whoever created it: "
                     "Calendaric itself, the user, or another plugin.",
-        "rationale": "The line is drawn at startup, not at authorship. Templating "
+        "rationale": "A matching file has a folder and filename that match a configured "
+                     "periodic-note folder and format. The line is drawn at startup, not "
+                     "at authorship. Templating "
                      "everything found at startup would write into files the plugin has "
                      "never seen, as a side effect of installing it. Refusing to "
                      "template anything the user creates by hand would break the "

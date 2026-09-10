@@ -1,7 +1,7 @@
 {
   "epic": "ICE",
   "epic_title": "Kept for a later decision, not built now",
-  "summary": "23 capabilities the mapping surfaced but that are not built in this release, held in eight entries: a disabled note granularity, a configuration mechanism with no current second use, four calendar indicator sources nothing in the vault configures, the related-note list inside the date switcher, one interaction built on an undocumented Obsidian internal, one behaviour that should never be rebuilt at all, and mobile support. ICE-04 is kept as the record of a deferral that was reversed. Most entries cost nothing to defer; the exception is calendar sets, where the first release's data shape decides whether adding a second set later is a feature or a migration.",
+  "summary": "ICE lists behaviour excluded from the first release and the evidence for each exclusion. ICE-04 records a deferral that was reversed; its behaviour is now part of CAL. Multiple calendar sets are the only deferral that constrains the first release's data model.",
   "entries": [
     {
       "id": "ICE-01",
@@ -90,11 +90,11 @@
     },
     {
       "id": "ICE-04",
-      "title": "Timeline complication (deferral reversed)",
+      "title": "Timeline badge and seven-day navigator (deferral reversed)",
       "kind": "reversed",
       "covers": [],
       "what_it_does": "Shows a small floating badge in the corner of any open periodic note with a relative-date label such as 'Today' or 'Last week' (plus an arrow if the note was only an inexact match); clicking it expands into a 7-day strip for jumping to a nearby day without leaving the note. It would mount and unmount itself automatically as markdown panes are opened and closed.",
-      "why_deferred": "Reversed. This entry deferred an active feature on evidence that did not say what it was read to say. The map observation reported only that no template, dataview query or note content references a timeline view, and flagged that a UI check was outside its scope. This entry turned that into 'enabled but unused'. TimelineManager is constructed on every plugin load, mounts a Timeline component into every open markdown view, and the component reads enableTimelineComplication, which is true in the live vault. The three capabilities moved to CAL and are built.",
+      "why_deferred": "Reversed. This entry deferred an active feature after overstating its evidence. The map said only that no template, Dataview query, or note content references the badge; it also said that checking the UI was outside its scope. TimelineManager runs on every plugin load, mounts the badge in every open Markdown view, and reads the enabled `enableTimelineComplication` setting. The three capabilities moved to CAL and are built.",
       "evidence": "obsidian-periodic-notes/src/main.ts:82 constructs TimelineManager unconditionally; src/timeline/manager.ts:14-63 mounts one component per open MarkdownView; src/timeline/Timeline.svelte:26-27,101 gates rendering on the setting; .obsidian/plugins/periodic-notes-anks/data.json:51 has enableTimelineComplication true.",
       "cost_to_add_later": "medium",
       "cost_rationale": "It needs its own mount/unmount lifecycle manager reacting to workspace layout-change events across every open leaf, plus a small interactive UI component and the relative-date-formatting helper it depends on — a self-contained vertical slice, bounded but not trivial.",
@@ -180,7 +180,7 @@
   ],
   "uncovered": [],
   "notes": [
-    "pn:relative-date-humanization renders the label for both the Timeline complication and the date switcher. Both are now built, and it is covered by US-CAL-13.",
+    "pn:relative-date-humanization renders the label for both the timeline badge and the date switcher. Both are now built, and US-CAL-13 covers it.",
     "ICE-04 covers nothing. It is kept as the record of a deferral that was reversed, so the numbering of the other entries stays stable."
   ]
 }

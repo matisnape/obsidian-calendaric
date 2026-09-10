@@ -534,9 +534,9 @@
     {
       "id": "US-FMT-06",
       "epic": "FMT",
-      "title": "Canonical identity for a date and granularity",
-      "story": "As the system matching notes and calendar cells to periods, I want a single date and granularity to always produce the same canonical identity, so that two references to \"this week\" or \"this day\" are recognised as the same period regardless of the exact time of day carried by the underlying date value.",
-      "rationale": "Every lookup and duplicate-detection path in the plugin needs a stable way to say two dates mean the same period; this is the shared foundation the rest of FMT and NOTE build on.",
+      "title": "Treat dates in the same period as the same note date",
+      "story": "As the system matching notes and calendar cells to periods, I want dates in the same period to share one note date, so that a time-of-day difference cannot make one day or week look like two.",
+      "rationale": "Note lookup and duplicate detection need one consistent date for each period.",
       "priority": "must",
       "status": "todo",
       "covers": [
@@ -555,9 +555,9 @@
         {
           "id": "AC-FMT-06.1",
           "given": "two date values representing different times of day on the same calendar day",
-          "when": "the day-granularity identity is computed for both",
+          "when": "both are converted to a day-note date",
           "then": [
-            "both produce the identical identity value"
+            "both produce the same note date"
           ],
           "verifies": "data",
           "testable_by": "unit",
@@ -566,8 +566,8 @@
         },
         {
           "id": "AC-FMT-06.2",
-          "given": "a date value is passed in to compute an identity",
-          "when": "the identity is computed",
+          "given": "a date value is passed in for conversion to a note date",
+          "when": "the note date is produced",
           "then": [
             "the original date value is not mutated by the computation"
           ],
@@ -579,9 +579,9 @@
         {
           "id": "AC-FMT-06.3",
           "given": "the same date value, but two different granularities such as day and the week containing that date",
-          "when": "identities are computed for each granularity",
+          "when": "a note date is produced for each granularity",
           "then": [
-            "the two identities are different values",
+            "the two note dates are different values",
             "a day-note and a week-note covering the same date are never confused with each other because of this"
           ],
           "verifies": "data",
@@ -591,10 +591,10 @@
         },
         {
           "id": "AC-FMT-06.4",
-          "given": "no granularity is specified when requesting an identity",
-          "when": "the identity is computed",
+          "given": "no granularity is specified when requesting a note date",
+          "when": "the note date is produced",
           "then": [
-            "it defaults to the day-granularity identity for that date"
+            "day is used as the granularity for that date"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -605,9 +605,9 @@
         {
           "id": "AC-FMT-06.5",
           "given": "two date values that fall a few milliseconds apart but on opposite sides of local midnight, so they belong to two different calendar days",
-          "when": "the day-granularity identity is computed for both",
+          "when": "both are converted to a day-note date",
           "then": [
-            "the two identities are different values, so a moment just after midnight is never merged into the previous day"
+            "the two note dates are different values, so a moment just after midnight is never merged into the previous day"
           ],
           "verifies": "data",
           "testable_by": "unit",
@@ -786,7 +786,7 @@
   "notes": [
     "Rival implementation decision: US-FMT-04 adopts the 'try every candidate format' structure (the one that already expands nested-path formats into a full-path and a basename-only candidate), because that structure is required anyway to support nested folder formats. Layered on top, it keeps the week-number-vs-month/day disambiguation from the single-format implementation, but applies it consistently to both the exact-match and the prefix-match branch, fixing an inconsistency present in the old single-format implementation (which only disambiguated on its exact-match branch). The undecided residue (candidate tie-break order, and how narrowly the disambiguation rule is scoped) is listed in US-FMT-04's open_questions.",
     "pn:loose-date-parsing-fallback-global (a vault-wide loose date guess when no configured format matches at all) is icebox, not part of this epic; US-FMT-04's failure paths intentionally stop at 'not recognised' rather than falling back to a global guess.",
-    "forks:weekly-note-prefix-match and forks:periodic-note-prefix-match-setting describe the same prefix-matching feature family as pn:strict-then-prefix-date-parsing and pn:allow-prefix-match-gate, just observed from the other historical codebase; they are folded into the same story (US-FMT-04) rather than duplicated into a second one.",
+    "forks:weekly-note-prefix-match and forks:periodic-note-prefix-match-setting describe the same prefix-matching feature family as pn:strict-then-prefix-date-parsing and pn:allow-prefix-match-gate, just observed from the other historical codebase; US-FMT-04 accounts for all four without a duplicate story.",
     "Most acceptance criteria in this epic are unit-testable in isolation (pure date math), which is why testable_by is almost always 'unit' rather than 'integration' or 'manual'; the two 'integration' criteria in US-FMT-04 are the ones that assert against the real shape of the user's existing vault, and the one 'manual' criterion in US-FMT-03 covers a live-reload UX check that is hard to assert purely in a unit test.",
     "SET owns the settings UI for the format field, the prefix-match toggle, and the locale/week-start dropdowns; this epic owns only what those stored values must cause to happen. NOTE owns what happens once a note is found or not found (create, open, index); this epic only decides whether a given filename counts as a match. TPL owns the same {{weekday:fmt}} token syntax inside the note body; this epic owns only its use inside the filename format field, sharing the day-of-week resolution mechanism (dni:get-day-of-week-numerical-value) with TPL as a cross-epic dependency rather than a duplicated rule."
   ]

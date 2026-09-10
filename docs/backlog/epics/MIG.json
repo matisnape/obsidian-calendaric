@@ -480,7 +480,7 @@
     {
       "id": "US-MIG-05",
       "epic": "MIG",
-      "title": "Choose which predecessor plugin's configuration governs a granularity when more than one is active",
+      "title": "Choose one import source per granularity",
       "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
       "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
       "priority": "must",
