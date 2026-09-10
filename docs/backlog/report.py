@@ -70,6 +70,15 @@ def overview():
         for s in blocked:
             print(f"  {s['id']:<12} {s['title']}")
 
+    decs = BL.get("decisions") or []
+    if decs:
+        print(f"\nDECISIONS TAKEN ({len(decs)}):")
+        for d in decs:
+            on = sorted(s["id"] for s in BL["stories"]
+                        if any(x["id"] == d["id"] for x in s.get("decisions") or []))
+            print(f"  {d['id']}  {d['title']}")
+            print(f"    {', '.join(on)}")
+
     qs = [(s["id"], q) for s in BL["stories"] for q in s.get("open_questions") or []]
     if qs:
         print(f"\nOPEN QUESTIONS ({len(qs)}):")

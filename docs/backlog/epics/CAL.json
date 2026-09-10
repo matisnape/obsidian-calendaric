@@ -11,9 +11,14 @@
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:render-calendar-grid", "calendaric:calendar-month-grid-render"],
+      "covers": [
+        "calui:render-calendar-grid",
+        "calendaric:calendar-month-grid-render"
+      ],
       "constrained_by": [],
-      "granularity": ["month"],
+      "granularity": [
+        "month"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -102,13 +107,17 @@
       "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:navigate-month", "calui:reset-to-current-month", "calendaric:calendar-navigation"],
-      "constrained_by": [],
-      "granularity": ["month"],
-      "depends_on": [],
-      "open_questions": [
-        "The prior component version showed a localized word (e.g. a Polish 'Dzisiaj') on the reset-to-today control; a newer version replaced it with an icon and an English-only tooltip. Since this vault is primarily Polish, should the rewritten control keep a localized label?"
+      "covers": [
+        "calui:navigate-month",
+        "calui:reset-to-current-month",
+        "calendaric:calendar-navigation"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "month"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CAL-02.1",
@@ -160,6 +169,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-05",
+          "title": "The plugin ships in English only",
+          "decision": "All user-facing text is English. No localisation layer, no translated labels, no locale-dependent strings. Controls that the previous component library labelled with a translated word use an icon with an English tooltip instead.",
+          "rationale": "Stated by the owner. It removes a whole class of open question about which surfaces need translating, and keeps narrow controls readable in a sidebar. Note this is about interface text only: date and weekday names still follow the configured locale, because those come from the date formatter, not from the plugin's own copy.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -170,9 +188,17 @@
       "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:day-cell-interactions", "calendaric:calendar-click-to-open-or-create", "cal:hover-link-preview", "cal:confirmation-modal-dialog", "calendaric:confirm-before-create-modal"],
+      "covers": [
+        "calui:day-cell-interactions",
+        "calendaric:calendar-click-to-open-or-create",
+        "cal:hover-link-preview",
+        "cal:confirmation-modal-dialog",
+        "calendaric:confirm-before-create-modal"
+      ],
       "constrained_by": [],
-      "granularity": ["day"],
+      "granularity": [
+        "day"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -261,13 +287,19 @@
       "rationale": "The week-number column is a click target in its own right, not just a label.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:week-number-interactions", "calendaric:calendar-click-to-open-or-create", "cal:hover-link-preview", "cal:confirmation-modal-dialog", "calendaric:confirm-before-create-modal"],
-      "constrained_by": [],
-      "granularity": ["week"],
-      "depends_on": [],
-      "open_questions": [
-        "The old week-number cell can resolve a slightly different reference date for click versus hover/right-click, depending on the configured week-start day. Should the rewrite guarantee all three resolve to the same date, or is the discrepancy acceptable?"
+      "covers": [
+        "calui:week-number-interactions",
+        "calendaric:calendar-click-to-open-or-create",
+        "cal:hover-link-preview",
+        "cal:confirmation-modal-dialog",
+        "calendaric:confirm-before-create-modal"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "week"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CAL-04.1",
@@ -317,6 +349,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-06",
+          "title": "Every gesture on a week-number cell resolves the same date",
+          "decision": "Click, hover and right-click on a week-number cell all resolve to the same reference date for that week, whatever the configured week-start day.",
+          "rationale": "The old behaviour could resolve a different date for click than for hover, so the preview showed one note and the click opened another. That is a defect, not a feature worth preserving.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -327,13 +368,19 @@
       "rationale": "This carries forward a feature the user relies on today that is currently implemented in a fragile, easily-broken way; the rewrite must make it a real, first-class part of the header rather than a workaround layered on top of it.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:month-header-interactions", "cal:month-header-click-open-monthly-note", "cal:reset-month-to-today-on-header-click", "forks:open-monthly-note-from-header", "cal:expose-displayed-month"],
-      "constrained_by": [],
-      "granularity": ["month"],
-      "depends_on": [],
-      "open_questions": [
-        "If monthly note support becomes unavailable while the view is already open (for example the user disables it mid-session), should the header start falling back to reset-to-today on the very next click, or only after the view is reopened?"
+      "covers": [
+        "calui:month-header-interactions",
+        "cal:month-header-click-open-monthly-note",
+        "cal:reset-month-to-today-on-header-click",
+        "forks:open-monthly-note-from-header",
+        "cal:expose-displayed-month"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "month"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CAL-05.1",
@@ -397,6 +444,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-07",
+          "title": "The month header reacts to a configuration change immediately",
+          "decision": "When monthly notes stop being available while the calendar is open, the next click on the month header already behaves as the fallback. No reopening of the view is required, in either direction.",
+          "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -407,9 +463,15 @@
       "rationale": "The context menu is the calendar's entry point into standard file management, including whatever other installed plugins add to it.",
       "priority": "should",
       "status": "todo",
-      "covers": ["cal:day-week-context-menu", "cal:file-context-menu"],
+      "covers": [
+        "cal:day-week-context-menu",
+        "cal:file-context-menu"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week"],
+      "granularity": [
+        "day",
+        "week"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -473,9 +535,20 @@
       "rationale": "This is the one indicator the vault actually uses today, and the extension point behind it must stay open to other indicators later.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:resolve-day-metadata", "calui:render-dots", "cal:metadata-source-wordcount", "cal:get-word-count", "calendaric:calendar-note-existence-dots", "cal:mount-calendar-view"],
+      "covers": [
+        "calui:resolve-day-metadata",
+        "calui:render-dots",
+        "cal:metadata-source-wordcount",
+        "cal:get-word-count",
+        "calendaric:calendar-note-existence-dots",
+        "cal:mount-calendar-view"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month"],
+      "granularity": [
+        "day",
+        "week",
+        "month"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -551,9 +624,16 @@
       "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must work the same on touch devices.",
       "priority": "should",
       "status": "todo",
-      "covers": ["calui:hover-popover-desktop", "calui:popover-mobile-fallback"],
+      "covers": [
+        "calui:hover-popover-desktop",
+        "calui:popover-mobile-fallback"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month"],
+      "granularity": [
+        "day",
+        "week",
+        "month"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -615,9 +695,17 @@
       "rationale": "The grid is read constantly but the notes behind it are created and edited elsewhere; staleness would make it actively misleading.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:auto-refresh-on-vault-events", "calendaric:calendar-live-refresh-on-vault-change", "cal:refresh-on-periodic-notes-settings-change", "cal:reactive-settings-refresh"],
+      "covers": [
+        "cal:auto-refresh-on-vault-events",
+        "calendaric:calendar-live-refresh-on-vault-change",
+        "cal:refresh-on-periodic-notes-settings-change",
+        "cal:reactive-settings-refresh"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week"],
+      "granularity": [
+        "day",
+        "week"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -692,9 +780,16 @@
       "rationale": "The highlight is the calendar's answer to 'where am I', and it must track the active pane, not just clicks made inside the view itself.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:track-active-file-for-highlight", "calendaric:calendar-active-file-highlight", "cal:jump-calendar-to-active-note"],
+      "covers": [
+        "cal:track-active-file-for-highlight",
+        "calendaric:calendar-active-file-highlight",
+        "cal:jump-calendar-to-active-note"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week"],
+      "granularity": [
+        "day",
+        "week"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -757,9 +852,15 @@
       "rationale": "The view has no reason to be reopened during normal use, so it must roll itself over rather than relying on the user to refresh it.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:calendar-heartbeat-tick", "calendaric:calendar-minute-refresh"],
+      "covers": [
+        "cal:calendar-heartbeat-tick",
+        "calendaric:calendar-minute-refresh"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "month"],
+      "granularity": [
+        "day",
+        "month"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -810,13 +911,15 @@
       "rationale": "This is the shared positioning behaviour the indicator popover (and future overlay-driven features) depend on to be usable near the edges of the window.",
       "priority": "should",
       "status": "todo",
-      "covers": ["pn:text-input-suggest-popper-positioning"],
-      "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": [],
-      "open_questions": [
-        "Is this positioning behaviour meant to be one shared mechanism reused by both this epic's popover and SET's own autocomplete inputs, or an independent implementation per epic?"
+      "covers": [
+        "pn:text-input-suggest-popper-positioning"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CAL-12.1",
@@ -866,6 +969,15 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-08",
+          "title": "One overlay-positioning mechanism, shared by every overlay",
+          "decision": "The calendar's hover popover and the settings screen's autocomplete use the same positioning behaviour and the same implementation.",
+          "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly the duplication this rewrite exists to remove. It also means one place to fix when a popover is clipped.",
+          "decided_on": "2026-09-10"
         }
       ]
     }

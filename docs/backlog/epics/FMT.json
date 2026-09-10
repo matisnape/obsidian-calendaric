@@ -11,13 +11,18 @@
       "rationale": "The current implementation is documented as respecting the week-start setting but hard-codes ISO Monday-first weeks instead, so filenames can silently name the wrong day.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calendaric:template-token-weekday-format", "dni:get-day-of-week-numerical-value"],
-      "constrained_by": [],
-      "granularity": ["week"],
-      "depends_on": ["US-FMT-03"],
-      "open_questions": [
-        "When a weekday token names something other than one of the seven weekday names, should it be left as literal text in the filename, or should format validation reject it before saving?"
+      "covers": [
+        "calendaric:template-token-weekday-format",
+        "dni:get-day-of-week-numerical-value"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "week"
+      ],
+      "depends_on": [
+        "US-FMT-03"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-FMT-01.1",
@@ -70,6 +75,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-01",
+          "title": "Week-based tokens and week numbers follow the configured week-start day",
+          "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
+          "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -80,10 +94,18 @@
       "rationale": "The grid math must key off the user's actual week-start setting rather than a value that is silently ignored, or the grid disagrees with every other week-aware feature in the plugin.",
       "priority": "must",
       "status": "todo",
-      "covers": ["calui:compute-month-grid", "calendaric:calendar-week-start-resolution"],
+      "covers": [
+        "calui:compute-month-grid",
+        "calendaric:calendar-week-start-resolution"
+      ],
       "constrained_by": [],
-      "granularity": ["month", "week"],
-      "depends_on": ["US-FMT-03"],
+      "granularity": [
+        "month",
+        "week"
+      ],
+      "depends_on": [
+        "US-FMT-03"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -153,7 +175,9 @@
         "calendaric:override-locale-setting"
       ],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -243,12 +267,14 @@
         "vault:monthly-work-validate-title-shape",
         "vault:create-yearly-note-static"
       ],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": [],
-      "open_questions": [
-        "Between the two old implementations, one tries only the single format resolved for the requested granularity, the other tries every candidate format (full path and basename-only) for that granularity. This story adopts the every-candidate-format approach so nested-path formats work, and requires the strict-then-prefix decision below; the remaining open point is the tie-break order when more than one candidate format produces a valid match for the same file — today's code always takes the first candidate in an unspecified list order, and this story does not change that.",
-        "Should the week-number-vs-month/day disambiguation described in AC-FMT-04.5 also apply when a format has a day token but no month token, or only when both a month and a day token are present, as in the narrower of the two old implementations?"
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
       ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-FMT-04.1",
@@ -348,6 +374,22 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-14",
+          "title": "Candidate formats are tried in declaration order, and that order is documented",
+          "decision": "When more than one candidate format validly matches the same file, the first in declaration order wins. The order is defined and documented rather than incidental.",
+          "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Any deterministic rule beats that; declaration order is the one a user can predict.",
+          "decided_on": "2026-09-10"
+        },
+        {
+          "id": "DEC-15",
+          "title": "Week-number disambiguation applies whenever a day token is present",
+          "decision": "The rule that separates a week number from a month-or-day value applies when the format carries a day token, whether or not it also carries a month token.",
+          "rationale": "The narrower variant only triggered when both were present, so a format like DD slipped through and parsed as a week number. The wider rule catches the case the narrow one was written to catch.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -358,13 +400,19 @@
       "rationale": "A format that looks reasonable can still be unusable for its granularity; catching this at save time is cheaper than discovering it once notes already exist under it.",
       "priority": "must",
       "status": "todo",
-      "covers": ["pn:format-validation", "pn:fragile-basename-detection"],
-      "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": [],
-      "open_questions": [
-        "Should the fragile-basename and non-identifying-format warnings block saving the format outright, or only show a warning that the user can dismiss and save anyway?"
+      "covers": [
+        "pn:format-validation",
+        "pn:fragile-basename-detection"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-FMT-05.1",
@@ -415,6 +463,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-16",
+          "title": "Format warnings inform, they do not block",
+          "decision": "A format flagged as fragile or non-identifying shows a warning the user can read and dismiss. The value still saves.",
+          "rationale": "The check is a heuristic. A user with a deliberate nested-path scheme should not be locked out by it, and a blocked save gives them nowhere to go.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -425,9 +482,16 @@
       "rationale": "Every lookup and duplicate-detection path in the plugin needs a stable way to say two dates mean the same period; this is the shared foundation the rest of FMT and NOTE build on.",
       "priority": "must",
       "status": "todo",
-      "covers": ["dni:compute-date-uid"],
+      "covers": [
+        "dni:compute-date-uid"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -490,13 +554,19 @@
       "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:get-date-uid-from-file"],
-      "constrained_by": [],
-      "granularity": ["day", "week"],
-      "depends_on": ["US-FMT-04", "US-FMT-06"],
-      "open_questions": [
-        "Today's implementation matches only the file's basename, not its folder, so two same-named files in different folders would resolve identically. Should this rewrite require the file to also be located under the granularity's configured folder before accepting the match?"
+      "covers": [
+        "cal:get-date-uid-from-file"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week"
+      ],
+      "depends_on": [
+        "US-FMT-04",
+        "US-FMT-06"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-FMT-07.1",
@@ -545,6 +615,15 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-02",
+          "title": "A file is the note for a period only when its folder matches too",
+          "decision": "Recognising a file as a periodic note requires both the filename to match the granularity's format and the file to sit under that granularity's configured folder. Filename alone is not sufficient. No vault-wide loose fallback exists.",
+          "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
+          "decided_on": "2026-09-10"
         }
       ]
     }

@@ -11,9 +11,14 @@
       "rationale": "The calendar view has no ribbon icon of its own in the merged design, so the palette command is its only guaranteed entry point.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:open-calendar-view", "calendaric:open-calendar-view"],
+      "covers": [
+        "cal:open-calendar-view",
+        "calendaric:open-calendar-view"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -78,10 +83,16 @@
       "rationale": "This turns the calendar into a default part of the workspace layout instead of an opt-in view.",
       "priority": "should",
       "status": "todo",
-      "covers": ["cal:auto-reveal-view-on-layout-ready"],
+      "covers": [
+        "cal:auto-reveal-view-on-layout-ready"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": ["US-CMD-01"],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [
+        "US-CMD-01"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -143,13 +154,16 @@
       "rationale": "Without this, switching notes and switching the calendar's displayed period are two disconnected actions.",
       "priority": "should",
       "status": "todo",
-      "covers": ["cal:reveal-active-note-command"],
-      "constrained_by": [],
-      "granularity": ["day", "week"],
-      "depends_on": [],
-      "open_questions": [
-        "Should running \"Reveal active note\" with no periodic note active, or with the calendar view closed, show a brief notice, or fail silently as it does today?"
+      "covers": [
+        "cal:reveal-active-note-command"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "day",
+        "week"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CMD-03.1",
@@ -188,6 +202,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-09",
+          "title": "A command that cannot act says so",
+          "decision": "Running a command whose precondition is not met shows a brief notice naming what was missing. It never fails silently.",
+          "rationale": "A command that does nothing and says nothing is indistinguishable from a broken plugin. The old behaviour taught users to stop trusting the command.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -198,13 +221,17 @@
       "rationale": "This avoids weekly notes losing a keyboard entry point when the generated week command is not registered.",
       "priority": "should",
       "status": "todo",
-      "covers": ["cal:open-weekly-note-command"],
-      "constrained_by": [],
-      "granularity": ["week"],
-      "depends_on": ["US-CMD-05"],
-      "open_questions": [
-        "Once weekly notes are always covered by the generated per-granularity command set (US-CMD-05), is this standalone \"Open Weekly Note\" command still needed, or should it be retired?"
+      "covers": [
+        "cal:open-weekly-note-command"
       ],
+      "constrained_by": [],
+      "granularity": [
+        "week"
+      ],
+      "depends_on": [
+        "US-CMD-05"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CMD-04.1",
@@ -244,6 +271,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-10",
+          "title": "Retire the standalone weekly-note command",
+          "decision": "There is no separate 'Open Weekly Note' command. The generated per-granularity command set covers it, as it covers every other granularity.",
+          "rationale": "It existed because weekly notes predated the generated command set. Keeping both means two command-palette entries doing the same thing, and one of them special-cased in the code.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -254,9 +290,17 @@
       "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
       "priority": "must",
       "status": "todo",
-      "covers": ["pn:dynamic-command-registration"],
+      "covers": [
+        "pn:dynamic-command-registration"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "quarter", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -358,9 +402,17 @@
       "rationale": "Pure navigation and note creation are different intents, and conflating them would create unwanted files just from browsing.",
       "priority": "must",
       "status": "todo",
-      "covers": ["pn:jump-to-adjacent-note-command"],
+      "covers": [
+        "pn:jump-to-adjacent-note-command"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "quarter", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -425,9 +477,17 @@
       "rationale": "This is the command that keeps a daily or weekly logging habit moving forward even into periods with no note yet.",
       "priority": "must",
       "status": "todo",
-      "covers": ["pn:open-adjacent-note-command"],
+      "covers": [
+        "pn:open-adjacent-note-command"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "quarter", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -491,9 +551,18 @@
       "rationale": "A single icon avoids cluttering the ribbon with one item per granularity while still keeping every active granularity reachable.",
       "priority": "should",
       "status": "todo",
-      "covers": ["pn:ribbon-icon-single-granularity", "pn:context-menu-open-note"],
+      "covers": [
+        "pn:ribbon-icon-single-granularity",
+        "pn:context-menu-open-note"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "quarter", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -576,11 +645,15 @@
         "calendaric:clear-startup-note-exclusivity"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "quarter", "year"],
-      "depends_on": [],
-      "open_questions": [
-        "One source plugin only created a missing startup note for day and week granularities, silently doing nothing for month, quarter or year. Should the merged plugin create the note for every granularity that can be configured to open at startup, or keep that day/week-only limitation?"
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
       ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-CMD-09.1",
@@ -643,6 +716,15 @@
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-11",
+          "title": "The startup note is created for whichever granularity is configured",
+          "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
+          "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
+          "decided_on": "2026-09-10"
         }
       ]
     }

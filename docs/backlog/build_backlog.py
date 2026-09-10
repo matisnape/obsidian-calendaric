@@ -74,6 +74,11 @@ def main() -> int:
             if story["status"] not in STORY_STATUSES:
                 problems.append(f"{sid}: status {story['status']!r} is not one of {STORY_STATUSES}")
 
+            dec_ids = [d.get("id") for d in story.get("decisions") or []]
+            for did in set(dec_ids):
+                if dec_ids.count(did) > 1:
+                    problems.append(f"{sid}: decision {did} is recorded {dec_ids.count(did)} times")
+
             ac_nums = []
             for ac in story.get("acceptance_criteria") or []:
                 aid = ac.get("id", "")
@@ -173,6 +178,9 @@ def main() -> int:
         "icebox": icebox,
         "assignment": {r["uid"]: {"epic": r["epic"], "role": r["role"]}
                        for r in assignment["assignment"]},
+        "decisions": sorted(
+            {d["id"]: d for s in stories for d in s.get("decisions") or []}.values(),
+            key=lambda d: d["id"]),
         "coverage": {
             "build_total": len(build_uids),
             "build_covered": len(build_uids & set(covered)),

@@ -206,9 +206,7 @@
         "week"
       ],
       "depends_on": [],
-      "open_questions": [
-        "In this vault the Calendar plugin's own weekly folder/format/template fields are blank, and weekly configuration actually comes from the Periodic Notes plugin instead. Should the Calendar-plugin importer skip offering itself when those fields are blank, to avoid suggesting an import of nothing?"
-      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-MIG-03.1",
@@ -284,6 +282,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-17",
+          "title": "An import with nothing to import is not offered",
+          "decision": "When a predecessor plugin's configuration is empty for every field the importer would read, that import is not offered at all.",
+          "rationale": "In this vault the Calendar plugin's weekly fields are blank because weekly configuration lives in Periodic Notes. Offering to import nothing is noise that teaches users to dismiss the import prompt without reading it.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -308,9 +315,7 @@
         "year"
       ],
       "depends_on": [],
-      "open_questions": [
-        "The Periodic Notes plugin's per-granularity configuration also carries an 'allow prefix matching' flag with no equivalent field in this configuration. Should the importer silently drop it, or should it be handed to whichever epic ends up owning prefix-matched note lookup?"
-      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-MIG-04.1",
@@ -388,6 +393,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-18",
+          "title": "Prefix matching is carried across on import",
+          "decision": "The per-granularity allow-prefix-matching flag transfers from the Periodic Notes configuration into the imported configuration. It is not dropped.",
+          "rationale": "The field has a direct equivalent in the new model. Dropping it silently turns off prefix matching for a vault that depends on it, and this vault does depend on it: its weekly notes are renamed to a longer title after creation and only resolve through a prefix match.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -416,9 +430,7 @@
         "year"
       ],
       "depends_on": [],
-      "open_questions": [
-        "The old code treats the mere presence of the Calendar plugin as proof that weekly notes are externally configured, without checking whether the Calendar plugin's own weekly setting is actually enabled -- unlike day, month and year, which all check an explicit enabled flag. Is that asymmetry intentional (the Calendar plugin always manages weekly notes once installed) or should weekly be checked the same way as the others?"
-      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-MIG-05.1",
@@ -481,6 +493,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-04",
+          "title": "Probe exactly one canonical plugin id per predecessor",
+          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin by one canonical id each, to offer a one-time import and to warn when a predecessor is still managing the same notes. The paired development-build id probe is not carried forward. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity.",
+          "rationale": "The dual-id probe existed only to let a development build and a store build of the same plugin coexist in one vault. The merged plugin removes that situation. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, goes with it.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -501,9 +522,7 @@
       "depends_on": [
         "US-MIG-05"
       ],
-      "open_questions": [
-        "Some cross-plugin detection is still needed: Calendaric must be able to tell whether the core Daily Notes plugin, the Calendar plugin or the Periodic Notes plugin is currently enabled, both to offer the one-time imports and to show this coexistence notice. What should not carry forward is the old dev-build/production-build id-pair probe for each of those plugins -- that existed only to support one vault's side-loaded development copies of Calendar and Periodic Notes, not a real interoperability need. Recommendation: probe exactly one canonical plugin id per predecessor plugin."
-      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-MIG-06.1",
@@ -554,6 +573,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-04",
+          "title": "Probe exactly one canonical plugin id per predecessor",
+          "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin by one canonical id each, to offer a one-time import and to warn when a predecessor is still managing the same notes. The paired development-build id probe is not carried forward. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity.",
+          "rationale": "The dual-id probe existed only to let a development build and a store build of the same plugin coexist in one vault. The merged plugin removes that situation. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, goes with it.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -570,9 +598,7 @@
         "n-a"
       ],
       "depends_on": [],
-      "open_questions": [
-        "When Calendaric loads data written by a newer version than the one currently running, should it preserve the fields it does not recognise so a later upgrade back to that newer version sees them again, or is it acceptable to drop them once the older version saves the file? This is a real design decision, not something the old plugins ever had to make."
-      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-MIG-07.1",
@@ -640,6 +666,15 @@
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-19",
+          "title": "Unrecognised configuration fields survive a round trip",
+          "decision": "Configuration written by a newer version keeps its unrecognised fields when an older version loads and saves the file.",
+          "rationale": "Same principle as preserving an unused named configuration group: running an older build once must not silently destroy settings, so that downgrading and upgrading again is safe.",
+          "decided_on": "2026-09-10"
         }
       ]
     }

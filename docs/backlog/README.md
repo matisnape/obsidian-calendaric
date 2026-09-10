@@ -84,9 +84,35 @@ are how the user's real vault uses these features today — constraints the
 stories must not break, cited in `constrained_by[]`. They are deliberately not
 turned into stories.
 
+## Decisions
+
+The stories surfaced 24 open questions. All 24 are now answered, as 20 decisions
+`DEC-01` … `DEC-20`, recorded on the stories they settle rather than in a chat
+log. A story carrying one shows the decision, the reasoning and the date; a
+decision that settles the same question in several epics is recorded on each of
+them, which is why 20 decisions appear on 22 stories.
+
+```bash
+python3 record_decision.py            # apply every decision; safe to re-run
+python3 record_decision.py DEC-07     # apply one
+python3 report.py                     # lists them, with the stories each covers
+```
+
+`record_decision.py` holds the decision text. Adding one means adding an entry
+there and re-running it, so the wording lives in version control next to
+everything it affects.
+
+The four with the widest reach:
+
+| Id | Decision |
+|---|---|
+| `DEC-01` | Week numbers and weekday tokens follow the configured week-start day, not ISO |
+| `DEC-02` | A file is a periodic note only when its folder matches too, not its name alone |
+| `DEC-03` | Desktop only for now, with every desktop-specific call behind one adapter |
+| `DEC-05` | The plugin ships in English only; no localisation layer |
+
 ## Known limits
 
 - Every criterion starts `unverified`. Nothing here has been checked against code yet.
-- 24 open questions are recorded across the stories. They are real design decisions, not placeholders — `report.py` lists them.
-- Three of those questions are the same disagreement seen from three epics: whether week-based tokens follow ISO weeks or the user's configured week-start day. `FMT` and `TPL` both decided in favour of the configured setting; `ARCH` flagged it as unresolved. It needs one answer, recorded once.
+- The decisions are recorded, not implemented. A criterion still describes the behaviour; the decision only settles which behaviour.
 - This epic split is a judgement, not a fact. `CAL` and `CMD` in particular both touch "open the note for this date" from different sides.

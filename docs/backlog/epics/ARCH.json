@@ -13,7 +13,9 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -95,7 +97,9 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -176,7 +180,9 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -255,7 +261,9 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -337,11 +345,11 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": [],
-      "open_questions": [
-        "The old calendar-ui indicator contract broke every consumer across a single version bump. Should the new indicator interface carry an explicit compatibility guarantee (e.g. only additive changes allowed), or is a documented breaking-change process considered sufficient? This is a product/process decision, not one this epic can settle on its own."
+      "granularity": [
+        "n-a"
       ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-ARCH-05.1",
@@ -395,6 +403,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-20",
+          "title": "The indicator interface changes additively only",
+          "decision": "Once published, the contract a calendar indicator implements only gains optional members. Removing or repurposing an existing member is a breaking change that requires a new contract alongside the old one.",
+          "rationale": "The previous indicator contract was rewritten in a single version bump and broke every implementation at once. An additive-only rule is the cheapest guarantee that keeps that from repeating.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -405,9 +422,13 @@
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
       "status": "todo",
-      "covers": ["forks:git-dependency-self-build"],
+      "covers": [
+        "forks:git-dependency-self-build"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -487,9 +508,13 @@
       "rationale": "Two separate P1 defects came from exactly this: Obsidian's 1.13 settings-modal DOM change crashed the Periodic Notes settings pane outright, and separate code that read a companion plugin's settings as a plain object rather than the reactive store it actually was silently and permanently returned nothing, so a shipped feature never worked for any user.",
       "priority": "must",
       "status": "todo",
-      "covers": ["forks:settings-tab-crash-guard-1.13"],
+      "covers": [
+        "forks:settings-tab-crash-guard-1.13"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -558,11 +583,11 @@
       "status": "todo",
       "covers": [],
       "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": [],
-      "open_questions": [
-        "Which behaviour is correct for week-based template tokens: ISO week numbering, or the user's configured \"Start week on\" setting? The map found the guide and the code disagree; deciding which one is right is a product decision this epic cannot make on its own."
+      "granularity": [
+        "n-a"
       ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-ARCH-08.1",
@@ -615,6 +640,15 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-01",
+          "title": "Week-based tokens and week numbers follow the configured week-start day",
+          "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
+          "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
+          "decided_on": "2026-09-10"
         }
       ]
     }

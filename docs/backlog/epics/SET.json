@@ -18,7 +18,12 @@
         "pn:settings-per-granularity-allow-prefix-match-toggle"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -98,10 +103,16 @@
       "rationale": "Global and per-granularity settings answer different questions, and mixing them makes the screen for either harder to read.",
       "priority": "should",
       "status": "todo",
-      "covers": ["cal:settings-tab-ui"],
+      "covers": [
+        "cal:settings-tab-ui"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": ["US-SET-01"],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [
+        "US-SET-01"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -158,9 +169,18 @@
         "dni:resolve-monthly-settings",
         "dni:resolve-yearly-settings"
       ],
-      "constrained_by": ["vault:resolve-daily-settings"],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-SET-01"],
+      "constrained_by": [
+        "vault:resolve-daily-settings"
+      ],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-SET-01"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -244,11 +264,16 @@
         "calendaric:open-format-guide-from-settings"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-SET-01"],
-      "open_questions": [
-        "Does Calendaric intend to support mobile Obsidian? The old format-guide link only worked on desktop; the new one must not silently fail on whichever platforms are actually in scope."
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
       ],
+      "depends_on": [
+        "US-SET-01"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-SET-04.1",
@@ -315,6 +340,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-03",
+          "title": "Desktop first, with the platform-specific surface behind one boundary",
+          "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
+          "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -325,10 +359,19 @@
       "rationale": "Two granularities both trying to auto-open at startup is a contradiction the settings screen has to resolve for the user, not leave as an ambiguous stored state.",
       "priority": "should",
       "status": "todo",
-      "covers": ["pn:settings-per-granularity-open-at-startup-toggle"],
+      "covers": [
+        "pn:settings-per-granularity-open-at-startup-toggle"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-SET-01"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-SET-01"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -391,10 +434,16 @@
       "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:persist-plugin-settings"],
+      "covers": [
+        "cal:persist-plugin-settings"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
-      "depends_on": ["US-SET-01"],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [
+        "US-SET-01"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -471,10 +520,20 @@
       "rationale": "A setting that only applies after a restart makes every change feel risky to try.",
       "priority": "must",
       "status": "todo",
-      "covers": ["cal:persist-plugin-settings"],
+      "covers": [
+        "cal:persist-plugin-settings"
+      ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-SET-01", "US-SET-06"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-SET-01",
+        "US-SET-06"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {

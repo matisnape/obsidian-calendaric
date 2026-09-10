@@ -20,7 +20,12 @@
         "calendaric:template-token-title"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -117,7 +122,10 @@
         "calendaric:template-token-yesterday-tomorrow"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week"],
+      "granularity": [
+        "day",
+        "week"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -174,13 +182,15 @@
         "dni:template-token-day-of-week",
         "calendaric:template-token-weekday-body"
       ],
-      "constrained_by": ["vault:monthly-work-generate-weekday-headers"],
-      "granularity": ["week", "day"],
-      "depends_on": [],
-      "open_questions": [
-        "The Sunday-first rule in AC-TPL-03.2 is derived from the token's own definition, not observed in this vault: every real template here, including the weekday-header generator this story is constrained by, assumes an ISO Monday-first week. Verify the Sunday-first case against a live 'Start week on: Sunday' configuration before shipping.",
-        "FMT hard-codes the identical ISO-Monday assumption for the same {{weekday:fmt}} syntax in the filename Format field (calendaric:template-token-weekday-format). Coordinate the fix so both surfaces resolve a given weekday the same way for the same week-start setting."
+      "constrained_by": [
+        "vault:monthly-work-generate-weekday-headers"
       ],
+      "granularity": [
+        "week",
+        "day"
+      ],
+      "depends_on": [],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-TPL-03.1",
@@ -247,6 +257,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-01",
+          "title": "Week-based tokens and week numbers follow the configured week-start day",
+          "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
+          "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -257,9 +276,13 @@
       "rationale": "A template path is free text pointing into the vault; nothing stops it from going stale or being mistyped, so it has to be checked rather than assumed.",
       "priority": "must",
       "status": "todo",
-      "covers": ["pn:template-validation"],
+      "covers": [
+        "pn:template-validation"
+      ],
       "constrained_by": [],
-      "granularity": ["n-a"],
+      "granularity": [
+        "n-a"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -345,7 +368,12 @@
         "vault:monthly-work-embed-base-views",
         "vault:monthly-work-validate-title-shape"
       ],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -421,7 +449,12 @@
         "vault:monthly-work-write-frontmatter-plan",
         "vault:create-yearly-note-static"
       ],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [

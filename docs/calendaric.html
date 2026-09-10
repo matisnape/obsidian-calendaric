@@ -204,6 +204,8 @@ function storyBlock(s, open) {
       <span class="kmeta" style="display:inline-flex; margin-left:8px">
         <code>${esc(s.id)}</code> ${bdg("epic", s.epic)} ${bdg(s.priority || "could", s.priority || "?")}
         ${bdg(s.status, s.status)} ${bdg("neutral", `${roll.pass}/${roll.total} AC`)}
+        ${(s.decisions || []).length ? bdg("done", `${s.decisions.length} decided`) : ""}
+        ${(s.open_questions || []).length ? bdg("blocked", `${s.open_questions.length} open`) : ""}
       </span></summary>
     <div class="note" style="margin-top:8px">${esc(s.story)}</div>
     ${s.rationale ? `<div class="note"><i>Why:</i> ${esc(s.rationale)}</div>` : ""}
@@ -221,6 +223,9 @@ function storyBlock(s, open) {
       ${(s.constrained_by || []).length ? `<span>constrained by ${s.constrained_by.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
       ${(s.depends_on || []).length ? `<span>after ${s.depends_on.map(u => `<code>${esc(u)}</code>`).join(" ")}</span>` : ""}
     </div>
+    ${(s.decisions || []).map(d => `<div class="note" style="border-left:2px solid var(--p3); padding-left:10px; margin-top:8px">
+      <b>${esc(d.id)} &middot; ${esc(d.title)}</b><br>${esc(d.decision)}
+      <br><i>Why:</i> ${esc(d.rationale)}</div>`).join("")}
     ${(s.open_questions || []).length ? `<div class="note"><i>Open:</i>${list(s.open_questions)}</div>` : ""}
   </details></div>`;
 }

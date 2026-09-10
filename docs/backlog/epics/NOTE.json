@@ -19,8 +19,15 @@
         "pn:get-periodic-note"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-11"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-11"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -90,8 +97,15 @@
         "dni:get-all-yearly-notes"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-11"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-11"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -160,7 +174,12 @@
         "calendaric:resolve-default-note-folder"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -244,12 +263,20 @@
         "pn:create-periodic-note",
         "calendaric:create-daily-or-weekly-note"
       ],
-      "constrained_by": ["vault:create-daily-note"],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-03", "US-NOTE-05"],
-      "open_questions": [
-        "Is a bare 'create' ever invoked directly by another epic, or does every real entry point go through open-or-create (US-NOTE-07), which already checks existence first? This changes how often AC-NOTE-04.5/.6 are actually reachable in practice."
+      "constrained_by": [
+        "vault:create-daily-note"
       ],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-03",
+        "US-NOTE-05"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-04.1",
@@ -328,6 +355,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-12",
+          "title": "Opening and creating a note share one entry point",
+          "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
+          "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -343,7 +379,12 @@
         "calendaric:apply-template-on-create"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -411,7 +452,12 @@
         "calendaric:open-note-in-new-tab"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
@@ -481,9 +527,22 @@
         "cal:create-weekly-note-with-confirmation",
         "pn:open-periodic-note"
       ],
-      "constrained_by": ["vault:create-daily-note", "vault:cascade-create-weekly-from-daily"],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-01", "US-NOTE-04", "US-NOTE-05", "US-NOTE-06"],
+      "constrained_by": [
+        "vault:create-daily-note",
+        "vault:cascade-create-weekly-from-daily"
+      ],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-01",
+        "US-NOTE-04",
+        "US-NOTE-05",
+        "US-NOTE-06"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -565,8 +624,15 @@
         "pn:find-note-in-cache"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-11"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-11"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -632,8 +698,15 @@
         "pn:find-adjacent-note"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-11"],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-NOTE-11"
+      ],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -699,11 +772,17 @@
         "pn:auto-apply-template-on-empty-manual-file"
       ],
       "constrained_by": [],
-      "granularity": ["day", "week", "month", "year"],
-      "depends_on": ["US-NOTE-11", "US-NOTE-05"],
-      "open_questions": [
-        "Should a periodic-shaped empty file that already existed before the plugin started (picked up only by the initial index build) also be auto-templated, or is 'only files created while running' the intended, permanent boundary?"
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
       ],
+      "depends_on": [
+        "US-NOTE-11",
+        "US-NOTE-05"
+      ],
+      "open_questions": [],
       "acceptance_criteria": [
         {
           "id": "AC-NOTE-10.1",
@@ -742,6 +821,15 @@
           "status": "unverified",
           "evidence": null
         }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-13",
+          "title": "Templates are applied only to files the plugin creates",
+          "decision": "A periodic-shaped empty file that already existed before the plugin started is indexed but never templated. Applying a template is limited to files the plugin creates while running.",
+          "rationale": "The alternative means the first index build after installing writes into files the plugin has never seen. Writing to someone's existing notes as a side effect of installing is not a behaviour to reintroduce.",
+          "decided_on": "2026-09-10"
+        }
       ]
     },
     {
@@ -760,8 +848,16 @@
         "pn:cache-resolve-frontmatter",
         "pn:cache-reset-on-settings-change"
       ],
-      "constrained_by": ["vault:cascade-create-weekly-from-daily", "vault:create-weekly-note-rename-move"],
-      "granularity": ["day", "week", "month", "year"],
+      "constrained_by": [
+        "vault:cascade-create-weekly-from-daily",
+        "vault:create-weekly-note-rename-move"
+      ],
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "year"
+      ],
       "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
