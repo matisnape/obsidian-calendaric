@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-70 user stories, 342 acceptance criteria. They describe what Calendaric must do
+71 user stories, 352 acceptance criteria. They describe what Calendaric must do
 for a user, not how the old plugins did it. An agent that builds a feature is
 judged against the acceptance criteria; an agent that validates the work reads
 them and records a verdict.
@@ -39,7 +39,7 @@ Ids are permanent. They appear in validation reports, so nothing is renumbered.
 | `MIG` | Importing existing configuration and coexisting with other plugins |
 | `ARCH` | Architecture, boundaries, testability and release quality |
 
-Plus `ICE`, the icebox: 8 entries covering 22 capabilities that are deliberately
+Plus `ICE`, the icebox: 8 entries covering 23 capabilities that are deliberately
 not in the first release. They are kept with the evidence for deferring them,
 what it would cost to add them later, and — most usefully — what the first
 release must not preclude.
