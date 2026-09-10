@@ -274,8 +274,8 @@ def cite(owner, source, text, problems, own_modules=(), sibling_repos=None):
         if not sibling:
             problems.append(f"{owner} cites {raw!r}, which is a bare git ref, not a path")
             return []
-        return [(owner, sibling, ".", None, True)]
-    return [(owner, sibling or source, path, lines, True)]
+        return [(owner, sibling, ".", None, True, False)]
+    return [(owner, sibling or source, path, lines, True, sibling is None)]
 
 
 def check_citations(out):
@@ -293,6 +293,10 @@ def check_citations(out):
     # A sibling repository is a declared source root, named by its directory.
     sibling_repos = {pathlib.Path(r).name: sid for sid, r in ROOTS.items() if r}
 
+    external_modules = {m["id"] for m in out["modules"] if m.get("external")}
+    external_modules |= {m["uid"] for m in out["modules"] if m.get("external")}
+    marker_allowed = set()
+
     records = []
     for c in out["capabilities"]:
         for d in c.get("defined_in") or []:
@@ -300,7 +304,9 @@ def check_citations(out):
             if not isinstance(path, str):
                 problems.append(f"capability {c['uid']} defined_in path is not a string: {path!r}")
                 continue
-            records.append((c["uid"], c["source"], path, lines, False))
+            if d.get("module") in external_modules:
+                marker_allowed.add(c["uid"])
+            records.append((c["uid"], c["source"], path, lines, False, False))
     for obs in out["observations"]:
         for where in obs.get("where") or []:
             records += cite(obs.get("id", "?"), obs["source"], where, problems,
@@ -324,13 +330,16 @@ def check_citations(out):
                     if not head.strip():
                         problems.append(f"{owner} cites {segment!r}, which names no file")
                         continue
-                    records.append((owner, rec["source"], head.strip(), tail, False))
+                    records.append((owner, rec["source"], head.strip(), tail, False, False))
                 else:
-                    records.append((owner, rec["source"], segment, None, False))
+                    records.append((owner, rec["source"], segment, None, False, False))
 
-    for owner, source, path, lines, may_cross in records:
+    for owner, source, path, lines, is_observation, may_hop in records:
         if path in ("—", "-", "n/a"):
-            continue        # explicit marker: this record cites no file on purpose
+            if owner not in marker_allowed:
+                problems.append(f"{owner} cites {path!r} instead of a file. That marker is only "
+                                f"for a capability defined in an external module.")
+            continue
         if not isinstance(path, str) or not path.strip():
             problems.append(f"{owner} has a citation with no path: {path!r}")
             continue
@@ -346,10 +355,10 @@ def check_citations(out):
         # already sits at the shared parent, so try the root first either way.
         base = pathlib.Path(root)
         candidates = [base / path]
-        if may_cross and path.split("/", 1)[0] in sibling_repos:
+        if may_hop and path.split("/", 1)[0] in sibling_repos:
             candidates.append(base.parent / path)
         if path.endswith("/") or path in ("./", "."):
-            if not may_cross:
+            if not is_observation:
                 problems.append(f"{owner} cites the directory {path}, but this record must name "
                                 f"the file that defines it")
             elif not any(c.is_dir() for c in candidates):

@@ -187,12 +187,15 @@ def main() -> int:
     # A reason has to be prose. A number, a zero-width space and a combining mark
     # each satisfied the earlier version of this check.
     INVISIBLE = ("Cc", "Cf", "Cs", "Co", "Cn", "Zs", "Zl", "Zp", "Mn", "Me")
+    # Category alone is not enough: a Hangul filler is a letter that renders as
+    # nothing, and NFKC turns one filler into another.
+    FILLERS = {"\u115f", "\u1160", "\u3164", "\uffa0", "\u2800", "\u180e"}
 
     def has_text(value):
         """True for a string carrying at least one visible base character."""
         if not isinstance(value, str):
             return False
-        return any(unicodedata.category(ch) not in INVISIBLE
+        return any(unicodedata.category(ch) not in INVISIBLE and ch not in FILLERS
                    for ch in unicodedata.normalize("NFKC", value))
 
     covered = defaultdict(list)
