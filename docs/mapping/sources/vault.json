@@ -1,0 +1,793 @@
+{
+  "source": {
+    "id": "vault",
+    "repo": "vault",
+    "path": "/Users/anna.nowak/Documents/Inbox",
+    "version": "n/a",
+    "role": "Real-world usage layer: the live Obsidian vault that consumes calendar/periodic-notes/templater. Shows which plugin features are actually depended on vs merely available."
+  },
+  "modules": [
+    {
+      "id": "vault-cfg-calendar",
+      "name": "calendar/data.json",
+      "path": ".obsidian/plugins/calendar/data.json",
+      "role": "Settings for the base (non-fork) Calendar plugin build. Not in community-plugins.json enabled list.",
+      "loc": 9,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-calendar-anks",
+      "name": "calendar-anks/data.json",
+      "path": ".obsidian/plugins/calendar-anks/data.json",
+      "role": "Settings for the enabled 'Calendar (dev)' fork. weeklyNote* fields are blanked out, deferring weekly note config to periodic-notes-anks.",
+      "loc": 9,
+      "category": "config",
+      "depends_on": ["vault-cfg-periodic-notes-anks"],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-periodic-notes-anks",
+      "name": "periodic-notes-anks/data.json",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json",
+      "role": "Live, active periodic-notes config. calendarSets[0] ('Default') is the source of truth for day/week/month/quarter/year folders, formats and template paths. Stale top-level daily/weekly/monthly/quarterly/yearly keys also present and disagree with calendarSets in places.",
+      "loc": 58,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-periodic-notes-legacy",
+      "name": "periodic-notes/data.json",
+      "path": ".obsidian/plugins/periodic-notes/data.json",
+      "role": "Config for the base (non-fork) Periodic Notes plugin. Plugin id absent from community-plugins.json (disabled). Contains a second calendar set 'Work' pointing at a 'Kurs/...' folder tree that does not exist on disk. Fully orphaned residue.",
+      "loc": 62,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-templater",
+      "name": "templater-obsidian/data.json",
+      "path": ".obsidian/plugins/templater-obsidian/data.json",
+      "role": "Templater settings: templates_folder plus per-folder auto-apply mapping (folder_templates) for daily/weekly/monthly/monthly-work/1on1 folders. trigger_on_file_creation_mode is 'folder', so any new file dropped into a mapped folder gets a template run automatically, independent of which plugin created the file.",
+      "loc": 27,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-daily-notes-core",
+      "name": "daily-notes.json",
+      "path": ".obsidian/daily-notes.json",
+      "role": "Core Obsidian 'Daily notes' plugin config. Enabled in core-plugins.json. Duplicates the same folder/format/template as periodic-notes-anks.calendarSets[0].day.",
+      "loc": 5,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-cfg-community-plugins",
+      "name": "community-plugins.json",
+      "path": ".obsidian/community-plugins.json",
+      "role": "Enabled community plugin list. Confirms calendar-anks + periodic-notes-anks (the -anks forks) are the live plugins; base calendar/periodic-notes are installed but disabled.",
+      "loc": 27,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-daily",
+      "name": "Daily Template.md",
+      "path": "_90 Ekstra/_91 Szablony/Daily Template.md",
+      "role": "Templater script run on every new daily note: writes frontmatter, links today's Work-monthly heading, and cascade-creates this week's weekly note if missing.",
+      "loc": 85,
+      "category": "integration",
+      "depends_on": ["vault-tmpl-weekly", "vault-cfg-templater"],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-weekly",
+      "name": "Weekly Periodic Template.md",
+      "path": "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md",
+      "role": "Templater script run on every new/raw weekly note: renames raw title to pretty title, moves file to target folder, writes frontmatter + prev/next links, renders a dataviewjs daily-note scan, and embeds Weekly Notes.base views.",
+      "loc": 151,
+      "category": "integration",
+      "depends_on": ["vault-base-weekly-notes"],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-monthly",
+      "name": "Monthly Periodic Template.md",
+      "path": "_90 Ekstra/_91 Szablony/Monthly Periodic Template.md",
+      "role": "Templater script run on every new monthly (personal) note: renames/moves to canonical folder, writes frontmatter (relates-to Work note, year link), renders dataview lists of the month's weekly/daily notes, and embeds Weekly Notes.base month views.",
+      "loc": 102,
+      "category": "integration",
+      "depends_on": ["vault-base-weekly-notes"],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-monthly-work",
+      "name": "Monthly Work Periodic Template.md",
+      "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md",
+      "role": "Templater script run on every new monthly Work note: validates title shape (YYYY-MM ... - Work), writes frontmatter/plan/links, pre-generates one ## heading per weekday of the month (for the daily template's anchored backlink), and embeds Weekly Notes.base Work-filtered month views.",
+      "loc": 115,
+      "category": "integration",
+      "depends_on": ["vault-base-weekly-notes"],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-yearly",
+      "name": "Yearly Template.md",
+      "path": "_90 Ekstra/_91 Szablony/Yearly Template.md",
+      "role": "Static frontmatter-only template for yearly notes; no Templater script logic.",
+      "loc": 5,
+      "category": "integration",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-tmpl-legacy",
+      "name": "Weekly Template.md / Monthly Template.md / Weekly 1.md / Monthly Note Template.md / Monthly Work Template DEPRECATED.md",
+      "path": "_90 Ekstra/_91 Szablony/",
+      "role": "Superseded periodic-note templates left on disk. Not referenced by any live calendarSets templatePath or templater folder_templates entry.",
+      "loc": 271,
+      "category": "integration",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "vault-base-weekly-notes",
+      "name": "Weekly Notes.base",
+      "path": "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base",
+      "role": "Bases file defining 6 table views (Created/Updated this week, this month, this month (Work)) driven by parsing the current note's own filename to derive a date range, plus a categories-contains-Work filter for the Work variants. Embedded by weekly/monthly/monthly-work templates.",
+      "loc": 144,
+      "category": "integration",
+      "depends_on": [],
+      "external": false
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "resolve-daily-settings",
+      "name": "Daily note folder/format/template is defined in three places at once",
+      "category": "config",
+      "surface": "config",
+      "description": "The same daily-note folder ('_00 Planer/_01 Dziennik'), filename format ('YYYY-MM-DD, dddd') and template path are configured independently in periodic-notes-anks.calendarSets[0].day, the core daily-notes.json, and templater's folder_templates entry for that folder. All three currently agree, but nothing keeps them in sync.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "vault-cfg-periodic-notes-anks", "symbol": "calendarSets[0].day", "path": ".obsidian/plugins/periodic-notes-anks/data.json", "lines": "8-14" },
+        { "module": "vault-cfg-daily-notes-core", "symbol": "root", "path": ".obsidian/daily-notes.json", "lines": "1-5" },
+        { "module": "vault-cfg-templater", "symbol": "folder_templates[1]", "path": ".obsidian/plugins/templater-obsidian/data.json", "lines": "17-20" }
+      ],
+      "used_by": ["vault-tmpl-daily"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "core daily-notes.json template path has no .md extension ('Daily Template') while the others do; Obsidian's TFile resolution tolerates this, but a naive string-compare in a merged plugin would not."
+      ],
+      "edge_cases": ["If any one of the three configs is edited without the others, whichever plugin actually creates the file wins silently."],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-daily-note",
+      "name": "Create a daily note",
+      "category": "notes",
+      "surface": "integration",
+      "description": "A new file matching the daily folder/format is created (by periodic-notes-anks's calendar UI, the core Daily Notes command, or manually), and because trigger_on_file_creation_mode is 'folder', Templater auto-runs Daily Template.md against it.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "vault-cfg-templater", "symbol": "folder_templates", "path": ".obsidian/plugins/templater-obsidian/data.json", "lines": "10-20" }
+      ],
+      "used_by": ["vault-tmpl-daily"],
+      "depends_on_capability": ["resolve-daily-settings"],
+      "behaviour_notes": ["Actual file creation is done by an external plugin (periodic-notes-anks or core daily-notes), out of scope of this vault's own code; Templater only reacts to the folder."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "daily-write-frontmatter",
+      "name": "Daily note frontmatter (month/week links + tags)",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Parses the date from the file title (must start with YYYY-MM-DD), then writes frontmatter linking both the personal and Work monthly notes and the weekly note, plus journal/journal-daily tags.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "vault-tmpl-daily", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Daily Template.md", "lines": "16-63" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Aborts with a visible warning block instead of throwing if the title doesn't start with YYYY-MM-DD or moment can't parse it (Daily Template.md:20-30)."
+      ],
+      "edge_cases": ["Title must literally start with YYYY-MM-DD; a note renamed or created with a different prefix silently gets the warning block as its entire content."],
+      "confidence": "verified"
+    },
+    {
+      "id": "daily-anchor-link-to-work-heading",
+      "name": "Anchored backlink from daily note to today's Work-monthly heading",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Computes the current month's Work note title, reads that file's raw content, and only emits a `[[Month - Work#DD.MM, dddd]]` link under '# Today' if the matching '## DD.MM, dddd' heading is actually found via regex in that file's body.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "vault-tmpl-daily", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Daily Template.md", "lines": "38-52" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["monthly-work-generate-weekday-headers"],
+      "behaviour_notes": [
+        "Silently omits the link (no warning) if the Work-monthly note doesn't exist yet or the heading isn't found — e.g. weekend days, since headers are only generated Mon-Fri (isoWeekday() <= 5)."
+      ],
+      "edge_cases": ["Depends on exact heading text match; renaming/reformatting a heading in the Work-monthly note breaks the link silently for that day only."],
+      "confidence": "verified"
+    },
+    {
+      "id": "cascade-create-weekly-from-daily",
+      "name": "Auto-create this week's weekly note from the daily template",
+      "category": "notes",
+      "surface": "integration",
+      "description": "After computing the current week's pretty title, checks whether that exact file already exists at '_00 Planer/_02 Tygodnie/<pretty title>.md'; if not, calls tp.file.create_new on the Weekly Periodic Template to create it (open_new=false, so focus stays on the daily note being edited).",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "vault-tmpl-daily", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Daily Template.md", "lines": "71-85" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["create-weekly-note-rename-move"],
+      "behaviour_notes": [
+        "Checks only the pretty path, relying on the invariant that Weekly Periodic Template always renames/moves itself into that exact pretty form (Daily Template.md:73-75 comment).",
+        "If the weekly template file itself can't be found by tp.file.find_tfile, emits a warning instead of failing (Daily Template.md:82-84)."
+      ],
+      "edge_cases": ["If a weekly note was ever created under a different name/location (e.g. templater misfire), this check won't see it and will create a duplicate."],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-weekly-note-rename-move",
+      "name": "Rename raw weekly title to pretty, move into target folder",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Extracts the ISO week (YYYY-Wnn) from either a raw or already-pretty file title, computes the pretty title 'GGGG-[W]WW, DD.MM - DD.MM', renames the file to it, and moves it into '_00 Planer/_02 Tygodnie' if not already there.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "vault-tmpl-weekly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md", "lines": "29-84" }
+      ],
+      "used_by": ["vault-tmpl-daily"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Uses tp.config.target_file rather than app.workspace.getActiveFile() specifically because this template can run on a file that isn't the active/open note (created programmatically by the daily template) — documented in-file at lines 66-71.",
+        "ensureFolder() creates parent folders recursively since Obsidian's createFolder requires parents to pre-exist (lines 17-27)."
+      ],
+      "edge_cases": ["Week parsing regex only matches a leading '\\d{4}-W\\d{2}'; a title not starting that way aborts with a warning (lines 32-36)."],
+      "confidence": "verified"
+    },
+    {
+      "id": "weekly-write-frontmatter-nav",
+      "name": "Weekly note frontmatter (month/year links) + prev/next navigation",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "From the Monday of the ISO week, computes and writes month (personal + Work) and year (personal + 1on1 Self Review) frontmatter links, journal/journal-weekly tags, and a prev/next line linking the adjacent pretty weekly titles.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "vault-tmpl-weekly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md", "lines": "86-104" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["create-weekly-note-rename-move"],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "weekly-dataviewjs-daily-scan",
+      "name": "Weekly note's inline daily-note listing (dataviewjs)",
+      "category": "integration",
+      "surface": "integration",
+      "description": "A dataviewjs block parses the weekly note's own filename ('YYYY-Www, DD.MM - DD.MM') into a start/end date range, then lists every note in '_00 Planer/_01 Dziennik' whose filename starts with a date inside that range.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "vault-tmpl-weekly", "symbol": "root script (dataviewjs block)", "path": "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md", "lines": "107-148" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Handles year rollover for weeks spanning Dec/Jan (endYear = year+1 if end month < start month) (lines 122-123).",
+        "External dependency on the Dataview plugin being installed/enabled; without it this block renders as a raw code fence."
+      ],
+      "edge_cases": ["Hardcodes the daily folder path; if the daily folder ever moves, this block breaks independently of the frontmatter-driven month template's dataview query."],
+      "confidence": "verified"
+    },
+    {
+      "id": "weekly-embed-base-views",
+      "name": "Weekly note embeds Bases 'Created/Updated this week' views",
+      "category": "integration",
+      "surface": "template-token",
+      "description": "Embeds two views from Weekly Notes.base ('Created this week', 'Updated this week'), which independently parse the weekly note's own filename to derive its date range and filter all vault files (excluding planner/template/archive folders) by file.ctime/file.mtime.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "vault-tmpl-weekly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md", "lines": "149-151" },
+        { "module": "vault-base-weekly-notes", "symbol": "views[0-1]", "path": "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base", "lines": "16-57" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["'Updated this week' is documented in the base file itself as unreliable for past weeks, since file.mtime is a single timestamp, not history (Weekly Notes.base:36-38)."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-monthly-note-rename-move",
+      "name": "Rename/move monthly (personal) note to canonical form",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Parses YYYY-MM from the title, computes the canonical 'YYYY-MM MMMM' title, renames the file if needed, and moves it into '_00 Planer/_03 Miesiące'.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Periodic Template.md", "lines": "19-101" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Writes frontmatter/body content before doing rename/move, commented as 'less fragile' (lines 44-45)."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-write-frontmatter-nav",
+      "name": "Monthly note frontmatter + prev/next + Stuff checklist",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Writes 'relates to' link to the paired Work-monthly note, year link, journal/journal-monthly tags, prev/next month links, and a blank '# Stuff' checklist item.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Periodic Template.md", "lines": "45-56" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["create-monthly-note-rename-move"],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-dataview-weekly-daily-lists",
+      "name": "Monthly note's dataview lists of its weekly/daily notes",
+      "category": "integration",
+      "surface": "integration",
+      "description": "Two plain Dataview LIST queries filter '_00 Planer/_02 Tygodnie' and '_00 Planer/_01 Dziennik' for notes whose frontmatter 'month' field contains a link to this monthly note, sorted ascending by filename.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Periodic Template.md", "lines": "61-75" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Comment explains this is link-driven (frontmatter 'month') rather than file.ctime-driven, so a month note created in advance still correctly lists its own future notes (Monthly Periodic Template.md:58-60)."
+      ],
+      "edge_cases": ["Depends entirely on the daily/weekly templates having actually written the 'month' frontmatter link; a manually created daily/weekly note without it won't show up."],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-embed-base-views",
+      "name": "Monthly note embeds Bases 'Created/Updated this month' views",
+      "category": "integration",
+      "surface": "template-token",
+      "description": "Embeds 'Created this month' / 'Updated this month' views from Weekly Notes.base, which derive the month's date range from the host note's own filename (YYYY-MM prefix).",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Periodic Template.md", "lines": "77-80" },
+        { "module": "vault-base-weekly-notes", "symbol": "views[2-3]", "path": "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base", "lines": "58-100" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-work-validate-title-shape",
+      "name": "Monthly-Work template only activates on a matching title",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Requires the title to start with 'YYYY-MM' AND end with ' - Work'; if either check fails, the template returns immediately and writes nothing, since it is auto-triggered on every new file in the Work-monthly folder regardless of name.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly-work", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md", "lines": "34-52" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["In-file comment: 'Apply only when rules pass => do nothing' — a deliberate no-op guard, not an error path (lines 41-43)."],
+      "edge_cases": ["A file created in '_00 Planer/_03a Miesiące Work' with a non-conforming name is auto-templated to an empty file with no warning."],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-work-write-frontmatter-plan",
+      "name": "Monthly-Work frontmatter, Plan/Links/TODO sections",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Writes monthly/work tags, 'relates to' link back to the personal monthly note and '1on1 start here', year link, prev/next Work-month links, and static Plan/Ważne linki/TODO section stubs (including a hardcoded Notion URL).",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly-work", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md", "lines": "62-80" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["monthly-work-validate-title-shape"],
+      "behaviour_notes": [],
+      "edge_cases": ["Hardcoded Notion link and 1on1 note names are copy-pasted content, not computed — will go stale independent of the template logic."],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-work-generate-weekday-headers",
+      "name": "Pre-generate one heading per weekday of the month",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "Walks backward from end-of-month to start-of-month, emitting '## DD.MM, dddd' for each day whose isoWeekday() <= 5 (Mon-Fri), producing a descending list of weekday headings under '# <u>Daily</u>'.",
+      "granularity": ["month", "day"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly-work", "symbol": "generateMonthlyWorkHeaders", "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md", "lines": "17-32" },
+        { "module": "vault-tmpl-monthly-work", "symbol": "root script (invocation)", "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md", "lines": "90-93" }
+      ],
+      "used_by": ["daily-anchor-link-to-work-heading"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Weekends are never given headings, which is exactly why the daily template's anchored-link feature finds no heading (and links nothing) on Sat/Sun."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "monthly-work-embed-base-views",
+      "name": "Monthly-Work note embeds Bases Work-filtered month views",
+      "category": "integration",
+      "surface": "template-token",
+      "description": "Embeds 'Created this month (Work)' / 'Updated this month (Work)' views, which additionally filter to notes whose 'categories' frontmatter links to '[[Work]]', on top of the same filename-derived month range.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "vault-tmpl-monthly-work", "symbol": "root script", "path": "_90 Ekstra/_91 Szablony/Monthly Work Periodic Template.md", "lines": "85-88" },
+        { "module": "vault-base-weekly-notes", "symbol": "views[4-5]", "path": "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base", "lines": "101-143" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["In-file comment notes the title prefix ('YYYY-MM MMMM - Work') shares slice offsets with the plain monthly title, so the same slice(0,4)/slice(5,7) logic works unmodified (Weekly Notes.base:101-103)."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-yearly-note-static",
+      "name": "Create a yearly note (static frontmatter only)",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Applies a fixed frontmatter block (journal, journal/yearly tags) with no computed logic, rename, or move — the only granularity whose template does no scripting at all.",
+      "granularity": ["year"],
+      "defined_in": [
+        { "module": "vault-tmpl-yearly", "symbol": "root", "path": "_90 Ekstra/_91 Szablony/Yearly Template.md", "lines": "1-5" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Unlike day/week/month, periodic-notes-anks.calendarSets[0].year has allowPrefixMatch:false and a bare 'YYYY' format, so no rename step is needed — the note is already created with its final name."],
+      "edge_cases": [],
+      "confidence": "verified"
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow-daily-note-end-to-end",
+      "title": "Create today's daily note",
+      "description": "Any of three configured mechanisms creates the file in the daily folder; Templater's folder trigger then runs Daily Template.md, which writes frontmatter, links today's Work-monthly heading if it exists, and cascades into creating this week's weekly note if it doesn't exist yet.",
+      "trigger": "periodic-notes-anks calendar UI, core Daily Notes command, or a file manually created in '_00 Planer/_01 Dziennik'",
+      "steps": [
+        { "from": "external:periodic-notes-anks-plugin", "to": "vault-cfg-periodic-notes-anks", "action": "resolve day folder/format/template from calendarSets[0].day", "payload": "—" },
+        { "from": "vault-cfg-templater", "to": "vault-tmpl-daily", "action": "auto-run template on file created in the mapped folder (trigger_on_file_creation_mode=folder)", "payload": "new TFile" },
+        { "from": "vault-tmpl-daily", "to": "vault-tmpl-daily", "action": "parse date from title, write frontmatter (month/week links, tags)", "payload": "moment date" },
+        { "from": "vault-tmpl-daily", "to": "vault-tmpl-monthly-work", "action": "read Work-monthly note content, check for today's weekday heading, emit anchored link if found", "payload": "heading regex" },
+        { "from": "vault-tmpl-daily", "to": "vault-tmpl-weekly", "action": "if this week's pretty-named weekly note doesn't exist, tp.file.create_new() it", "payload": "currentWeekTitle" }
+      ],
+      "capabilities": ["create-daily-note", "daily-write-frontmatter", "daily-anchor-link-to-work-heading", "cascade-create-weekly-from-daily"],
+      "confidence": "verified"
+    },
+    {
+      "id": "flow-weekly-note-end-to-end",
+      "title": "Create (or cascade-create) a weekly note",
+      "description": "A weekly note is created under its raw ISO-week title (by periodic-notes-anks, or programmatically by the daily template); Templater runs Weekly Periodic Template.md, which renames it to the pretty DD.MM-range title, moves it into the weekly folder, writes frontmatter/nav, and renders both a dataviewjs daily-note scan and embedded Bases views.",
+      "trigger": "periodic-notes-anks calendar UI, or Daily Template's cascade-create step",
+      "steps": [
+        { "from": "vault-tmpl-daily", "to": "vault-tmpl-weekly", "action": "create_new() with open_new=false", "payload": "raw or pretty week title" },
+        { "from": "vault-tmpl-weekly", "to": "vault-tmpl-weekly", "action": "parse week key, compute pretty title, rename + move to '_00 Planer/_02 Tygodnie'", "payload": "GGGG-[W]WW" },
+        { "from": "vault-tmpl-weekly", "to": "vault-tmpl-weekly", "action": "write frontmatter (month/year links, tags) + prev/next nav", "payload": "—" },
+        { "from": "vault-tmpl-weekly", "to": "external:dataview-plugin", "action": "run dataviewjs block scanning '_00 Planer/_01 Dziennik' by parsed date range", "payload": "start/end Luxon dates" },
+        { "from": "vault-tmpl-weekly", "to": "vault-base-weekly-notes", "action": "embed 'Created this week' / 'Updated this week' views", "payload": "—" }
+      ],
+      "capabilities": ["create-weekly-note-rename-move", "weekly-write-frontmatter-nav", "weekly-dataviewjs-daily-scan", "weekly-embed-base-views"],
+      "confidence": "verified"
+    },
+    {
+      "id": "flow-monthly-note-end-to-end",
+      "title": "Create a personal monthly note",
+      "description": "A monthly note created under a YYYY-MM-prefixed title gets renamed to canonical 'YYYY-MM MMMM' form, moved into the monthly folder, given frontmatter linking its Work-monthly counterpart and the year note, and populated with dataview lists plus embedded Bases views of its own weekly/daily children.",
+      "trigger": "periodic-notes-anks calendar UI, or a manually created file in '_00 Planer/_03 Miesiące'",
+      "steps": [
+        { "from": "vault-cfg-templater", "to": "vault-tmpl-monthly", "action": "auto-run template on file created in the mapped folder", "payload": "new TFile" },
+        { "from": "vault-tmpl-monthly", "to": "vault-tmpl-monthly", "action": "parse YYYY-MM, write frontmatter/nav/body, then rename+move", "payload": "moment date" },
+        { "from": "vault-tmpl-monthly", "to": "external:dataview-plugin", "action": "run two LIST queries against '_00 Planer/_02 Tygodnie' and '_00 Planer/_01 Dziennik' filtered by frontmatter 'month' link", "payload": "link(this.file.name)" },
+        { "from": "vault-tmpl-monthly", "to": "vault-base-weekly-notes", "action": "embed 'Created this month' / 'Updated this month' views", "payload": "—" }
+      ],
+      "capabilities": ["create-monthly-note-rename-move", "monthly-write-frontmatter-nav", "monthly-dataview-weekly-daily-lists", "monthly-embed-base-views"],
+      "confidence": "verified"
+    },
+    {
+      "id": "flow-monthly-work-note-end-to-end",
+      "title": "Create a Work-monthly note",
+      "description": "A file created in the Work-monthly folder with a name matching 'YYYY-MM ... - Work' gets frontmatter, a Plan/links/TODO body, one weekday heading per Mon-Fri day of the month, and embedded Work-filtered Bases views; a non-matching filename gets nothing (silent no-op).",
+      "trigger": "periodic-notes-anks calendar UI (calendarSets[0].month is actually mapped to the PERSONAL monthly folder/template — see observations for the stale top-level 'monthly' key that instead points here), or a manually created file",
+      "steps": [
+        { "from": "vault-cfg-templater", "to": "vault-tmpl-monthly-work", "action": "auto-run template on file created in the mapped folder", "payload": "new TFile" },
+        { "from": "vault-tmpl-monthly-work", "to": "vault-tmpl-monthly-work", "action": "validate title shape; abort silently if it doesn't match", "payload": "regex" },
+        { "from": "vault-tmpl-monthly-work", "to": "vault-tmpl-monthly-work", "action": "write frontmatter/plan/links, generate one heading per weekday", "payload": "moment date range" },
+        { "from": "vault-tmpl-monthly-work", "to": "vault-base-weekly-notes", "action": "embed 'Created/Updated this month (Work)' views", "payload": "—" }
+      ],
+      "capabilities": ["monthly-work-validate-title-shape", "monthly-work-write-frontmatter-plan", "monthly-work-generate-weekday-headers", "monthly-work-embed-base-views"],
+      "confidence": "verified"
+    },
+    {
+      "id": "flow-yearly-note-end-to-end",
+      "title": "Create a yearly note",
+      "description": "A note created with the bare 'YYYY' format in the yearly folder gets a static frontmatter block applied; no computed logic, rename, or cross-note creation happens.",
+      "trigger": "periodic-notes-anks calendar UI, or a manually created file in '_00 Planer/_05 Lata'",
+      "steps": [
+        { "from": "vault-cfg-templater", "to": "vault-tmpl-yearly", "action": "auto-run template on file created in the mapped folder", "payload": "new TFile" },
+        { "from": "vault-tmpl-yearly", "to": "vault-tmpl-yearly", "action": "write static frontmatter", "payload": "—" }
+      ],
+      "capabilities": ["create-yearly-note-static"],
+      "confidence": "verified"
+    }
+  ],
+  "settings": [
+    {
+      "key": "calendarSets[].day.{enabled,format,folder,templatePath,allowPrefixMatch}",
+      "label": "Day granularity config (live)",
+      "type": "object",
+      "default": "enabled=true, format='YYYY-MM-DD, dddd', folder='_00 Planer/_01 Dziennik', templatePath='_90 Ekstra/_91 Szablony/Daily Template.md', allowPrefixMatch=false",
+      "scope": "per-calendar-set",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:8-14",
+      "affects": ["create-daily-note", "daily-write-frontmatter"],
+      "notes": "This is the live source of truth; the top-level 'daily' key (line 27-32) agrees with it exactly."
+    },
+    {
+      "key": "calendarSets[].week.{enabled,format,folder,templatePath,allowPrefixMatch}",
+      "label": "Week granularity config (live)",
+      "type": "object",
+      "default": "enabled=true, format='gggg-[W]ww', folder='_00 Planer/_02 Tygodnie', templatePath='_90 Ekstra/_91 Szablony/Weekly Periodic Template.md', allowPrefixMatch=true",
+      "scope": "per-calendar-set",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:15-21",
+      "affects": ["create-weekly-note-rename-move"],
+      "notes": "allowPrefixMatch=true is required here (unlike day/year) because Weekly Periodic Template renames the raw 'gggg-[W]ww' file to a longer pretty title; the plugin must still match it by its original prefix."
+    },
+    {
+      "key": "calendarSets[].month.{enabled,format,folder,templatePath}",
+      "label": "Month granularity config (live)",
+      "type": "object",
+      "default": "enabled=true, format='YYYY-MM MMMM', folder='_00 Planer/_03 Miesiące', templatePath='_90 Ekstra/_91 Szablony/Monthly Periodic Template.md'",
+      "scope": "per-calendar-set",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:22-28",
+      "affects": ["create-monthly-note-rename-move"],
+      "notes": "Disagrees with the stale top-level 'monthly' key (format='YYYY-MM', template='Monthly work.md', folder='_00 Planer/_03a Miesiące Work') — see observations."
+    },
+    {
+      "key": "calendarSets[].quarter.{enabled,format,folder,templatePath}",
+      "label": "Quarter granularity config",
+      "type": "object",
+      "default": "enabled=false, format='YYYY-[Q]Q', folder='', templatePath=''",
+      "scope": "per-calendar-set",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:29-34",
+      "affects": [],
+      "notes": "Disabled and unconfigured. Unused feature."
+    },
+    {
+      "key": "calendarSets[].year.{enabled,format,folder,templatePath,allowPrefixMatch}",
+      "label": "Year granularity config (live)",
+      "type": "object",
+      "default": "enabled=true, format='YYYY', folder='_00 Planer/_05 Lata', templatePath='_90 Ekstra/_91 Szablony/Yearly Template.md', allowPrefixMatch=false",
+      "scope": "per-calendar-set",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:35-41",
+      "affects": ["create-yearly-note-static"],
+      "notes": "Stale top-level 'yearly' key agrees on format/folder but has template='' — disagreement is on the template path only."
+    },
+    {
+      "key": "activeCalendarSet",
+      "label": "Active calendar set id",
+      "type": "string",
+      "default": "Default",
+      "scope": "global",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:6",
+      "affects": [],
+      "notes": "Only one calendar set ('Default') exists in the live plugin; multi-calendar-set support is unused here (the base periodic-notes plugin's stale config does have a second 'Work' set, but that plugin is disabled)."
+    },
+    {
+      "key": "enableTimelineComplication",
+      "label": "Enable timeline complication",
+      "type": "boolean",
+      "default": true,
+      "scope": "global",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:42",
+      "affects": [],
+      "notes": "Enabled but no template or note content references the timeline view; unused in practice as far as readable files show."
+    },
+    {
+      "key": "weekStart (periodic-notes-anks top-level)",
+      "label": "Week start (periodic-notes-anks)",
+      "type": "enum",
+      "default": "locale",
+      "scope": "global",
+      "path": ".obsidian/plugins/periodic-notes-anks/data.json:44",
+      "affects": ["create-weekly-note-rename-move"],
+      "notes": "Note: this differs from calendar-anks' own weekStart='monday' (data.json). Weekly template computes weeks via moment's isoWeek(), which is locale-independent Monday-start regardless of either setting, so the practical effect is currently nil, but it's a config divergence worth flattening in the merge."
+    },
+    {
+      "key": "weekStart (calendar-anks)",
+      "label": "Week start (Calendar plugin heatmap)",
+      "type": "enum",
+      "default": "monday",
+      "scope": "global",
+      "path": ".obsidian/plugins/calendar-anks/data.json:2",
+      "affects": [],
+      "notes": "Governs only the Calendar heatmap grid's start-of-week column, not note creation."
+    },
+    {
+      "key": "wordsPerDot",
+      "label": "Words per calendar heatmap dot",
+      "type": "number",
+      "default": 250,
+      "scope": "global",
+      "path": ".obsidian/plugins/calendar-anks/data.json:3",
+      "affects": [],
+      "notes": "Base calendar/data.json (inactive) has 50; calendar-anks (active) has 250. Only dot-source in use is word count — no custom metadata dot source configured anywhere readable."
+    },
+    {
+      "key": "shouldConfirmBeforeCreate",
+      "label": "Confirm before creating a new note from calendar UI",
+      "type": "boolean",
+      "default": true,
+      "scope": "global",
+      "path": ".obsidian/plugins/calendar-anks/data.json:1",
+      "affects": ["create-daily-note"],
+      "notes": null
+    },
+    {
+      "key": "weeklyNoteFormat / weeklyNoteTemplate / weeklyNoteFolder (calendar-anks)",
+      "label": "Calendar plugin's own weekly-note settings",
+      "type": "string",
+      "default": "\"\" (all blank)",
+      "scope": "global",
+      "path": ".obsidian/plugins/calendar-anks/data.json:5-7",
+      "affects": [],
+      "notes": "Dead in the current build — blanked out, deferring entirely to periodic-notes-anks.calendarSets[0].week. The disabled base calendar/data.json still has these filled in (folder='_00 Planer/_02 Tygodnie', template path set), which is inert residue."
+    },
+    {
+      "key": "templates_folder",
+      "label": "Templater templates root folder",
+      "type": "string",
+      "default": "_90 Ekstra/_91 Szablony",
+      "scope": "global",
+      "path": ".obsidian/plugins/templater-obsidian/data.json:3",
+      "affects": ["create-daily-note", "flow-weekly-note-end-to-end", "flow-monthly-note-end-to-end", "flow-monthly-work-note-end-to-end", "flow-yearly-note-end-to-end"],
+      "notes": null
+    },
+    {
+      "key": "trigger_on_file_creation_mode",
+      "label": "When Templater auto-applies a template",
+      "type": "enum",
+      "default": "folder",
+      "scope": "global",
+      "path": ".obsidian/plugins/templater-obsidian/data.json:5",
+      "affects": ["create-daily-note", "flow-weekly-note-end-to-end", "flow-monthly-note-end-to-end", "flow-monthly-work-note-end-to-end"],
+      "notes": "Means Templater reacts purely to folder location, independent of which plugin (periodic-notes-anks, core daily-notes, or a manual file create) produced the file."
+    },
+    {
+      "key": "folder_templates",
+      "label": "Per-folder auto-template mapping",
+      "type": "array",
+      "default": "5 entries: weekly, daily, monthly, monthly-work, 1on1",
+      "scope": "global",
+      "path": ".obsidian/plugins/templater-obsidian/data.json:8-25",
+      "affects": ["create-daily-note", "flow-weekly-note-end-to-end", "flow-monthly-note-end-to-end", "flow-monthly-work-note-end-to-end"],
+      "notes": "The 1on1 folder mapping ('_00 Planer/_04 1on1' -> '1on1 Yearly - 1on1 Self Review.md') is outside periodic-notes-anks's granularities entirely (quarter is disabled) — a parallel, template-only periodic mechanism not modeled by the calendar/periodic-notes plugins at all."
+    },
+    {
+      "key": "format (core daily-notes.json)",
+      "label": "Core Daily Notes plugin format",
+      "type": "string",
+      "default": "YYYY-MM-DD, dddd",
+      "scope": "global",
+      "path": ".obsidian/daily-notes.json:2",
+      "affects": ["create-daily-note"],
+      "notes": "Third independent copy of the same setting; see resolve-daily-settings capability."
+    }
+  ],
+  "commands": [],
+  "api_surface": [],
+  "observations": [
+    {
+      "severity": "P2",
+      "kind": "duplication",
+      "what": "Daily-note folder/format/template is independently configured in three places: periodic-notes-anks.calendarSets[0].day, core .obsidian/daily-notes.json, and Templater's folder_templates entry. All three currently agree.",
+      "where": [
+        ".obsidian/plugins/periodic-notes-anks/data.json:8-14",
+        ".obsidian/daily-notes.json:1-5",
+        ".obsidian/plugins/templater-obsidian/data.json:17-20"
+      ],
+      "why_it_matters": "A merged plugin has to decide which of these three config surfaces is authoritative for daily notes; picking wrong, or dropping one silently, changes which plugin creates the file and could break the folder-trigger Templater relies on."
+    },
+    {
+      "severity": "P2",
+      "kind": "version-skew",
+      "what": "periodic-notes-anks/data.json keeps stale top-level daily/weekly/monthly/quarterly/yearly keys alongside the live calendarSets[0] object, and the top-level 'monthly' key actively disagrees with the live month config: it points to folder '_00 Planer/_03a Miesiące Work' and template 'Monthly work.md' (i.e. the WORK values), while calendarSets[0].month correctly points to '_00 Planer/_03 Miesiące' and 'Monthly Periodic Template.md'.",
+      "where": [".obsidian/plugins/periodic-notes-anks/data.json:47-58"],
+      "why_it_matters": "Reading the top-level keys instead of calendarSets[] gives a wrong and specifically misleading answer for month (it looks like a valid config, just the wrong one) rather than an obviously-empty one. Any merge tooling that walks the JSON generically must be pointed at calendarSets[], never the legacy top-level block."
+    },
+    {
+      "severity": "P3",
+      "kind": "dead-code",
+      "what": "The base (non-fork) 'periodic-notes' plugin (id 'periodic-notes', not 'periodic-notes-anks') is installed but absent from community-plugins.json, i.e. disabled. Its data.json contains a second calendar set ('Work') whose folders all live under 'Kurs/...', a top-level folder that does not exist anywhere in this vault.",
+      "where": [".obsidian/plugins/periodic-notes/data.json:20-32"],
+      "why_it_matters": "Fully orphaned config from a prior vault layout; safe to ignore entirely for the merge, but worth flagging so nobody mistakes the 'Work' calendar-set pattern there for a currently-used multi-calendar-set feature."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "Quarterly notes are disabled and unconfigured (enabled:false, format/folder/templatePath present but empty or default) in the live calendarSets[0].",
+      "where": [".obsidian/plugins/periodic-notes-anks/data.json:29-34"],
+      "why_it_matters": "Quarterly-note support can be scoped out of (or deprioritized in) the merged plugin's initial feature set — nothing in this vault depends on it."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "Only one calendar set ('Default') is defined in the live periodic-notes-anks config; multi-calendar-set support (multiple independent day/week/month/year configs, e.g. a 'Work' set) is unused in the active plugin.",
+      "where": [".obsidian/plugins/periodic-notes-anks/data.json:6-46"],
+      "why_it_matters": "The 'Work' vs personal split in this vault is instead implemented ad hoc via a second physical folder + a separate template + a ' - Work' filename suffix, not via periodic-notes' own multi-calendar-set mechanism. A merge should not assume calendar-sets are how 'Work' notes are actually kept separate here."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "enableTimelineComplication is true, but no template, dataview query, or note content in the readable files references a timeline view.",
+      "where": [".obsidian/plugins/periodic-notes-anks/data.json:42"],
+      "why_it_matters": "Timeline complication can likely be deprioritized as a feature nobody is observed to use, pending a UI check outside this agent's read scope."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "Calendar plugin's word-count-based heatmap dot (wordsPerDot) is the only 'dot source' configured; no custom/metadata-based dot source (e.g. a mood or task-count field) appears in any readable config.",
+      "where": [".obsidian/plugins/calendar-anks/data.json:3"],
+      "why_it_matters": "If the merged plugin's calendar view supports pluggable dot sources, only the built-in word-count source needs porting as 'used'; anything more elaborate is unused here."
+    },
+    {
+      "severity": "P3",
+      "kind": "coupling",
+      "what": "The weekly template, monthly template, and monthly-work template all embed views from a single shared 'Weekly Notes.base' file, and separately the weekly template's dataviewjs block independently hardcodes the daily-notes folder path ('_00 Planer/_01 Dziennik').",
+      "where": [
+        "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base:1-144",
+        "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md:129"
+      ],
+      "why_it_matters": "These are two independent couplings to the exact folder names in periodic-notes-anks.calendarSets[0] (daily folder, and each view's filename-parsing assumptions about title format). Renaming any planner folder or filename format in the merged plugin requires updating both the Templater scripts and the Bases file's view filters/parsing offsets in lockstep — there is no shared constant."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "Five older periodic-note templates ('Weekly Template.md', 'Monthly Template.md', 'Weekly 1.md', 'Monthly Note Template.md', 'Monthly Work Template DEPRECATED.md') sit in the templates folder but are referenced by no live calendarSets templatePath and no templater folder_templates entry.",
+      "where": ["_90 Ekstra/_91 Szablony/Weekly Template.md", "_90 Ekstra/_91 Szablony/Monthly Template.md", "_90 Ekstra/_91 Szablony/Weekly 1.md", "_90 Ekstra/_91 Szablony/Monthly Note Template.md", "_90 Ekstra/_91 Szablony/Monthly Work Template DEPRECATED.md"],
+      "why_it_matters": "Dead weight for the merge — none of their logic needs porting. Confirmed unreferenced by grepping the live config's template paths, not by filename convention alone."
+    },
+    {
+      "severity": "P3",
+      "kind": "divergence",
+      "what": "211 of 219 files in '_00 Planer/_01 Dziennik' match the current daily format 'YYYY-MM-DD, dddd'; 7 are legacy bare 'YYYY-MM-DD.md' files from 2022-2024 (predating the current template), and 1 ('2025-10–10, Friday.md') uses an en-dash typo instead of a hyphen in the date.",
+      "where": ["_00 Planer/_01 Dziennik/2022-09-19.md", "_00 Planer/_01 Dziennik/2025-10–10, Friday.md"],
+      "why_it_matters": "A merged plugin's daily-note lookup/parsing (regex anchored on 'YYYY-MM-DD' at the start of the title) will not resolve these 8 files as daily notes; that's consistent with current behavior (the live template's own regex would reject them too) so it is not a regression, just worth confirming intentional."
+    },
+    {
+      "severity": "P3",
+      "kind": "coupling",
+      "what": "Weekly, monthly, and monthly-work Bases views (and the weekly dataviewjs block) parse the host note's OWN filename via fixed character offsets (e.g. this.file.name.slice(0,4), slice(13,15)) to recover a date range, rather than reading a frontmatter date field.",
+      "where": ["_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base:21-22,43-44,65-66,86-87,109-110,129-130"],
+      "why_it_matters": "This is the tightest possible coupling to exact filename format (pretty weekly title, 'YYYY-MM MMMM' monthly title). Any format change in the merged plugin must recompute every slice offset in this file or these views silently return empty/wrong ranges with no error."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "'_00 Planer/_04 1on1' is templater-mapped and populated (10 files) but has no corresponding granularity in periodic-notes-anks (quarter is disabled and unused for it); it's a purely Templater-driven periodic mechanism.",
+      "where": [".obsidian/plugins/templater-obsidian/data.json:21-24", "_00 Planer/_04 1on1/"],
+      "why_it_matters": "If the merge intends periodic-notes to be the single source of all periodic behaviour, this folder is a real-world counter-example already living outside that model — worth an explicit decision (fold into 'quarter', or leave as a Templater-only convention)."
+    }
+  ]
+}

@@ -1,0 +1,1788 @@
+{
+  "epics": {
+    "NOTE": "Resolve, create, open and navigate periodic notes",
+    "FMT": "Filename formats, date parsing, week numbers, locale",
+    "TPL": "Template files and token substitution in the note body",
+    "CAL": "The calendar view: grid, navigation, indicators, interaction",
+    "SET": "Configuration model and settings UI",
+    "CMD": "Commands, ribbon, menus and startup behaviour",
+    "MIG": "Importing existing configuration and coexisting with other plugins",
+    "ARCH": "Architecture, boundaries, testability and release quality",
+    "ICE": "Kept for a later decision, not built now"
+  },
+  "assignment": [
+    {
+      "uid": "dni:create-daily-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a daily note",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-daily-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Look up a daily note by date",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-all-daily-notes",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Enumerate all daily notes",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:create-weekly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a weekly note",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-weekly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Look up a weekly note by date",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-all-weekly-notes",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Enumerate all weekly notes",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:create-monthly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a monthly note",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-monthly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Look up a monthly note by date",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-all-monthly-notes",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Enumerate all monthly notes",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:create-quarterly-note",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Create a quarterly note",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-quarterly-note",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Look up a quarterly note by date",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-all-quarterly-notes",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Enumerate all quarterly notes",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:create-yearly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a yearly note",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-yearly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Look up a yearly note by date",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-all-yearly-notes",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Enumerate all yearly notes",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:create-periodic-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Generic create-note dispatcher",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-periodic-note-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Generic settings dispatcher",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-daily-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Resolve daily note settings",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-weekly-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Resolve weekly note settings",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-monthly-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Resolve monthly note settings",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-quarterly-settings",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Resolve quarterly note settings",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-yearly-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Resolve yearly note settings",
+      "surface": "api",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:should-use-periodic-notes-settings",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Periodic-Notes-settings precedence check",
+      "surface": "internal",
+      "category": "config",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-periodic-notes-plugin",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Resolve the Periodic Notes plugin instance (dev-id first)",
+      "surface": "internal",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-daily-notes-plugin-loaded",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect whether daily notes are enabled",
+      "surface": "api",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-weekly-notes-plugin-loaded",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect whether weekly notes are enabled",
+      "surface": "api",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-monthly-notes-plugin-loaded",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect whether monthly notes are enabled",
+      "surface": "api",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-quarterly-notes-plugin-loaded",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Detect whether quarterly notes are enabled",
+      "surface": "api",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:detect-yearly-notes-plugin-loaded",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect whether yearly notes are enabled",
+      "surface": "api",
+      "category": "integration",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:parse-date-from-filename",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Parse a note's date from its filename",
+      "surface": "api",
+      "category": "dates",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:compute-date-uid",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Compute a granularity-prefixed date UID",
+      "surface": "api",
+      "category": "dates",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-day-of-week-numerical-value",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Resolve a day-of-week name to its locale-relative index",
+      "surface": "internal",
+      "category": "dates",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:get-template-info",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Load a template file's contents and fold state",
+      "surface": "api",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:resolve-note-path-and-ensure-folder",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Build a normalized note path and create its parent folder",
+      "surface": "internal",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:template-token-date-time-calc",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{date}}/{{time}} template tokens with optional +/-N unit offset and custom format",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:template-token-yesterday-tomorrow",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{yesterday}}/{{tomorrow}} template tokens (daily only)",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "dni:template-token-day-of-week",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{sunday|monday|...:format}} template tokens (weekly only)",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "dni"
+    },
+    {
+      "uid": "calui:render-calendar-grid",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Render the 6-week calendar table",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:compute-month-grid",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Compute a 42-cell month grid",
+      "surface": "api",
+      "category": "dates",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:navigate-month",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Increment / decrement the displayed month",
+      "surface": "ui",
+      "category": "state",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:reset-to-current-month",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Reset to the current month ('today' button)",
+      "surface": "ui",
+      "category": "state",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:day-cell-interactions",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Day cell click / hover / contextmenu / drag",
+      "surface": "event",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:week-number-interactions",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Week-number cell click / hover / contextmenu",
+      "surface": "event",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:month-header-interactions",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Month/year header click / hover / contextmenu",
+      "surface": "event",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:resolve-day-metadata",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Resolve per-day/week/month metadata from registered sources",
+      "surface": "integration",
+      "category": "state",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:render-dots",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Render metadata dots on a cell",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:hover-popover-desktop",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Hover popover (desktop)",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:popover-mobile-fallback",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Inline metadata box (mobile)",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:periodic-note-file-cache",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Live periodic-note file cache",
+      "surface": "integration",
+      "category": "state",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:drag-day-or-week-note",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Drag a day/week/month cell's note",
+      "surface": "event",
+      "category": "integration",
+      "source": "calui"
+    },
+    {
+      "uid": "calui:configure-locale-and-week-start",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Configure global moment locale and week start",
+      "surface": "api",
+      "category": "dates",
+      "source": "calui"
+    },
+    {
+      "uid": "cal:open-calendar-view",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Open the Calendar view (command)",
+      "surface": "command",
+      "category": "entry",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:auto-reveal-view-on-layout-ready",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Auto-open the calendar leaf on plugin load",
+      "surface": "event",
+      "category": "entry",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:open-weekly-note-command",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Open Weekly Note (command)",
+      "surface": "command",
+      "category": "notes",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:reveal-active-note-command",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Reveal active note (command)",
+      "surface": "command",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:persist-plugin-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Load and persist plugin settings",
+      "surface": "api",
+      "category": "config",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:mount-calendar-view",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Mount the Svelte calendar into the view",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:extend-metadata-sources-via-event",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Third-party metadata source extension point",
+      "surface": "event",
+      "category": "integration",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:open-or-create-daily-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Click a day: open or create its daily note",
+      "surface": "ui",
+      "category": "notes",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:open-or-create-weekly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Click the week number: open or create its weekly note",
+      "surface": "ui",
+      "category": "notes",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:create-daily-note-with-confirmation",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a new daily note (with optional confirmation)",
+      "surface": "ui",
+      "category": "notes",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:create-weekly-note-with-confirmation",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a new weekly note (with optional confirmation)",
+      "surface": "ui",
+      "category": "notes",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:confirmation-modal-dialog",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Generic accept/cancel confirmation modal",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:hover-link-preview",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Hover a day/week cell with Cmd/Ctrl to preview the note",
+      "surface": "event",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:day-week-context-menu",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Right-click a day/week cell",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:file-context-menu",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Build and show the note's file context menu",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:month-header-click-open-monthly-note",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Click the month header to open/create that month's periodic note",
+      "surface": "ui",
+      "category": "integration",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:reset-month-to-today-on-header-click",
+      "epic": "CAL",
+      "role": "build",
+      "name": "(Upstream) reset displayed month to today on header click",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:periodic-notes-weekly-detection",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect whether Periodic Notes owns weekly notes",
+      "surface": "integration",
+      "category": "integration",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:periodic-notes-monthly-plugin-resolution",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Resolve the Periodic Notes plugin only when monthly notes are enabled",
+      "surface": "integration",
+      "category": "integration",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:settings-tab-ui",
+      "epic": "SET",
+      "role": "build",
+      "name": "Calendar settings tab",
+      "surface": "setting",
+      "category": "config",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:daily-notes-plugin-warning-banner",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Warn when Daily Notes plugin is not enabled",
+      "surface": "ui",
+      "category": "integration",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:metadata-source-streak",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Streak dot source: has-note class",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:metadata-source-tags",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Custom tags source: data-attributes from frontmatter",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:metadata-source-tasks",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Tasks source: incomplete-checkbox dot",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:metadata-source-wordcount",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Word count source: filled dots by length",
+      "surface": "setting",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:auto-refresh-on-vault-events",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Refresh calendar on vault file create/delete/modify",
+      "surface": "event",
+      "category": "state",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:refresh-on-periodic-notes-settings-change",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Refresh on Periodic Notes settings change",
+      "surface": "event",
+      "category": "state",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:reactive-settings-refresh",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Re-render calendar when plugin settings change",
+      "surface": "event",
+      "category": "state",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:track-active-file-for-highlight",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Track the active file for calendar highlighting",
+      "surface": "event",
+      "category": "state",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:jump-calendar-to-active-note",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Jump the calendar to the active note's date",
+      "surface": "ui",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:calendar-heartbeat-tick",
+      "epic": "CAL",
+      "role": "build",
+      "name": "1-minute heartbeat keeps 'today' current",
+      "surface": "ui",
+      "category": "state",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:expose-displayed-month",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Expose the internally-tracked displayed month",
+      "surface": "api",
+      "category": "ui",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:get-date-uid-from-file",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Resolve a date-UID from a file (day-then-week)",
+      "surface": "api",
+      "category": "dates",
+      "source": "cal"
+    },
+    {
+      "uid": "cal:get-word-count",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Unicode-aware word count",
+      "surface": "api",
+      "category": "dates",
+      "source": "cal"
+    },
+    {
+      "uid": "pn:calendar-set-model",
+      "epic": "SET",
+      "role": "build",
+      "name": "Calendar set data model",
+      "surface": "api",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:get-active-calendar-set",
+      "epic": "SET",
+      "role": "build",
+      "name": "Resolve the active calendar set",
+      "surface": "api",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:get-active-and-inactive-granularities",
+      "epic": "SET",
+      "role": "build",
+      "name": "List active/inactive granularities for the active set",
+      "surface": "api",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:switch-active-calendar-set",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Switch the active calendar set",
+      "surface": "command",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:create-calendar-set",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Create a new calendar set",
+      "surface": "ui",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:duplicate-calendar-set",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Duplicate a calendar set",
+      "surface": "ui",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:rename-calendar-set",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Rename a calendar set inline",
+      "surface": "ui",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:delete-calendar-set",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Delete a calendar set",
+      "surface": "ui",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:legacy-settings-migration",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Migrate legacy Daily-Notes / pre-calendar-set settings on first load",
+      "surface": "integration",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:dynamic-command-registration",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Add/remove per-granularity commands as the active set changes",
+      "surface": "command",
+      "category": "entry",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:ribbon-icon-single-granularity",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Ribbon icon for the first active granularity",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:context-menu-open-note",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Ribbon right-click menu: open any active granularity's note",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:create-periodic-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a periodic note",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:open-periodic-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Open (or create) a periodic note",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:get-periodic-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Look up the exact periodic note for a date",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:get-periodic-notes-related",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "List all cached notes for a period, optionally including finer granularities",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:is-periodic",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Check whether a file path is a periodic note",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:find-adjacent-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Find the next/previous periodic note of the same granularity",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:jump-to-adjacent-note-command",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Jump to the closest existing adjacent note (no creation)",
+      "surface": "command",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:open-adjacent-note-command",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Open the next/previous note by date offset (creating it if needed)",
+      "surface": "command",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:find-note-in-cache",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Find a file's cache metadata (any or a specific calendar set)",
+      "surface": "api",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:startup-note-auto-open",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Auto-open a configured note on vault load",
+      "surface": "event",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:clear-startup-note-exclusivity",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Enforce a single startup-note flag vault-wide",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:template-token-expansion",
+      "epic": "TPL",
+      "role": "build",
+      "name": "Template token expansion",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:note-creation-path-and-folder-autocreate",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Resolve creation path and auto-create missing folders",
+      "surface": "api",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:strict-then-prefix-date-parsing",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Strict-then-prefix date parsing (getDateWithPrefixFallback)",
+      "surface": "api",
+      "category": "dates",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:possible-formats-nested-path",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Possible-formats expansion for nested-path formats",
+      "surface": "api",
+      "category": "dates",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:loose-date-parsing-fallback-global",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Vault-wide loose date guess when no configured format matches at all",
+      "surface": "api",
+      "category": "dates",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:fragile-basename-detection",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Warn when a nested-path format's basename can't uniquely identify a day",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:format-validation",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Validate a format string",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:folder-validation",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Validate a folder path",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:template-validation",
+      "epic": "TPL",
+      "role": "build",
+      "name": "Validate a template file path",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:cache-index-build-on-load",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Build the full note-cache index on vault layout-ready",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:cache-resolve-on-file-create",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Resolve a single file against every calendar set on create",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:cache-resolve-on-rename",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Re-resolve a file on rename",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:cache-resolve-frontmatter",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Resolve a file via a frontmatter date field",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:cache-reset-on-settings-change",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Rebuild the cache whenever settings change",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:allow-prefix-match-gate",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Per-granularity opt-in gate for prefix-matched notes",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:auto-apply-template-on-empty-manual-file",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Auto-apply the template to a manually-created empty file that matches a periodic pattern",
+      "surface": "event",
+      "category": "notes",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:localization-week-start-override",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Override the global moment.js week-start day",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:localization-locale-override",
+      "epic": "FMT",
+      "role": "build",
+      "name": "One-time global moment.js locale configuration at plugin load",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:relative-date-humanization",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Human-readable relative date/period labels",
+      "surface": "api",
+      "category": "dates",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-router-navigation",
+      "epic": "SET",
+      "role": "build",
+      "name": "Settings mini-app breadcrumb router",
+      "surface": "ui",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-dashboard-list-and-add",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Settings dashboard: list, add calendar sets, global toggles",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-details-rename-and-toggle-granularities",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Settings details page: rename, activate/duplicate/delete, per-granularity accordion",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-per-granularity-format-editor",
+      "epic": "SET",
+      "role": "build",
+      "name": "Per-granularity Format setting",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-per-granularity-folder-editor",
+      "epic": "SET",
+      "role": "build",
+      "name": "Per-granularity Note Folder setting",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-per-granularity-template-editor",
+      "epic": "SET",
+      "role": "build",
+      "name": "Per-granularity Note Template setting",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-per-granularity-open-at-startup-toggle",
+      "epic": "SET",
+      "role": "build",
+      "name": "Per-granularity Open on startup toggle",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:settings-per-granularity-allow-prefix-match-toggle",
+      "epic": "SET",
+      "role": "build",
+      "name": "Per-granularity Allow prefix matching toggle",
+      "surface": "setting",
+      "category": "config",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:getting-started-banner-daily-notes-detection",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Detect and offer to migrate away from the core Daily Notes plugin",
+      "surface": "integration",
+      "category": "integration",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:nl-date-navigator",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Natural-language date switcher",
+      "surface": "command",
+      "category": "integration",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:related-files-switcher-tab-handoff",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Related-files switcher with modal hand-off",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:calendar-set-quick-switch-modal",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Quick-switch active calendar set via fuzzy modal",
+      "surface": "command",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:text-input-suggest-popper-positioning",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Generic popper-positioned text-input autocomplete",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:timeline-complication-render",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Timeline complication badge and week strip",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:timeline-lifecycle-per-leaf",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Mount/unmount one Timeline component per open markdown leaf",
+      "surface": "event",
+      "category": "state",
+      "source": "pn"
+    },
+    {
+      "uid": "calendaric:open-calendar-view",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Open the calendar view",
+      "surface": "command",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-month-grid-render",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Render the month grid",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-week-start-resolution",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Resolve the calendar's week-start day",
+      "surface": "setting",
+      "category": "dates",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-navigation",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Navigate the calendar (prev/next/today)",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-note-existence-dots",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Show a dot under days/weeks with an existing note",
+      "surface": "ui",
+      "category": "state",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-live-refresh-on-vault-change",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Live-update dots on vault changes",
+      "surface": "event",
+      "category": "state",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-active-file-highlight",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Highlight the currently open note in the grid",
+      "surface": "event",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-minute-refresh",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Auto-refresh the grid every 60s",
+      "surface": "event",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:calendar-click-to-open-or-create",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Click a day/week cell to open or create its note",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:confirm-before-create-modal",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Confirmation modal before creating a note",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:create-daily-or-weekly-note",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Create a periodic note (day or week only)",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:apply-template-on-create",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Apply a template file when creating a note",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:open-note-in-active-leaf",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Open a note, reuse tab or split on meta/ctrl-click",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:open-note-in-new-tab",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Open a note in a new tab (startup path)",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:compute-note-path",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Compute a periodic note's vault path",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:resolve-default-note-folder",
+      "epic": "NOTE",
+      "role": "build",
+      "name": "Fall back to Obsidian's default new-file folder",
+      "surface": "api",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-weekday-format",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Week token in the Format field: {{weekday:fmt}}",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-weekday-body",
+      "epic": "TPL",
+      "role": "build",
+      "name": "Week token in template body: {{weekday:fmt}}",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-date",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{date}} template variable",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-date-custom",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{date:fmt}} template variable",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-time",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{time}} template variable",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-title",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{title}} template variable",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:template-token-yesterday-tomorrow",
+      "epic": "TPL",
+      "role": "build",
+      "name": "{{yesterday}} / {{tomorrow}} template variables",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:startup-note-auto-open",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Open a periodic note automatically on vault startup",
+      "surface": "setting",
+      "category": "notes",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:clear-startup-note-exclusivity",
+      "epic": "CMD",
+      "role": "build",
+      "name": "Enforce only one granularity can auto-open at startup",
+      "surface": "api",
+      "category": "config",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:import-daily-notes-settings",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Import settings from the core Daily Notes plugin",
+      "surface": "ui",
+      "category": "integration",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:read-legacy-daily-notes-config",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Read the core Daily Notes plugin's config",
+      "surface": "integration",
+      "category": "integration",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:disable-core-daily-notes-plugin",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Disable the core Daily Notes plugin",
+      "surface": "integration",
+      "category": "integration",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:open-format-guide-from-settings",
+      "epic": "SET",
+      "role": "build",
+      "name": "Open the bundled format/template guide from settings",
+      "surface": "ui",
+      "category": "ui",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:override-locale-setting",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Override the moment.js locale",
+      "surface": "setting",
+      "category": "config",
+      "source": "calendaric"
+    },
+    {
+      "uid": "calendaric:granularity-placeholder-groups",
+      "epic": "ICE",
+      "role": "icebox",
+      "name": "Non-functional Monthly/Quarterly/Yearly/Custom Notes settings groups",
+      "surface": "ui",
+      "category": "config",
+      "source": "calendaric"
+    },
+    {
+      "uid": "vault:resolve-daily-settings",
+      "epic": "SET",
+      "role": "evidence",
+      "name": "Daily note folder/format/template is defined in three places at once",
+      "surface": "config",
+      "category": "config",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:create-daily-note",
+      "epic": "NOTE",
+      "role": "evidence",
+      "name": "Create a daily note",
+      "surface": "integration",
+      "category": "notes",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:daily-write-frontmatter",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Daily note frontmatter (month/week links + tags)",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:daily-anchor-link-to-work-heading",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Anchored backlink from daily note to today's Work-monthly heading",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:cascade-create-weekly-from-daily",
+      "epic": "NOTE",
+      "role": "evidence",
+      "name": "Auto-create this week's weekly note from the daily template",
+      "surface": "integration",
+      "category": "notes",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:create-weekly-note-rename-move",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Rename raw weekly title to pretty, move into target folder",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:weekly-write-frontmatter-nav",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Weekly note frontmatter (month/year links) + prev/next navigation",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:weekly-dataviewjs-daily-scan",
+      "epic": "MIG",
+      "role": "evidence",
+      "name": "Weekly note's inline daily-note listing (dataviewjs)",
+      "surface": "integration",
+      "category": "integration",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:weekly-embed-base-views",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Weekly note embeds Bases 'Created/Updated this week' views",
+      "surface": "template-token",
+      "category": "integration",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:create-monthly-note-rename-move",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Rename/move monthly (personal) note to canonical form",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-write-frontmatter-nav",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Monthly note frontmatter + prev/next + Stuff checklist",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-dataview-weekly-daily-lists",
+      "epic": "MIG",
+      "role": "evidence",
+      "name": "Monthly note's dataview lists of its weekly/daily notes",
+      "surface": "integration",
+      "category": "integration",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-embed-base-views",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Monthly note embeds Bases 'Created/Updated this month' views",
+      "surface": "template-token",
+      "category": "integration",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-work-validate-title-shape",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Monthly-Work template only activates on a matching title",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-work-write-frontmatter-plan",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Monthly-Work frontmatter, Plan/Links/TODO sections",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-work-generate-weekday-headers",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Pre-generate one heading per weekday of the month",
+      "surface": "template-token",
+      "category": "dates",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:monthly-work-embed-base-views",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Monthly-Work note embeds Bases Work-filtered month views",
+      "surface": "template-token",
+      "category": "integration",
+      "source": "vault"
+    },
+    {
+      "uid": "vault:create-yearly-note-static",
+      "epic": "TPL",
+      "role": "evidence",
+      "name": "Create a yearly note (static frontmatter only)",
+      "surface": "template-token",
+      "category": "notes",
+      "source": "vault"
+    },
+    {
+      "uid": "forks:dev-plugin-id-fallback",
+      "epic": "MIG",
+      "role": "build",
+      "name": "Prefer a side-installed dev plugin over its community-store copy",
+      "surface": "integration",
+      "category": "integration",
+      "source": "forks"
+    },
+    {
+      "uid": "forks:weekly-note-prefix-match",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Prefix-match fallback for weekly note filenames (daily-notes-interface)",
+      "surface": "setting",
+      "category": "dates",
+      "source": "forks"
+    },
+    {
+      "uid": "forks:periodic-note-prefix-match-setting",
+      "epic": "FMT",
+      "role": "build",
+      "name": "Per-granularity 'Allow prefix matching' toggle (Periodic Notes)",
+      "surface": "setting",
+      "category": "config",
+      "source": "forks"
+    },
+    {
+      "uid": "forks:open-monthly-note-from-header",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Open/create the month's periodic note by clicking the calendar month header",
+      "surface": "ui",
+      "category": "ui",
+      "source": "forks"
+    },
+    {
+      "uid": "forks:settings-tab-crash-guard-1.13",
+      "epic": "ARCH",
+      "role": "build",
+      "name": "Periodic Notes settings tab no longer crashes on Obsidian 1.13+",
+      "surface": "ui",
+      "category": "ui",
+      "source": "forks"
+    },
+    {
+      "uid": "forks:git-dependency-self-build",
+      "epic": "ARCH",
+      "role": "build",
+      "name": "obsidian-daily-notes-interface self-builds when installed as a git dependency",
+      "surface": "integration",
+      "category": "config",
+      "source": "forks"
+    }
+  ]
+}

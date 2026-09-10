@@ -1,0 +1,1037 @@
+{
+  "source": {
+    "id": "dni",
+    "repo": "obsidian-daily-notes-interface",
+    "path": "/Users/anna.nowak/projects/obsidian/obsidian-daily-notes-interface",
+    "version": "0.9.4",
+    "role": "Shared library that resolves, creates and looks up periodic (daily/weekly/monthly/quarterly/yearly) notes; used by obsidian-calendar-plugin and, historically, obsidian-periodic-notes."
+  },
+  "modules": [
+    {
+      "id": "dni-index",
+      "name": "index.ts",
+      "path": "src/index.ts",
+      "role": "Public API surface: re-exports per-granularity functions/constants, generic create/get-settings dispatchers, and inline plugin-detection functions for daily/weekly notes.",
+      "loc": 150,
+      "category": "integration",
+      "depends_on": ["dni-settings", "dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly", "dni-parse", "dni-vault", "dni-constants", "dni-types", "periodic-notes-plugin", "calendar-plugin"],
+      "external": false
+    },
+    {
+      "id": "dni-constants",
+      "name": "constants.ts",
+      "path": "src/constants.ts",
+      "role": "Default moment format strings per granularity.",
+      "loc": 5,
+      "category": "dates",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "dni-types",
+      "name": "types.ts",
+      "path": "src/types.ts",
+      "role": "Shared IGranularity union and IPeriodicNoteSettings shape.",
+      "loc": 7,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "dni-settings",
+      "name": "settings.ts",
+      "path": "src/settings.ts",
+      "role": "Reads per-granularity note settings out of the periodic-notes plugin, the core daily-notes plugin, or the Calendar plugin, with fallback defaults.",
+      "loc": 160,
+      "category": "integration",
+      "depends_on": ["dni-constants", "dni-types", "periodic-notes-plugin", "calendar-plugin", "obsidian-internal-daily-notes-plugin"],
+      "external": false
+    },
+    {
+      "id": "dni-daily",
+      "name": "daily.ts",
+      "path": "src/daily.ts",
+      "role": "Create/lookup/enumerate daily notes; mustache template token replacement including date/time math and {{yesterday}}/{{tomorrow}}.",
+      "loc": 108,
+      "category": "notes",
+      "depends_on": ["dni-parse", "dni-settings", "dni-vault", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "dni-weekly",
+      "name": "weekly.ts",
+      "path": "src/weekly.ts",
+      "role": "Create/lookup/enumerate weekly notes; locale-aware day-of-week resolution and {{sunday|monday|...:format}} template tokens.",
+      "loc": 124,
+      "category": "notes",
+      "depends_on": ["dni-index", "dni-parse", "dni-settings", "dni-vault", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "dni-monthly",
+      "name": "monthly.ts",
+      "path": "src/monthly.ts",
+      "role": "Create/lookup/enumerate monthly notes.",
+      "loc": 100,
+      "category": "notes",
+      "depends_on": ["dni-index", "dni-parse", "dni-settings", "dni-vault", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "dni-quarterly",
+      "name": "quarterly.ts",
+      "path": "src/quarterly.ts",
+      "role": "Create/lookup/enumerate quarterly notes.",
+      "loc": 100,
+      "category": "notes",
+      "depends_on": ["dni-index", "dni-parse", "dni-settings", "dni-vault", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "dni-yearly",
+      "name": "yearly.ts",
+      "path": "src/yearly.ts",
+      "role": "Create/lookup/enumerate yearly notes.",
+      "loc": 100,
+      "category": "notes",
+      "depends_on": ["dni-index", "dni-parse", "dni-settings", "dni-vault", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "dni-parse",
+      "name": "parse.ts",
+      "path": "src/parse.ts",
+      "role": "Maps a filename/path back to a Moment for a given granularity (strict then optional prefix match); builds the dateUID cache key.",
+      "loc": 113,
+      "category": "dates",
+      "depends_on": ["dni-settings", "dni-vault"],
+      "external": false
+    },
+    {
+      "id": "dni-vault",
+      "name": "vault.ts",
+      "path": "src/vault.ts",
+      "role": "Path join/basename utilities, folder auto-creation, and template file loading (with Obsidian fold-state).",
+      "loc": 93,
+      "category": "notes",
+      "depends_on": ["obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "obsidian-api",
+      "name": "Obsidian core API",
+      "path": "n/a",
+      "role": "App/Vault/TFile/TFolder/normalizePath/Notice/metadataCache/foldManager — the host app surface this library reads and writes.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "periodic-notes-plugin",
+      "name": "Periodic Notes community plugin",
+      "path": "n/a",
+      "role": "Community plugin instance read via app.plugins.getPlugin('periodic-notes-anks' | 'periodic-notes'); source of per-granularity settings.{daily,weekly,monthly,quarterly,yearly}.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "calendar-plugin",
+      "name": "Calendar community plugin",
+      "path": "n/a",
+      "role": "Community plugin instance read via app.plugins.getPlugin('calendar-anks' | 'calendar'); source of legacy weekly-note settings (.options.weeklyNoteFormat/Folder/Template) and of weekly-notes-enabled detection.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "obsidian-internal-daily-notes-plugin",
+      "name": "Obsidian core 'daily-notes' internal plugin",
+      "path": "n/a",
+      "role": "Obsidian's built-in daily notes plugin, read via app.internalPlugins.plugins['daily-notes'] / internalPlugins.getPluginById('daily-notes').instance.options.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "create-daily-note",
+      "name": "Create a daily note",
+      "category": "notes",
+      "surface": "api",
+      "description": "Creates a new daily note file for a given Moment: resolves settings, applies the configured template (with fold state), fills in filename/date/time tokens, writes the file via vault.create, and returns the created TFile.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-daily", "symbol": "createDailyNote", "path": "src/daily.ts", "lines": "17-72" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-daily-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc", "template-token-yesterday-tomorrow"],
+      "behaviour_notes": [
+        "Mimics the core daily-notes plugin's mustache replacement so behavior stays in sync.",
+        "Restores Obsidian fold state on the new file via app.foldManager.save(createdFile, IFoldInfo) (src/daily.ts:65).",
+        "Does not check for an existing file before calling vault.create; relies on vault.create throwing.",
+        "On any failure (including 'file already exists'), logs to console, shows a generic Notice('Unable to create new file.'), and the function resolves to undefined instead of rejecting or returning null (src/daily.ts:68-71)."
+      ],
+      "edge_cases": [
+        "shows error if file creation failed (src/__tests__/daily.spec.ts pattern shared across granularities)",
+        "replaces all mustaches in template, including {{date+1d:format}}-style calc tokens"
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-daily-note",
+      "name": "Look up a daily note by date",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a Moment and a Record<dateUID, TFile> (as produced by getAllDailyNotes), returns the matching TFile or null.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-daily", "symbol": "getDailyNote", "path": "src/daily.ts", "lines": "74-79" }],
+      "used_by": [],
+      "depends_on_capability": ["compute-date-uid"],
+      "behaviour_notes": [
+        "Pure lookup keyed by getDateUID(date, 'day'); does not touch the vault itself.",
+        "Because getDateUID calls date.clone().startOf('day'), time-of-day differences on the lookup Moment do not affect the match."
+      ],
+      "edge_cases": ["returns note on the same day even if the HH:MM:SS is different", "returns null if there is no daily note for a given date"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-all-daily-notes",
+      "name": "Enumerate all daily notes",
+      "category": "notes",
+      "surface": "api",
+      "description": "Recursively walks the configured daily-notes folder and returns a Record<dateUID, TFile> for every file whose name parses as a valid daily-note date.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-daily", "symbol": "getAllDailyNotes", "path": "src/daily.ts", "lines": "81-108" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-daily-settings", "parse-date-from-filename", "compute-date-uid"],
+      "behaviour_notes": [
+        "Unlike getAllWeeklyNotes/getAllMonthlyNotes/getAllQuarterlyNotes/getAllYearlyNotes, this function does NOT call appHasDailyNotesPluginLoaded() first — it always attempts the folder lookup.",
+        "Throws DailyNotesFolderMissingError if the configured folder does not exist (vault.getAbstractFileByPath returns falsy)."
+      ],
+      "edge_cases": ["throws error if daily note folder can't be found", "returns a list of all daily notes with no nested folders", "returns a list of all daily notes including files nested in folders"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-weekly-note",
+      "name": "Create a weekly note",
+      "category": "notes",
+      "surface": "api",
+      "description": "Creates a new weekly note file for a given Moment, applying the template plus weekly-specific {{sunday|monday|...:format}} tokens in addition to the shared date/time/title tokens.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-weekly", "symbol": "createWeeklyNote", "path": "src/weekly.ts", "lines": "36-85" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-weekly-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc", "template-token-day-of-week"],
+      "behaviour_notes": [
+        "Does not support {{yesterday}}/{{tomorrow}} tokens (daily-only).",
+        "Same 'no existing-file check, generic Notice on failure' pattern as createDailyNote (src/weekly.ts:81-84)."
+      ],
+      "edge_cases": ["replaces {{sunday}} and {{monday}} in weekly note", "shows error if file creation failed"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-weekly-note",
+      "name": "Look up a weekly note by date",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a Moment and a Record<dateUID, TFile>, returns the matching weekly TFile or null.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-weekly", "symbol": "getWeeklyNote", "path": "src/weekly.ts", "lines": "87-92" }],
+      "used_by": [],
+      "depends_on_capability": ["compute-date-uid"],
+      "behaviour_notes": ["Same shape as getDailyNote/getMonthlyNote/etc."],
+      "edge_cases": ["returns note on the same day even if the HH:MM:SS is different", "returns null if there is no weekly note for a given date"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-all-weekly-notes",
+      "name": "Enumerate all weekly notes",
+      "category": "notes",
+      "surface": "api",
+      "description": "If weekly notes are enabled (Calendar or Periodic Notes plugin), recursively walks the configured weekly folder and returns a Record<dateUID, TFile>.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-weekly", "symbol": "getAllWeeklyNotes", "path": "src/weekly.ts", "lines": "94-124" }],
+      "used_by": [],
+      "depends_on_capability": ["detect-weekly-notes-plugin-loaded", "resolve-weekly-settings", "parse-date-from-filename", "compute-date-uid"],
+      "behaviour_notes": [
+        "Guarded: returns {} immediately if appHasWeeklyNotesPluginLoaded() is false, unlike getAllDailyNotes which has no such guard.",
+        "Throws WeeklyNotesFolderMissingError if the folder is missing (only reachable when the plugin check passed)."
+      ],
+      "edge_cases": ["throws error if weekly note folder can't be found", "returns a list of all weekly notes including files nested in folders"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-monthly-note",
+      "name": "Create a monthly note",
+      "category": "notes",
+      "surface": "api",
+      "description": "Creates a new monthly note file for a given Moment; template gets only the shared date/time/title tokens (no day-of-week, no yesterday/tomorrow).",
+      "granularity": ["month"],
+      "defined_in": [{ "module": "dni-monthly", "symbol": "createMonthlyNote", "path": "src/monthly.ts", "lines": "18-61" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-monthly-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc"],
+      "behaviour_notes": ["Identical structure/error-handling to createQuarterlyNote and createYearlyNote."],
+      "edge_cases": ["uses folder path from monthly note settings", "uses template contents when creating file", "shows error if file creation failed", "replaces all mustaches in template"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-monthly-note",
+      "name": "Look up a monthly note by date",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a Moment and a Record<dateUID, TFile>, returns the matching monthly TFile or null.",
+      "granularity": ["month"],
+      "defined_in": [{ "module": "dni-monthly", "symbol": "getMonthlyNote", "path": "src/monthly.ts", "lines": "63-68" }],
+      "used_by": [],
+      "depends_on_capability": ["compute-date-uid"],
+      "behaviour_notes": [],
+      "edge_cases": ["returns note on the same day even if the HH:MM:SS is different", "returns null if there is no monthly note for a given date"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-all-monthly-notes",
+      "name": "Enumerate all monthly notes",
+      "category": "notes",
+      "surface": "api",
+      "description": "If monthly notes are enabled (Periodic Notes plugin only), recursively walks the configured monthly folder and returns a Record<dateUID, TFile>.",
+      "granularity": ["month"],
+      "defined_in": [{ "module": "dni-monthly", "symbol": "getAllMonthlyNotes", "path": "src/monthly.ts", "lines": "70-100" }],
+      "used_by": [],
+      "depends_on_capability": ["detect-monthly-notes-plugin-loaded", "resolve-monthly-settings", "parse-date-from-filename", "compute-date-uid"],
+      "behaviour_notes": ["Guarded by appHasMonthlyNotesPluginLoaded(); monthly notes have no legacy Calendar-plugin path, only Periodic Notes."],
+      "edge_cases": ["throws error if monthly note folder can't be found", "returns a list of all monthly notes including files nested in folders"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-quarterly-note",
+      "name": "Create a quarterly note",
+      "category": "notes",
+      "surface": "api",
+      "description": "Creates a new quarterly note file for a given Moment; same shared-token-only template handling as monthly/yearly.",
+      "granularity": ["quarter"],
+      "defined_in": [{ "module": "dni-quarterly", "symbol": "createQuarterlyNote", "path": "src/quarterly.ts", "lines": "18-61" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-quarterly-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc"],
+      "behaviour_notes": ["Not reachable via the generic createPeriodicNote() dispatcher (see observations: dispatch table omits 'quarter')."],
+      "edge_cases": ["uses folder path from quarterly note settings", "uses template contents when creating file", "shows error if file creation failed", "replaces all mustaches in template"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-quarterly-note",
+      "name": "Look up a quarterly note by date",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a Moment and a Record<dateUID, TFile>, returns the matching quarterly TFile or null.",
+      "granularity": ["quarter"],
+      "defined_in": [{ "module": "dni-quarterly", "symbol": "getQuarterlyNote", "path": "src/quarterly.ts", "lines": "63-68" }],
+      "used_by": [],
+      "depends_on_capability": ["compute-date-uid"],
+      "behaviour_notes": [],
+      "edge_cases": ["returns note on the same day even if the HH:MM:SS is different", "returns null if there is no quarterly note for a given date"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-all-quarterly-notes",
+      "name": "Enumerate all quarterly notes",
+      "category": "notes",
+      "surface": "api",
+      "description": "If quarterly notes are enabled (Periodic Notes plugin only), recursively walks the configured quarterly folder and returns a Record<dateUID, TFile>.",
+      "granularity": ["quarter"],
+      "defined_in": [{ "module": "dni-quarterly", "symbol": "getAllQuarterlyNotes", "path": "src/quarterly.ts", "lines": "70-100" }],
+      "used_by": [],
+      "depends_on_capability": ["detect-quarterly-notes-plugin-loaded", "resolve-quarterly-settings", "parse-date-from-filename", "compute-date-uid"],
+      "behaviour_notes": [],
+      "edge_cases": ["throws error if quarterly note folder can't be found", "returns a list of all quarterly notes including files nested in folders"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-yearly-note",
+      "name": "Create a yearly note",
+      "category": "notes",
+      "surface": "api",
+      "description": "Creates a new yearly note file for a given Moment; same shared-token-only template handling as monthly/quarterly.",
+      "granularity": ["year"],
+      "defined_in": [{ "module": "dni-yearly", "symbol": "createYearlyNote", "path": "src/yearly.ts", "lines": "18-61" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-yearly-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc"],
+      "behaviour_notes": ["Not reachable via the generic createPeriodicNote() dispatcher (see observations: dispatch table omits 'year')."],
+      "edge_cases": ["uses folder path from yearly note settings", "uses template contents when creating file", "shows error if file creation failed", "replaces all mustaches in template"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-yearly-note",
+      "name": "Look up a yearly note by date",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a Moment and a Record<dateUID, TFile>, returns the matching yearly TFile or null.",
+      "granularity": ["year"],
+      "defined_in": [{ "module": "dni-yearly", "symbol": "getYearlyNote", "path": "src/yearly.ts", "lines": "63-68" }],
+      "used_by": [],
+      "depends_on_capability": ["compute-date-uid"],
+      "behaviour_notes": [],
+      "edge_cases": ["returns note on the same year even if the HH:mm:SS is different", "returns null if there is no yearly note for a given date"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-all-yearly-notes",
+      "name": "Enumerate all yearly notes",
+      "category": "notes",
+      "surface": "api",
+      "description": "If yearly notes are enabled (Periodic Notes plugin only), recursively walks the configured yearly folder and returns a Record<dateUID, TFile>.",
+      "granularity": ["year"],
+      "defined_in": [{ "module": "dni-yearly", "symbol": "getAllYearlyNotes", "path": "src/yearly.ts", "lines": "70-100" }],
+      "used_by": [],
+      "depends_on_capability": ["detect-yearly-notes-plugin-loaded", "resolve-yearly-settings", "parse-date-from-filename", "compute-date-uid"],
+      "behaviour_notes": [],
+      "edge_cases": ["throws error if yearly note folder can't be found", "returns a list of all yearly notes including files nested in folders"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-periodic-note",
+      "name": "Generic create-note dispatcher",
+      "category": "notes",
+      "surface": "api",
+      "description": "Dispatches to the correct create*Note function for a given IGranularity + Moment.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [{ "module": "dni-index", "symbol": "createPeriodicNote", "path": "src/index.ts", "lines": "114-124" }],
+      "used_by": [],
+      "depends_on_capability": ["create-daily-note", "create-weekly-note", "create-monthly-note"],
+      "behaviour_notes": [
+        "BUG: the internal dispatch table only has keys 'day', 'month', 'week' (src/index.ts:118-122); 'quarter' and 'year' are missing.",
+        "Calling createPeriodicNote('quarter', date) or createPeriodicNote('year', date) evaluates createFn['quarter'] to undefined and throws a TypeError ('createFn[granularity] is not a function') rather than delegating to createQuarterlyNote/createYearlyNote, even though both exist and are separately exported."
+      ],
+      "edge_cases": ["No test coverage found for this function (not present in any __tests__ spec)."],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-periodic-note-settings",
+      "name": "Generic settings dispatcher",
+      "category": "config",
+      "surface": "api",
+      "description": "Dispatches to the correct getXNoteSettings function for a given IGranularity and returns IPeriodicNoteSettings.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [{ "module": "dni-index", "symbol": "getPeriodicNoteSettings", "path": "src/index.ts", "lines": "100-112" }],
+      "used_by": [],
+      "depends_on_capability": ["resolve-daily-settings", "resolve-weekly-settings", "resolve-monthly-settings", "resolve-quarterly-settings", "resolve-yearly-settings"],
+      "behaviour_notes": ["Unlike createPeriodicNote, this dispatch table is complete for all 5 granularities."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-daily-settings",
+      "name": "Resolve daily note settings",
+      "category": "config",
+      "surface": "api",
+      "description": "Returns {format, folder, template} for daily notes, preferring the Periodic Notes plugin's daily settings (if enabled) over the core daily-notes internal plugin's options, with DEFAULT_DAILY_NOTE_FORMAT / '' fallbacks.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getDailyNoteSettings", "path": "src/settings.ts", "lines": "36-61" }],
+      "used_by": ["dni-daily", "dni-parse", "dni-index"],
+      "depends_on_capability": ["should-use-periodic-notes-settings"],
+      "behaviour_notes": [
+        "Wraps everything in try/catch; on error logs via console.info('No custom daily note settings found!', err) and returns undefined (not a default object) — callers destructuring the result will throw.",
+        "Never includes allowPrefixMatch in the returned object."
+      ],
+      "edge_cases": ["returns defaults if daily note settings don't exist", "uses settings from core daily notes if periodic-notes' daily is disabled", "uses settings from Periodic Notes if periodic-notes and daily notes are both enabled", "cleanses data (trims folder/template whitespace)"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-weekly-settings",
+      "name": "Resolve weekly note settings",
+      "category": "config",
+      "surface": "api",
+      "description": "Returns {format, folder, template, allowPrefixMatch} for weekly notes, preferring Periodic Notes' weekly settings (if enabled) over the Calendar plugin's legacy weeklyNoteFormat/Folder/Template options.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getWeeklyNoteSettings", "path": "src/settings.ts", "lines": "67-97" }],
+      "used_by": ["dni-weekly", "dni-parse", "dni-index"],
+      "depends_on_capability": ["should-use-periodic-notes-settings"],
+      "behaviour_notes": [
+        "The only one of the five getXNoteSettings functions that ever populates allowPrefixMatch — and only when the Periodic Notes plugin's weekly settings are in effect.",
+        "When falling back to the Calendar plugin, allowPrefixMatch is hardcoded to false with an explicit comment 'Calendar plugin doesn't support this setting' (src/settings.ts:92)."
+      ],
+      "edge_cases": ["returns defaults if weekly note settings don't exist", "cleanses data"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-monthly-settings",
+      "name": "Resolve monthly note settings",
+      "category": "config",
+      "surface": "api",
+      "description": "Returns {format, folder, template} for monthly notes from the Periodic Notes plugin only (no legacy plugin fallback), with DEFAULT_MONTHLY_NOTE_FORMAT / '' fallbacks.",
+      "granularity": ["month"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getMonthlyNoteSettings", "path": "src/settings.ts", "lines": "103-118" }],
+      "used_by": ["dni-monthly", "dni-parse", "dni-index"],
+      "depends_on_capability": ["should-use-periodic-notes-settings"],
+      "behaviour_notes": ["Never includes allowPrefixMatch."],
+      "edge_cases": ["returns defaults if monthly note settings don't exist", "cleanses data"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-quarterly-settings",
+      "name": "Resolve quarterly note settings",
+      "category": "config",
+      "surface": "api",
+      "description": "Returns {format, folder, template} for quarterly notes from the Periodic Notes plugin only, with DEFAULT_QUARTERLY_NOTE_FORMAT / '' fallbacks.",
+      "granularity": ["quarter"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getQuarterlyNoteSettings", "path": "src/settings.ts", "lines": "124-139" }],
+      "used_by": ["dni-quarterly", "dni-parse", "dni-index"],
+      "depends_on_capability": ["should-use-periodic-notes-settings"],
+      "behaviour_notes": ["Never includes allowPrefixMatch."],
+      "edge_cases": ["returns defaults if quarterly note settings don't exist", "cleanses data"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-yearly-settings",
+      "name": "Resolve yearly note settings",
+      "category": "config",
+      "surface": "api",
+      "description": "Returns {format, folder, template} for yearly notes from the Periodic Notes plugin only, with DEFAULT_YEARLY_NOTE_FORMAT / '' fallbacks.",
+      "granularity": ["year"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getYearlyNoteSettings", "path": "src/settings.ts", "lines": "145-160" }],
+      "used_by": ["dni-yearly", "dni-parse", "dni-index"],
+      "depends_on_capability": ["should-use-periodic-notes-settings"],
+      "behaviour_notes": ["Never includes allowPrefixMatch."],
+      "edge_cases": ["returns defaults if yearly note settings don't exist", "cleanses data"],
+      "confidence": "verified"
+    },
+    {
+      "id": "should-use-periodic-notes-settings",
+      "name": "Periodic-Notes-settings precedence check",
+      "category": "config",
+      "surface": "internal",
+      "description": "Returns true when the Periodic Notes plugin is installed and its settings[periodicity].enabled flag is truthy, gating whether a resolve-*-settings function reads from Periodic Notes vs. its legacy fallback.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "shouldUsePeriodicNotesSettings", "path": "src/settings.ts", "lines": "25-30" }],
+      "used_by": ["dni-settings"],
+      "depends_on_capability": ["detect-periodic-notes-plugin"],
+      "behaviour_notes": ["Not exported from index.ts; internal to settings.ts only."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-periodic-notes-plugin",
+      "name": "Resolve the Periodic Notes plugin instance (dev-id first)",
+      "category": "integration",
+      "surface": "internal",
+      "description": "Looks up the Periodic Notes plugin instance via app.plugins.getPlugin, trying the side-loaded dev build id 'periodic-notes-anks' first and falling back to the community-store id 'periodic-notes'.",
+      "granularity": ["n-a"],
+      "defined_in": [{ "module": "dni-settings", "symbol": "getPeriodicNotesPlugin", "path": "src/settings.ts", "lines": "15-23" }],
+      "used_by": ["dni-settings", "dni-index"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Order is always: 'periodic-notes-anks' (dev/side-installed build) then 'periodic-notes' (community store build) — first truthy wins.",
+        "Imported by index.ts and called directly from appHasMonthlyNotesPluginLoaded/appHasQuarterlyNotesPluginLoaded/appHasYearlyNotesPluginLoaded (src/index.ts:52,57,62), but is NOT itself re-exported from index.ts's public export block (src/index.ts:127-149) — it is reachable only indirectly, through the boolean/settings functions that call it.",
+        "appHasDailyNotesPluginLoaded and appHasWeeklyNotesPluginLoaded do NOT call this function — they re-implement the same 'anks id first, then production id' probe inline in index.ts (see observations: duplication)."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-daily-notes-plugin-loaded",
+      "name": "Detect whether daily notes are enabled",
+      "category": "integration",
+      "surface": "api",
+      "description": "Returns true if Obsidian's core 'daily-notes' internal plugin is enabled, OR if the Periodic Notes plugin (dev id 'periodic-notes-anks' checked before 'periodic-notes') is installed with settings.daily.enabled truthy.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-index", "symbol": "appHasDailyNotesPluginLoaded", "path": "src/index.ts", "lines": "12-26" }],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Checks app.internalPlugins.plugins['daily-notes'].enabled FIRST; only checks Periodic Notes if that internal plugin is absent/disabled.",
+        "Duplicates detect-periodic-notes-plugin's dev-id-first lookup inline instead of calling getPeriodicNotesPlugin() (src/index.ts:22-24).",
+        "Not called by getAllDailyNotes (see observation on daily's missing guard)."
+      ],
+      "edge_cases": ["returns true when daily notes plugin is enabled", "returns false when the core plugin is disabled and Periodic Notes' daily is not enabled"],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-weekly-notes-plugin-loaded",
+      "name": "Detect whether weekly notes are enabled",
+      "category": "integration",
+      "surface": "api",
+      "description": "Returns true if the Calendar plugin (dev id 'calendar-anks' checked before 'calendar') is installed, OR if the Periodic Notes plugin (dev id first) is installed with settings.weekly.enabled truthy.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-index", "symbol": "appHasWeeklyNotesPluginLoaded", "path": "src/index.ts", "lines": "32-49" }],
+      "used_by": ["dni-weekly"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Presence of the Calendar plugin alone is sufficient — its settings.weekly.enabled is never checked, unlike the other four granularities.",
+        "Duplicates detect-periodic-notes-plugin's dev-id-first lookup inline (src/index.ts:45-47) instead of calling getPeriodicNotesPlugin().",
+        "Code comment (src/index.ts:28-31) explains: weekly notes historically lived in the Calendar plugin and are checked there until that feature is fully migrated to Periodic Notes."
+      ],
+      "edge_cases": ["returns true when weekly notes plugin is enabled", "returns false when weekly notes plugin is disabled"],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-monthly-notes-plugin-loaded",
+      "name": "Detect whether monthly notes are enabled",
+      "category": "integration",
+      "surface": "api",
+      "description": "Returns true only if the Periodic Notes plugin is installed and settings.monthly.enabled is truthy. There is no legacy/core plugin fallback for monthly notes.",
+      "granularity": ["month"],
+      "defined_in": [{ "module": "dni-index", "symbol": "appHasMonthlyNotesPluginLoaded", "path": "src/index.ts", "lines": "51-54" }],
+      "used_by": ["dni-monthly"],
+      "depends_on_capability": ["detect-periodic-notes-plugin"],
+      "behaviour_notes": ["Delegates cleanly to getPeriodicNotesPlugin(), unlike the daily/weekly variants."],
+      "edge_cases": ["returns true when periodic-notes plugin is enabled", "returns false when periodic-notes plugin is disabled"],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-quarterly-notes-plugin-loaded",
+      "name": "Detect whether quarterly notes are enabled",
+      "category": "integration",
+      "surface": "api",
+      "description": "Returns true only if the Periodic Notes plugin is installed and settings.quarterly.enabled is truthy.",
+      "granularity": ["quarter"],
+      "defined_in": [{ "module": "dni-index", "symbol": "appHasQuarterlyNotesPluginLoaded", "path": "src/index.ts", "lines": "56-59" }],
+      "used_by": ["dni-quarterly"],
+      "depends_on_capability": ["detect-periodic-notes-plugin"],
+      "behaviour_notes": [],
+      "edge_cases": ["returns true when periodic-notes plugin is enabled", "returns false when periodic-notes plugin is disabled"],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-yearly-notes-plugin-loaded",
+      "name": "Detect whether yearly notes are enabled",
+      "category": "integration",
+      "surface": "api",
+      "description": "Returns true only if the Periodic Notes plugin is installed and settings.yearly.enabled is truthy.",
+      "granularity": ["year"],
+      "defined_in": [{ "module": "dni-index", "symbol": "appHasYearlyNotesPluginLoaded", "path": "src/index.ts", "lines": "61-64" }],
+      "used_by": ["dni-yearly"],
+      "depends_on_capability": ["detect-periodic-notes-plugin"],
+      "behaviour_notes": [],
+      "edge_cases": ["returns true when periodic-notes plugin is enabled", "returns false when periodic-notes plugin is disabled"],
+      "confidence": "verified"
+    },
+    {
+      "id": "parse-date-from-filename",
+      "name": "Parse a note's date from its filename",
+      "category": "dates",
+      "surface": "api",
+      "description": "Given a TFile (getDateFromFile) or a path string (getDateFromPath) plus a granularity, resolves that granularity's format and parses the basename into a Moment, first strictly, then (only if allowPrefixMatch is set) via loose/prefix matching. Returns null if nothing matches.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [
+        { "module": "dni-parse", "symbol": "getDateFromFile", "path": "src/parse.ts", "lines": "47-52" },
+        { "module": "dni-parse", "symbol": "getDateFromPath", "path": "src/parse.ts", "lines": "54-59" },
+        { "module": "dni-parse", "symbol": "getDateFromFilename", "path": "src/parse.ts", "lines": "61-113" }
+      ],
+      "used_by": ["dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly"],
+      "depends_on_capability": ["resolve-daily-settings", "resolve-weekly-settings", "resolve-monthly-settings", "resolve-quarterly-settings", "resolve-yearly-settings"],
+      "behaviour_notes": [
+        "format is taken as settings.format.split('/').pop() — only the last path segment of the configured format is used for parsing (handles formats with folder-like separators).",
+        "Step 1: strict moment(filename, format, true). If valid, checked for 'ambiguity' (see below); returned as-is otherwise.",
+        "isFormatAmbiguous (src/parse.ts:36-45) only fires for granularity==='week' when the (bracket-stripped) format contains a week-number token (w/ww) AND also a month (M) or day (D) token. In that case the date is re-parsed non-strictly with M/D tokens stripped from the format, because moment prioritizes month+day over week-number when both are present, which is wrong for a week-numbered filename.",
+        "Step 2 (only if strict parse failed): if allowPrefixMatch is falsy, returns null immediately.",
+        "Step 2b: otherwise re-parses non-strictly, then re-formats the parsed moment with the same format and requires filename.startsWith(formattedDate) before accepting — this lets a filename with a descriptive suffix (e.g. '2025-W46, 10.11 - 16.11') still resolve to the same date as the strict prefix.",
+        "allowPrefixMatch only ever comes from resolve-weekly-settings (Periodic Notes weekly settings); the other four resolve-*-settings functions never set it, so day/month/quarter/year notes can never use prefix matching in this codebase even though the code path is generic."
+      ],
+      "edge_cases": [
+        "it supports formats with year, month, and day",
+        "it supports formats with partial year, month, and week number",
+        "it supports formats with year and week number",
+        "it supports formats with year, week number, and month",
+        "it supports formats with year, week number, and day",
+        "it supports formats with year, month number, week number",
+        "it supports formats with year, month number, week number without prefix",
+        "it supports year, month, day, week number",
+        "[en-gb] it supports year, month, day, week number",
+        "ambiguous dates are still parsed strictly first — a filename with an extra suffix or spaces is rejected (null), not loosely matched, when the base strict format cannot match it and allowPrefixMatch isn't in play for that variant"
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "compute-date-uid",
+      "name": "Compute a granularity-prefixed date UID",
+      "category": "dates",
+      "surface": "api",
+      "description": "Given a Moment and granularity (default 'day'), returns a string like 'day-2026-09-08T00:00:00-04:00' — the date is normalized with startOf(granularity) first, and the granularity name is prefixed to avoid cross-granularity collisions.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [{ "module": "dni-parse", "symbol": "getDateUID", "path": "src/parse.ts", "lines": "19-25" }],
+      "used_by": ["dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Clones the input Moment before calling startOf(), so it does not mutate the caller's date object."],
+      "edge_cases": ["it does not mutate the original date", "it uses 'day' for the default granularity", "it supports 'week'/'month' granularity"],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-day-of-week-numerical-value",
+      "name": "Resolve a day-of-week name to its locale-relative index",
+      "category": "dates",
+      "surface": "internal",
+      "description": "Given a day name ('sunday'..'saturday'), returns its index (0-6) relative to the current moment locale's configured week-start day, used to implement weekly template tokens like {{monday:...}}.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "dni-weekly", "symbol": "getDaysOfWeek", "path": "src/weekly.ts", "lines": "11-30" },
+        { "module": "dni-weekly", "symbol": "getDayOfWeekNumericalValue", "path": "src/weekly.ts", "lines": "32-34" }
+      ],
+      "used_by": ["dni-weekly"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Reads moment.localeData()._week.dow directly (private Moment API) to determine the locale's week start, then rotates a fixed Sun-Sat array by that many positions."],
+      "edge_cases": [
+        "start week on Sunday: returns 0 for sunday, 1 for monday",
+        "start week on Monday: returns 6 for sunday, 0 for monday"
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-template-info",
+      "name": "Load a template file's contents and fold state",
+      "category": "notes",
+      "surface": "api",
+      "description": "Given a template path, returns a tuple [contents, IFoldInfo]. Returns ['', null] immediately if the (normalized) template path is empty ('/'); otherwise reads the file via metadataCache.getFirstLinkpathDest + vault.cachedRead and loads its fold state via app.foldManager.load.",
+      "granularity": ["n-a"],
+      "defined_in": [{ "module": "dni-vault", "symbol": "getTemplateInfo", "path": "src/vault.ts", "lines": "68-92" }],
+      "used_by": ["dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Errors (e.g. template file not found -> metadataCache.getFirstLinkpathDest returns null -> vault.cachedRead(null) throws) are caught internally: logs to console.error, shows Notice('Failed to read the daily note template'), and resolves to ['', null] rather than rejecting.",
+        "This means a misconfigured/missing template silently degrades to an empty-body note instead of failing the create-*-note call."
+      ],
+      "edge_cases": ["returns '' if path is empty", "returns contents of the template file", "throws error if file can't be found (caught internally; resolves to empty tuple with a Notice rather than propagating)"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-note-path-and-ensure-folder",
+      "name": "Build a normalized note path and create its parent folder",
+      "category": "notes",
+      "surface": "internal",
+      "description": "Given a target directory and filename, appends '.md' if missing, joins+normalizes the path, and creates any missing parent folder(s) via vault.createFolder before returning the final path.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "dni-vault", "symbol": "getNotePath", "path": "src/vault.ts", "lines": "54-66" },
+        { "module": "dni-vault", "symbol": "ensureFolderExists", "path": "src/vault.ts", "lines": "42-52" },
+        { "module": "dni-vault", "symbol": "join", "path": "src/vault.ts", "lines": "13-33" }
+      ],
+      "used_by": ["dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "ensureFolderExists only checks/creates the immediate parent directory (join of all but the last path segment); it does not recursively verify each intermediate ancestor exists — relies on Obsidian's vault.createFolder to handle nested creation.",
+        "join() is a vendored mini path.join implementation (credited to @creationix/path.js) — no dependency on Node's `path` module, so it works in Obsidian's sandboxed/mobile runtime."
+      ],
+      "edge_cases": ["join() mimics path.join"],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-date-time-calc",
+      "name": "{{date}}/{{time}} template tokens with optional +/-N unit offset and custom format",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Regex-driven mustache replacement supporting {{date}}, {{time}}, {{date+7d}}, {{date-1M:YYYY-MM}}, etc. — applies a time-of-day from 'now' onto the note's date, optionally offsets by a signed integer + unit (y/q/m/w/d/h/s), and optionally formats with a custom moment format after the trailing ':'.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [
+        { "module": "dni-daily", "symbol": "createDailyNote (inline replace callback)", "path": "src/daily.ts", "lines": "35-53" },
+        { "module": "dni-weekly", "symbol": "createWeeklyNote (inline replace callback)", "path": "src/weekly.ts", "lines": "47-65" },
+        { "module": "dni-monthly", "symbol": "createMonthlyNote (inline replace callback)", "path": "src/monthly.ts", "lines": "29-47" },
+        { "module": "dni-quarterly", "symbol": "createQuarterlyNote (inline replace callback)", "path": "src/quarterly.ts", "lines": "29-47" },
+        { "module": "dni-yearly", "symbol": "createYearlyNote (inline replace callback)", "path": "src/yearly.ts", "lines": "29-47" }
+      ],
+      "used_by": ["dni-daily", "dni-weekly", "dni-monthly", "dni-quarterly", "dni-yearly"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "The exact same regex and callback body (byte-for-byte) is duplicated across all five create*Note functions instead of being a shared helper — a prime de-duplication target for the merge (see observations).",
+        "Falls back to the granularity's own `format` (not a fixed default) when no custom momentFormat is supplied after ':'."
+      ],
+      "edge_cases": ["replaces all mustaches in template (each granularity's own spec file)"],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-yesterday-tomorrow",
+      "name": "{{yesterday}}/{{tomorrow}} template tokens (daily only)",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "In createDailyNote only, replaces {{yesterday}} and {{tomorrow}} with the note's date minus/plus one day, formatted with the daily format.",
+      "granularity": ["day"],
+      "defined_in": [{ "module": "dni-daily", "symbol": "createDailyNote (inline replace calls)", "path": "src/daily.ts", "lines": "54-61" }],
+      "used_by": ["dni-daily"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No equivalent token exists for weekly/monthly/quarterly/yearly notes — this is a daily-only feature, an asymmetry worth deciding on during the merge."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-day-of-week",
+      "name": "{{sunday|monday|...:format}} template tokens (weekly only)",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "In createWeeklyNote only, replaces {{<dayname>:<format>}} with that day of the note's week (via date.weekday(n)), formatted with the given moment format.",
+      "granularity": ["week"],
+      "defined_in": [{ "module": "dni-weekly", "symbol": "createWeeklyNote (inline replace call)", "path": "src/weekly.ts", "lines": "68-74" }],
+      "used_by": ["dni-weekly"],
+      "depends_on_capability": ["get-day-of-week-numerical-value"],
+      "behaviour_notes": ["Requires an explicit ':<format>' suffix (regex requires the colon and a format group); '{{monday}}' alone does not match this token."],
+      "edge_cases": ["replaces {{sunday}} and {{monday}} in weekly note"],
+      "confidence": "verified"
+    }
+  ],
+  "flows": [
+    {
+      "id": "create-a-daily-note",
+      "title": "Create a new daily note for a given date",
+      "description": "A consumer (e.g. obsidian-calendar-plugin) calls createDailyNote(moment); the library resolves settings, loads and fills the template, ensures the folder exists, writes the file, and restores fold state.",
+      "trigger": "caller invokes createDailyNote(date)",
+      "steps": [
+        { "from": "dni-daily", "to": "dni-settings", "action": "getDailyNoteSettings() — resolve format/folder/template", "payload": "—" },
+        { "from": "dni-settings", "to": "periodic-notes-plugin", "action": "probe 'periodic-notes-anks' then 'periodic-notes'; read settings.daily if enabled", "payload": "—" },
+        { "from": "dni-settings", "to": "obsidian-internal-daily-notes-plugin", "action": "fallback: read internalPlugins.getPluginById('daily-notes').instance.options", "payload": "—" },
+        { "from": "dni-daily", "to": "dni-vault", "action": "getTemplateInfo(template) — read template file + fold state", "payload": "template path" },
+        { "from": "dni-vault", "to": "obsidian-api", "action": "metadataCache.getFirstLinkpathDest + vault.cachedRead", "payload": "template path" },
+        { "from": "dni-daily", "to": "dni-vault", "action": "getNotePath(folder, filename) — normalize path, create missing folder", "payload": "folder, filename" },
+        { "from": "dni-vault", "to": "obsidian-api", "action": "vault.createFolder(dir) if missing", "payload": "folder path" },
+        { "from": "dni-daily", "to": "dni-daily", "action": "replace {{date}}/{{time}}/{{title}}/{{date±N unit:fmt}}/{{yesterday}}/{{tomorrow}} tokens in template contents", "payload": "—" },
+        { "from": "dni-daily", "to": "obsidian-api", "action": "vault.create(path, contents)", "payload": "normalized path + filled template" },
+        { "from": "dni-daily", "to": "obsidian-api", "action": "app.foldManager.save(createdFile, foldInfo)", "payload": "—" }
+      ],
+      "capabilities": ["create-daily-note", "resolve-daily-settings", "get-template-info", "resolve-note-path-and-ensure-folder", "template-token-date-time-calc", "template-token-yesterday-tomorrow"],
+      "confidence": "verified"
+    },
+    {
+      "id": "detect-periodic-notes-availability",
+      "title": "Decide whether a given granularity's periodic notes are enabled",
+      "description": "Before showing UI or resolving settings, a caller checks appHasXNotesPluginLoaded() for a granularity; daily/weekly special-case a legacy plugin, monthly/quarterly/yearly go straight to Periodic Notes.",
+      "trigger": "caller invokes appHasDailyNotesPluginLoaded() / appHasWeeklyNotesPluginLoaded() / appHasMonthlyNotesPluginLoaded() / etc.",
+      "steps": [
+        { "from": "dni-index", "to": "obsidian-internal-daily-notes-plugin", "action": "(daily only) check internalPlugins.plugins['daily-notes'].enabled", "payload": "—" },
+        { "from": "dni-index", "to": "calendar-plugin", "action": "(weekly only) app.plugins.getPlugin('calendar-anks' || 'calendar')", "payload": "—" },
+        { "from": "dni-index", "to": "periodic-notes-plugin", "action": "app.plugins.getPlugin('periodic-notes-anks' || 'periodic-notes'); read settings[granularity].enabled", "payload": "—" }
+      ],
+      "capabilities": ["detect-daily-notes-plugin-loaded", "detect-weekly-notes-plugin-loaded", "detect-monthly-notes-plugin-loaded", "detect-quarterly-notes-plugin-loaded", "detect-yearly-notes-plugin-loaded", "detect-periodic-notes-plugin"],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-settings-with-periodic-notes-precedence",
+      "title": "Resolve a granularity's format/folder/template, preferring Periodic Notes",
+      "description": "Every resolve-*-settings function checks whether Periodic Notes should win (installed + settings[periodicity].enabled) before falling back to that granularity's legacy source (core plugin for daily, Calendar plugin for weekly, hardcoded defaults for month/quarter/year).",
+      "trigger": "any create-*-note, get-all-*-notes, or parse-date-from-filename call",
+      "steps": [
+        { "from": "dni-settings", "to": "periodic-notes-plugin", "action": "getPeriodicNotesPlugin() dev-id-first probe; check settings[periodicity].enabled", "payload": "—" },
+        { "from": "dni-settings", "to": "obsidian-internal-daily-notes-plugin", "action": "(daily fallback only)", "payload": "—" },
+        { "from": "dni-settings", "to": "calendar-plugin", "action": "(weekly fallback only)", "payload": "—" },
+        { "from": "dni-settings", "to": "dni-constants", "action": "apply DEFAULT_*_NOTE_FORMAT / '' when nothing else applies", "payload": "—" }
+      ],
+      "capabilities": ["resolve-daily-settings", "resolve-weekly-settings", "resolve-monthly-settings", "resolve-quarterly-settings", "resolve-yearly-settings", "should-use-periodic-notes-settings"],
+      "confidence": "verified"
+    },
+    {
+      "id": "parse-existing-note-filename-to-date",
+      "title": "Map an existing vault file back to its date",
+      "description": "Used when building the getAll*Notes index: for each file found, its basename is parsed against the granularity's configured format, strictly first, then via prefix matching if allowed and enabled.",
+      "trigger": "getAllDailyNotes/getAllWeeklyNotes/getAllMonthlyNotes/getAllQuarterlyNotes/getAllYearlyNotes iterates vault files",
+      "steps": [
+        { "from": "dni-daily", "to": "dni-parse", "action": "getDateFromFile(file, granularity)", "payload": "TFile" },
+        { "from": "dni-parse", "to": "dni-settings", "action": "resolve settings for granularity to get `format` and `allowPrefixMatch`", "payload": "granularity" },
+        { "from": "dni-parse", "to": "obsidian-api", "action": "window.moment(filename, format, strict) — strict parse first", "payload": "filename, format" },
+        { "from": "dni-parse", "to": "obsidian-api", "action": "if strict fails and allowPrefixMatch, re-parse loosely and require filename.startsWith(reformatted date)", "payload": "filename, format" },
+        { "from": "dni-parse", "to": "dni-parse", "action": "getDateUID(parsedDate, granularity) to key the resulting Record", "payload": "Moment" }
+      ],
+      "capabilities": ["parse-date-from-filename", "compute-date-uid"],
+      "confidence": "verified"
+    },
+    {
+      "id": "build-note-index-for-granularity",
+      "title": "Build the in-memory Record<dateUID, TFile> index for a granularity",
+      "description": "getAllXNotes recursively walks the configured folder and returns a lookup map; every granularity except daily first checks that its plugin is enabled and returns {} early if not.",
+      "trigger": "caller invokes getAllDailyNotes()/getAllWeeklyNotes()/getAllMonthlyNotes()/getAllQuarterlyNotes()/getAllYearlyNotes()",
+      "steps": [
+        { "from": "dni-weekly", "to": "dni-index", "action": "(weekly/monthly/quarterly/yearly only) appHasXNotesPluginLoaded() guard — daily has none", "payload": "—" },
+        { "from": "dni-weekly", "to": "dni-settings", "action": "resolve folder for granularity", "payload": "—" },
+        { "from": "dni-weekly", "to": "obsidian-api", "action": "vault.getAbstractFileByPath(folder); throw *NotesFolderMissingError if not found", "payload": "folder path" },
+        { "from": "dni-weekly", "to": "obsidian-api", "action": "Vault.recurseChildren(folder, visit each TFile)", "payload": "—" },
+        { "from": "dni-weekly", "to": "dni-parse", "action": "getDateFromFile(file, granularity) per file", "payload": "TFile" },
+        { "from": "dni-weekly", "to": "dni-parse", "action": "getDateUID(date, granularity) to key the Record", "payload": "Moment" }
+      ],
+      "capabilities": ["get-all-daily-notes", "get-all-weekly-notes", "get-all-monthly-notes", "get-all-quarterly-notes", "get-all-yearly-notes"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-weekly-note-with-day-tokens",
+      "title": "Create a weekly note using day-of-week template tokens",
+      "description": "Same as the daily create flow, but weekly notes additionally resolve {{sunday:...}}-style tokens using the current moment locale's week-start day.",
+      "trigger": "caller invokes createWeeklyNote(date)",
+      "steps": [
+        { "from": "dni-weekly", "to": "dni-settings", "action": "getWeeklyNoteSettings()", "payload": "—" },
+        { "from": "dni-weekly", "to": "dni-vault", "action": "getTemplateInfo(template) + getNotePath(folder, filename)", "payload": "—" },
+        { "from": "dni-weekly", "to": "dni-weekly", "action": "getDayOfWeekNumericalValue(dayName) — locale-relative index", "payload": "day name" },
+        { "from": "dni-weekly", "to": "obsidian-api", "action": "date.weekday(n).format(momentFormat) then vault.create(...)", "payload": "—" }
+      ],
+      "capabilities": ["create-weekly-note", "get-day-of-week-numerical-value", "template-token-day-of-week"],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-periodic-note-generic-dispatch",
+      "title": "Create a note for an arbitrary granularity via the generic dispatcher (day/week/month only)",
+      "description": "createPeriodicNote(granularity, date) looks up a create function in a table that only covers day/week/month; calling it with 'quarter' or 'year' throws instead of delegating.",
+      "trigger": "caller invokes createPeriodicNote(granularity, date)",
+      "steps": [
+        { "from": "dni-index", "to": "dni-daily", "action": "createDailyNote(date) if granularity === 'day'", "payload": "—" },
+        { "from": "dni-index", "to": "dni-weekly", "action": "createWeeklyNote(date) if granularity === 'week'", "payload": "—" },
+        { "from": "dni-index", "to": "dni-monthly", "action": "createMonthlyNote(date) if granularity === 'month'", "payload": "—" },
+        { "from": "dni-index", "to": "dni-index", "action": "createFn['quarter']/createFn['year'] is undefined -> TypeError thrown", "payload": "—" }
+      ],
+      "capabilities": ["create-periodic-note"],
+      "confidence": "verified"
+    },
+    {
+      "id": "look-up-todays-daily-note",
+      "title": "Look up today's daily note from an already-built index",
+      "description": "A typical consumer flow: build the daily-note index once, then repeatedly resolve 'today' (or any date) against it without touching the vault again.",
+      "trigger": "caller has a Record<dateUID, TFile> from getAllDailyNotes() and a Moment for 'today'",
+      "steps": [
+        { "from": "dni-parse", "to": "dni-parse", "action": "getDateUID(today, 'day')", "payload": "Moment" },
+        { "from": "dni-daily", "to": "dni-daily", "action": "getDailyNote(today, dailyNotes) looks up dailyNotes[dateUID] ?? null", "payload": "Moment, Record" }
+      ],
+      "capabilities": ["get-daily-note", "compute-date-uid"],
+      "confidence": "verified"
+    }
+  ],
+  "settings": [
+    { "key": "daily-notes.format", "label": "Daily note date format (core plugin)", "type": "string", "default": "YYYY-MM-DD", "scope": "per-granularity", "path": "src/settings.ts:52-54", "affects": ["resolve-daily-settings", "create-daily-note", "parse-date-from-filename"], "notes": "Read from internalPlugins.getPluginById('daily-notes').instance.options.format; used only when Periodic Notes' daily settings are not in effect." },
+    { "key": "daily-notes.folder", "label": "Daily note folder (core plugin)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:52-56", "affects": ["resolve-daily-settings", "create-daily-note", "get-all-daily-notes"] },
+    { "key": "daily-notes.template", "label": "Daily note template path (core plugin)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:52-57", "affects": ["resolve-daily-settings", "create-daily-note"] },
+    { "key": "periodic-notes.settings.daily.enabled", "label": "Use Periodic Notes' daily settings", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:29,41", "affects": ["should-use-periodic-notes-settings", "resolve-daily-settings", "detect-daily-notes-plugin-loaded"] },
+    { "key": "periodic-notes.settings.daily.format", "label": "Daily note date format (Periodic Notes)", "type": "string", "default": "YYYY-MM-DD", "scope": "per-granularity", "path": "src/settings.ts:42-45", "affects": ["resolve-daily-settings"] },
+    { "key": "periodic-notes.settings.daily.folder", "label": "Daily note folder (Periodic Notes)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:42-46", "affects": ["resolve-daily-settings"] },
+    { "key": "periodic-notes.settings.daily.template", "label": "Daily note template path (Periodic Notes)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:42-47", "affects": ["resolve-daily-settings"] },
+    { "key": "calendar.options.weeklyNoteFormat", "label": "Weekly note date format (Calendar plugin)", "type": "string", "default": "gggg-[W]ww", "scope": "per-granularity", "path": "src/settings.ts:73-89", "affects": ["resolve-weekly-settings"] },
+    { "key": "calendar.options.weeklyNoteFolder", "label": "Weekly note folder (Calendar plugin)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:73-90", "affects": ["resolve-weekly-settings"] },
+    { "key": "calendar.options.weeklyNoteTemplate", "label": "Weekly note template path (Calendar plugin)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:73-91", "affects": ["resolve-weekly-settings"] },
+    { "key": "periodic-notes.settings.weekly.enabled", "label": "Use Periodic Notes' weekly settings", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:29,78", "affects": ["should-use-periodic-notes-settings", "resolve-weekly-settings", "detect-weekly-notes-plugin-loaded"] },
+    { "key": "periodic-notes.settings.weekly.format", "label": "Weekly note date format (Periodic Notes)", "type": "string", "default": "gggg-[W]ww", "scope": "per-granularity", "path": "src/settings.ts:80", "affects": ["resolve-weekly-settings"] },
+    { "key": "periodic-notes.settings.weekly.folder", "label": "Weekly note folder (Periodic Notes)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:81", "affects": ["resolve-weekly-settings"] },
+    { "key": "periodic-notes.settings.weekly.template", "label": "Weekly note template path (Periodic Notes)", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:82", "affects": ["resolve-weekly-settings"] },
+    { "key": "periodic-notes.settings.weekly.allowPrefixMatch", "label": "Allow loose/prefix matching of weekly note filenames", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:83", "affects": ["resolve-weekly-settings", "parse-date-from-filename"], "notes": "Only granularity that ever populates this flag; day/month/quarter/year always get allowPrefixMatch=undefined (treated as false) because their settings getters never read/return it, even though types.ts declares it as generic." },
+    { "key": "periodic-notes.settings.monthly.enabled", "label": "Use Periodic Notes' monthly settings (also the only way monthly notes are enabled at all)", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:106", "affects": ["should-use-periodic-notes-settings", "resolve-monthly-settings", "detect-monthly-notes-plugin-loaded"] },
+    { "key": "periodic-notes.settings.monthly.format", "label": "Monthly note date format", "type": "string", "default": "YYYY-MM", "scope": "per-granularity", "path": "src/settings.ts:111", "affects": ["resolve-monthly-settings"] },
+    { "key": "periodic-notes.settings.monthly.folder", "label": "Monthly note folder", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:112", "affects": ["resolve-monthly-settings"] },
+    { "key": "periodic-notes.settings.monthly.template", "label": "Monthly note template path", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:113", "affects": ["resolve-monthly-settings"] },
+    { "key": "periodic-notes.settings.quarterly.enabled", "label": "Use Periodic Notes' quarterly settings (also the only way quarterly notes are enabled at all)", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:127", "affects": ["should-use-periodic-notes-settings", "resolve-quarterly-settings", "detect-quarterly-notes-plugin-loaded"] },
+    { "key": "periodic-notes.settings.quarterly.format", "label": "Quarterly note date format", "type": "string", "default": "YYYY-[Q]Q", "scope": "per-granularity", "path": "src/settings.ts:132", "affects": ["resolve-quarterly-settings"] },
+    { "key": "periodic-notes.settings.quarterly.folder", "label": "Quarterly note folder", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:133", "affects": ["resolve-quarterly-settings"] },
+    { "key": "periodic-notes.settings.quarterly.template", "label": "Quarterly note template path", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:134", "affects": ["resolve-quarterly-settings"] },
+    { "key": "periodic-notes.settings.yearly.enabled", "label": "Use Periodic Notes' yearly settings (also the only way yearly notes are enabled at all)", "type": "boolean", "default": false, "scope": "per-granularity", "path": "src/settings.ts:148", "affects": ["should-use-periodic-notes-settings", "resolve-yearly-settings", "detect-yearly-notes-plugin-loaded"] },
+    { "key": "periodic-notes.settings.yearly.format", "label": "Yearly note date format", "type": "string", "default": "YYYY", "scope": "per-granularity", "path": "src/settings.ts:153", "affects": ["resolve-yearly-settings"] },
+    { "key": "periodic-notes.settings.yearly.folder", "label": "Yearly note folder", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:154", "affects": ["resolve-yearly-settings"] },
+    { "key": "periodic-notes.settings.yearly.template", "label": "Yearly note template path", "type": "string", "default": "", "scope": "per-granularity", "path": "src/settings.ts:155", "affects": ["resolve-yearly-settings"] }
+  ],
+  "commands": [],
+  "api_surface": [
+    { "export": "appHasDailyNotesPluginLoaded", "kind": "function", "signature": "() => boolean", "path": "src/index.ts:12", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "appHasWeeklyNotesPluginLoaded", "kind": "function", "signature": "() => boolean", "path": "src/index.ts:32", "stability": "public", "consumers": [] },
+    { "export": "appHasMonthlyNotesPluginLoaded", "kind": "function", "signature": "() => boolean", "path": "src/index.ts:51", "stability": "public", "consumers": [] },
+    { "export": "appHasQuarterlyNotesPluginLoaded", "kind": "function", "signature": "() => boolean", "path": "src/index.ts:56", "stability": "public", "consumers": [] },
+    { "export": "appHasYearlyNotesPluginLoaded", "kind": "function", "signature": "() => boolean", "path": "src/index.ts:61", "stability": "public", "consumers": [] },
+    { "export": "DEFAULT_DAILY_NOTE_FORMAT", "kind": "const", "signature": "\"YYYY-MM-DD\"", "path": "src/constants.ts:1", "stability": "public", "consumers": [] },
+    { "export": "DEFAULT_WEEKLY_NOTE_FORMAT", "kind": "const", "signature": "\"gggg-[W]ww\"", "path": "src/constants.ts:2", "stability": "public", "consumers": [] },
+    { "export": "DEFAULT_MONTHLY_NOTE_FORMAT", "kind": "const", "signature": "\"YYYY-MM\"", "path": "src/constants.ts:3", "stability": "public", "consumers": [] },
+    { "export": "DEFAULT_QUARTERLY_NOTE_FORMAT", "kind": "const", "signature": "\"YYYY-[Q]Q\"", "path": "src/constants.ts:4", "stability": "public", "consumers": [] },
+    { "export": "DEFAULT_YEARLY_NOTE_FORMAT", "kind": "const", "signature": "\"YYYY\"", "path": "src/constants.ts:5", "stability": "public", "consumers": [] },
+    { "export": "IGranularity", "kind": "type", "signature": "\"day\" | \"week\" | \"month\" | \"quarter\" | \"year\"", "path": "src/types.ts:1", "stability": "public", "consumers": [] },
+    { "export": "IPeriodicNoteSettings", "kind": "type", "signature": "{ folder?: string; format?: string; template?: string; allowPrefixMatch?: boolean }", "path": "src/types.ts:2-7", "stability": "public", "consumers": [] },
+    { "export": "createDailyNote", "kind": "function", "signature": "(date: Moment) => Promise<TFile>", "path": "src/daily.ts:17", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "createWeeklyNote", "kind": "function", "signature": "(date: Moment) => Promise<TFile>", "path": "src/weekly.ts:36", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "createMonthlyNote", "kind": "function", "signature": "(date: Moment) => Promise<TFile>", "path": "src/monthly.ts:18", "stability": "public", "consumers": [] },
+    { "export": "createQuarterlyNote", "kind": "function", "signature": "(date: Moment) => Promise<TFile>", "path": "src/quarterly.ts:18", "stability": "public", "consumers": [] },
+    { "export": "createYearlyNote", "kind": "function", "signature": "(date: Moment) => Promise<TFile>", "path": "src/yearly.ts:18", "stability": "public", "consumers": [] },
+    { "export": "createPeriodicNote", "kind": "function", "signature": "(granularity: IGranularity, date: Moment) => Promise<TFile>", "path": "src/index.ts:114", "stability": "public", "consumers": [] },
+    { "export": "getAllDailyNotes", "kind": "function", "signature": "() => Record<string, TFile>", "path": "src/daily.ts:81", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getAllWeeklyNotes", "kind": "function", "signature": "() => Record<string, TFile>", "path": "src/weekly.ts:94", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getAllMonthlyNotes", "kind": "function", "signature": "() => Record<string, TFile>", "path": "src/monthly.ts:70", "stability": "public", "consumers": [] },
+    { "export": "getAllQuarterlyNotes", "kind": "function", "signature": "() => Record<string, TFile>", "path": "src/quarterly.ts:70", "stability": "public", "consumers": [] },
+    { "export": "getAllYearlyNotes", "kind": "function", "signature": "() => Record<string, TFile>", "path": "src/yearly.ts:70", "stability": "public", "consumers": [] },
+    { "export": "getDailyNote", "kind": "function", "signature": "(date: Moment, dailyNotes: Record<string, TFile>) => TFile", "path": "src/daily.ts:74", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getDailyNoteSettings", "kind": "function", "signature": "() => IPeriodicNoteSettings", "path": "src/settings.ts:36", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getMonthlyNote", "kind": "function", "signature": "(date: Moment, monthlyNotes: Record<string, TFile>) => TFile", "path": "src/monthly.ts:63", "stability": "public", "consumers": [] },
+    { "export": "getMonthlyNoteSettings", "kind": "function", "signature": "() => IPeriodicNoteSettings", "path": "src/settings.ts:103", "stability": "public", "consumers": [] },
+    { "export": "getPeriodicNoteSettings", "kind": "function", "signature": "(granularity: IGranularity) => IPeriodicNoteSettings", "path": "src/index.ts:100", "stability": "public", "consumers": [] },
+    { "export": "getWeeklyNote", "kind": "function", "signature": "(date: Moment, weeklyNotes: Record<string, TFile>) => TFile", "path": "src/weekly.ts:87", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getWeeklyNoteSettings", "kind": "function", "signature": "() => IPeriodicNoteSettings", "path": "src/settings.ts:67", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getQuarterlyNote", "kind": "function", "signature": "(date: Moment, quarterly: Record<string, TFile>) => TFile", "path": "src/quarterly.ts:63", "stability": "public", "consumers": [] },
+    { "export": "getQuarterlyNoteSettings", "kind": "function", "signature": "() => IPeriodicNoteSettings", "path": "src/settings.ts:124", "stability": "public", "consumers": [] },
+    { "export": "getYearlyNote", "kind": "function", "signature": "(date: Moment, yearlyNotes: Record<string, TFile>) => TFile", "path": "src/yearly.ts:63", "stability": "public", "consumers": [] },
+    { "export": "getYearlyNoteSettings", "kind": "function", "signature": "() => IPeriodicNoteSettings", "path": "src/settings.ts:145", "stability": "public", "consumers": [] },
+    { "export": "getDateUID", "kind": "function", "signature": "(date: Moment, granularity?: IGranularity) => string", "path": "src/parse.ts:19", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getDateFromFile", "kind": "function", "signature": "(file: TFile, granularity: IGranularity) => Moment | null", "path": "src/parse.ts:47", "stability": "public", "consumers": ["obsidian-calendar-plugin"] },
+    { "export": "getDateFromPath", "kind": "function", "signature": "(path: string, granularity: IGranularity) => Moment | null", "path": "src/parse.ts:54", "stability": "public", "consumers": [] },
+    { "export": "getTemplateInfo", "kind": "function", "signature": "(template: string) => Promise<[string, IFoldInfo]>", "path": "src/vault.ts:68", "stability": "public", "consumers": [] },
+    { "export": "getPeriodicNotesPlugin", "kind": "function", "signature": "() => any", "path": "src/settings.ts:15", "stability": "internal", "consumers": [] },
+    { "export": "DailyNotesFolderMissingError", "kind": "class", "signature": "class DailyNotesFolderMissingError extends Error {}", "path": "src/daily.ts:8", "stability": "internal", "consumers": [] },
+    { "export": "WeeklyNotesFolderMissingError", "kind": "class", "signature": "class WeeklyNotesFolderMissingError extends Error {}", "path": "src/weekly.ts:9", "stability": "internal", "consumers": [] },
+    { "export": "MonthlyNotesFolderMissingError", "kind": "class", "signature": "class MonthlyNotesFolderMissingError extends Error {}", "path": "src/monthly.ts:9", "stability": "internal", "consumers": [] },
+    { "export": "QuarterlyNotesFolderMissingError", "kind": "class", "signature": "class QuarterlyNotesFolderMissingError extends Error {}", "path": "src/quarterly.ts:9", "stability": "internal", "consumers": [] },
+    { "export": "YearlyNotesFolderMissingError", "kind": "class", "signature": "class YearlyNotesFolderMissingError extends Error {}", "path": "src/yearly.ts:9", "stability": "internal", "consumers": [] }
+  ],
+  "observations": [
+    {
+      "severity": "P1",
+      "kind": "bug",
+      "what": "index.ts's generic createPeriodicNote(granularity, date) dispatch table only maps 'day', 'month', 'week' to their create functions; 'quarter' and 'year' are absent even though createQuarterlyNote/createYearlyNote both exist and are separately exported.",
+      "where": ["dni-index:src/index.ts:118-124"],
+      "why_it_matters": "Any merged code path that routes through the generic dispatcher (rather than calling create*Note directly) will throw a TypeError for quarter/year instead of creating a note. A naive merge that keeps this dispatcher as 'the' generic entry point silently breaks two of the five granularities."
+    },
+    {
+      "severity": "P2",
+      "kind": "duplication",
+      "what": "The 'try dev plugin id (\"periodic-notes-anks\"), then production id (\"periodic-notes\")' probe is implemented twice: once as the shared getPeriodicNotesPlugin() in settings.ts (used by settings.ts itself and by the monthly/quarterly/yearly plugin-detection functions), and once inlined separately inside appHasDailyNotesPluginLoaded and appHasWeeklyNotesPluginLoaded in index.ts, which do not call getPeriodicNotesPlugin() at all. The Calendar plugin's 'calendar-anks'/'calendar' probe (index.ts:38-39) is also unique to appHasWeeklyNotesPluginLoaded and not centralized anywhere.",
+      "where": ["dni-settings:src/settings.ts:15-23", "dni-index:src/index.ts:22-24", "dni-index:src/index.ts:38-47"],
+      "why_it_matters": "A merge that only updates the shared getPeriodicNotesPlugin() helper (e.g. to add a third plugin id, or change probe order) will miss the two inlined copies in index.ts, silently leaving daily/weekly detection out of sync with monthly/quarterly/yearly."
+    },
+    {
+      "severity": "P2",
+      "kind": "duplication",
+      "what": "The {{date±N unit:format}}/{{time}} regex-and-callback used to fill in date/time template tokens is copy-pasted verbatim across createDailyNote, createWeeklyNote, createMonthlyNote, createQuarterlyNote, and createYearlyNote instead of being a shared helper.",
+      "where": ["dni-daily:src/daily.ts:35-53", "dni-weekly:src/weekly.ts:47-65", "dni-monthly:src/monthly.ts:29-47", "dni-quarterly:src/quarterly.ts:29-47", "dni-yearly:src/yearly.ts:29-47"],
+      "why_it_matters": "A fix or extension to this token syntax (e.g. adding a new unit or fixing a formatting edge case) has to be applied identically in five places; the merge should extract this into one shared function up front rather than porting all five copies."
+    },
+    {
+      "severity": "P2",
+      "kind": "divergence",
+      "what": "getAllDailyNotes() does not call appHasDailyNotesPluginLoaded() before walking the vault, unlike getAllWeeklyNotes/getAllMonthlyNotes/getAllQuarterlyNotes/getAllYearlyNotes, which all return {} early if their respective plugin isn't enabled.",
+      "where": ["dni-daily:src/daily.ts:81-108", "dni-weekly:src/weekly.ts:94-99", "dni-monthly:src/monthly.ts:70-75"],
+      "why_it_matters": "If daily notes are effectively 'disabled' but a folder still exists at the configured (possibly stale/default) path, getAllDailyNotes will still scan it and throw DailyNotesFolderMissingError only if the folder is truly absent — it never short-circuits the way the other four granularities do. A merge that unifies getAll*Notes into one generic function must decide whether to add the missing guard to daily or intentionally drop it from the others."
+    },
+    {
+      "severity": "P2",
+      "kind": "gap",
+      "what": "allowPrefixMatch is declared generically on IPeriodicNoteSettings and consumed generically in parse.ts's getDateFromFilename for every granularity, but only getWeeklyNoteSettings ever populates it (and only from the Periodic Notes plugin path — the Calendar-plugin fallback hardcodes it to false). getDailyNoteSettings/getMonthlyNoteSettings/getQuarterlyNoteSettings/getYearlyNoteSettings never include the key at all.",
+      "where": ["src/types.ts:6", "src/settings.ts:83", "src/settings.ts:36-61", "src/settings.ts:103-160", "src/parse.ts:75"],
+      "why_it_matters": "Prefix/loose filename matching (e.g. matching '2026-01-15 Some Title.md' as a daily note) silently cannot work for day/month/quarter/year notes today, even though nothing in parse.ts's logic is week-specific. If the merge wants to offer prefix matching uniformly, each of the four other resolve-*-settings functions needs the same wiring added."
+    },
+    {
+      "severity": "P2",
+      "kind": "divergence",
+      "what": "Weekly-note detection (appHasWeeklyNotesPluginLoaded) treats the mere presence of the Calendar plugin as sufficient ('true' as soon as app.plugins.getPlugin('calendar-anks'||'calendar') returns truthy), without checking any 'weekly enabled' flag on it — whereas daily notes check internalPlugins...['daily-notes'].enabled, and monthly/quarterly/yearly check periodicNotes.settings[g].enabled. Weekly is the only granularity where plugin-installed implies feature-enabled.",
+      "where": ["dni-index:src/index.ts:32-49"],
+      "why_it_matters": "A user who has the Calendar plugin installed but has turned off its weekly-notes feature (if such a toggle exists) will still be reported as 'weekly notes enabled' by this library — a behavior a unified implementation should decide to keep or fix explicitly, not inherit by accident."
+    },
+    {
+      "severity": "P3",
+      "kind": "version-skew",
+      "what": "The repo-root index.d.ts (hand-maintained, not referenced by package.json's missing 'types' field, and not produced by the rollup build which only emits dist/main.js) is out of sync with src/: it declares DailyNotesFolderMissingError/WeeklyNotesFolderMissingError/MonthlyNotesFolderMissingError/QuarterlyNotesFolderMissingError/YearlyNotesFolderMissingError as top-level exports of the package, but src/index.ts never imports or re-exports any of the five *FolderMissingError classes from daily.ts/weekly.ts/monthly.ts/quarterly.ts/yearly.ts. It also declares IPeriodicNoteSettings without allowPrefixMatch, unlike src/types.ts.",
+      "where": ["index.d.ts:4-15", "src/index.ts:83-95", "src/types.ts:2-7", "package.json"],
+      "why_it_matters": "Anyone consulting index.d.ts for 'what this library exports' (rather than reading src/index.ts) will believe the *FolderMissingError classes and a narrower settings shape are part of the public API; a merge should treat src/index.ts as the sole source of truth and either delete or regenerate index.d.ts."
+    },
+    {
+      "severity": "P1",
+      "kind": "divergence",
+      "what": "Despite the role hint that obsidian-periodic-notes 'historically' used this library, the checked-out obsidian-periodic-notes repo does not import 'obsidian-daily-notes-interface' anywhere and is not listed in its package.json dependencies; it instead ships its own independent parser.ts, cache.ts, calendarSetManager.ts, and settings/ implementing equivalent (but not necessarily identical) date-parsing and settings-resolution logic.",
+      "where": ["obsidian-periodic-notes:package.json", "obsidian-periodic-notes/src/parser.ts", "obsidian-periodic-notes/src/cache.ts"],
+      "why_it_matters": "The merge cannot treat obsidian-daily-notes-interface as periodic-notes' current settings/parsing implementation — that logic has diverged into a second, independently-evolved copy that must be diffed against this one (parse.ts especially) rather than assumed compatible. This should be resolved by whichever agent maps obsidian-periodic-notes."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "getPeriodicNotesPlugin() is exported from settings.ts and imported into index.ts, but is not included in index.ts's final `export { ... }` block, so it is not part of the package's public API even though three of the five plugin-detection functions (monthly/quarterly/yearly) are effectively thin wrappers around it.",
+      "where": ["dni-settings:src/settings.ts:15-23", "dni-index:src/index.ts:81", "dni-index:src/index.ts:127-149"],
+      "why_it_matters": "A consumer plugin cannot get the raw Periodic Notes plugin instance (e.g. to read settings for a custom granularity, or to react to its own onload) without reimplementing the dev/production id probe itself — worth deciding whether to make this a first-class public export in the merged library."
+    },
+    {
+      "severity": "P3",
+      "kind": "coupling",
+      "what": "weekly.ts, monthly.ts, quarterly.ts, and yearly.ts each import their corresponding appHasXNotesPluginLoaded function from './index' (the package's own aggregator module), creating an internal circular dependency (index.ts imports from these files' create/get functions, and they import back from index.ts for the plugin-detection function).",
+      "where": ["dni-weekly:src/weekly.ts:4", "dni-monthly:src/monthly.ts:4", "dni-quarterly:src/quarterly.ts:4", "dni-yearly:src/yearly.ts:4", "dni-index:src/index.ts:83-95"],
+      "why_it_matters": "This works today because TypeScript/ES module circular imports of pure functions are tolerated, but a restructure during the merge (e.g. splitting index.ts differently, or bundling with stricter tooling) could break at the module-resolution level; the merge should relocate appHasXNotesPluginLoaded next to detect-periodic-notes-plugin in a settings/detection module instead of index.ts to remove the cycle."
+    }
+  ]
+}

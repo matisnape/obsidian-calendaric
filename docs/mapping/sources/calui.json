@@ -1,0 +1,816 @@
+{
+  "source": {
+    "id": "calui",
+    "repo": "obsidian-calendar-ui",
+    "path": "/Users/anna.nowak/projects/obsidian/obsidian-calendar-ui",
+    "version": "0.4.0",
+    "role": "Svelte component library rendering the calendar grid (month/week/day cells, nav, popover). Published as an npm package and consumed by obsidian-calendar-plugin."
+  },
+  "modules": [
+    {
+      "id": "calui-index",
+      "name": "index.ts",
+      "path": "src/index.ts",
+      "role": "Public entry point: re-exports Calendar component, types, and configureGlobalMomentLocale.",
+      "loc": 21,
+      "category": "entry",
+      "depends_on": ["calui-calendar", "calui-localization", "calui-types"],
+      "external": false
+    },
+    {
+      "id": "calui-calendar",
+      "name": "Calendar.svelte",
+      "path": "src/components/Calendar.svelte",
+      "role": "Root component: owns displayedMonth store, builds the month grid, wires Nav/Day/WeekNum, creates the PeriodicNotesCache, and drives the hover popover timing.",
+      "loc": 192,
+      "category": "ui",
+      "depends_on": ["calui-context", "calui-nav", "calui-day", "calui-weeknum", "calui-popover-menu", "calui-utils", "calui-filestore", "calui-types", "external-obsidian"],
+      "external": false
+    },
+    {
+      "id": "calui-month",
+      "name": "Month.svelte",
+      "path": "src/components/Month.svelte",
+      "role": "Renders the clickable month/year title cell, fetches month-granularity metadata, and dispatches hover/click/contextmenu for the month header.",
+      "loc": 129,
+      "category": "ui",
+      "depends_on": ["calui-context", "calui-dots", "calui-metadata-resolver", "calui-utils", "calui-filestore", "calui-types", "external-obsidian-daily-notes-interface"],
+      "external": false
+    },
+    {
+      "id": "calui-day",
+      "name": "Day.svelte",
+      "path": "src/components/Day.svelte",
+      "role": "Single day cell: fetches per-day metadata from the fileCache, renders dots, and dispatches click/hover/contextmenu/drag interactions.",
+      "loc": 166,
+      "category": "ui",
+      "depends_on": ["calui-context", "calui-dots", "calui-metadata-resolver", "calui-utils", "calui-filestore", "calui-types", "external-obsidian-daily-notes-interface"],
+      "external": false
+    },
+    {
+      "id": "calui-nav",
+      "name": "Nav.svelte",
+      "path": "src/components/Nav.svelte",
+      "role": "Navigation bar: prev/next month arrows and the reset-to-today dot, all acting on the shared displayedMonth context store.",
+      "loc": 95,
+      "category": "ui",
+      "depends_on": ["calui-context", "calui-arrow", "calui-dot", "calui-month"],
+      "external": false
+    },
+    {
+      "id": "calui-arrow",
+      "name": "Arrow.svelte",
+      "path": "src/components/Arrow.svelte",
+      "role": "Left/right chevron button used by Nav for month navigation.",
+      "loc": 51,
+      "category": "ui",
+      "depends_on": ["external-obsidian"],
+      "external": false
+    },
+    {
+      "id": "calui-weeknum",
+      "name": "WeekNum.svelte",
+      "path": "src/components/WeekNum.svelte",
+      "role": "Week-number cell: fetches week-granularity metadata and dispatches click/hover/contextmenu for the whole week row.",
+      "loc": 127,
+      "category": "ui",
+      "depends_on": ["calui-metadata-resolver", "calui-dots", "calui-utils", "calui-filestore", "calui-types", "external-obsidian-daily-notes-interface"],
+      "external": false
+    },
+    {
+      "id": "calui-dot",
+      "name": "Dot.svelte",
+      "path": "src/components/Dot.svelte",
+      "role": "Single SVG dot (filled or hollow), colored per source.",
+      "loc": 33,
+      "category": "ui",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "calui-dots",
+      "name": "Dots.svelte",
+      "path": "src/components/Dots.svelte",
+      "role": "Renders up to 5 dots per source, sorted by source order, filtered to sources with display including the calendar.",
+      "loc": 38,
+      "category": "ui",
+      "depends_on": ["calui-dot", "calui-types"],
+      "external": false
+    },
+    {
+      "id": "calui-metadata-resolver",
+      "name": "MetadataResolver.svelte",
+      "path": "src/components/MetadataResolver.svelte",
+      "role": "Awaits a Promise<IDayMetadata[]> and exposes the resolved (or null, or pending-null) value to its default slot.",
+      "loc": 17,
+      "category": "ui",
+      "depends_on": ["calui-types"],
+      "external": false
+    },
+    {
+      "id": "calui-popover-menu",
+      "name": "popover/PopoverMenu.svelte",
+      "path": "src/components/popover/PopoverMenu.svelte",
+      "role": "Filters/sorts metadata for menu display and renders either an inline Box (mobile) or a portaled, Popper-positioned Box (desktop).",
+      "loc": 32,
+      "category": "ui",
+      "depends_on": ["calui-popover-box", "calui-popper", "calui-context", "calui-types", "external-svelte-portal"],
+      "external": false
+    },
+    {
+      "id": "calui-popover-box",
+      "name": "popover/Box.svelte",
+      "path": "src/components/popover/Box.svelte",
+      "role": "Renders the popover content: first 2 metadata entries as a large 'showcase' grid, remaining entries as a compact overflow list.",
+      "loc": 155,
+      "category": "ui",
+      "depends_on": ["calui-types"],
+      "external": false
+    },
+    {
+      "id": "calui-popper",
+      "name": "popover/Popper.svelte",
+      "path": "src/components/popover/Popper.svelte",
+      "role": "Thin wrapper around @popperjs/svelte that positions its slot content relative to a reference element (bottom-end, +5px offset) and fades it in/out based on isVisible.",
+      "loc": 58,
+      "category": "ui",
+      "depends_on": ["external-popperjs-svelte"],
+      "external": false
+    },
+    {
+      "id": "calui-context",
+      "name": "context.js",
+      "path": "src/context.js",
+      "role": "Declares the two Svelte context keys used across the tree: IS_MOBILE and DISPLAYED_MONTH.",
+      "loc": 2,
+      "category": "state",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "calui-filestore",
+      "name": "fileStore.ts",
+      "path": "src/fileStore.ts",
+      "role": "PeriodicNotesCache: a Svelte store of day/week/month periodic notes kept in sync with vault create/delete/modify/rename events, plus the getEvaluatedMetadata() fan-out that calls every registered ICalendarSource.",
+      "loc": 158,
+      "category": "state",
+      "depends_on": ["calui-types", "external-obsidian", "external-obsidian-daily-notes-interface"],
+      "external": false
+    },
+    {
+      "id": "calui-localization",
+      "name": "localization.ts",
+      "path": "src/localization.ts",
+      "role": "configureGlobalMomentLocale(): resolves and applies the moment locale (Obsidian language + optional override) and the week-start override, mutating the global window.moment instance.",
+      "loc": 109,
+      "category": "dates",
+      "depends_on": ["external-moment"],
+      "external": false
+    },
+    {
+      "id": "calui-utils",
+      "name": "utils.ts",
+      "path": "src/utils.ts",
+      "role": "Small date/DOM helpers: isMetaPressed, getDaysOfWeek, isWeekend, getStartOfWeek, and getMonth (the 42-cell month-grid generator).",
+      "loc": 52,
+      "category": "dates",
+      "depends_on": ["calui-types"],
+      "external": false
+    },
+    {
+      "id": "calui-types",
+      "name": "types.ts",
+      "path": "src/types.ts",
+      "role": "Shared TypeScript contract: IDot, IWeek/IMonth, ISourceSettings, IEvaluatedMetadata, ICalendarSource (the extension point host plugins implement), IDayMetadata (the merged shape components consume).",
+      "loc": 55,
+      "category": "config",
+      "depends_on": ["external-obsidian", "external-obsidian-daily-notes-interface", "external-moment"],
+      "external": false
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "render-calendar-grid",
+      "name": "Render the 6-week calendar table",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Calendar.svelte renders a <table> with a weekday header row, an optional week-number column, and 6 weeks x 7 days of Day cells, driven by a reactive getMonth(displayedMonth) computation.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calui-calendar", "symbol": "Calendar.svelte template", "path": "src/components/Calendar.svelte", "lines": "87-150" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["compute-month-grid", "resolve-day-metadata"],
+      "behaviour_notes": [
+        "Weekend columns get a `weekend` CSS class via isWeekend(date).",
+        "The whole grid re-renders reactively whenever the DISPLAYED_MONTH context store changes."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "compute-month-grid",
+      "name": "Compute a 42-cell month grid",
+      "category": "dates",
+      "surface": "api",
+      "description": "getMonth(displayedMonth) returns 6 IWeek entries (7 Moment days + ISO week number each), always starting from the weekday-aligned offset before the 1st of the month, so the grid always has exactly 42 day cells.",
+      "granularity": ["month", "week", "day"],
+      "defined_in": [
+        { "module": "calui-utils", "symbol": "getMonth", "path": "src/utils.ts", "lines": "29-52" }
+      ],
+      "used_by": ["calui-calendar"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Week start is NOT taken from the `localeData` argument passed in — that argument (and the one passed to getDaysOfWeek) is swallowed by a `..._args: unknown[]` rest parameter and never read. Actual week start comes only from the global `window.moment()` locale/week state, which the host must mutate via configureGlobalMomentLocale() beforehand.",
+        "Byte-identical to the 0.3.12 implementation — not part of the version skew."
+      ],
+      "edge_cases": ["displayedMonth is cloned before mutation, so the caller's Moment instance is never mutated in place."],
+      "confidence": "verified"
+    },
+    {
+      "id": "navigate-month",
+      "name": "Increment / decrement the displayed month",
+      "category": "state",
+      "surface": "ui",
+      "description": "Clicking the left/right Arrow in Nav.svelte adds/subtracts one month from the DISPLAYED_MONTH context store, which cascades into a grid + metadata recompute.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calui-nav", "symbol": "incrementDisplayedMonth / decrementDisplayedMonth", "path": "src/components/Nav.svelte", "lines": "20-26" }
+      ],
+      "used_by": ["calui-nav"],
+      "depends_on_capability": ["compute-month-grid"],
+      "behaviour_notes": [
+        "In 0.4.0 this state lives only in the internal writable store set via setContext(DISPLAYED_MONTH, ...) in Calendar.svelte — there is no longer an exported Calendar method the host can call directly (see observation on Calendar.svelte contract change)."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "reset-to-current-month",
+      "name": "Reset to the current month ('today' button)",
+      "category": "state",
+      "surface": "ui",
+      "description": "Clicking the dot button between the arrows sets DISPLAYED_MONTH back to `today.clone()`. The dot is dimmed/inactive and non-clickable (no `active` class, opacity 0.4) while already viewing the current month.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calui-nav", "symbol": "resetDisplayedMonth", "path": "src/components/Nav.svelte", "lines": "28-30" }
+      ],
+      "used_by": ["calui-nav", "calui-month"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Month.svelte's own header click ALSO calls resetDisplayedMonth() when no monthly-notes source is loaded (see month-header-interactions)."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "day-cell-interactions",
+      "name": "Day cell click / hover / contextmenu / drag",
+      "category": "ui",
+      "surface": "event",
+      "description": "Day.svelte wires click, pointerenter/pointerleave, contextmenu and dragstart on each day <div>. click and contextmenu call the host-supplied onClick/onContextMenu callbacks (from the eventHandlers prop) with (granularity='day', date, file, ...); pointerenter/leave additionally dispatch outward 'hoverDay'/'endHoverDay' custom events consumed by Calendar.svelte for the popover.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calui-day", "symbol": "handleClick / handleHover / endHover / handleContextmenu", "path": "src/components/Day.svelte", "lines": "62-91" }
+      ],
+      "used_by": ["calui-calendar"],
+      "depends_on_capability": ["resolve-day-metadata"],
+      "behaviour_notes": [
+        "On mobile (IS_MOBILE context true), a click ALSO dispatches 'hoverDay' (since there is no real hover on touch), so the popover doubles as the mobile tap detail view.",
+        "isMetaPressed(event) is forwarded to onClick so the host can decide 'open in new split'.",
+        "dragstart calls fileCache.onDragStart(event, file), which hands off to Obsidian's internal dragManager."
+      ],
+      "edge_cases": ["file can be null/undefined if no periodic note exists yet for that day — onClick/onHover still fire with existingFile falsy."],
+      "confidence": "verified"
+    },
+    {
+      "id": "week-number-interactions",
+      "name": "Week-number cell click / hover / contextmenu",
+      "category": "ui",
+      "surface": "event",
+      "description": "WeekNum.svelte wires click/contextmenu/pointerenter/pointerleave on the week-number cell, calling the host onClick/onContextMenu/onHover callbacks with (granularity='week', startOfWeek or days[0], file, ...) and dispatching 'hoverDay'/'endHoverDay'.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "calui-weeknum", "symbol": "WeekNum.svelte template + handleHover/endHover", "path": "src/components/WeekNum.svelte", "lines": "61-95" }
+      ],
+      "used_by": ["calui-calendar"],
+      "depends_on_capability": ["resolve-day-metadata"],
+      "behaviour_notes": [
+        "click passes `startOfWeek` (getStartOfWeek(days), i.e. days[0].weekday(0)) while contextmenu/hover pass `days[0]` directly — these can differ depending on week-start configuration, a subtle inconsistency worth preserving intentionally or fixing on merge."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "month-header-interactions",
+      "name": "Month/year header click / hover / contextmenu",
+      "category": "ui",
+      "surface": "event",
+      "description": "Month.svelte's title div wires click, contextmenu, pointerenter/pointerleave. If a monthly-notes source is loaded (appHasMonthlyNotesPluginLoaded()), click calls onClick('month', displayedMonth, file, isMetaPressed); otherwise click falls back to resetDisplayedMonth(). contextmenu only fires the callback (only when metadata resolved AND onContextMenu is set).",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calui-month", "symbol": "handleClick / handleHover / endHover", "path": "src/components/Month.svelte", "lines": "58-91" }
+      ],
+      "used_by": ["calui-nav"],
+      "depends_on_capability": ["reset-to-current-month", "resolve-day-metadata"],
+      "behaviour_notes": [
+        "This whole capability (a real onClick/onContextMenu path for the month header, gated on monthly-notes support) is NEW in 0.4.0 — 0.3.12's Nav.svelte only had an unconditional resetDisplayedMonth() on the header, no month-level source callbacks at all."
+      ],
+      "edge_cases": ["hover is a no-op entirely when appHasMonthlyNotesPluginLoaded() is false."],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-day-metadata",
+      "name": "Resolve per-day/week/month metadata from registered sources",
+      "category": "state",
+      "surface": "integration",
+      "description": "PeriodicNotesCache.getEvaluatedMetadata(granularity, date, getSourceSettings) looks up the existing periodic note file for that date/granularity, calls `source.getMetadata?.(granularity, date, file)` for every registered ICalendarSource, and merges each result with the source's own id/name/description and its per-source display settings (color, display, order) into one IDayMetadata per source. This is the extension point host plugins use to add dots/values to the calendar.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-filestore", "symbol": "PeriodicNotesCache.getEvaluatedMetadata", "path": "src/fileStore.ts", "lines": "128-150" }
+      ],
+      "used_by": ["calui-day", "calui-weeknum", "calui-month"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Returns an ARRAY of IDayMetadata (one entry per registered source), not a single merged object — this is a structural break from 0.3.12's metadataReducer, which flattened all sources into one {classes, dataAttributes, dots} object.",
+        "Each Day/WeekNum/Month component re-subscribes to fileCache.store AND (for Day/WeekNum) recomputes on every store change, re-fetching metadata for every visible cell on any vault file event.",
+        "getMetadata is optional on ICalendarSource (`source.getMetadata?.(...)`); sources that omit it contribute only their own id/name/settings with an empty evaluated-metadata object."
+      ],
+      "edge_cases": [
+        "file passed to source.getMetadata can be undefined if no periodic note exists yet for that date.",
+        "getEvaluatedMetadata is called fresh (no caching) on every fileCache.store or displayedMonth change, for every cell — potential perf concern for large source counts."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "render-dots",
+      "name": "Render metadata dots on a cell",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Dots.svelte sorts the resolved IDayMetadata[] by `order`, keeps only sources whose `display` is 'calendar-and-menu', and renders up to 5 (MAX_DOTS_PER_SOURCE) Dot.svelte instances per source, colored via the source's `color` setting.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-dots", "symbol": "Dots.svelte", "path": "src/components/Dots.svelte", "lines": "9-25" }
+      ],
+      "used_by": ["calui-day", "calui-weeknum", "calui-month"],
+      "depends_on_capability": ["resolve-day-metadata"],
+      "behaviour_notes": [
+        "Sources with display 'menu' or 'none' contribute no dots to the calendar grid (they only show in the popover menu, or nowhere)."
+      ],
+      "edge_cases": ["dots defaults to [] if a source's evaluated metadata omits it."],
+      "confidence": "verified"
+    },
+    {
+      "id": "hover-popover-desktop",
+      "name": "Hover popover (desktop)",
+      "category": "ui",
+      "surface": "ui",
+      "description": "On desktop, hovering a day for 750ms (Calendar.svelte's hoverTimeout) opens a Popper-positioned popover (bottom-end, +5px offset) portaled into `.app-container`, showing a Box with up to 2 'showcase' metadata items (large, with optional /goal) and the rest as a compact overflow list.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-calendar", "symbol": "updatePopover / dismissPopover", "path": "src/components/Calendar.svelte", "lines": "56-84" }
+      ],
+      "used_by": ["calui-popover-menu"],
+      "depends_on_capability": ["resolve-day-metadata"],
+      "behaviour_notes": [
+        "dismissPopover is debounced (250ms, leading edge via Obsidian's `debounce` util) so quickly moving between adjacent cells doesn't flicker the popover closed.",
+        "The popover only opens if the pointer is still over the same target after the 750ms delay (`$hoveredDay === target` check).",
+        "Menu items are filtered to display 'menu' or 'calendar-and-menu' AND `meta.value !== undefined`, then sorted by `order`.",
+        "This entire feature (PopoverMenu/Box/Popper, @popperjs/core, @popperjs/svelte, svelte-portal) is NEW in 0.4.0 — 0.3.12 has no popover at all."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "popover-mobile-fallback",
+      "name": "Inline metadata box (mobile)",
+      "category": "ui",
+      "surface": "ui",
+      "description": "When IS_MOBILE context is true, PopoverMenu.svelte renders Box.svelte directly inline (no Portal, no Popper positioning, no shadow) instead of as a floating popover, since mobile has no hover concept — Day.svelte's click handler dispatches 'hoverDay' explicitly to drive this on tap.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-popover-menu", "symbol": "PopoverMenu.svelte", "path": "src/components/popover/PopoverMenu.svelte", "lines": "24-32" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["day-cell-interactions"],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "periodic-note-file-cache",
+      "name": "Live periodic-note file cache",
+      "category": "state",
+      "surface": "integration",
+      "description": "PeriodicNotesCache builds an initial map of dateUID -> TFile from obsidian-daily-notes-interface's getAllDailyNotes/getAllWeeklyNotes/getAllMonthlyNotes on layout-ready, then keeps it current by listening to vault create/delete/modify/rename, plugin-emitted 'periodic-notes:settings-updated', and 'calendar:metadata-updated' workspace events, fully re-initializing on the latter two.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-filestore", "symbol": "PeriodicNotesCache constructor / onFileCreated / onFileDeleted / onFileModified / onFileRenamed / initialize", "path": "src/fileStore.ts", "lines": "44-117" }
+      ],
+      "used_by": ["calui-calendar"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "onFileRenamed removes the old-path UID then re-runs onFileCreated for the new path — a rename that changes date is handled as delete+create.",
+        "Only .md files are tracked (`file.extension == 'md'` check).",
+        "'periodic-notes:settings-updated' and 'calendar:metadata-updated' trigger a full `initialize()` rebuild, not an incremental update."
+      ],
+      "edge_cases": ["getDateUIDFromFile/getDateUIDFromPath return null for files that don't match any periodic-note naming pattern; those are silently ignored."],
+      "confidence": "verified"
+    },
+    {
+      "id": "drag-day-or-week-note",
+      "name": "Drag a day/week/month cell's note",
+      "category": "integration",
+      "surface": "event",
+      "description": "Day.svelte, WeekNum.svelte and Month.svelte all mark their cell `draggable` and forward `dragstart` to `fileCache.onDragStart(event, file)`, which delegates to Obsidian's internal (undocumented) `app.dragManager` to start a native file-link drag.",
+      "granularity": ["day", "week", "month"],
+      "defined_in": [
+        { "module": "calui-filestore", "symbol": "onDragStart", "path": "src/fileStore.ts", "lines": "152-157" }
+      ],
+      "used_by": ["calui-day", "calui-weeknum", "calui-month"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Relies on an untyped, undocumented Obsidian internal API (`(app as any).dragManager`); this is a fragile external dependency, not a stable Obsidian API."],
+      "edge_cases": ["Dragging a cell with no existing file still starts a drag with `file` undefined — behavior then depends entirely on dragManager's own handling."],
+      "confidence": "verified"
+    },
+    {
+      "id": "configure-locale-and-week-start",
+      "name": "Configure global moment locale and week start",
+      "category": "dates",
+      "surface": "api",
+      "description": "configureGlobalMomentLocale(localeOverride, weekStart) resolves a moment locale from Obsidian's stored UI language (localStorage 'language'), an optional explicit override, or a more-specific system locale, applies it via `window.moment.locale(...)`, then overrides the locale's week-start day (or restores the original bundled week spec when weekStart is 'locale').",
+      "granularity": ["any"],
+      "defined_in": [
+        { "module": "calui-localization", "symbol": "configureGlobalMomentLocale / overrideGlobalMomentWeekStart", "path": "src/localization.ts", "lines": "55-109" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Caches the locale's original week spec on `window._bundledLocaleWeekSpec` the first time it runs, so later 'locale' selections restore the true bundled default rather than whatever was last forced.",
+        "This function is the ONLY mechanism that actually controls week start / weekday-name locale for the whole calendar — the `localeData` prop threaded through the components does not (see compute-month-grid behaviour_notes).",
+        "`weekdays.indexOf(weekStart) || 0` has a latent bug: indexOf returns 0 both for 'sunday' (correct, index 0) and for 'not found' (-1 would be truthy... actually -1 is truthy so `|| 0` only fires for exactly 0, i.e. 'sunday' silently falls back to dow 0 anyway by coincidence, but any genuinely invalid weekStart string produces dow -1, not a safe default)."
+      ],
+      "edge_cases": ["obsidianLang defaults to 'en' when Obsidian's language isn't set in localStorage."],
+      "confidence": "verified"
+    }
+  ],
+  "flows": [
+    {
+      "id": "click-day-to-open-note",
+      "title": "User clicks a day cell to open/create the daily note",
+      "description": "Clicking a day cell resolves the day's existing file (if any) and calls the host's onClick callback with granularity, date, file and meta-key state; the host decides whether/how to open or create the note.",
+      "trigger": "user clicks a day cell",
+      "steps": [
+        { "from": "calui-day", "to": "calui-filestore", "action": "look up existing file for this date/granularity via store subscription", "payload": "date, 'day'" },
+        { "from": "calui-day", "to": "calui-day", "action": "handleClick(event, metadata)", "payload": "MouseEvent" },
+        { "from": "calui-day", "to": "obsidian-calendar-plugin", "action": "invoke host onClick('day', date, file, isMetaPressed)", "payload": "(granularity, date, file, inNewSplit)" }
+      ],
+      "capabilities": ["day-cell-interactions", "resolve-day-metadata"],
+      "confidence": "verified"
+    },
+    {
+      "id": "hover-day-shows-popover",
+      "title": "User hovers a day long enough to see the metadata popover",
+      "description": "Pointer-entering a day dispatches hoverDay upward; Calendar.svelte debounces 750ms before opening a Popper-positioned popover box with that day's metadata, and closes it (debounced) on pointer-leave.",
+      "trigger": "user hovers (pointerenter) a day cell",
+      "steps": [
+        { "from": "calui-day", "to": "calui-day", "action": "handleHover(event, metadata): call onHover?, then dispatch 'hoverDay'", "payload": "{date, metadata, target}" },
+        { "from": "calui-calendar", "to": "calui-calendar", "action": "updatePopover: arm 750ms hoverTimeout, store hoveredDay + popoverMetadata", "payload": "CustomEvent detail" },
+        { "from": "calui-calendar", "to": "calui-popover-menu", "action": "render popover once showPopover flips true", "payload": "referenceElement, metadata, isVisible" },
+        { "from": "calui-popover-menu", "to": "calui-popper", "action": "position the Box relative to the hovered cell", "payload": "referenceElement" }
+      ],
+      "capabilities": ["day-cell-interactions", "hover-popover-desktop", "resolve-day-metadata"],
+      "confidence": "verified"
+    },
+    {
+      "id": "contextmenu-on-day",
+      "title": "User right-clicks a day cell",
+      "description": "A contextmenu event on a day cell fires the host onContextMenu callback with the resolved file, then ends the hover state (dispatches endHoverDay).",
+      "trigger": "user right-clicks (contextmenu) a day cell",
+      "steps": [
+        { "from": "calui-day", "to": "obsidian-calendar-plugin", "action": "invoke host onContextMenu('day', date, file, event)", "payload": "MouseEvent" },
+        { "from": "calui-day", "to": "calui-calendar", "action": "dispatch 'endHoverDay' to close any open popover", "payload": "{target}" }
+      ],
+      "capabilities": ["day-cell-interactions"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-weeknum-to-open-weekly-note",
+      "title": "User clicks the week-number cell to open/create the weekly note",
+      "description": "Clicking the week-number cell resolves the week's start-of-week Moment and existing file, then calls the host onClick callback for granularity 'week'.",
+      "trigger": "user clicks a week-number cell",
+      "steps": [
+        { "from": "calui-weeknum", "to": "calui-filestore", "action": "look up existing file for week's first day", "payload": "days[0], 'week'" },
+        { "from": "calui-weeknum", "to": "obsidian-calendar-plugin", "action": "invoke host onClick('week', startOfWeek, file, isMetaPressed)", "payload": "(granularity, date, file, inNewSplit)" }
+      ],
+      "capabilities": ["week-number-interactions", "resolve-day-metadata"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-month-header",
+      "title": "User clicks the month/year header",
+      "description": "If a monthly-notes source is loaded, the click calls the host onClick callback for granularity 'month'; otherwise it just resets the displayed month back to today (there being no monthly note concept to open).",
+      "trigger": "user clicks the month/year title",
+      "steps": [
+        { "from": "calui-month", "to": "calui-month", "action": "check appHasMonthlyNotesPluginLoaded()", "payload": "—" },
+        { "from": "calui-month", "to": "obsidian-calendar-plugin", "action": "invoke host onClick('month', displayedMonth, file, isMetaPressed) [only if monthly notes are loaded]", "payload": "(granularity, date, file, inNewSplit)" },
+        { "from": "calui-month", "to": "calui-nav", "action": "resetDisplayedMonth() [only if monthly notes are NOT loaded]", "payload": "—" }
+      ],
+      "capabilities": ["month-header-interactions", "reset-to-current-month"],
+      "confidence": "verified"
+    },
+    {
+      "id": "navigate-to-adjacent-month",
+      "title": "User clicks the prev/next month arrow",
+      "description": "Clicking an Arrow updates the shared DISPLAYED_MONTH context store, which reactively recomputes the 42-cell grid and re-triggers metadata resolution for every visible cell.",
+      "trigger": "user clicks the left or right Arrow in Nav",
+      "steps": [
+        { "from": "calui-arrow", "to": "calui-nav", "action": "onClick() fires increment/decrementDisplayedMonth", "payload": "—" },
+        { "from": "calui-nav", "to": "calui-context", "action": "update the DISPLAYED_MONTH writable store", "payload": "Moment" },
+        { "from": "calui-calendar", "to": "calui-utils", "action": "recompute month grid via getMonth($displayedMonthStore, localeData)", "payload": "Moment" }
+      ],
+      "capabilities": ["navigate-month", "compute-month-grid"],
+      "confidence": "verified"
+    },
+    {
+      "id": "reset-to-today-click",
+      "title": "User clicks the reset-to-today dot",
+      "description": "Clicking the (only-active-when-not-current-month) dot button between the nav arrows snaps the displayed month back to today.",
+      "trigger": "user clicks the reset-button dot in Nav",
+      "steps": [
+        { "from": "calui-dot", "to": "calui-nav", "action": "on:click bubbles to the reset-button wrapper", "payload": "—" },
+        { "from": "calui-nav", "to": "calui-context", "action": "displayedMonth.set(today.clone())", "payload": "Moment" }
+      ],
+      "capabilities": ["reset-to-current-month"],
+      "confidence": "verified"
+    },
+    {
+      "id": "vault-file-change-refreshes-dots",
+      "title": "A note is created/deleted/modified and the calendar's dots refresh",
+      "description": "Any vault create/delete/modify/rename event updates PeriodicNotesCache's store, which every visible Day/WeekNum/Month cell has subscribed to, so each re-fetches its metadata and re-renders its dots without any explicit re-render call from the host.",
+      "trigger": "obsidian vault fires create/delete/modify/rename",
+      "steps": [
+        { "from": "external-obsidian", "to": "calui-filestore", "action": "vault event handler updates the periodic-notes store", "payload": "TAbstractFile" },
+        { "from": "calui-filestore", "to": "calui-day", "action": "fileCache.store.subscribe callback re-fetches file + metadata", "payload": "Record<uid, TFile>" },
+        { "from": "calui-day", "to": "calui-dots", "action": "re-render with updated metadata", "payload": "IDayMetadata[]" }
+      ],
+      "capabilities": ["periodic-note-file-cache", "resolve-day-metadata", "render-dots"],
+      "confidence": "verified"
+    }
+  ],
+  "settings": [],
+  "commands": [],
+  "api_surface": [
+    {
+      "export": "Calendar",
+      "kind": "svelte-component",
+      "signature": "props: {localeData: Locale, showWeekNums?: boolean, eventHandlers: CallableFunction[], plugin: Plugin, sources?: ICalendarSource[], getSourceSettings: (id: string) => ISourceSettings, selectedId: string, today?: Moment, displayedMonth?: Moment}; no dispatched events of its own (listens to child hoverDay/endHoverDay internally); no slots; sets context IS_MOBILE and DISPLAYED_MONTH.",
+      "path": "src/components/Calendar.svelte:20-37",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "Month",
+      "kind": "svelte-component",
+      "signature": "props: {fileCache: PeriodicNotesCache, getSourceSettings, onHover?, onClick?, onContextMenu?, resetDisplayedMonth: () => void}; dispatches 'hoverDay' {date, metadata, target} and 'endHoverDay' {target}; no slots; reads DISPLAYED_MONTH context.",
+      "path": "src/components/Month.svelte:18-39",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "Day",
+      "kind": "svelte-component",
+      "signature": "props: {date: Moment, fileCache: PeriodicNotesCache, getSourceSettings, onHover?, onClick?, onContextMenu?, today: Moment, selectedId?: string}; dispatches 'hoverDay' {date, metadata, target} and 'endHoverDay' {target}; no slots; reads IS_MOBILE and DISPLAYED_MONTH context.",
+      "path": "src/components/Day.svelte:22-53",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "Nav",
+      "kind": "svelte-component",
+      "signature": "props: {getSourceSettings, fileCache: PeriodicNotesCache, today: Moment, eventHandlers: CallableFunction[]}; forwards (does not itself dispatch) 'hoverDay'/'endHoverDay' from its Month child; no slots; reads DISPLAYED_MONTH context.",
+      "path": "src/components/Nav.svelte:13-18",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "Arrow",
+      "kind": "svelte-component",
+      "signature": "props: {onClick: () => void, tooltip: string, direction: 'left' | 'right'}; no dispatched events (plain on:click prop callback); no slots; no context use (reads window.app.isMobile directly).",
+      "path": "src/components/Arrow.svelte:2-7",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "WeekNum",
+      "kind": "svelte-component",
+      "signature": "props: {weekNum: number, days: Moment[], getSourceSettings, onHover?, onClick?, onContextMenu?, fileCache: PeriodicNotesCache, selectedId?: string}; dispatches 'hoverDay' {date, metadata, target} and 'endHoverDay' {target}; no slots; no context use.",
+      "path": "src/components/WeekNum.svelte:16-43",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "Dot",
+      "kind": "svelte-component",
+      "signature": "props: {color: string, isFilled: boolean, isActive: boolean}; no events; no slots; no context use.",
+      "path": "src/components/Dot.svelte:1-4",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "Dots",
+      "kind": "svelte-component",
+      "signature": "props: {centered?: boolean (default true), metadata: IDayMetadata[]}; no events; no slots; no context use.",
+      "path": "src/components/Dots.svelte:6-7",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "MetadataResolver",
+      "kind": "svelte-component",
+      "signature": "props: {metadata: Promise<IDayMetadata[]> | null}; no events; default slot receives `metadata` (resolved value, or null while pending / when input is null); no context use.",
+      "path": "src/components/MetadataResolver.svelte:6",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "popover/PopoverMenu",
+      "kind": "svelte-component",
+      "signature": "props: {referenceElement: HTMLElement, metadata: IDayMetadata[], isVisible: boolean}; no events; no slots; reads IS_MOBILE context.",
+      "path": "src/components/popover/PopoverMenu.svelte:11-13",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "popover/Box",
+      "kind": "svelte-component",
+      "signature": "props: {menuItems: IDayMetadata[]}; no events; no slots; no context use.",
+      "path": "src/components/popover/Box.svelte:4",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "popover/Popper",
+      "kind": "svelte-component",
+      "signature": "props: {isVisible: boolean, referenceElement: HTMLElement}; no events; default slot for the positioned content; no context use; wraps @popperjs/svelte with placement 'bottom-end' and an 8px vertical offset.",
+      "path": "src/components/popover/Popper.svelte:10-24",
+      "stability": "internal",
+      "consumers": []
+    },
+    {
+      "export": "ICalendarSource",
+      "kind": "type",
+      "signature": "{ id: string; name: string; description?: string; getMetadata?: (granularity: IGranularity, date: Moment, file: TFile) => Promise<IEvaluatedMetadata>; defaultSettings: Record<string, string | number>; registerSettings?: (containerEl, settings: ISourceSettings, saveSettings) => void }",
+      "path": "src/types.ts:38-55",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "IDot",
+      "kind": "type",
+      "signature": "{ isFilled: boolean }",
+      "path": "src/types.ts:5-7",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "IDayMetadata",
+      "kind": "type",
+      "signature": "ICalendarSource & ISourceSettings & IEvaluatedMetadata (id, name, description?, color, display, order, value, goal?, dots, attrs?)",
+      "path": "src/types.ts:33-36",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "ISourceSettings",
+      "kind": "type",
+      "signature": "{ color: string; display: 'calendar-and-menu' | 'menu' | 'none'; order: number }",
+      "path": "src/types.ts:27-31",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "configureGlobalMomentLocale",
+      "kind": "function",
+      "signature": "(localeOverride?: ILocaleOverride = 'system-default', weekStart?: IWeekStartOption = 'locale') => string",
+      "path": "src/localization.ts:85-109",
+      "stability": "public",
+      "consumers": ["obsidian-calendar-plugin"]
+    },
+    {
+      "export": "PeriodicNotesCache",
+      "kind": "class",
+      "signature": "default class PeriodicNotesCache { constructor(plugin: Plugin, sources: ICalendarSource[]); store: Writable<Record<string, TFile>>; getFile(date, granularity); getFileForPeriodicNote(id); getEvaluatedMetadata(granularity, date, getSourceSettings); onDragStart(event, file); }",
+      "path": "src/fileStore.ts:44-158",
+      "stability": "internal",
+      "consumers": []
+    }
+  ],
+  "observations": [
+    {
+      "severity": "P1",
+      "kind": "divergence",
+      "what": "Calendar.svelte's public prop contract was fully rewritten between 0.3.12 and 0.4.0. 0.3.12 exposes six named callback props (onHoverDay, onHoverWeek, onClickDay, onClickWeek, onContextMenuDay, onContextMenuWeek) plus three exported navigation functions (incrementDisplayedMonth, decrementDisplayedMonth, resetDisplayedMonth) and a plain reassignable `export let displayedMonth`. 0.4.0 replaces the six callbacks with one `eventHandlers: CallableFunction[]` array spread onto children (new signature: (granularity, date, file, ...) instead of (date, isMetaPressed)), adds required `plugin: Plugin` and `getSourceSettings` props, removes the three exported nav functions entirely (moved to Nav.svelte, not exposed to the parent), and moves displayedMonth into an internal context store that the exported `displayedMonth` prop is never written back to.",
+      "where": [
+        "calui-calendar:src/components/Calendar.svelte:20-37",
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Calendar.svelte:14-63 (0.3.12)",
+        "obsidian-calendar-plugin/src/ui/Calendar.svelte:16-77"
+      ],
+      "why_it_matters": "The real consumer's wrapper (obsidian-calendar-plugin/src/ui/Calendar.svelte) does `bind:displayedMonth` on CalendarBase and relies on that binding for view.ts's `getDisplayedMonth()` (used to open the correct monthly note) and for its own midnight-rollover heartbeat check. In 0.4.0 that bind silently stops tracking navigation (no runtime error, just a stale value) because the exported prop is only used to seed the internal store once."
+    },
+    {
+      "severity": "P1",
+      "kind": "divergence",
+      "what": "ICalendarSource / IDayMetadata / IDot were fully rewritten. 0.3.12: ICalendarSource = {getDailyMetadata?, getWeeklyMetadata?} each returning {classes?, dataAttributes?, dots?}; IDot = {className, color, isFilled}. 0.4.0: ICalendarSource = {id, name, description?, getMetadata?(granularity, date, file), defaultSettings, registerSettings?} returning IEvaluatedMetadata {value, goal?, dots, attrs?}; IDot = {isFilled} only (color now lives on ISourceSettings, applied by the parent, not the source).",
+      "where": [
+        "calui-types:src/types.ts:1-55",
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/types.ts:1-25 (0.3.12)",
+        "obsidian-calendar-plugin/src/ui/sources/streak.ts:15-30",
+        "obsidian-calendar-plugin/src/ui/sources/tasks.ts:20-40"
+      ],
+      "why_it_matters": "All four of the plugin's real sources (streak, tasks, wordCount, tags in obsidian-calendar-plugin/src/ui/sources/) implement the old getDailyMetadata/getWeeklyMetadata shape verbatim, returning {classes, dots} with IDot {className, color, isFilled}. Porting 0.4.0 wholesale means every source needs a full rewrite (add id/name/defaultSettings, switch to getMetadata(granularity, date, file), change dots to {isFilled} only, move color out to settings) — this is new source code, not a mechanical prop rename."
+    },
+    {
+      "severity": "P1",
+      "kind": "divergence",
+      "what": "The clickable month-header DOM structure changed. 0.3.12's Nav.svelte renders `<h3 class=\"title\" on:click={resetDisplayedMonth}>`. 0.4.0 moves the title into the new Month.svelte as a non-heading `<div>` (with the on:click/on:contextmenu handlers) wrapping an inner `<span class=\"title\">` used only for styling.",
+      "where": [
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Nav.svelte:21 (0.3.12)",
+        "calui-month:src/components/Month.svelte:88-105",
+        "obsidian-calendar-plugin/src/view.ts:126-176"
+      ],
+      "why_it_matters": "obsidian-calendar-plugin/src/view.ts's onMonthHeaderClick intercepts capture-phase clicks with `target.closest('h3.title')` specifically because 0.3.12's Calendar has no month-level click prop at all. That selector will never match 0.4.0's markup (no <h3> anywhere), silently disabling 'click month header to open the monthly note'. Meanwhile 0.4.0 ships a native onClick/onContextMenu path for the month header via eventHandlers, but the plugin's current wrapper (src/ui/Calendar.svelte) never threads any handler for granularity 'month' through at all — the merge needs to pick one mechanism, not keep both half-wired."
+    },
+    {
+      "severity": "P1",
+      "kind": "gap",
+      "what": "Month-granularity support (fileStore.ts, Month.svelte's metadata/popover path, the 'month' branch throughout) does not exist in 0.3.12 at all — there is no fileStore.ts, and ICalendarSource never mentions month. It is entirely new in 0.4.0.",
+      "where": [
+        "calui-filestore:src/fileStore.ts:22 (IGranularity loop includes 'month')",
+        "calui-month:src/components/Month.svelte"
+      ],
+      "why_it_matters": "obsidian-calendar-plugin currently implements its own monthly-note handling directly in src/view.ts/src/io (via getMonthlyNotesPeriodicNotesPlugin), independent of calendar-ui. Merging in 0.4.0's native month support is new functionality that can conflict or duplicate with the plugin's existing monthly-note code path, not just a drop-in upgrade."
+    },
+    {
+      "severity": "P2",
+      "kind": "version-skew",
+      "what": "obsidian-daily-notes-interface is pinned at 0.8.4 for the 0.3.12 line vs 0.9.2 for 0.4.0. fileStore.ts (0.4.0-only) imports getAllMonthlyNotes and appHasMonthlyNotesPluginLoaded from that package.",
+      "where": [
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/package.json (0.3.12: obsidian-daily-notes-interface 0.8.4)",
+        "calui-filestore:src/fileStore.ts:3-11 (imports getAllMonthlyNotes, etc.)"
+      ],
+      "why_it_matters": "Bumping this transitive dependency is a prerequisite for merging in the 0.4.0 fileStore/month code, not optional — the 0.8.4 API surface almost certainly lacks the monthly-note helpers 0.4.0 depends on."
+    },
+    {
+      "severity": "P2",
+      "kind": "divergence",
+      "what": "The reset-to-today control lost its localized text label. 0.3.12's Nav.svelte showed `today.calendar().split(/\\d|\\s/)[0]` (a locale-aware word, e.g. the translated 'Today'). 0.4.0's reset button is icon-only (a filled Dot) with a hardcoded English aria-label 'Reset to current month'.",
+      "where": [
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/Nav.svelte:14,32 (0.3.12)",
+        "calui-nav:src/components/Nav.svelte:51-58"
+      ],
+      "why_it_matters": "This vault runs primarily in Polish; a straight merge silently drops the localized 'Dzisiaj'-style label users currently see, replacing it with an icon plus an English-only tooltip."
+    },
+    {
+      "severity": "P2",
+      "kind": "dead-code",
+      "what": "The `localeData` prop on Calendar (and the `today`/`localeData` arguments threaded through to getDaysOfWeek/getMonth) has no real effect: both utils.ts functions declare only the parameters they use, then swallow everything else via `..._args: unknown[]`, and read only the global `window.moment()` state. This is identical in both 0.3.12 and 0.4.0 (utils.ts is byte-for-byte the same).",
+      "where": [
+        "calui-utils:src/utils.ts:13-15,29-52",
+        "calui-calendar:src/components/Calendar.svelte:47-48"
+      ],
+      "why_it_matters": "Anyone porting or extending this code could reasonably assume passing a different `localeData` to Calendar changes week start/weekday names for that instance; it does not — only a prior call to configureGlobalMomentLocale() (which mutates the shared global) has any effect. Worth fixing (either wire the param through or remove it) rather than carrying the dead parameter into the merged repo."
+    },
+    {
+      "severity": "P3",
+      "kind": "divergence",
+      "what": "Arrow.svelte reads `(window.app as any).isMobile` directly instead of using the IS_MOBILE Svelte context that Calendar.svelte sets and that Day.svelte/PopoverMenu.svelte both consume.",
+      "where": [
+        "calui-arrow:src/components/Arrow.svelte:7",
+        "calui-context:src/context.js:1",
+        "calui-calendar:src/components/Calendar.svelte:34"
+      ],
+      "why_it_matters": "Harmless today (same global either way, since Calendar always sets context to `plugin.app.isMobile`), but it's an inconsistent pattern within the same 0.4.0 codebase and worth normalizing when merging so mobile-detection has one source of truth."
+    },
+    {
+      "severity": "P3",
+      "kind": "divergence",
+      "what": "MetadataResolver.svelte gained a pending-state branch in 0.4.0: `{#await metadata}` now renders `<slot metadata={null}/>` while the promise is in flight. 0.3.12's version has no `{#await}` pending branch at all (only `{:then}`), so it renders nothing until the promise resolves.",
+      "where": [
+        "obsidian-calendar-plugin/node_modules/obsidian-calendar-ui/src/components/MetadataResolver.svelte:9-11 (0.3.12)",
+        "calui-metadata-resolver:src/components/MetadataResolver.svelte:9-17"
+      ],
+      "why_it_matters": "0.4.0 cells will render their 'no metadata yet' state (e.g. empty dots) briefly on every recompute, then flash to the resolved state, where 0.3.12 rendered nothing until resolved. Minor but real visual/behavioral difference to be aware of when comparing screenshots or writing tests across the two versions."
+    },
+    {
+      "severity": "P3",
+      "kind": "duplication",
+      "what": "obsidian-calendar-plugin re-implements calui's unexported isMetaPressed helper verbatim, with a comment acknowledging it: 'Mirrors obsidian-calendar-ui's (unexported) isMetaPressed helper so meta-click behaves the same on the month header as it does on day/week cells.'",
+      "where": [
+        "calui-utils:src/utils.ts:9-11",
+        "obsidian-calendar-plugin/src/view.ts:29-32"
+      ],
+      "why_it_matters": "calui never exports isMetaPressed from index.ts even though it's simple, stable, and needed by any host implementing month-header handling itself (as the 0.3.12-era plugin does). Exporting it in the merged library removes a real, currently-necessary duplication."
+    }
+  ]
+}

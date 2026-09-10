@@ -1,0 +1,1149 @@
+{
+  "source": {
+    "id": "cal",
+    "repo": "obsidian-calendar-plugin",
+    "path": "/Users/anna.nowak/projects/obsidian/obsidian-calendar-plugin",
+    "version": "1.5.10",
+    "role": "Sidebar Calendar view: renders obsidian-calendar-ui, wired to obsidian-daily-notes-interface for daily/weekly note IO. Personal fork of matisnape/obsidian-calendar-plugin, branch master, HEAD 39040cd, 7 commits ahead of upstream/master."
+  },
+  "modules": [
+    {
+      "id": "cal-main",
+      "name": "main.ts",
+      "path": "src/main.ts",
+      "role": "Plugin entry point: view registration, commands, settings load/save, leaf init on layout-ready.",
+      "loc": 113,
+      "category": "entry",
+      "depends_on": ["cal-view", "cal-settings", "cal-stores", "cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-view",
+      "name": "view.ts",
+      "path": "src/view.ts",
+      "role": "ItemView subclass: mounts Calendar.svelte, wires all click/hover/context-menu callbacks, vault event listeners, and the local month-header click interceptor.",
+      "loc": 376,
+      "category": "ui",
+      "depends_on": ["cal-io-daily", "cal-io-weekly", "cal-settings", "cal-stores", "cal-calendar-svelte", "cal-file-menu", "cal-sources-index", "cal-ext-dni", "cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-settings",
+      "name": "settings.ts",
+      "path": "src/settings.ts",
+      "role": "ISettings interface + defaults, Periodic Notes plugin detection/resolution, and the settings tab UI.",
+      "loc": 299,
+      "category": "config",
+      "depends_on": ["cal-constants", "cal-ext-obsidian-api", "cal-ext-dni", "cal-ext-periodic-notes"],
+      "external": false
+    },
+    {
+      "id": "cal-io-daily",
+      "name": "dailyNotes.ts",
+      "path": "src/io/dailyNotes.ts",
+      "role": "Create-daily-note flow with optional confirmation modal, then open the new file.",
+      "loc": 44,
+      "category": "notes",
+      "depends_on": ["cal-settings", "cal-modal", "cal-ext-dni"],
+      "external": false
+    },
+    {
+      "id": "cal-io-weekly",
+      "name": "weeklyNotes.ts",
+      "path": "src/io/weeklyNotes.ts",
+      "role": "Create-weekly-note flow with optional confirmation modal, then open the new file.",
+      "loc": 44,
+      "category": "notes",
+      "depends_on": ["cal-settings", "cal-modal", "cal-ext-dni"],
+      "external": false
+    },
+    {
+      "id": "cal-modal",
+      "name": "modal.ts",
+      "path": "src/ui/modal.ts",
+      "role": "Generic accept/cancel confirmation modal, reused by both note-creation flows.",
+      "loc": 45,
+      "category": "ui",
+      "depends_on": ["cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-calendar-svelte",
+      "name": "Calendar.svelte",
+      "path": "src/ui/Calendar.svelte",
+      "role": "Svelte wrapper around obsidian-calendar-ui's CalendarBase: owns `today`/`displayedMonth`, the 1-minute heartbeat, and the local getDisplayedMonth() accessor.",
+      "loc": 77,
+      "category": "ui",
+      "depends_on": ["cal-stores", "cal-settings", "cal-ext-calendar-ui"],
+      "external": false
+    },
+    {
+      "id": "cal-stores",
+      "name": "stores.ts",
+      "path": "src/ui/stores.ts",
+      "role": "Svelte stores: settings, dailyNotes/weeklyNotes (reindexable file maps), activeFile (selected-file id).",
+      "loc": 72,
+      "category": "state",
+      "depends_on": ["cal-settings", "cal-utils", "cal-ext-dni"],
+      "external": false
+    },
+    {
+      "id": "cal-file-menu",
+      "name": "fileMenu.ts",
+      "path": "src/ui/fileMenu.ts",
+      "role": "Builds and shows the right-click context menu for a day/week's note (Delete + file-menu event for other plugins).",
+      "loc": 23,
+      "category": "ui",
+      "depends_on": ["cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-sources-streak",
+      "name": "streak.ts",
+      "path": "src/ui/sources/streak.ts",
+      "role": "Per-day metadata source: adds a 'has-note' CSS class when a note exists.",
+      "loc": 32,
+      "category": "ui",
+      "depends_on": ["cal-stores", "cal-utils", "cal-ext-dni"],
+      "external": false
+    },
+    {
+      "id": "cal-sources-tags",
+      "name": "tags.ts",
+      "path": "src/ui/sources/tags.ts",
+      "role": "Per-day metadata source: reads frontmatter tags and exposes them as data-attributes (split emoji vs. text tags).",
+      "loc": 65,
+      "category": "ui",
+      "depends_on": ["cal-stores", "cal-utils", "cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-sources-tasks",
+      "name": "tasks.ts",
+      "path": "src/ui/sources/tasks.ts",
+      "role": "Per-day metadata source: counts incomplete checkbox tasks in the note body and shows one 'task' dot if any remain.",
+      "loc": 55,
+      "category": "ui",
+      "depends_on": ["cal-stores", "cal-ext-obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "cal-sources-wordcount",
+      "name": "wordCount.ts",
+      "path": "src/ui/sources/wordCount.ts",
+      "role": "Per-day metadata source: converts note word count into 1-5 filled dots, scaled by the wordsPerDot setting.",
+      "loc": 61,
+      "category": "ui",
+      "depends_on": ["cal-stores", "cal-utils", "cal-constants"],
+      "external": false
+    },
+    {
+      "id": "cal-sources-index",
+      "name": "index.ts",
+      "path": "src/ui/sources/index.ts",
+      "role": "Barrel re-exporting the four built-in metadata sources.",
+      "loc": 4,
+      "category": "ui",
+      "depends_on": ["cal-sources-streak", "cal-sources-tags", "cal-sources-tasks", "cal-sources-wordcount"],
+      "external": false
+    },
+    {
+      "id": "cal-utils",
+      "name": "utils.ts",
+      "path": "src/ui/utils.ts",
+      "role": "Small helpers: classList, clamp, partition, getDateUIDFromFile (day/week dual parse), getWordCount (unicode-aware tokenizer).",
+      "loc": 74,
+      "category": "dates",
+      "depends_on": ["cal-ext-dni"],
+      "external": false
+    },
+    {
+      "id": "cal-constants",
+      "name": "constants.ts",
+      "path": "src/constants.ts",
+      "role": "Shared constants: default weekly format, default words-per-dot, view type id, the calendar:open trigger event name.",
+      "loc": 5,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "cal-ext-dni",
+      "name": "obsidian-daily-notes-interface",
+      "path": "obsidian-daily-notes-interface",
+      "role": "External package: daily/weekly note settings, lookup (getDailyNote/getWeeklyNote/getDateFromFile), creation (createDailyNote/createWeeklyNote), and vault indexing (getAllDailyNotes/getAllWeeklyNotes).",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "cal-ext-calendar-ui",
+      "name": "obsidian-calendar-ui",
+      "path": "obsidian-calendar-ui",
+      "role": "External Svelte library: CalendarBase component (rendering, click/hover/context-menu dispatch, month-header reset-to-today, week numbers), ICalendarSource/IDayMetadata/IDot types, configureGlobalMomentLocale.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "cal-ext-periodic-notes",
+      "name": "Periodic Notes plugin",
+      "path": "app.plugins (periodic-notes / periodic-notes-anks)",
+      "role": "External community plugin, detected via app.plugins.getPlugin(); exposes settings store, calendarSetManager.getActiveGranularities(), and openPeriodicNote().",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    },
+    {
+      "id": "cal-ext-obsidian-api",
+      "name": "Obsidian API",
+      "path": "obsidian",
+      "role": "App/Vault/Workspace/Plugin API surface: Plugin, ItemView, PluginSettingTab, Modal, Menu, vault events, workspace events, leaf/file operations.",
+      "loc": 0,
+      "category": "external",
+      "depends_on": [],
+      "external": true
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "open-calendar-view",
+      "name": "Open the Calendar view (command)",
+      "category": "entry",
+      "surface": "command",
+      "description": "Registers the 'show-calendar-view' command, enabled only while no calendar leaf is open; on invoke it calls initLeaf() to add the view to the right sidebar.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-main", "symbol": "addCommand('show-calendar-view')", "path": "src/main.ts", "lines": "43-54" },
+        { "module": "cal-main", "symbol": "initLeaf", "path": "src/main.ts", "lines": "86-93" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["checkCallback returns false (hides the command) once a calendar leaf already exists."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "auto-reveal-view-on-layout-ready",
+      "name": "Auto-open the calendar leaf on plugin load",
+      "category": "entry",
+      "surface": "event",
+      "description": "On onload(), if the workspace layout is already ready the plugin calls initLeaf() immediately; otherwise it waits for the one-shot 'layout-ready' workspace event.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-main", "symbol": "onload", "path": "src/main.ts", "lines": "77-83" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["open-calendar-view"],
+      "behaviour_notes": [],
+      "edge_cases": ["If the calendar view type is registered but layout-ready never fires (unlikely), the leaf never opens automatically."],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-weekly-note-command",
+      "name": "Open Weekly Note (command)",
+      "category": "notes",
+      "surface": "command",
+      "description": "Registers the 'open-weekly-note' command. It is hidden (checkCallback returns false) whenever Periodic Notes has weekly notes enabled, since Periodic Notes then owns that job. On invoke it delegates to the view's openOrCreateWeeklyNote for today, opened in the current leaf.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "cal-main", "symbol": "addCommand('open-weekly-note')", "path": "src/main.ts", "lines": "56-65" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["open-or-create-weekly-note", "periodic-notes-weekly-detection"],
+      "behaviour_notes": [],
+      "edge_cases": ["Command is unavailable via checkCallback, not just disabled -- it will not appear in the palette at all when Periodic Notes weekly is on."],
+      "confidence": "verified"
+    },
+    {
+      "id": "reveal-active-note-command",
+      "name": "Reveal active note (command)",
+      "category": "ui",
+      "surface": "command",
+      "description": "Registers the 'reveal-active-note' command, always available; calls view.revealActiveNote() which jumps the calendar's displayed month to the currently open file's date.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-main", "symbol": "addCommand('reveal-active-note')", "path": "src/main.ts", "lines": "67-71" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["jump-calendar-to-active-note"],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "persist-plugin-settings",
+      "name": "Load and persist plugin settings",
+      "category": "config",
+      "surface": "api",
+      "description": "loadOptions() merges saved data.json into the `settings` Svelte store defaults on load and immediately re-saves; writeOptions() applies a partial patch to the store and re-saves data.json. The plugin also mirrors the live store value into `this.options` via a subscription so synchronous reads (e.g. settings.ts's `this.plugin.options`) stay current.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-main", "symbol": "loadOptions", "path": "src/main.ts", "lines": "95-105" },
+        { "module": "cal-main", "symbol": "writeOptions", "path": "src/main.ts", "lines": "107-112" },
+        { "module": "cal-main", "symbol": "settings.subscribe", "path": "src/main.ts", "lines": "32-36" }
+      ],
+      "used_by": ["cal-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["saveData() is called unconditionally after every loadOptions(), even if nothing changed, so a fresh install writes a data.json immediately."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "mount-calendar-view",
+      "name": "Mount the Svelte calendar into the view",
+      "category": "ui",
+      "surface": "ui",
+      "description": "On ItemView.onOpen(), builds the built-in sources array (streak, tags, wordCount, tasks), fires the 'calendar:open' extension event with it, then instantiates the Calendar.svelte component into contentEl with click/hover/context-menu callbacks and the sources array as props.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onOpen", "path": "src/view.ts", "lines": "101-126" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["extend-metadata-sources-via-event"],
+      "behaviour_notes": ["The sources array passed to Calendar is the SAME array object trigger()'d to listeners, so a plugin handling calendar:open can push() extra sources into it before the Calendar component reads props.sources."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "extend-metadata-sources-via-event",
+      "name": "Third-party metadata source extension point",
+      "category": "integration",
+      "surface": "event",
+      "description": "Fires the workspace event 'calendar:open' (TRIGGER_ON_OPEN) with the mutable sources array right before mounting the Svelte component, letting other plugins register additional ICalendarSource implementations.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onOpen", "path": "src/view.ts", "lines": "104-110" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Only fires once per view open; a plugin that loads after the calendar view has already opened will miss this event unless the view is closed and reopened."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-or-create-daily-note",
+      "name": "Click a day: open or create its daily note",
+      "category": "notes",
+      "surface": "ui",
+      "description": "Looks up the daily note for the clicked date via the dailyNotes store; if it exists, opens it (in a split if inNewSplit) preserving the vault's configured default view mode and marks it the active file. If missing, delegates to tryToCreateDailyNote.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "openOrCreateDailyNote", "path": "src/view.ts", "lines": "348-375" }
+      ],
+      "used_by": ["cal-calendar-svelte"],
+      "depends_on_capability": ["create-daily-note-with-confirmation"],
+      "behaviour_notes": ["Reads app.vault.getConfig('defaultViewMode') to open the existing file in the user's preferred edit/preview mode -- the weekly equivalent does not do this (see gap observation)."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-or-create-weekly-note",
+      "name": "Click the week number: open or create its weekly note",
+      "category": "notes",
+      "surface": "ui",
+      "description": "Looks up the weekly note for the clicked date's week via the weeklyNotes store; if it exists, opens it (in a split if inNewSplit) and marks it active, then calls workspace.setActiveLeaf. If missing, delegates to tryToCreateWeeklyNote.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "openOrCreateWeeklyNote", "path": "src/view.ts", "lines": "321-346" }
+      ],
+      "used_by": ["cal-calendar-svelte", "cal-main"],
+      "depends_on_capability": ["create-weekly-note-with-confirmation"],
+      "behaviour_notes": ["Unlike openOrCreateDailyNote, does not pass a `mode` to leaf.openFile (no defaultViewMode lookup) -- see gap observation."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-daily-note-with-confirmation",
+      "name": "Create a new daily note (with optional confirmation)",
+      "category": "notes",
+      "surface": "ui",
+      "description": "Computes the target filename from the daily note format, then either shows a ConfirmationModal (if shouldConfirmBeforeCreate) or creates the file immediately via obsidian-daily-notes-interface's createDailyNote(). On accept/immediate path, opens the new file (split or unpinned leaf) and invokes the caller's callback with the new TFile.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "cal-io-daily", "symbol": "tryToCreateDailyNote", "path": "src/io/dailyNotes.ts", "lines": "14-44" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": ["confirmation-modal-dialog"],
+      "behaviour_notes": ["The 'Never mind' button just closes the modal -- no file is created and no callback fires."],
+      "edge_cases": ["If createDailyNote throws (e.g. folder/template misconfiguration in obsidian-daily-notes-interface), the error propagates unhandled from the async createFile closure."],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-weekly-note-with-confirmation",
+      "name": "Create a new weekly note (with optional confirmation)",
+      "category": "notes",
+      "surface": "ui",
+      "description": "Same pattern as the daily-note flow: computes filename from the weekly note format, optionally confirms via modal, creates via createWeeklyNote(), opens it, and invokes the callback.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "cal-io-weekly", "symbol": "tryToCreateWeeklyNote", "path": "src/io/weeklyNotes.ts", "lines": "14-44" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": ["confirmation-modal-dialog"],
+      "behaviour_notes": [],
+      "edge_cases": ["Same unhandled-throw risk as the daily variant."],
+      "confidence": "verified"
+    },
+    {
+      "id": "confirmation-modal-dialog",
+      "name": "Generic accept/cancel confirmation modal",
+      "category": "ui",
+      "surface": "ui",
+      "description": "A reusable Obsidian Modal with a title, body text, a 'Never mind' (close) button and a CTA button that awaits an onAccept callback before closing.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-modal", "symbol": "ConfirmationModal", "path": "src/ui/modal.ts", "lines": "11-36" },
+        { "module": "cal-modal", "symbol": "createConfirmationDialog", "path": "src/ui/modal.ts", "lines": "38-45" }
+      ],
+      "used_by": ["cal-io-daily", "cal-io-weekly"],
+      "depends_on_capability": [],
+      "behaviour_notes": [],
+      "edge_cases": ["If onAccept rejects, the modal never calls this.close() (no catch) -- the dialog would appear stuck."],
+      "confidence": "verified"
+    },
+    {
+      "id": "hover-link-preview",
+      "name": "Hover a day/week cell with Cmd/Ctrl to preview the note",
+      "category": "ui",
+      "surface": "event",
+      "description": "When onHoverDay/onHoverWeek fire with isMetaPressed=true, looks up the note for that date and triggers Obsidian's native 'link-hover' popover pointing at the note's path (or undefined if none exists).",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onHoverDay", "path": "src/view.ts", "lines": "182-199" },
+        { "module": "cal-view", "symbol": "onHoverWeek", "path": "src/view.ts", "lines": "201-218" }
+      ],
+      "used_by": ["cal-calendar-svelte"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Without the meta/ctrl key the handler returns immediately and does nothing (no plain hover preview)."],
+      "edge_cases": ["Still calls workspace.trigger('link-hover', ...) even when no note exists for that date, passing `note?.path` as undefined -- whatever the hover-preview consumer does with an undefined path is undocumented here."],
+      "confidence": "verified"
+    },
+    {
+      "id": "day-week-context-menu",
+      "name": "Right-click a day/week cell",
+      "category": "ui",
+      "surface": "ui",
+      "description": "onContextMenuDay/onContextMenuWeek look up the note for the clicked date; if one exists, delegate to showFileMenu() at the click position. If no note exists, nothing is shown.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onContextMenuDay", "path": "src/view.ts", "lines": "220-230" },
+        { "module": "cal-view", "symbol": "onContextMenuWeek", "path": "src/view.ts", "lines": "232-242" }
+      ],
+      "used_by": ["cal-calendar-svelte"],
+      "depends_on_capability": ["file-context-menu"],
+      "behaviour_notes": [],
+      "edge_cases": ["No menu at all for empty days/weeks -- there's no 'create note' entry from the context menu."],
+      "confidence": "verified"
+    },
+    {
+      "id": "file-context-menu",
+      "name": "Build and show the note's file context menu",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Creates an Obsidian Menu with a 'Delete' item (calls fileManager.promptForFileDeletion), then triggers the standard 'file-menu' workspace event (source: 'calendar-context-menu') so other plugins can append their own items before showing the menu at the given position.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-file-menu", "symbol": "showFileMenu", "path": "src/ui/fileMenu.ts", "lines": "3-23" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "month-header-click-open-monthly-note",
+      "name": "Click the month header to open/create that month's periodic note",
+      "category": "integration",
+      "surface": "ui",
+      "description": "A capture-phase click listener on the whole view container intercepts clicks that land on 'h3.title' (the month header, e.g. 'Oct 2026'). If a Periodic Notes instance with monthly notes enabled can be resolved, it reads the currently displayed month from Calendar.svelte and calls periodicNotes.openPeriodicNote('month', displayedMonth, { inNewSplit: <meta/ctrl pressed> }), then prevents default and stops propagation so obsidian-calendar-ui's own bubble-phase reset-to-today handler does not also fire.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onOpen (registerDomEvent capture listener)", "path": "src/view.ts", "lines": "128-141" },
+        { "module": "cal-view", "symbol": "onMonthHeaderClick", "path": "src/view.ts", "lines": "144-180" },
+        { "module": "cal-view", "symbol": "isMetaPressed", "path": "src/view.ts", "lines": "28-33" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["periodic-notes-monthly-plugin-resolution", "expose-displayed-month"],
+      "behaviour_notes": [
+        "This is a LOCAL FORK feature (commit 5ed4307), not present upstream.",
+        "Registered in the capture phase specifically to win the race against obsidian-calendar-ui's bubble-phase 'h3.title' click listener (resetDisplayedMonth).",
+        "The nav's separate '.reset-button' dot calls the same resetDisplayedMonth but is a different DOM element, so it is unaffected by this interceptor.",
+        "isMetaPressed is a local re-implementation of an unexported helper in obsidian-calendar-ui, kept in sync manually."
+      ],
+      "edge_cases": [
+        "If Periodic Notes can't be resolved (not installed, monthly disabled, fail-closed), the handler returns without calling preventDefault/stopPropagation, so the upstream reset-to-current-month click still fires normally.",
+        "If displayedMonth can't be read off Calendar.svelte (defensive guard against a future obsidian-calendar-ui internal change), logs a console.warn and also falls through to the default reset behavior."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "reset-month-to-today-on-header-click",
+      "name": "(Upstream) reset displayed month to today on header click",
+      "category": "ui",
+      "surface": "ui",
+      "description": "obsidian-calendar-ui's own bubble-phase click listener on 'h3.title' resets the calendar's displayedMonth back to today. Still runs whenever month-header-click-open-monthly-note does not intercept and stop the event.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "cal-ext-calendar-ui", "symbol": "resetDisplayedMonth (h3.title click)", "path": "obsidian-calendar-ui (out of scope)", "lines": "n/a" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Not part of this repo's source; behavior inferred from the fork's own code comments describing the race it must win."],
+      "edge_cases": [],
+      "confidence": "inferred"
+    },
+    {
+      "id": "periodic-notes-weekly-detection",
+      "name": "Detect whether Periodic Notes owns weekly notes",
+      "category": "integration",
+      "surface": "integration",
+      "description": "appHasPeriodicNotesPluginLoaded() looks up the Periodic Notes plugin instance (dev id first, then production id) and returns whether its weekly notes are enabled, by reading `periodicNotes.settings?.weekly?.enabled`.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "cal-settings", "symbol": "appHasPeriodicNotesPluginLoaded", "path": "src/settings.ts", "lines": "48-56" }
+      ],
+      "used_by": ["cal-main", "cal-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Plugin id probe order: 'periodic-notes-anks' (dev build) then 'periodic-notes' (community-store build) -- fixed to include the dev id in commit 7727890 after being missed by the earlier dev-id/prefix-match fix."],
+      "edge_cases": ["Reads `periodicNotes.settings` directly as if it were a plain object. Per the sibling function's own commit message (39040cd), `settings` on the live Periodic Notes plugin instance is actually a Svelte store (Writable<ISettings>), not a plain object -- so `.weekly?.enabled` here may always read undefined the same way the monthly check did before it was fixed. This path was not covered by that fix. See observation."],
+      "confidence": "verified"
+    },
+    {
+      "id": "periodic-notes-monthly-plugin-resolution",
+      "name": "Resolve the Periodic Notes plugin only when monthly notes are enabled",
+      "category": "integration",
+      "surface": "integration",
+      "description": "getMonthlyNotesPeriodicNotesPlugin() finds the Periodic Notes plugin instance, then checks the live 'is monthly enabled' answer via calendarSetManager.getActiveGranularities().includes('month'), and finally checks openPeriodicNote is callable. Returns the plugin instance or null.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "cal-settings", "symbol": "getMonthlyNotesPeriodicNotesPlugin", "path": "src/settings.ts", "lines": "72-111" },
+        { "module": "cal-settings", "symbol": "IPeriodicNotesPlugin", "path": "src/settings.ts", "lines": "58-64" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Exact probe order: (1) pluginManager.getPlugin('periodic-notes-anks') [dev plugin id] || (2) pluginManager.getPlugin('periodic-notes') [production id]. If neither is found -> return null.",
+        "If found: check `periodicNotes.calendarSetManager` exists and its `getActiveGranularities` is a function; call it and require the result to include 'month', else return null.",
+        "FAIL-CLOSED BRANCH: if calendarSetManager or getActiveGranularities is missing on this Periodic Notes build, the function CANNOT verify monthly is enabled, so it returns null rather than guessing -- preserving the old 'fall back to reset click handler' behavior instead of risking a call into openPeriodicNote/createPeriodicNote for a possibly-disabled or unconfigured granularity.",
+        "Finally checks `typeof periodicNotes.openPeriodicNote === 'function'` before returning the instance.",
+        "This replaced an earlier (buggy) direct read of `periodicNotes.settings.monthly` -- that field was always undefined because `settings` is a Svelte store, not a plain object (fixed in commit 39040cd)."
+      ],
+      "edge_cases": ["Local fork feature (commits 5ed4307, 39040cd); depends on Periodic Notes' internal calendarSetManager API shape, which is not a documented public contract."],
+      "confidence": "verified"
+    },
+    {
+      "id": "settings-tab-ui",
+      "name": "Calendar settings tab",
+      "category": "config",
+      "surface": "setting",
+      "description": "Renders the plugin's settings tab: a Daily Notes warning banner (conditional), General Settings (words-per-dot, week start, confirm-before-create, show-week-number), conditionally-shown legacy Weekly Note settings, and Advanced (locale override).",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-settings", "symbol": "CalendarSettingsTab.display", "path": "src/settings.ts", "lines": "121-166" }
+      ],
+      "used_by": ["cal-main"],
+      "depends_on_capability": ["daily-notes-plugin-warning-banner", "periodic-notes-weekly-detection"],
+      "behaviour_notes": ["Legacy Weekly Note Settings section (format/template/folder) is only shown when showWeeklyNote is on AND Periodic Notes is not already handling weekly notes; it carries a migration note pointing users at the Periodic Notes plugin."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "daily-notes-plugin-warning-banner",
+      "name": "Warn when Daily Notes plugin is not enabled",
+      "category": "integration",
+      "surface": "ui",
+      "description": "The settings tab shows a warning banner recommending the Daily Notes or Periodic Notes plugin whenever appHasDailyNotesPluginLoaded() (from obsidian-daily-notes-interface) returns false.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-settings", "symbol": "display", "path": "src/settings.ts", "lines": "124-135" }
+      ],
+      "used_by": ["cal-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": [],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "metadata-source-streak",
+      "name": "Streak dot source: has-note class",
+      "category": "ui",
+      "surface": "ui",
+      "description": "For a given day/week, looks up the note in the dailyNotes/weeklyNotes store (no vault I/O) and returns a 'has-note' CSS class if it exists; no dots.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-sources-streak", "symbol": "streakSource", "path": "src/ui/sources/streak.ts", "lines": "16-32" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Cheapest of the four sources: a store lookup, no file read.", "Always enabled; no dedicated setting."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "metadata-source-tags",
+      "name": "Custom tags source: data-attributes from frontmatter",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Reads the note's cached frontmatter (metadataCache, no disk I/O) and parses its tags. Splits them into emoji vs. non-emoji tags: non-emoji tags become a space-joined 'data-tags' attribute, and the first emoji tag becomes 'data-emoji-tag'.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-sources-tags", "symbol": "customTagsSource", "path": "src/ui/sources/tags.ts", "lines": "50-65" },
+        { "module": "cal-sources-tags", "symbol": "getNoteTags", "path": "src/ui/sources/tags.ts", "lines": "11-28" },
+        { "module": "cal-sources-tags", "symbol": "getFormattedTagAttributes", "path": "src/ui/sources/tags.ts", "lines": "30-48" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Cheap: uses the metadata cache, not a file read.", "Only the FIRST emoji tag is surfaced (data-emoji-tag), any additional emoji tags on the note are dropped.", "Always enabled; no dedicated setting."],
+      "edge_cases": ["Notes with no frontmatter/tags produce empty data-attributes, not an absent object."],
+      "confidence": "verified"
+    },
+    {
+      "id": "metadata-source-tasks",
+      "name": "Tasks source: incomplete-checkbox dot",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Reads the full note body via vault.cachedRead and regex-counts incomplete checkboxes ('- [ ]' or '* [ ]'). Shows one unfilled 'task' dot if the count is nonzero.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-sources-tasks", "symbol": "tasksSource", "path": "src/ui/sources/tasks.ts", "lines": "38-55" },
+        { "module": "cal-sources-tasks", "symbol": "getNumberOfRemainingTasks", "path": "src/ui/sources/tasks.ts", "lines": "9-17" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["More expensive than streak/tags: does a full cachedRead() of every note file visible in the grid (cached by Obsidian, but still a per-day read/regex scan).", "Only ever renders ONE dot regardless of how many incomplete tasks exist.", "Always enabled; no dedicated setting."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "metadata-source-wordcount",
+      "name": "Word count source: filled dots by length",
+      "category": "ui",
+      "surface": "setting",
+      "description": "Reads the full note body via vault.cachedRead, counts words with a unicode-aware tokenizer, then divides by the wordsPerDot setting and clamps to 1-5 filled dots.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-sources-wordcount", "symbol": "wordCountSource", "path": "src/ui/sources/wordCount.ts", "lines": "44-61" },
+        { "module": "cal-sources-wordcount", "symbol": "getWordLengthAsDots", "path": "src/ui/sources/wordCount.ts", "lines": "14-24" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": ["get-word-count"],
+      "behaviour_notes": ["Effectively disabled (returns 0 dots) when wordsPerDot <= 0.", "Same per-day cachedRead cost as the tasks source."],
+      "edge_cases": ["A note with 1 word still shows at least 1 dot (Math.floor(...) clamped to a minimum of 1, not 0, once wordCount > 0 -- actually clamp(floor(numDots),1,5), so even a very short note with any positive numDots below 1 rounds down to 0 then is clamped UP to 1)."],
+      "confidence": "verified"
+    },
+    {
+      "id": "auto-refresh-on-vault-events",
+      "name": "Refresh calendar on vault file create/delete/modify",
+      "category": "state",
+      "surface": "event",
+      "description": "Listens to vault 'create', 'delete', and 'modify'. For files whose name matches the daily or weekly note date format, reindexes the corresponding store (dailyNotes/weeklyNotes) and forces a re-render via calendar.tick().",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onFileCreated", "path": "src/view.ts", "lines": "268-279" },
+        { "module": "cal-view", "symbol": "onFileDeleted", "path": "src/view.ts", "lines": "250-259" },
+        { "module": "cal-view", "symbol": "onFileModified", "path": "src/view.ts", "lines": "261-266" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "onFileCreated additionally guards on `this.app.workspace.layoutReady` and `this.calendar` being set (so it's a no-op during initial vault indexing before the view has mounted).",
+        "onFileDeleted/onFileModified do NOT check layoutReady.",
+        "onFileModified reindexes nothing -- it only ticks the calendar (so dot metadata like word count/tasks re-renders), since modifying an existing file doesn't change which dates have notes."
+      ],
+      "edge_cases": ["A rename is seen by Obsidian as delete+create, not a single 'rename' handler here, so both reindexes run."],
+      "confidence": "verified"
+    },
+    {
+      "id": "refresh-on-periodic-notes-settings-change",
+      "name": "Refresh on Periodic Notes settings change",
+      "category": "state",
+      "surface": "event",
+      "description": "Listens for the custom workspace event 'periodic-notes:settings-updated' (fired by the Periodic Notes plugin itself) and reindexes both dailyNotes and weeklyNotes stores plus updates the active-file highlight.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onNoteSettingsUpdate", "path": "src/view.ts", "lines": "244-248" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": [],
+      "edge_cases": ["Untyped event: cast via `(<any>this.app.workspace).on(...)` since this event isn't part of Obsidian's typed API."],
+      "confidence": "verified"
+    },
+    {
+      "id": "reactive-settings-refresh",
+      "name": "Re-render calendar when plugin settings change",
+      "category": "state",
+      "surface": "event",
+      "description": "The view subscribes to the `settings` store in its constructor; any settings change (e.g. user edits words-per-dot or toggles show-week-number in the settings tab) re-renders the calendar via calendar.tick().",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "settings.subscribe", "path": "src/view.ts", "lines": "72-79" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["persist-plugin-settings"],
+      "behaviour_notes": ["Guarded by `if (this.calendar)` since this subscription fires once immediately on construction, before the Svelte component exists."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "track-active-file-for-highlight",
+      "name": "Track the active file for calendar highlighting",
+      "category": "state",
+      "surface": "event",
+      "description": "On workspace 'file-open', updateActiveFile() reads the active leaf's file (if it's a FileView) and pushes its date-UID into the `activeFile` store, then ticks the calendar so the corresponding cell gets `selectedId` highlighting in Calendar.svelte.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "onFileOpen", "path": "src/view.ts", "lines": "281-285" },
+        { "module": "cal-view", "symbol": "updateActiveFile", "path": "src/view.ts", "lines": "287-299" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["get-date-uid-from-file"],
+      "behaviour_notes": ["Guarded on `this.app.workspace.layoutReady` -- does nothing during initial startup file-open events."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "jump-calendar-to-active-note",
+      "name": "Jump the calendar to the active note's date",
+      "category": "ui",
+      "surface": "ui",
+      "description": "revealActiveNote() checks whether the active leaf's file is a daily or weekly note (via getDateFromFile) and, if so, sets the calendar's displayedMonth to that date.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-view", "symbol": "revealActiveNote", "path": "src/view.ts", "lines": "301-319" }
+      ],
+      "used_by": ["cal-main"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Fixed in commit 7727890: previously called `moment(filename, format, true)` inline for the weekly check -- a strict-only parse that bypassed obsidian-daily-notes-interface's own allowPrefixMatch-aware parser. Now routed through getDateFromFile(file, 'week') so weekly notes whose filename only prefix-matches the configured format are revealed too, matching how they're already indexed and dotted."
+      ],
+      "edge_cases": ["Does nothing if the active leaf's view isn't a FileView, or the file matches neither day nor week format."],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-heartbeat-tick",
+      "name": "1-minute heartbeat keeps 'today' current",
+      "category": "state",
+      "surface": "ui",
+      "description": "A setInterval every 60s calls tick() (refreshing the `today` moment). If the calendar is currently displaying the current day (`displayedMonth.isSame(today, 'day')`), it also advances `displayedMonth` to the refreshed `today` -- so a calendar left open across midnight rolls over to the new day/month on its own.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "cal-calendar-svelte", "symbol": "heartbeat interval", "path": "src/ui/Calendar.svelte", "lines": "48-57" },
+        { "module": "cal-calendar-svelte", "symbol": "tick", "path": "src/ui/Calendar.svelte", "lines": "28-30" }
+      ],
+      "used_by": [],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Cleared onDestroy to avoid leaking the interval when the view closes."],
+      "edge_cases": ["Comparison is `.isSame(today, 'day')` despite the variable name `isViewingCurrentMonth` -- it actually checks same-DAY, not same-month, so browsing to a different day within the current month also disables the auto-rollover until the user navigates back to today."],
+      "confidence": "verified"
+    },
+    {
+      "id": "expose-displayed-month",
+      "name": "Expose the internally-tracked displayed month",
+      "category": "ui",
+      "surface": "api",
+      "description": "getDisplayedMonth() is a local addition exporting the Svelte component's internal `displayedMonth` binding, so code outside the Svelte tree (view.ts) can read what month the calendar is currently showing.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "cal-calendar-svelte", "symbol": "getDisplayedMonth", "path": "src/ui/Calendar.svelte", "lines": "36-38" }
+      ],
+      "used_by": ["cal-view"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Local fork addition (commit 5ed4307) that exists solely to support month-header-click-open-monthly-note; `displayedMonth` otherwise lives entirely inside obsidian-calendar-ui's component state and wasn't reachable from view.ts before this."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-date-uid-from-file",
+      "name": "Resolve a date-UID from a file (day-then-week)",
+      "category": "dates",
+      "surface": "api",
+      "description": "getDateUIDFromFile() tries to parse the file as a daily note first, then a weekly note, returning obsidian-daily-notes-interface's dateUID string for whichever matches, or null.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "cal-utils", "symbol": "getDateUIDFromFile", "path": "src/ui/utils.ts", "lines": "42-58" }
+      ],
+      "used_by": ["cal-stores"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Backs the activeFile store's setFile()."],
+      "edge_cases": ["Own TODO comment: 'I'm not checking the path!' -- a file with a matching basename in an unexpected folder would still resolve, potentially colliding with another note of the same name/date."],
+      "confidence": "verified"
+    },
+    {
+      "id": "get-word-count",
+      "name": "Unicode-aware word count",
+      "category": "dates",
+      "surface": "api",
+      "description": "getWordCount() tokenizes text with a large Unicode letter-range regex (space-delimited scripts) plus a separate CJK non-space-delimited character class, returning the total token count.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "cal-utils", "symbol": "getWordCount", "path": "src/ui/utils.ts", "lines": "60-73" }
+      ],
+      "used_by": ["cal-sources-wordcount"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Handles CJK text as one 'word' per character (nonSpaceDelimitedWords branch) rather than by whitespace."],
+      "edge_cases": [],
+      "confidence": "verified"
+    }
+  ],
+  "flows": [
+    {
+      "id": "click-day-open-or-create-daily-note",
+      "title": "Click a day cell",
+      "description": "User clicks a day in the grid; the calendar opens that day's note if it exists, or offers to create it.",
+      "trigger": "user clicks a day cell",
+      "steps": [
+        { "from": "cal-ext-calendar-ui", "to": "cal-view", "action": "dispatch onClickDay(date, isMetaPressed)", "payload": "Moment date, boolean" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getDailyNote(date, dailyNotes)", "payload": "Moment date" },
+        { "from": "cal-view", "to": "cal-io-daily", "action": "tryToCreateDailyNote(date, ...) if no file found", "payload": "Moment date, settings" },
+        { "from": "cal-io-daily", "to": "cal-modal", "action": "show confirmation dialog if shouldConfirmBeforeCreate", "payload": "title/text/cta" },
+        { "from": "cal-io-daily", "to": "cal-ext-dni", "action": "createDailyNote(date)", "payload": "Moment date" },
+        { "from": "cal-io-daily", "to": "cal-ext-obsidian-api", "action": "leaf.openFile(newFile)", "payload": "TFile" },
+        { "from": "cal-view", "to": "cal-stores", "action": "activeFile.setFile(file)", "payload": "TFile" }
+      ],
+      "capabilities": ["open-or-create-daily-note", "create-daily-note-with-confirmation", "confirmation-modal-dialog", "track-active-file-for-highlight"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-week-number-open-or-create-weekly-note",
+      "title": "Click a week number",
+      "description": "User clicks the week-number column; the calendar opens that week's note if it exists, or offers to create it.",
+      "trigger": "user clicks a week-number cell",
+      "steps": [
+        { "from": "cal-ext-calendar-ui", "to": "cal-view", "action": "dispatch onClickWeek(date, isMetaPressed)", "payload": "Moment date, boolean" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getWeeklyNote(date, weeklyNotes)", "payload": "Moment date" },
+        { "from": "cal-view", "to": "cal-io-weekly", "action": "tryToCreateWeeklyNote(startOfWeek, ...) if no file found", "payload": "Moment date, settings" },
+        { "from": "cal-io-weekly", "to": "cal-modal", "action": "show confirmation dialog if shouldConfirmBeforeCreate", "payload": "title/text/cta" },
+        { "from": "cal-io-weekly", "to": "cal-ext-dni", "action": "createWeeklyNote(date)", "payload": "Moment date" },
+        { "from": "cal-view", "to": "cal-ext-obsidian-api", "action": "workspace.setActiveLeaf(leaf, true, true)", "payload": "WorkspaceLeaf" }
+      ],
+      "capabilities": ["open-or-create-weekly-note", "create-weekly-note-with-confirmation", "confirmation-modal-dialog"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-month-header-open-monthly-note",
+      "title": "Click the month header",
+      "description": "User clicks the 'Oct 2026'-style header. If Periodic Notes has monthly notes enabled, opens/creates that month's periodic note instead of resetting to today; a local fork feature layered on top of upstream's own header click handler.",
+      "trigger": "user clicks the month header text (h3.title)",
+      "steps": [
+        { "from": "cal-ext-obsidian-api", "to": "cal-view", "action": "capture-phase click event on the view container", "payload": "MouseEvent" },
+        { "from": "cal-view", "to": "cal-view", "action": "confirm event.target closest 'h3.title' is inside the view", "payload": "—" },
+        { "from": "cal-view", "to": "cal-settings", "action": "getMonthlyNotesPeriodicNotesPlugin()", "payload": "—" },
+        { "from": "cal-settings", "to": "cal-ext-periodic-notes", "action": "probe plugin ids, then calendarSetManager.getActiveGranularities()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-calendar-svelte", "action": "getDisplayedMonth()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-view", "action": "event.preventDefault(); event.stopPropagation()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-ext-periodic-notes", "action": "openPeriodicNote('month', displayedMonth.clone(), { inNewSplit })", "payload": "Moment month, options" }
+      ],
+      "capabilities": ["month-header-click-open-monthly-note", "periodic-notes-monthly-plugin-resolution", "expose-displayed-month"],
+      "confidence": "verified"
+    },
+    {
+      "id": "hover-day-shows-native-link-preview",
+      "title": "Cmd/Ctrl-hover a day or week cell",
+      "description": "Holding the platform meta key while hovering a day/week cell triggers Obsidian's native link-hover popover for that note.",
+      "trigger": "user hovers a day/week cell with Cmd (macOS) or Ctrl held",
+      "steps": [
+        { "from": "cal-ext-calendar-ui", "to": "cal-view", "action": "dispatch onHoverDay/onHoverWeek(date, targetEl, isMetaPressed)", "payload": "Moment date, EventTarget, boolean" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getDailyNote/getWeeklyNote lookup", "payload": "Moment date" },
+        { "from": "cal-view", "to": "cal-ext-obsidian-api", "action": "workspace.trigger('link-hover', this, targetEl, formattedDate, note?.path)", "payload": "—" }
+      ],
+      "capabilities": ["hover-link-preview"],
+      "confidence": "verified"
+    },
+    {
+      "id": "right-click-day-shows-file-context-menu",
+      "title": "Right-click a day or week cell",
+      "description": "Right-clicking a day/week cell that has a note shows a file context menu (Delete, plus anything other plugins add via the file-menu event).",
+      "trigger": "user right-clicks a day/week cell with an existing note",
+      "steps": [
+        { "from": "cal-ext-calendar-ui", "to": "cal-view", "action": "dispatch onContextMenuDay/onContextMenuWeek(date, event)", "payload": "Moment date, MouseEvent" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getDailyNote/getWeeklyNote lookup", "payload": "Moment date" },
+        { "from": "cal-view", "to": "cal-file-menu", "action": "showFileMenu(app, note, {x, y})", "payload": "TFile, Point" },
+        { "from": "cal-file-menu", "to": "cal-ext-obsidian-api", "action": "trigger('file-menu', fileMenu, file, 'calendar-context-menu', null); menu.showAtPosition", "payload": "—" }
+      ],
+      "capabilities": ["day-week-context-menu", "file-context-menu"],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-weekly-note-via-command",
+      "title": "Run 'Open Weekly Note' from the command palette",
+      "description": "Opens or creates this week's weekly note, only available when Periodic Notes isn't already handling weekly notes.",
+      "trigger": "user runs the 'Open Weekly Note' command",
+      "steps": [
+        { "from": "cal-ext-obsidian-api", "to": "cal-main", "action": "invoke checkCallback(false)", "payload": "—" },
+        { "from": "cal-main", "to": "cal-view", "action": "view.openOrCreateWeeklyNote(window.moment(), false)", "payload": "Moment today" }
+      ],
+      "capabilities": ["open-weekly-note-command", "open-or-create-weekly-note"],
+      "confidence": "verified"
+    },
+    {
+      "id": "reveal-active-note-command-jumps-calendar",
+      "title": "Run 'Reveal active note' from the command palette",
+      "description": "Jumps the open calendar view to whichever month contains the currently active daily or weekly note.",
+      "trigger": "user runs the 'Reveal active note' command",
+      "steps": [
+        { "from": "cal-ext-obsidian-api", "to": "cal-main", "action": "invoke callback", "payload": "—" },
+        { "from": "cal-main", "to": "cal-view", "action": "view.revealActiveNote()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getDateFromFile(activeLeaf.view.file, 'day'|'week')", "payload": "TFile" },
+        { "from": "cal-view", "to": "cal-calendar-svelte", "action": "calendar.$set({ displayedMonth: date })", "payload": "Moment date" }
+      ],
+      "capabilities": ["reveal-active-note-command", "jump-calendar-to-active-note"],
+      "confidence": "verified"
+    },
+    {
+      "id": "vault-file-change-refreshes-calendar",
+      "title": "A daily/weekly note file changes on disk",
+      "description": "Creating, deleting, or modifying a file that matches the daily/weekly note format keeps the calendar's stores and dots in sync automatically.",
+      "trigger": "vault 'create' | 'delete' | 'modify' event fires for a matching file",
+      "steps": [
+        { "from": "cal-ext-obsidian-api", "to": "cal-view", "action": "vault.on('create'|'delete'|'modify', handler)", "payload": "TFile" },
+        { "from": "cal-view", "to": "cal-ext-dni", "action": "getDateFromFile(file, 'day'|'week')", "payload": "TFile" },
+        { "from": "cal-view", "to": "cal-stores", "action": "dailyNotes.reindex() / weeklyNotes.reindex()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-calendar-svelte", "action": "calendar.tick()", "payload": "—" }
+      ],
+      "capabilities": ["auto-refresh-on-vault-events"],
+      "confidence": "verified"
+    },
+    {
+      "id": "settings-change-refreshes-calendar",
+      "title": "Change a setting in the Calendar settings tab",
+      "description": "Editing a setting (e.g. words per dot, show week number) persists it and immediately re-renders the open calendar.",
+      "trigger": "user changes a control in the Calendar settings tab",
+      "steps": [
+        { "from": "cal-settings", "to": "cal-main", "action": "plugin.writeOptions(() => ({ ...patch }))", "payload": "Partial<ISettings>" },
+        { "from": "cal-main", "to": "cal-stores", "action": "settings.update(...) then saveData", "payload": "ISettings" },
+        { "from": "cal-stores", "to": "cal-view", "action": "settings.subscribe callback fires", "payload": "ISettings" },
+        { "from": "cal-view", "to": "cal-calendar-svelte", "action": "calendar.tick()", "payload": "—" }
+      ],
+      "capabilities": ["reactive-settings-refresh", "persist-plugin-settings"],
+      "confidence": "verified"
+    },
+    {
+      "id": "plugin-load-reveals-calendar-view",
+      "title": "Plugin loads (app start or plugin enabled)",
+      "description": "On load, the plugin registers its view/commands, loads settings, and opens the calendar into the right sidebar once the workspace layout is ready.",
+      "trigger": "Obsidian loads/enables the plugin",
+      "steps": [
+        { "from": "cal-ext-obsidian-api", "to": "cal-main", "action": "onload()", "payload": "—" },
+        { "from": "cal-main", "to": "cal-stores", "action": "subscribe to settings; loadOptions() merges data.json", "payload": "—" },
+        { "from": "cal-main", "to": "cal-main", "action": "registerView(VIEW_TYPE_CALENDAR, factory)", "payload": "—" },
+        { "from": "cal-main", "to": "cal-main", "action": "initLeaf() immediately or on 'layout-ready'", "payload": "—" },
+        { "from": "cal-main", "to": "cal-view", "action": "leaf factory constructs CalendarView; Obsidian calls onOpen()", "payload": "—" },
+        { "from": "cal-view", "to": "cal-calendar-svelte", "action": "mount Calendar.svelte with props/sources", "payload": "—" }
+      ],
+      "capabilities": ["open-calendar-view", "auto-reveal-view-on-layout-ready", "persist-plugin-settings", "mount-calendar-view"],
+      "confidence": "verified"
+    },
+    {
+      "id": "midnight-rollover-advances-displayed-month",
+      "title": "Calendar left open across midnight",
+      "description": "A 1-minute heartbeat keeps 'today' current and, if the user is viewing today, silently advances the displayed day/month at midnight without any user action.",
+      "trigger": "60-second internal heartbeat timer, while viewing the current day",
+      "steps": [
+        { "from": "cal-calendar-svelte", "to": "cal-calendar-svelte", "action": "tick(): today = window.moment(); if displayedMonth.isSame(today, 'day') then displayedMonth = today", "payload": "—" }
+      ],
+      "capabilities": ["calendar-heartbeat-tick"],
+      "confidence": "verified"
+    },
+    {
+      "id": "extend-metadata-sources-via-plugin-integration",
+      "title": "Another plugin adds a metadata source",
+      "description": "When the calendar view opens, other installed plugins can listen for 'calendar:open' and push additional ICalendarSource entries into the sources array before it's handed to the Svelte component.",
+      "trigger": "the calendar view's onOpen() fires the 'calendar:open' workspace event",
+      "steps": [
+        { "from": "cal-view", "to": "cal-ext-obsidian-api", "action": "workspace.trigger('calendar:open', sources)", "payload": "ICalendarSource[]" },
+        { "from": "cal-ext-obsidian-api", "to": "cal-ext-obsidian-api", "action": "listening plugin(s) push() extra sources into the same array", "payload": "ICalendarSource" }
+      ],
+      "capabilities": ["extend-metadata-sources-via-event"],
+      "confidence": "verified"
+    }
+  ],
+  "settings": [
+    {
+      "key": "wordsPerDot",
+      "label": "Words per dot",
+      "type": "number",
+      "default": 250,
+      "scope": "global",
+      "path": "src/settings.ts:11,38",
+      "affects": ["metadata-source-wordcount"],
+      "notes": "Effectively disables the word-count dots when set to 0 or a negative number (metadata-source-wordcount short-circuits)."
+    },
+    {
+      "key": "weekStart",
+      "label": "Start week on:",
+      "type": "enum",
+      "default": "locale",
+      "scope": "global",
+      "path": "src/settings.ts:12,36",
+      "affects": ["mount-calendar-view"],
+      "notes": "Passed into obsidian-calendar-ui's configureGlobalMomentLocale via Calendar.svelte's getToday()."
+    },
+    {
+      "key": "shouldConfirmBeforeCreate",
+      "label": "Confirm before creating new note",
+      "type": "boolean",
+      "default": true,
+      "scope": "global",
+      "path": "src/settings.ts:13,35",
+      "affects": ["create-daily-note-with-confirmation", "create-weekly-note-with-confirmation"]
+    },
+    {
+      "key": "showWeeklyNote",
+      "label": "Show week number",
+      "type": "boolean",
+      "default": false,
+      "scope": "global",
+      "path": "src/settings.ts:16,40",
+      "affects": ["mount-calendar-view", "settings-tab-ui"],
+      "notes": "Controls both the showWeekNums prop passed to obsidian-calendar-ui and whether the legacy Weekly Note Settings section is shown in the tab."
+    },
+    {
+      "key": "weeklyNoteFormat",
+      "label": "Weekly note format",
+      "type": "string",
+      "default": "",
+      "scope": "global",
+      "path": "src/settings.ts:17,41",
+      "affects": [],
+      "notes": "DEAD in the current build: stored and editable in the settings tab, but createWeeklyNote()/getWeeklyNoteSettings() (obsidian-daily-notes-interface) are called with no arguments and never read this field. Only the interface field and the UI control exist; nothing in this repo wires the value through."
+    },
+    {
+      "key": "weeklyNoteTemplate",
+      "label": "Weekly note template",
+      "type": "string",
+      "default": "",
+      "scope": "global",
+      "path": "src/settings.ts:18,42",
+      "affects": [],
+      "notes": "Same dead-setting situation as weeklyNoteFormat."
+    },
+    {
+      "key": "weeklyNoteFolder",
+      "label": "Weekly note folder",
+      "type": "string",
+      "default": "",
+      "scope": "global",
+      "path": "src/settings.ts:19,43",
+      "affects": [],
+      "notes": "Same dead-setting situation as weeklyNoteFormat."
+    },
+    {
+      "key": "localeOverride",
+      "label": "Override locale:",
+      "type": "enum",
+      "default": "system-default",
+      "scope": "global",
+      "path": "src/settings.ts:21,45",
+      "affects": ["mount-calendar-view"],
+      "notes": "Passed into configureGlobalMomentLocale alongside weekStart."
+    }
+  ],
+  "commands": [
+    {
+      "id": "show-calendar-view",
+      "name": "Open view",
+      "kind": "command",
+      "path": "src/main.ts:43",
+      "calls": ["open-calendar-view"],
+      "condition": "hidden/disabled once a calendar leaf is already open"
+    },
+    {
+      "id": "open-weekly-note",
+      "name": "Open Weekly Note",
+      "kind": "command",
+      "path": "src/main.ts:56",
+      "calls": ["open-weekly-note-command", "open-or-create-weekly-note"],
+      "condition": "hidden when Periodic Notes has weekly notes enabled (periodic-notes-weekly-detection)"
+    },
+    {
+      "id": "reveal-active-note",
+      "name": "Reveal active note",
+      "kind": "command",
+      "path": "src/main.ts:67",
+      "calls": ["reveal-active-note-command", "jump-calendar-to-active-note"],
+      "condition": null
+    },
+    {
+      "id": "cal:file-context-menu-delete",
+      "name": "Delete (day/week note context menu)",
+      "kind": "context-menu",
+      "path": "src/ui/fileMenu.ts:5",
+      "calls": ["file-context-menu"],
+      "condition": "only shown on right-click of a day/week cell that has an existing note"
+    }
+  ],
+  "api_surface": [
+    {
+      "export": "CalendarPlugin instance (options, writeOptions)",
+      "kind": "plugin-instance-field",
+      "signature": "app.plugins.plugins['calendar'] : { options: ISettings, writeOptions(fn: (s: ISettings) => Partial<ISettings>): Promise<void> }",
+      "path": "src/main.ts:21-113",
+      "stability": "accidental",
+      "consumers": []
+    }
+  ],
+  "observations": [
+    {
+      "severity": "P2",
+      "kind": "divergence",
+      "what": "Month-header click now opens/creates the month's Periodic Notes note (capture-phase interceptor + fail-closed plugin resolution), instead of only resetting the calendar to today. This is entirely absent upstream.",
+      "where": ["cal-view:src/view.ts:128-180", "cal-settings:src/settings.ts:58-111", "cal-calendar-svelte:src/ui/Calendar.svelte:36-38"],
+      "why_it_matters": "Easy to lose silently in a merge/rebase: it's a capture-phase DOM listener racing an upstream bubble-phase handler, plus a new exported Svelte accessor and a new settings.ts function, all introduced across commits 5ed4307 and 39040cd. A naive merge that only carries forward file-level diffs on view.ts could easily drop the Calendar.svelte accessor or the capture/bubble ordering comment, silently breaking the feature or corrupting event handling on the month header for everyone."
+    },
+    {
+      "severity": "P2",
+      "kind": "bug",
+      "what": "appHasPeriodicNotesPluginLoaded() (src/settings.ts:48-56) reads `periodicNotes.settings?.weekly?.enabled` directly off the plugin instance. The sibling function getMonthlyNotesPeriodicNotesPlugin()'s own commit message (39040cd) states that `periodicNotes.settings` is actually a Svelte store (Writable<ISettings>), not a plain object -- which is exactly why the monthly check had to be rewritten to use calendarSetManager instead. The weekly check was never fixed the same way and may always read undefined.",
+      "where": ["cal-settings:src/settings.ts:48-56", "cal-settings:src/settings.ts:83-86 (sibling fix for context)"],
+      "why_it_matters": "If true, `showWeeklyNote`'s legacy settings UI and the 'Open Weekly Note' command's checkCallback may never correctly detect an active Periodic Notes weekly setup, always falling back to this plugin's own (deprecated) weekly-note path even when Periodic Notes is properly configured. Worth verifying against a live Periodic Notes instance before porting this function as-is."
+    },
+    {
+      "severity": "P2",
+      "kind": "version-skew",
+      "what": "This plugin's obsidian-daily-notes-interface dependency was repointed across 3 commits (8e2545b, 102ad6d, dc780c0) from the published npm version 0.9.0 to a personal fork (matisnape/obsidian-daily-notes-interface) pinned at commit bba664e424b962f989a2a4fc70ad882ee489f588 via a GitHub dependency spec, specifically to get allowPrefixMatch / dev-id plugin detection behavior that upstream obsidian-daily-notes-interface doesn't have.",
+      "where": ["package.json:14-22"],
+      "why_it_matters": "If the merged obsidian-calendaric repo consolidates on a different obsidian-daily-notes-interface source (e.g. the community version, or a different fork mapped by another agent), this plugin's getDateFromFile/allowPrefixMatch-dependent behavior (see jump-calendar-to-active-note fix) and its dev-id plugin detection pattern may silently regress unless that same fork's changes are ported into whichever DNI implementation is chosen as canonical."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "openOrCreateDailyNote() looks up and applies `app.vault.getConfig('defaultViewMode')` when opening an existing note (src/view.ts:367-372), but openOrCreateWeeklyNote() does not (src/view.ts:339-342) -- it just calls `leaf.openFile(existingFile)` with no options.",
+      "where": ["cal-view:src/view.ts:348-375", "cal-view:src/view.ts:321-346"],
+      "why_it_matters": "An existing weekly note may open in a different edit/preview mode than the user's configured default, unlike daily notes. Worth deciding intentionally when porting rather than carrying the asymmetry forward silently."
+    },
+    {
+      "severity": "P3",
+      "kind": "dead-code",
+      "what": "weeklyNoteFormat, weeklyNoteTemplate, and weeklyNoteFolder are declared in ISettings, given defaults, and editable via the settings tab, but nothing in this repo's source ever reads them -- createWeeklyNote(date) (obsidian-daily-notes-interface) is called with only a date argument.",
+      "where": ["cal-settings:src/settings.ts:17-19,41-43,237-274", "cal-io-weekly:src/io/weeklyNotes.ts:14-44"],
+      "why_it_matters": "A user who fills these fields expecting them to control weekly note creation gets no effect; they were presumably superseded by Periodic Notes' own settings. A merge should either wire them up or drop them rather than porting dead settings forward."
+    },
+    {
+      "severity": "P3",
+      "kind": "duplication",
+      "what": "Two separate functions in settings.ts (appHasPeriodicNotesPluginLoaded and getMonthlyNotesPeriodicNotesPlugin) each independently implement the same 'try periodic-notes-anks, then periodic-notes' plugin-id probe.",
+      "where": ["cal-settings:src/settings.ts:50-54", "cal-settings:src/settings.ts:74-78"],
+      "why_it_matters": "A future dev-plugin-id change (or a third id) has to be updated in two places; this already caused one missed-gap bugfix (commit 7727890) when the id probe was added to only one of the two functions initially."
+    },
+    {
+      "severity": "P3",
+      "kind": "bug",
+      "what": "onHoverDay/onHoverWeek trigger the 'link-hover' workspace event with `note?.path` even when no note exists for the hovered date, passing an undefined path.",
+      "where": ["cal-view:src/view.ts:182-218"],
+      "why_it_matters": "Whatever hover-preview consumer Obsidian core wires up may attempt to preview `undefined`, showing an empty or erroring popover instead of no popover at all. Minor UX rough edge worth deciding on when porting."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "getDateUIDFromFile() only compares the file's basename against daily/weekly formats and explicitly does not check the file's folder path (own TODO comment: '// TODO: I'm not checking the path!').",
+      "where": ["cal-utils:src/ui/utils.ts:40-56"],
+      "why_it_matters": "Two same-named files in different folders (e.g. a manually created note that happens to match the daily-note date format, outside the daily notes folder) would be indistinguishable by this lookup, potentially mis-highlighting the wrong file as 'active' in the calendar."
+    }
+  ]
+}

@@ -1,0 +1,955 @@
+{
+  "source": {
+    "id": "calendaric",
+    "repo": "obsidian-calendaric",
+    "path": "/Users/anna.nowak/projects/obsidian/obsidian-calendaric",
+    "version": "0.1.0",
+    "role": "MERGE TARGET. From-scratch rewrite started from the Obsidian sample plugin; intended to absorb the Calendar and Periodic Notes plugins into one repo. Plain TypeScript with hand-rolled DOM (no Svelte). Three feature commits so far: calendar view, settings view, create/open daily+weekly notes."
+  },
+  "modules": [
+    {
+      "id": "calendaric-main",
+      "name": "main.ts",
+      "path": "src/main.ts",
+      "role": "Plugin lifecycle: load/save settings, register the calendar view, register the single command, open a granularity's note on vault startup.",
+      "loc": 105,
+      "category": "entry",
+      "depends_on": ["calendaric-settings", "calendaric-calendar-view", "calendaric-note-utils", "calendaric-note-create", "calendaric-note-open", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-types",
+      "name": "types.ts",
+      "path": "src/types.ts",
+      "role": "Shared interfaces: PeriodicConfig (per-granularity settings shape) and the calendar-grid data shapes (ICalendarDay/Week/Month).",
+      "loc": 34,
+      "category": "config",
+      "depends_on": [],
+      "external": false
+    },
+    {
+      "id": "calendaric-settings",
+      "name": "settings.ts",
+      "path": "src/settings.ts",
+      "role": "CalendaricSettings interface + defaults, and the entire settings tab UI (import card, general section, per-granularity groups, advanced/locale section) — settings model and settings UI are not split into separate files.",
+      "loc": 425,
+      "category": "config",
+      "depends_on": ["calendaric-types", "calendaric-daily-notes-import"],
+      "external": false
+    },
+    {
+      "id": "calendaric-daily-notes-import",
+      "name": "dailyNotesImport.ts",
+      "path": "src/settings/dailyNotesImport.ts",
+      "role": "Reads/disables the core Daily Notes plugin via Obsidian's internal-plugins API, for the one-time settings import card.",
+      "loc": 37,
+      "category": "integration",
+      "depends_on": ["obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-note-utils",
+      "name": "noteUtils.ts",
+      "path": "src/notes/noteUtils.ts",
+      "role": "Path computation for periodic notes: folder resolution (with fallback to Obsidian's default new-file location), and Format-string rendering including Calendaric's week tokens.",
+      "loc": 81,
+      "category": "notes",
+      "depends_on": ["calendaric-types"],
+      "external": false
+    },
+    {
+      "id": "calendaric-note-create",
+      "name": "noteCreate.ts",
+      "path": "src/notes/noteCreate.ts",
+      "role": "Creates a periodic note file at its computed path, creating parent folders as needed, and applying the configured template with token substitution.",
+      "loc": 53,
+      "category": "notes",
+      "depends_on": ["calendaric-note-utils", "calendaric-template-tokens", "calendaric-types"],
+      "external": false
+    },
+    {
+      "id": "calendaric-note-open",
+      "name": "noteOpen.ts",
+      "path": "src/notes/noteOpen.ts",
+      "role": "Opens a TFile in the appropriate leaf: reuse an unpinned tab, split on meta/ctrl-click, or a fresh tab (startup case).",
+      "loc": 30,
+      "category": "notes",
+      "depends_on": ["obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-template-tokens",
+      "name": "templateTokens.ts",
+      "path": "src/notes/templateTokens.ts",
+      "role": "Substitutes Calendaric's template body variables ({{date}}, {{date:fmt}}, {{time}}, {{title}}, {{yesterday}}/{{tomorrow}}, weekday tokens) into note content at creation time.",
+      "loc": 59,
+      "category": "notes",
+      "depends_on": ["calendaric-note-utils", "calendaric-types"],
+      "external": false
+    },
+    {
+      "id": "calendaric-calendar-view",
+      "name": "CalendarView.ts",
+      "path": "src/ui/CalendarView.ts",
+      "role": "ItemView wrapper that hosts the CalendarWidget in a workspace leaf; owns the 60s refresh interval.",
+      "loc": 47,
+      "category": "ui",
+      "depends_on": ["calendaric-calendar-widget", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-calendar-widget",
+      "name": "calendar.ts",
+      "path": "src/ui/calendar.ts",
+      "role": "Hand-rolled DOM month-grid widget: renders the table, nav buttons, week-number column, day/week dots, active-file highlight, and dispatches clicks to open/create notes (with optional confirmation modal).",
+      "loc": 259,
+      "category": "ui",
+      "depends_on": ["calendaric-calendar-utils", "calendaric-note-utils", "calendaric-note-create", "calendaric-note-open", "calendaric-modal", "calendaric-calendar-dots", "calendaric-settings", "calendaric-types", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-calendar-dots",
+      "name": "calendarDots.ts",
+      "path": "src/ui/calendarDots.ts",
+      "role": "DotScanner: computes which day/week cells in the visible month have an existing note (by re-checking computeNotePath against the vault), and re-triggers a render on vault create/delete/rename — no cache, no invalidation logic beyond 'redo the scan'.",
+      "loc": 83,
+      "category": "state",
+      "depends_on": ["calendaric-note-utils", "calendaric-types", "obsidian-api"],
+      "external": false
+    },
+    {
+      "id": "calendaric-calendar-utils",
+      "name": "calendarUtils.ts",
+      "path": "src/ui/calendarUtils.ts",
+      "role": "Pure date/grid math: resolve the numeric week-start day, build weekday header labels, and build the 6x7 month grid (today/adjacent-month/weekend flags, ISO week numbers).",
+      "loc": 76,
+      "category": "dates",
+      "depends_on": ["calendaric-settings", "calendaric-types"],
+      "external": false
+    },
+    {
+      "id": "calendaric-modal",
+      "name": "modal.ts",
+      "path": "src/ui/modal.ts",
+      "role": "Generic yes/no ConfirmationModal ('New <X> Note' / accept-or-dismiss), used before creating a note from the calendar grid.",
+      "loc": 44,
+      "category": "ui",
+      "depends_on": ["obsidian-api"],
+      "external": false
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "open-calendar-view",
+      "name": "Open the calendar view",
+      "category": "ui",
+      "surface": "command",
+      "description": "Registers the 'Show calendar' command; reveals (or creates in the right sidebar) the single calendaric-calendar leaf.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "calendaric-main", "symbol": "activateView", "path": "src/main.ts", "lines": "48-60" },
+        { "module": "calendaric-main", "symbol": "initLeaf", "path": "src/main.ts", "lines": "41-46" }
+      ],
+      "used_by": ["calendaric-main"],
+      "depends_on_capability": [],
+      "behaviour_notes": [
+        "Only one calendar leaf is ever created (checks getLeavesOfType before creating another).",
+        "No ribbon icon is registered anywhere — command palette is the only entry point, despite CalendarView.getIcon() defining a 'calendar' icon."
+      ],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-month-grid-render",
+      "name": "Render the month grid",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Builds a 6x7 HTML table for the displayed month: weekday headers respecting week-start, optional week-number column, today/adjacent-month/weekend styling per cell.",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calendaric-calendar-widget", "symbol": "CalendarWidget.render/renderGrid", "path": "src/ui/calendar.ts", "lines": "59-189" },
+        { "module": "calendaric-calendar-utils", "symbol": "getMonthGrid", "path": "src/ui/calendarUtils.ts", "lines": "40-76" }
+      ],
+      "used_by": ["calendaric-calendar-view"],
+      "depends_on_capability": ["calendar-week-start-resolution"],
+      "behaviour_notes": [
+        "Always renders exactly 6 weeks regardless of month length — covered by src/ui/calendarUtils.test.ts ('returns 6 weeks for any month').",
+        "Adjacent-month / weekend / week-number flags all covered by src/ui/calendarUtils.test.ts.",
+        "The widget itself (calendar.ts render/renderGrid DOM assembly) has zero test coverage."
+      ],
+      "edge_cases": ["Leap-year Feb 29 handling verified by test.", "Dec-to-Jan year boundary handled (adjacent Jan days get year()+1) — verified by test."],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-week-start-resolution",
+      "name": "Resolve the calendar's week-start day",
+      "category": "dates",
+      "surface": "setting",
+      "description": "Converts the 'weekStart' setting ('locale' or a named weekday) to a numeric 0-6 weekday used only for grid layout (which column Monday..Sunday lands in, and where the grid starts).",
+      "granularity": ["week", "month"],
+      "defined_in": [
+        { "module": "calendaric-calendar-utils", "symbol": "resolveWeekStart", "path": "src/ui/calendarUtils.ts", "lines": "8-17" }
+      ],
+      "used_by": ["calendaric-calendar-widget"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/ui/calendarUtils.test.ts for 'monday', 'sunday', and 'locale'."],
+      "edge_cases": [
+        "This setting affects ONLY grid layout. It does NOT affect week-token resolution (see observation on week-token-in-format-field) — the two 'week start' concepts are inconsistent within the plugin."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-navigation",
+      "name": "Navigate the calendar (prev/next/today)",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Nav buttons move the displayed month back/forward one month or jump to the current month; only the grid body + title re-render (not the whole widget).",
+      "granularity": ["month"],
+      "defined_in": [
+        { "module": "calendaric-calendar-widget", "symbol": "goToPrevMonth/goToNextMonth/goToToday", "path": "src/ui/calendar.ts", "lines": "191-204" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["calendar-month-grid-render"],
+      "behaviour_notes": ["No test coverage — DOM/event-driven, not exercised by vitest."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-note-existence-dots",
+      "name": "Show a dot under days/weeks with an existing note",
+      "category": "state",
+      "surface": "ui",
+      "description": "Scans the vault (by recomputing every note path for the visible month/weeks and checking vault.getAbstractFileByPath) to decide which day cells and the week-number cell get a small SVG dot.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-calendar-dots", "symbol": "DotScanner.getDayNotePaths/getWeekNotePaths", "path": "src/ui/calendarDots.ts", "lines": "27-72" }
+      ],
+      "used_by": ["calendaric-calendar-widget"],
+      "depends_on_capability": ["compute-note-path"],
+      "behaviour_notes": [
+        "No cache: re-derives the full set of expected paths every render. No test coverage.",
+        "Returns an empty set immediately when the granularity's config.enabled or config.format is falsy — so disabling day/week notes silently removes their dots too."
+      ],
+      "edge_cases": ["Week dots are keyed by the ISO Monday of each visible week, independent of the weekStart display setting."],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-live-refresh-on-vault-change",
+      "name": "Live-update dots on vault changes",
+      "category": "state",
+      "surface": "event",
+      "description": "DotScanner registers vault 'create', 'delete', and 'rename' listeners; any of them triggers a full grid re-render so dots stay in sync without the user reloading the view.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-calendar-dots", "symbol": "DotScanner constructor", "path": "src/ui/calendarDots.ts", "lines": "15-21" }
+      ],
+      "used_by": ["calendaric-calendar-widget"],
+      "depends_on_capability": ["calendar-note-existence-dots"],
+      "behaviour_notes": ["Listeners are properly unregistered in destroy() via app.vault.offref — no test coverage but the cleanup pattern matches AGENTS.md's register*/cleanup guidance."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-active-file-highlight",
+      "name": "Highlight the currently open note in the grid",
+      "category": "ui",
+      "surface": "event",
+      "description": "Listens to workspace 'file-open' and adds an 'is-active' class to the day/week cell whose computed path matches the newly opened file.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-calendar-widget", "symbol": "CalendarWidget constructor (fileOpenRef)", "path": "src/ui/calendar.ts", "lines": "50-53" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["compute-note-path"],
+      "behaviour_notes": ["Recomputes the path for every day/week cell on every file-open event, no memoization. No test coverage."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-minute-refresh",
+      "name": "Auto-refresh the grid every 60s",
+      "category": "ui",
+      "surface": "event",
+      "description": "CalendarView registers a 60-second interval that calls calendar.refresh() so the 'today' cell rolls over at midnight without requiring user interaction.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calendaric-calendar-view", "symbol": "onOpen", "path": "src/ui/CalendarView.ts", "lines": "33-36" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["calendar-month-grid-render"],
+      "behaviour_notes": ["Uses this.registerInterval so it is cleaned up on view close, per AGENTS.md guidance. No test coverage."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "calendar-click-to-open-or-create",
+      "name": "Click a day/week cell to open or create its note",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Clicking a cell for an enabled granularity looks up the note; if it exists, opens it (openNote, respecting meta/ctrl for split); if not, either creates it directly or shows a confirmation modal first, per the confirmBeforeCreate setting.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-calendar-widget", "symbol": "handleNoteClick", "path": "src/ui/calendar.ts", "lines": "217-249" }
+      ],
+      "used_by": [],
+      "depends_on_capability": ["compute-note-path", "create-daily-or-weekly-note", "open-note-in-active-leaf", "confirm-before-create-modal"],
+      "behaviour_notes": ["Cells for a disabled granularity are not clickable at all (cursor/click handler only attached when config.enabled). No test coverage — this is the main uncovered interaction path."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "confirm-before-create-modal",
+      "name": "Confirmation modal before creating a note",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Generic accept/dismiss modal ('New <Granularity> Note' / 'File X does not exist. Would you like to create it?'); onAccept runs the actual create+open.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-modal", "symbol": "ConfirmationModal", "path": "src/ui/modal.ts", "lines": "15-44" }
+      ],
+      "used_by": ["calendaric-calendar-widget"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Explicitly commented as 'Copied from calendar-plugin's ConfirmationModal structure' — i.e. already a manual, non-Svelte port of that source's modal. No test coverage."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "create-daily-or-weekly-note",
+      "name": "Create a periodic note (day or week only)",
+      "category": "notes",
+      "surface": "api",
+      "description": "Computes the note path, creates parent folders if missing, reads+substitutes the configured template if any, and calls vault.create(). Returns the created TFile.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-create", "symbol": "createNote", "path": "src/notes/noteCreate.ts", "lines": "16-35" }
+      ],
+      "used_by": ["calendaric-main", "calendaric-calendar-widget"],
+      "depends_on_capability": ["compute-note-path", "apply-template-on-create"],
+      "behaviour_notes": [
+        "Type-level restriction: createNote's granularity parameter is typed as \"day\" | \"week\" only — month/quarter/year are not representable, not just unimplemented.",
+        "No test coverage for noteCreate.ts (it touches app.vault.create, which needs a fuller Obsidian mock than exists today)."
+      ],
+      "edge_cases": ["Does not open the file — caller's responsibility (documented in the file's own comment)."],
+      "confidence": "verified"
+    },
+    {
+      "id": "apply-template-on-create",
+      "name": "Apply a template file when creating a note",
+      "category": "notes",
+      "surface": "api",
+      "description": "If config.templatePath resolves to a file (via metadataCache.getFirstLinkpathDest), its content is read and passed through substituteTemplateTokens before being written as the new note's content; otherwise the note is created empty.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-create", "symbol": "buildNoteContent", "path": "src/notes/noteCreate.ts", "lines": "37-53" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": ["template-token-date", "template-token-date-custom", "template-token-time", "template-token-title", "template-token-yesterday-tomorrow", "template-token-weekday-body"],
+      "behaviour_notes": ["No test coverage (requires app.vault.read + metadataCache mocking)."],
+      "edge_cases": ["Silently returns empty string if templatePath is set but does not resolve to a real file."],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-note-in-active-leaf",
+      "name": "Open a note, reuse tab or split on meta/ctrl-click",
+      "category": "notes",
+      "surface": "api",
+      "description": "Opens a TFile via workspace.getLeaf(false) (reuse an unpinned tab) normally, or workspace.getLeaf(\"split\") when the click carries metaKey/ctrlKey.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-open", "symbol": "openNote/isMetaPressed", "path": "src/notes/noteOpen.ts", "lines": "7-22" }
+      ],
+      "used_by": ["calendaric-calendar-widget"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-note-in-new-tab",
+      "name": "Open a note in a new tab (startup path)",
+      "category": "notes",
+      "surface": "api",
+      "description": "Opens a TFile via workspace.getLeaf(\"tab\"); used exclusively by the startup-note flow, not by grid clicks.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-open", "symbol": "openNoteInNewTab", "path": "src/notes/noteOpen.ts", "lines": "27-30" }
+      ],
+      "used_by": ["calendaric-main"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "compute-note-path",
+      "name": "Compute a periodic note's vault path",
+      "category": "notes",
+      "surface": "api",
+      "description": "Combines a resolved folder with a Format-string filename (moment.js tokens plus Calendaric's {{weekday:fmt}} week tokens) to produce the full '<folder>/<filename>.md' path for a given date and PeriodicConfig.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-utils", "symbol": "computeNotePath", "path": "src/notes/noteUtils.ts", "lines": "37-41" }
+      ],
+      "used_by": ["calendaric-main", "calendaric-calendar-widget", "calendaric-calendar-dots", "calendaric-note-create"],
+      "depends_on_capability": ["resolve-default-note-folder", "template-token-weekday-format"],
+      "behaviour_notes": ["Covered by src/notes/noteUtils.test.ts: folder present/absent, week-token format, and the Obsidian-default-folder fallback."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "resolve-default-note-folder",
+      "name": "Fall back to Obsidian's default new-file folder",
+      "category": "notes",
+      "surface": "api",
+      "description": "When a granularity's own 'folder' setting is empty, reads the vault's internal config (newFileLocation / newFileFolderPath) to decide where the note goes: the configured folder if newFileLocation === 'folder', otherwise the vault root.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-note-utils", "symbol": "resolveNoteFolder", "path": "src/notes/noteUtils.ts", "lines": "67-81" }
+      ],
+      "used_by": ["calendaric-note-utils"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/noteUtils.test.ts ('uses Obsidian default folder when config folder is empty and newFileLocation=folder')."],
+      "edge_cases": ["Reads app.vault.config via an untyped 'as any' cast — this is Obsidian's undocumented internal vault config, not public API."],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-weekday-format",
+      "name": "Week token in the Format field: {{weekday:fmt}}",
+      "category": "dates",
+      "surface": "template-token",
+      "description": "In a Weekly Note's Format string only, {{monday:fmt}}..{{sunday:fmt}} is replaced with that ISO weekday's date (relative to the note's own date) formatted with the given moment.js format, then the whole string is escaped as a moment.js literal before being run through date.format(). Documented in docs/guide.md under 'Format Field > Week tokens'.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "calendaric-note-utils", "symbol": "formatWithWeekTokens", "path": "src/notes/noteUtils.ts", "lines": "51-61" }
+      ],
+      "used_by": ["calendaric-note-utils"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/noteUtils.test.ts and src/notes/templateTokens.test.ts (multiple cases: single token, full range format, case-insensitivity, no-op on plain strings)."],
+      "edge_cases": [
+        "Weekday resolution is always ISO (Monday=1..Sunday=7), REGARDLESS of the weekStart setting. docs/guide.md line 37 claims tokens 'are resolved using the same week-start locale as your Start week on setting' — that claim does not match the code (see observations).",
+        "Weekday matching is case-insensitive ('Monday', 'MONDAY' both work)."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-weekday-body",
+      "name": "Week token in template body: {{weekday:fmt}}",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Same {{monday:fmt}}..{{sunday:fmt}} tokens, evaluated a second time against the note's body text (not the filename) — only for granularity 'week'.",
+      "granularity": ["week"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens (applyWeekTokens branch)", "path": "src/notes/templateTokens.ts", "lines": "53-56" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": ["template-token-weekday-format"],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts ('substitutes full weekly template', 'does not substitute {{monday:fmt}} for daily granularity')."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-date",
+      "name": "{{date}} template variable",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Replaced with the note's own date, formatted with the granularity's configured Format string (week tokens included).",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens", "path": "src/notes/templateTokens.ts", "lines": "35-37" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": ["template-token-weekday-format"],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-date-custom",
+      "name": "{{date:fmt}} template variable",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Replaced with the note's date using a caller-supplied moment.js format string, distinct from the note's configured Format.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens", "path": "src/notes/templateTokens.ts", "lines": "33" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts. Note: substitution order matters — {{date:fmt}} is replaced before {{date}} specifically to avoid the plain {{date}} regex matching inside it; test 'does not substitute {{date:custom}} as {{date}}' asserts this."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-time",
+      "name": "{{time}} template variable",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Replaced with the current time as HH:mm (the moment passed into substituteTemplateTokens, i.e. creation time).",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens", "path": "src/notes/templateTokens.ts", "lines": "40" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-title",
+      "name": "{{title}} template variable",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Replaced with the created note's filename (without .md extension).",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens", "path": "src/notes/templateTokens.ts", "lines": "43" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "template-token-yesterday-tomorrow",
+      "name": "{{yesterday}} / {{tomorrow}} template variables",
+      "category": "notes",
+      "surface": "template-token",
+      "description": "Daily-note-only: replaced with the previous/next calendar day, formatted with the daily granularity's configured Format string.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calendaric-template-tokens", "symbol": "substituteTemplateTokens", "path": "src/notes/templateTokens.ts", "lines": "45-51" }
+      ],
+      "used_by": ["calendaric-note-create"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/notes/templateTokens.test.ts, including that it's a no-op ('left untouched') for granularity 'week'."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "startup-note-auto-open",
+      "name": "Open a periodic note automatically on vault startup",
+      "category": "notes",
+      "surface": "setting",
+      "description": "On workspace.onLayoutReady, checks each granularity in order (day, week, month, quarter, year) for the first with openAtStartup+enabled; opens the existing file, or silently creates it (bypassing confirmBeforeCreate) if missing — but only for day/week.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [
+        { "module": "calendaric-main", "symbol": "openStartupNote", "path": "src/main.ts", "lines": "69-92" }
+      ],
+      "used_by": ["calendaric-main"],
+      "depends_on_capability": ["compute-note-path", "create-daily-or-weekly-note", "open-note-in-new-tab"],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": [
+        "If a month/quarter/year granularity somehow has openAtStartup=true and no existing file, the loop 'break's without opening anything for that key and does not fall through to try the next granularity — effectively a silent no-op, not a crash.",
+        "In practice month/quarter/year can never reach openAtStartup=true today: the settings UI's placeholder groups for those granularities render a permanently-disabled toggle and no per-granularity content section at all (see calendaric-settings)."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "clear-startup-note-exclusivity",
+      "name": "Enforce only one granularity can auto-open at startup",
+      "category": "config",
+      "surface": "api",
+      "description": "clearStartupNote(settings) sets openAtStartup=false on all five granularities; called by the settings UI right before setting the new one's openAtStartup=true.",
+      "granularity": ["day", "week", "month", "quarter", "year"],
+      "defined_in": [
+        { "module": "calendaric-settings", "symbol": "clearStartupNote", "path": "src/settings.ts", "lines": "42-46" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/settings.test.ts (clears all granularities; no-op when already false; leaves other fields untouched)."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "import-daily-notes-settings",
+      "name": "Import settings from the core Daily Notes plugin",
+      "category": "integration",
+      "surface": "ui",
+      "description": "When the core 'daily-notes' internal plugin is enabled, shows a callout in the settings tab offering to copy its format/folder/template into Calendaric's day config (marking day.enabled=true and hasMigratedDailyNoteSettings=true), disable the core plugin outright, or dismiss the callout.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calendaric-settings", "symbol": "renderImportCard", "path": "src/settings.ts", "lines": "114-174" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": ["read-legacy-daily-notes-config", "disable-core-daily-notes-plugin"],
+      "behaviour_notes": ["No test coverage for renderImportCard itself (DOM-heavy); the functions it calls (isDailyNotesPluginEnabled, getLegacyDailyNoteSettings, disableDailyNotesPlugin) are fully covered by src/settings/dailyNotesImport.test.ts."],
+      "edge_cases": [
+        "If legacy format is empty, falls back to the hardcoded default 'YYYY-MM-DD' rather than leaving it blank.",
+        "There is no equivalent import path for the Periodic Notes plugin's week/month/quarter/year settings — only Daily Notes import exists."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "read-legacy-daily-notes-config",
+      "name": "Read the core Daily Notes plugin's config",
+      "category": "integration",
+      "surface": "integration",
+      "description": "Reads app.internalPlugins.getPluginById('daily-notes').instance.options (format/folder/template) via an untyped internal-API cast; also exposes isDailyNotesPluginEnabled().",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calendaric-daily-notes-import", "symbol": "getLegacyDailyNoteSettings / isDailyNotesPluginEnabled", "path": "src/settings/dailyNotesImport.ts", "lines": "15-33" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Fully covered by src/settings/dailyNotesImport.test.ts: enabled/disabled/not-found/missing-internalPlugins, and every combination of present/missing format/folder/template."],
+      "edge_cases": ["Missing any individual option field defaults that field to an empty string rather than throwing."],
+      "confidence": "verified"
+    },
+    {
+      "id": "disable-core-daily-notes-plugin",
+      "name": "Disable the core Daily Notes plugin",
+      "category": "integration",
+      "surface": "integration",
+      "description": "Calls the internal Daily Notes plugin's disable(true) to turn it off from within Calendaric's settings tab.",
+      "granularity": ["day"],
+      "defined_in": [
+        { "module": "calendaric-daily-notes-import", "symbol": "disableDailyNotesPlugin", "path": "src/settings/dailyNotesImport.ts", "lines": "35-37" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["Covered by src/settings/dailyNotesImport.test.ts ('calls disable(true) on the plugin', 'does not throw when the plugin is not found')."],
+      "edge_cases": [],
+      "confidence": "verified"
+    },
+    {
+      "id": "open-format-guide-from-settings",
+      "name": "Open the bundled format/template guide from settings",
+      "category": "ui",
+      "surface": "ui",
+      "description": "A 'Format & template guide' link in the Format field's description opens docs/guide.md (the plugin's own bundled doc) using Electron's shell.openPath, built from the vault adapter's basePath plus a hardcoded plugin-id path.",
+      "granularity": ["day", "week"],
+      "defined_in": [
+        { "module": "calendaric-settings", "symbol": "renderPeriodicGroupContent (guideLink handler)", "path": "src/settings.ts", "lines": "303-312" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": [
+        "Uses (window as any).require('electron') — an Electron/desktop-only API. manifest.json declares isDesktopOnly: false, so this link will throw on mobile where window.require does not exist (see observations)."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "override-locale-setting",
+      "name": "Override the moment.js locale",
+      "category": "config",
+      "surface": "setting",
+      "description": "A dropdown of all moment.js-registered locales; changing it calls window.moment.locale(value) immediately (affecting all date formatting app-wide for this session) and persists the choice. Applied again on every plugin onload if set.",
+      "granularity": ["n-a"],
+      "defined_in": [
+        { "module": "calendaric-settings", "symbol": "renderAdvancedSection", "path": "src/settings.ts", "lines": "398-424" },
+        { "module": "calendaric-main", "symbol": "onload (locale override)", "path": "src/main.ts", "lines": "19-23" }
+      ],
+      "used_by": ["calendaric-main", "calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": ["Calling window.moment.locale() is global/process-wide — it changes locale for every other plugin using the shared moment instance too, not just Calendaric."],
+      "confidence": "verified"
+    },
+    {
+      "id": "granularity-placeholder-groups",
+      "name": "Non-functional Monthly/Quarterly/Yearly/Custom Notes settings groups",
+      "category": "config",
+      "surface": "ui",
+      "description": "The Periodic Notes settings section renders a heading row with a permanently-disabled toggle for 'Monthly Notes', 'Quarterly Notes', 'Yearly Notes', and 'Custom Notes', with no expandable content and no way to enable them from the UI.",
+      "granularity": ["month", "quarter", "year"],
+      "defined_in": [
+        { "module": "calendaric-settings", "symbol": "renderPlaceholderGroup", "path": "src/settings.ts", "lines": "377-393" }
+      ],
+      "used_by": ["calendaric-settings"],
+      "depends_on_capability": [],
+      "behaviour_notes": ["No test coverage."],
+      "edge_cases": ["'Custom Notes' has no backing PeriodicConfig or granularity key anywhere in types.ts/settings.ts at all — it's UI scaffolding for a feature that doesn't exist yet even as a data shape."],
+      "confidence": "verified"
+    }
+  ],
+  "flows": [
+    {
+      "id": "open-calendar-from-command-palette",
+      "title": "Open the calendar view from the command palette",
+      "description": "User runs 'Show calendar'; the plugin reveals (creating if needed) the calendar leaf in the right sidebar, which constructs and renders the month-grid widget for the current month.",
+      "trigger": "user runs the 'Show calendar' command",
+      "steps": [
+        { "from": "calendaric-main", "to": "calendaric-calendar-view", "action": "reveal or create the calendaric-calendar leaf", "payload": "—" },
+        { "from": "calendaric-calendar-view", "to": "calendaric-calendar-widget", "action": "construct CalendarWidget and render current month", "payload": "CalendaricSettings" }
+      ],
+      "capabilities": ["open-calendar-view", "calendar-month-grid-render"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-empty-day-with-confirmation",
+      "title": "Click an empty day cell, confirm, create the note",
+      "description": "User clicks a day with no existing note while confirmBeforeCreate is on; a modal asks to confirm; accepting creates the note (applying its template) and opens it.",
+      "trigger": "user clicks a day cell in the grid with no dot",
+      "steps": [
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-utils", "action": "compute the note's path for that date", "payload": "moment date + PeriodicConfig" },
+        { "from": "calendaric-calendar-widget", "to": "calendaric-modal", "action": "open ConfirmationModal", "payload": "title + body text" },
+        { "from": "calendaric-modal", "to": "calendaric-note-create", "action": "onAccept: createNote", "payload": "date, granularity, config" },
+        { "from": "calendaric-note-create", "to": "calendaric-template-tokens", "action": "substitute template tokens if a template is configured", "payload": "raw template text" },
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-open", "action": "openNote in active or split leaf", "payload": "created TFile" }
+      ],
+      "capabilities": ["calendar-click-to-open-or-create", "confirm-before-create-modal", "create-daily-or-weekly-note", "apply-template-on-create", "open-note-in-active-leaf"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-empty-day-without-confirmation",
+      "title": "Click an empty day cell, create directly (no confirmation)",
+      "description": "Same as above but confirmBeforeCreate is off: the note is created and opened immediately with no modal.",
+      "trigger": "user clicks a day cell in the grid with no dot, confirmBeforeCreate = false",
+      "steps": [
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-create", "action": "createNote directly", "payload": "date, granularity, config" },
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-open", "action": "openNote", "payload": "created TFile" }
+      ],
+      "capabilities": ["calendar-click-to-open-or-create", "create-daily-or-weekly-note", "open-note-in-active-leaf"],
+      "confidence": "verified"
+    },
+    {
+      "id": "click-existing-day",
+      "title": "Click a day/week cell that already has a note",
+      "description": "A dot marks the cell as having a note; clicking it opens the existing file (split pane if meta/ctrl held) instead of prompting to create.",
+      "trigger": "user clicks a day or week cell showing a dot",
+      "steps": [
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-utils", "action": "compute the note's path", "payload": "moment date + PeriodicConfig" },
+        { "from": "calendaric-calendar-widget", "to": "calendaric-note-open", "action": "openNote", "payload": "existing TFile, click event" }
+      ],
+      "capabilities": ["calendar-note-existence-dots", "calendar-click-to-open-or-create", "open-note-in-active-leaf", "compute-note-path"],
+      "confidence": "verified"
+    },
+    {
+      "id": "navigate-and-rerender",
+      "title": "Navigate to another month and see updated dots",
+      "description": "Clicking prev/next/today changes the displayed month and re-renders only the grid body, re-scanning the vault for note-existence dots in the new range.",
+      "trigger": "user clicks a nav button",
+      "steps": [
+        { "from": "calendaric-calendar-widget", "to": "calendaric-calendar-utils", "action": "rebuild the 6x7 grid for the new month", "payload": "new displayedMonth" },
+        { "from": "calendaric-calendar-widget", "to": "calendaric-calendar-dots", "action": "recompute day/week note-existence sets", "payload": "new displayedMonth" }
+      ],
+      "capabilities": ["calendar-navigation", "calendar-month-grid-render", "calendar-note-existence-dots"],
+      "confidence": "verified"
+    },
+    {
+      "id": "vault-change-updates-dots",
+      "title": "Creating/deleting/renaming a note elsewhere updates the visible dots",
+      "description": "Any vault create/delete/rename event fires while the calendar view is open, and the grid re-renders so its dots reflect the new state without user action.",
+      "trigger": "a file is created, deleted, or renamed anywhere in the vault",
+      "steps": [
+        { "from": "obsidian-api", "to": "calendaric-calendar-dots", "action": "fire vault create/delete/rename event", "payload": "TAbstractFile" },
+        { "from": "calendaric-calendar-dots", "to": "calendaric-calendar-widget", "action": "invoke onUpdate callback", "payload": "—" }
+      ],
+      "capabilities": ["calendar-live-refresh-on-vault-change", "calendar-note-existence-dots"],
+      "confidence": "verified"
+    },
+    {
+      "id": "startup-note-open",
+      "title": "Open the configured startup note when the vault loads",
+      "description": "On workspace layout ready, the first granularity (day/week/month/quarter/year, in that order) with openAtStartup+enabled has its note found-or-silently-created and opened in a new tab.",
+      "trigger": "Obsidian finishes loading the workspace layout",
+      "steps": [
+        { "from": "calendaric-main", "to": "calendaric-note-utils", "action": "compute today's note path for the chosen granularity", "payload": "current moment + config" },
+        { "from": "calendaric-main", "to": "calendaric-note-create", "action": "silently create the note if missing (day/week only)", "payload": "current moment, granularity, config" },
+        { "from": "calendaric-main", "to": "calendaric-note-open", "action": "openNoteInNewTab", "payload": "TFile" }
+      ],
+      "capabilities": ["startup-note-auto-open", "compute-note-path", "create-daily-or-weekly-note", "open-note-in-new-tab"],
+      "confidence": "verified"
+    },
+    {
+      "id": "import-legacy-daily-notes",
+      "title": "Import settings from the core Daily Notes plugin",
+      "description": "When the core Daily Notes plugin is detected as enabled, the settings tab shows a callout; clicking 'Import settings' copies its format/folder/template into Calendaric's day config and marks migration done.",
+      "trigger": "user opens Calendaric's settings tab with the core Daily Notes plugin enabled, and clicks 'Import settings'",
+      "steps": [
+        { "from": "calendaric-settings", "to": "calendaric-daily-notes-import", "action": "read the core plugin's stored options", "payload": "—" },
+        { "from": "calendaric-settings", "to": "calendaric-settings", "action": "write format/folder/templatePath into settings.day, set hasMigratedDailyNoteSettings", "payload": "legacy config" }
+      ],
+      "capabilities": ["import-daily-notes-settings", "read-legacy-daily-notes-config"],
+      "confidence": "verified"
+    }
+  ],
+  "settings": [
+    {
+      "key": "weekStart",
+      "label": "Start week on",
+      "type": "enum",
+      "default": "monday",
+      "scope": "global",
+      "path": "src/settings.ts:17,30,182-193",
+      "affects": ["calendar-week-start-resolution", "calendar-month-grid-render"],
+      "notes": "Options: locale, monday..sunday. Only affects grid layout, not week-token/{{weekday}} resolution (see observations)."
+    },
+    {
+      "key": "showWeekNumbers",
+      "label": "Show week numbers",
+      "type": "boolean",
+      "default": true,
+      "scope": "global",
+      "path": "src/settings.ts:18,31,206-214",
+      "affects": ["calendar-month-grid-render"],
+      "notes": null
+    },
+    {
+      "key": "confirmBeforeCreate",
+      "label": "Confirm before creating new note",
+      "type": "boolean",
+      "default": true,
+      "scope": "global",
+      "path": "src/settings.ts:19,32,195-204",
+      "affects": ["calendar-click-to-open-or-create", "confirm-before-create-modal"],
+      "notes": "Bypassed unconditionally by the startup-note flow, which always creates silently."
+    },
+    {
+      "key": "overrideLocale",
+      "label": "Override locale",
+      "type": "string",
+      "default": "",
+      "scope": "global",
+      "path": "src/settings.ts:20,33,405-423",
+      "affects": ["override-locale-setting"],
+      "notes": "Empty string means 'use system locale'. Setting this mutates the global moment locale for the whole app session."
+    },
+    {
+      "key": "hasMigratedDailyNoteSettings",
+      "label": "(internal) Daily Notes import shown/completed",
+      "type": "boolean",
+      "default": false,
+      "scope": "global",
+      "path": "src/settings.ts:21,34",
+      "affects": ["import-daily-notes-settings"],
+      "notes": "Internal flag, not exposed as its own toggle — set as a side effect of Import/Disable/Dismiss in the import card."
+    },
+    {
+      "key": "<granularity>.enabled",
+      "label": "Enable this granularity's periodic notes",
+      "type": "boolean",
+      "default": "true for day and week; false for month, quarter, year",
+      "scope": "per-granularity",
+      "path": "src/types.ts:4,12; src/settings.ts:35-39,258-269",
+      "affects": ["calendar-click-to-open-or-create", "calendar-note-existence-dots", "calendar-active-file-highlight"],
+      "notes": "Only day/week expose a real toggle in the UI (renderPeriodicGroup); month/quarter/year show a permanently-disabled placeholder toggle, so their 'enabled' value can never become true from the UI today."
+    },
+    {
+      "key": "<granularity>.format",
+      "label": "Format",
+      "type": "string",
+      "default": "\"\" (empty) for every granularity; UI shows YYYY-MM-DD / gggg-[W]ww as a placeholder for day/week only, not a real default)",
+      "scope": "per-granularity",
+      "path": "src/types.ts:5,13; src/settings.ts:78-81,291-334",
+      "affects": ["compute-note-path", "template-token-weekday-format", "template-token-date"],
+      "notes": "Moment.js format string, extended with Calendaric's {{weekday:fmt}} week tokens for week notes."
+    },
+    {
+      "key": "<granularity>.folder",
+      "label": "Note Folder",
+      "type": "string",
+      "default": "\"\"",
+      "scope": "per-granularity",
+      "path": "src/types.ts:6,14; src/settings.ts:336-345",
+      "affects": ["compute-note-path", "resolve-default-note-folder"],
+      "notes": "Empty means fall back to Obsidian's own default new-file location."
+    },
+    {
+      "key": "<granularity>.templatePath",
+      "label": "<Granularity> Note Template",
+      "type": "string",
+      "default": "\"\"",
+      "scope": "per-granularity",
+      "path": "src/types.ts:7,15; src/settings.ts:349-358",
+      "affects": ["apply-template-on-create"],
+      "notes": "Resolved via metadataCache.getFirstLinkpathDest; empty or unresolved path means the note is created with empty content."
+    },
+    {
+      "key": "<granularity>.openAtStartup",
+      "label": "Open on startup",
+      "type": "boolean",
+      "default": false,
+      "scope": "per-granularity",
+      "path": "src/types.ts:8,16; src/settings.ts:360-374",
+      "affects": ["startup-note-auto-open", "clear-startup-note-exclusivity"],
+      "notes": "Mutually exclusive across all five granularities; toggling one on clears the others via clearStartupNote. Only reachable for day/week from the current UI."
+    }
+  ],
+  "commands": [
+    {
+      "id": "show-calendar-view",
+      "name": "Show calendar",
+      "kind": "command",
+      "path": "src/main.ts:30-34",
+      "calls": ["open-calendar-view"],
+      "condition": null
+    }
+  ],
+  "api_surface": [],
+  "observations": [
+    {
+      "severity": "P1",
+      "kind": "divergence",
+      "what": "All UI in this repo (settings tab, calendar grid, modal) is plain TypeScript building DOM nodes by hand (createEl/createDiv/addEventListener), not Svelte. The three source repos this is merging (Calendar plugin, Periodic Notes plugin, and presumably shared helpers) are Svelte-based.",
+      "where": ["src/ui/calendar.ts", "src/ui/CalendarView.ts", "src/ui/modal.ts", "src/settings.ts"],
+      "why_it_matters": "No UI code can be ported by copy-paste from the Svelte sources. Every view/component/modal must be re-implemented from scratch in this style (or the merge target must adopt Svelte, which conflicts with keeping this a from-scratch minimal rewrite and with AGENTS.md's 'avoid large dependencies' guidance)."
+    },
+    {
+      "severity": "P1",
+      "kind": "gap",
+      "what": "Only 'day' and 'week' granularities are functionally implemented anywhere: createNote's type signature is 'day' | 'week' only, the settings UI only renders real controls (format/folder/template/openAtStartup/enabled) for day and week, and month/quarter/year exist solely as PeriodicConfig data shapes with permanently-disabled placeholder toggles in the UI.",
+      "where": ["src/notes/noteCreate.ts:7", "src/settings.ts:223-230,377-393", "src/main.ts:70-91"],
+      "why_it_matters": "This is the single most important fact for the port plan: month, quarter, and year note creation/opening/templating/dots/settings-UI all still need to be built from scratch, even though the data shape (PeriodicConfig, DEFAULT_SETTINGS.month/quarter/year) already exists."
+    },
+    {
+      "severity": "P2",
+      "kind": "bug",
+      "what": "docs/guide.md explicitly states 'Week tokens are resolved using the same week-start locale as your \"Start week on\" setting', but formatWithWeekTokens/applyWeekTokens hard-code ISO weekday numbering (Monday=1..Sunday=7) via WEEKDAY_ISO, completely independent of the weekStart setting.",
+      "where": ["docs/guide.md:37", "src/notes/noteUtils.ts:7-15,21-27,51-61"],
+      "why_it_matters": "A user who sets 'Start week on: Sunday' will still get {{monday:...}} always meaning ISO Monday, not the first day of their configured week — the documented behaviour and the implemented behaviour disagree. When porting/fixing, decide (and test) which one is correct rather than assuming the doc is accurate."
+    },
+    {
+      "severity": "P2",
+      "kind": "bug",
+      "what": "The 'Format & template guide' link in settings opens docs/guide.md via `(window as any).require('electron').shell.openPath(...)`, an Electron/desktop-only API, while manifest.json declares `isDesktopOnly: false`.",
+      "where": ["src/settings.ts:303-312", "manifest.json:7"],
+      "why_it_matters": "This will throw (window.require is undefined) on Obsidian mobile, contradicting AGENTS.md's 'Avoid Node/Electron APIs if you want mobile compatibility' and the plugin's own manifest claim of mobile support."
+    },
+    {
+      "severity": "P2",
+      "kind": "gap",
+      "what": "Daily Notes plugin settings can be imported (renderImportCard / dailyNotesImport.ts), but there is no equivalent import path for the core Periodic Notes plugin's week/month/quarter/year settings.",
+      "where": ["src/settings.ts:114-174", "src/settings/dailyNotesImport.ts"],
+      "why_it_matters": "The stated goal is to absorb both the Calendar plugin and the Periodic Notes plugin. Users migrating from Periodic Notes (which already has week/month/quarter/year notes configured) currently have no assisted migration path at all — this needs to be built, not just extended."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "AGENTS.md's 'Split large files' guidance ('If any file exceeds ~200-300 lines, consider breaking it into smaller, focused modules') is already violated by src/settings.ts at 425 lines, which mixes the settings data model, the Daily-Notes-import UI, and the full settings-tab UI in one file.",
+      "where": ["src/settings.ts"],
+      "why_it_matters": "Merging in the Svelte-based settings UI/logic from the source repos (which is more feature-rich: month/quarter/year, more granular controls) will make this file worse, not better, unless it's split before or during the merge."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "tsconfig.json enables most strict-mode flags individually (noImplicitAny, strictNullChecks, strictBindCallApply, noImplicitThis, useUnknownInCatchVariables) but does not set the umbrella `\"strict\": true` that AGENTS.md 'prefers', and is missing strictFunctionTypes / strictPropertyInitialization / alwaysStrict specifically.",
+      "where": ["tsconfig.json"],
+      "why_it_matters": "Code merged in from other repos may rely on strictPropertyInitialization or strictFunctionTypes being on (or off) and behave differently once merged into this config; worth reconciling before merge rather than after a type-error pile-up."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "Test coverage is limited to pure-function modules: noteUtils.ts, templateTokens.ts, calendarUtils.ts, settings.ts's clearStartupNote, and dailyNotesImport.ts. Every DOM/IO-touching module (main.ts, CalendarView.ts, calendar.ts's CalendarWidget, calendarDots.ts's DotScanner, modal.ts, noteCreate.ts, and all of settings.ts's rendering code) has zero test coverage.",
+      "where": ["src/main.ts", "src/ui/CalendarView.ts", "src/ui/calendar.ts", "src/ui/calendarDots.ts", "src/ui/modal.ts", "src/notes/noteCreate.ts", "src/settings.ts"],
+      "why_it_matters": "Anything the port touches in these files has no regression safety net today; the __mocks__/obsidian.ts mock is also minimal (Plugin, PluginSettingTab, Setting only) and would need real expansion (TFile, Vault, MetadataCache, Workspace, ItemView, Modal) before these paths could be tested at all."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "No ribbon icon is registered anywhere in main.ts, even though CalendarView.getIcon() defines one ('calendar'); the command palette is the only way to open the calendar view.",
+      "where": ["src/main.ts", "src/ui/CalendarView.ts:22-24"],
+      "why_it_matters": "Source plugins being merged in (the Calendar plugin especially) commonly add a ribbon icon as their primary entry point — a source-parity check should confirm whether a ribbon icon needs to be added here."
+    },
+    {
+      "severity": "P3",
+      "kind": "gap",
+      "what": "'Custom Notes' appears as a disabled placeholder group label in the settings UI (renderPlaceholderGroup) but has no corresponding granularity key, PeriodicConfig, or any other data-model support anywhere in types.ts or settings.ts.",
+      "where": ["src/settings.ts:227,377-393"],
+      "why_it_matters": "This is pure UI scaffolding for an entirely unbuilt feature (arbitrary/custom periodic note sets, as in the Periodic Notes plugin) — a port plan should treat it as unstarted, not partially built."
+    }
+  ]
+}
