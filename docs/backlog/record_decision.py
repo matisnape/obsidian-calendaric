@@ -350,14 +350,17 @@ DECISIONS = {
         "decision": "When a predecessor plugin is enabled and has the same granularity "
                     "enabled, Calendaric shows a notice and does not create, template "
                     "or modify notes for that granularity. It still indexes and "
-                    "displays them. Management resumes when the user disables the "
-                    "predecessor for that granularity, or picks Calendaric as the owner "
-                    "in the notice.",
-        "rationale": "The old wording only forbade doing it silently, which a notice "
-                     "satisfies while both plugins keep writing to the same note. Two "
-                     "plugins creating the same daily note race each other and the "
-                     "loser's template output is lost. Refusing to write is the only "
-                     "outcome that matches the story's own title.",
+                    "displays them. Management resumes only once that predecessor no "
+                    "longer has the granularity enabled. Choosing Calendaric in the "
+                    "notice is what performs that change: the notice disables the "
+                    "granularity in the predecessor's own configuration, and Calendaric "
+                    "resumes only after re-reading it and finding the granularity off.",
+        "rationale": "Two plugins creating the same daily note race each other and the "
+                     "loser's template output is lost. An earlier wording let the user "
+                     "pick Calendaric as owner without anything changing in the "
+                     "predecessor, which re-opens exactly that race. Ownership has to "
+                     "be a fact about the predecessor's configuration, not a preference "
+                     "stored on our side.",
         "stories": {
             "MIG": ["US-MIG-06"],
         },

@@ -85,6 +85,19 @@
           "testable_by": "unit",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.6",
+          "given": "the codebase makes any desktop-only API call (an Electron or Node capability not available on mobile)",
+          "when": "its imports and call sites are inspected",
+          "then": [
+            "every desktop-only import and call is confined to one named adapter boundary",
+            "view modules and settings modules depend only on that adapter boundary's interface, never on the desktop-only API directly"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
         }
       ],
       "resolves": [
@@ -662,11 +675,11 @@
         },
         {
           "id": "AC-ARCH-08.2",
-          "given": "the guide states that week-based template tokens follow the \"Start week on\" setting",
-          "when": "a week-based template token is resolved",
+          "given": "the \"Start week on\" setting is configured to a given day",
+          "when": "a week-based template token or a week number is resolved",
           "then": [
-            "it uses the day configured in \"Start week on\", not a fixed numbering independent of that setting",
-            "if fixed numbering is kept instead, the guide's wording is corrected to describe that behaviour accurately"
+            "it uses the day configured in \"Start week on\", never a fixed numbering independent of that setting",
+            "the guide states that week-based tokens and week numbers follow the configured \"Start week on\" day"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",

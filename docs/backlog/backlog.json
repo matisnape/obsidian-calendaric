@@ -2705,7 +2705,7 @@
           "when": "the user clicks it",
           "then": [
             "a confirmation dialog appears naming the day before any file is created",
-            "accepting the dialog issues the create-and-open request",
+            "accepting the dialog creates the note and opens it in the active pane",
             "dismissing the dialog creates nothing and leaves the grid unchanged"
           ],
           "verifies": "behaviour",
@@ -2728,16 +2728,16 @@
         },
         {
           "id": "AC-CAL-03.5",
-          "given": "a day cell",
+          "given": "a day cell already has a note",
           "when": "the user hovers it while holding the preview modifier key",
           "then": [
-            "a native note preview is requested for that day's note path, whether or not the note exists"
+            "the correct native preview of that note's content appears near the cell",
+            "the grid does not navigate or open the note"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
-          "failure_path": true
+          "evidence": null
         },
         {
           "id": "AC-CAL-03.6",
@@ -2751,6 +2751,20 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.7",
+          "given": "a day cell has no note yet",
+          "when": "the user hovers it while holding the preview modifier key",
+          "then": [
+            "a preview is shown stating that the note does not exist yet",
+            "no file is created by hovering"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -2814,10 +2828,24 @@
         },
         {
           "id": "AC-CAL-04.4",
-          "given": "a week-number cell",
-          "when": "the user hovers it while holding the preview modifier key",
+          "given": "a week already has a note",
+          "when": "the user hovers its week-number cell while holding the preview modifier key",
           "then": [
-            "a native note preview is requested for that week's note path, whether or not the note exists"
+            "the correct native preview of that note's content appears near the cell",
+            "the grid does not navigate or open the note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-04.5",
+          "given": "a week has no note yet",
+          "when": "the user hovers its week-number cell while holding the preview modifier key",
+          "then": [
+            "a preview is shown stating that the note does not exist yet",
+            "no file is created by hovering"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -3062,11 +3090,12 @@
         },
         {
           "id": "AC-CAL-07.3",
-          "given": "the configured word-count threshold (default 250) is a positive whole number and a note's word count crosses one or more multiples of it",
+          "given": "the word-count threshold in effect for the cell is 250 (the default, or an explicit setting of 250)",
           "when": "its cell renders",
           "then": [
-            "one additional dot segment is filled for each multiple of the threshold the word count has crossed, up to the maximum",
-            "the fill never exceeds the maximum regardless of how long the note is",
+            "a note of 1, 249, 250, or 499 words fills exactly one dot segment",
+            "a note of 500 words fills exactly two dot segments",
+            "a note of 1250 words or more fills exactly five dot segments, and no more",
             "when the configured threshold value is not a positive whole number, the default of 250 is used to decide segment fill instead"
           ],
           "verifies": "behaviour",
@@ -3125,8 +3154,7 @@
       "priority": "should",
       "status": "todo",
       "covers": [
-        "calui:hover-popover-desktop",
-        "calui:popover-mobile-fallback"
+        "calui:hover-popover-desktop"
       ],
       "constrained_by": [],
       "granularity": [
@@ -3528,8 +3556,8 @@
     {
       "id": "US-CAL-13",
       "epic": "CAL",
-      "title": "Show which period an open note belongs to, and move between days from inside it",
-      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is and let me step to a neighbouring day, so that I do not have to decode the filename or go back to the calendar.",
+      "title": "Show which period an open note belongs to",
+      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is, so that I do not have to decode the filename to know where I am.",
       "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
       "priority": "should",
       "status": "todo",
@@ -3545,9 +3573,7 @@
         "month",
         "year"
       ],
-      "depends_on": [
-        "US-NOTE-03"
-      ],
+      "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -3579,10 +3605,10 @@
         },
         {
           "id": "AC-CAL-13.3",
-          "given": "the feature is disabled in settings",
-          "when": "a note for a recognised period is displayed",
+          "given": "the feature is enabled and then disabled in settings",
+          "when": "a note for a recognised period is opened after the setting is disabled",
           "then": [
-            "no label appears in any open note"
+            "no label appears in that note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -3592,12 +3618,11 @@
         },
         {
           "id": "AC-CAL-13.4",
-          "given": "the label is shown on an open daily note",
-          "when": "the user activates it",
+          "given": "the note matched for the label is an inexact, prefix match rather than an exact filename match",
+          "when": "the label is shown",
           "then": [
-            "a strip of the seven days of that note's week appears",
-            "the note's own day is marked, and today is marked when it falls in that week",
-            "the week starts on the configured start-of-week day"
+            "the label includes a marker indicating an inexact match",
+            "a label for an exactly-matched note shows no such marker"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -3606,11 +3631,11 @@
         },
         {
           "id": "AC-CAL-13.5",
-          "given": "the day strip is open",
-          "when": "the user activates a day that has no note",
+          "given": "a note is already open, either showing or not showing the label",
+          "when": "the feature setting is toggled",
           "then": [
-            "the note for that day is created and opens in the active pane",
-            "the configured template is applied"
+            "if the setting is now enabled, the label appears in that already-open note without the note being reopened",
+            "if the setting is now disabled, the label disappears from that already-open note without the note being reopened"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -3633,10 +3658,78 @@
         }
       ],
       "notes": [
-        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view."
+        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view.",
+        "Split per re-review finding 9: the day-strip navigation behaviour (stepping to a neighbouring day) is now its own story, US-CAL-14, because it is a distinct unit of value from showing the period label."
       ],
       "resolves": [
         "vault:enableTimelineComplication"
+      ]
+    },
+    {
+      "id": "US-CAL-14",
+      "epic": "CAL",
+      "title": "Move to a neighbouring day from an open note's label",
+      "story": "As someone reading a note from three weeks ago, I want to step to a neighbouring day directly from the label's day strip, so that I do not have to go back to the calendar to open it.",
+      "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:timeline-complication-render"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day"
+      ],
+      "depends_on": [
+        "US-NOTE-03",
+        "US-CAL-13"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-14.1",
+          "given": "the label is shown on an open daily note",
+          "when": "the user activates it",
+          "then": [
+            "a strip of the seven days of that note's week appears",
+            "the note's own day is marked, and today is marked when it falls in that week",
+            "the week starts on the configured start-of-week day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-14.2",
+          "given": "the day strip is open and a neighbouring day already has a note",
+          "when": "the user activates that day",
+          "then": [
+            "the existing note for that day opens in the active pane",
+            "no new file is created for that day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-14.3",
+          "given": "the day strip is open",
+          "when": "the user activates a day that has no note",
+          "then": [
+            "the note for that day is created and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ],
+      "notes": [
+        "Split from US-CAL-13 per re-review finding 9."
       ]
     },
     {
@@ -4751,7 +4844,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -4829,7 +4921,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -4905,7 +4996,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -4917,7 +5007,7 @@
           "when": "the plugin loads",
           "then": [
             "exactly one ribbon icon appears",
-            "it represents the first active granularity in day, week, month, quarter, year order"
+            "it represents the first active granularity in day, week, month, year order"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -4967,6 +5057,20 @@
           "when": "the plugin loads",
           "then": [
             "no ribbon icon is shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-08.6",
+          "given": "a reserved granularity, such as quarter, is present in the stored settings",
+          "when": "the plugin loads",
+          "then": [
+            "no command is generated for that granularity",
+            "no ribbon icon or context menu entry represents that granularity"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -5187,10 +5291,36 @@
           "status": "unverified",
           "evidence": null,
           "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.6",
+          "given": "the natural-language date plugin is installed and enabled, but no leaf is active in the workspace",
+          "when": "the user opens the command palette",
+          "then": [
+            "the date switcher command is not listed"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.7",
+          "given": "the date switcher is open and the user has chosen a result",
+          "when": "the user confirms while holding Cmd on macOS, or Ctrl on other platforms",
+          "then": [
+            "the resulting note opens in a new split pane instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
         }
       ],
       "notes": [
-        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only."
+        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only.",
+        "The '+N' related-note count badge shown on each suggestion, and the getPeriodicNotes lookup behind it, are deferred to ICE-05. No criterion in this story promises the badge."
       ]
     },
     {
@@ -5849,14 +5979,30 @@
         {
           "id": "AC-MIG-06.5",
           "given": "Calendaric is refusing to manage a granularity because a predecessor still owns it",
-          "when": "the user disables the predecessor for that granularity, or picks Calendaric as the owner from the notice",
+          "when": "the user picks Calendaric as the owner from the notice",
           "then": [
-            "Calendaric resumes creating, templating and modifying notes for that granularity"
+            "the notice disables the granularity in the predecessor's own configuration",
+            "Calendaric re-reads the predecessor's configuration for that granularity",
+            "Calendaric resumes creating, templating and modifying notes for that granularity only after that re-read confirms the granularity is off"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-MIG-06.6",
+          "given": "the user has picked Calendaric as the owner from the notice, but the predecessor still has the granularity enabled when Calendaric re-reads its configuration",
+          "when": "Calendaric checks whether to resume management of that granularity",
+          "then": [
+            "Calendaric does not create, template or modify notes for that granularity",
+            "the coexistence notice or blocked state stays in place"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -5871,8 +6017,8 @@
         {
           "id": "DEC-25",
           "title": "Calendaric does not manage a granularity a predecessor still owns",
-          "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
-          "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
+          "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes only once that predecessor no longer has the granularity enabled. Choosing Calendaric in the notice is what performs that change: the notice disables the granularity in the predecessor's own configuration, and Calendaric resumes only after re-reading it and finding the granularity off.",
+          "rationale": "Two plugins creating the same daily note race each other and the loser's template output is lost. An earlier wording let the user pick Calendaric as owner without anything changing in the predecessor, which re-opens exactly that race. Ownership has to be a fact about the predecessor's configuration, not a preference stored on our side.",
           "decided_on": "2026-09-11",
           "resolves": []
         }
@@ -6064,6 +6210,19 @@
           "then": [
             "it is obtained only through a typed function exported by the integration layer",
             "no other layer imports a companion plugin's module directly"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-01.6",
+          "given": "the codebase makes any desktop-only API call (an Electron or Node capability not available on mobile)",
+          "when": "its imports and call sites are inspected",
+          "then": [
+            "every desktop-only import and call is confined to one named adapter boundary",
+            "view modules and settings modules depend only on that adapter boundary's interface, never on the desktop-only API directly"
           ],
           "verifies": "architecture",
           "testable_by": "unit",
@@ -6646,11 +6805,11 @@
         },
         {
           "id": "AC-ARCH-08.2",
-          "given": "the guide states that week-based template tokens follow the \"Start week on\" setting",
-          "when": "a week-based template token is resolved",
+          "given": "the \"Start week on\" setting is configured to a given day",
+          "when": "a week-based template token or a week number is resolved",
           "then": [
-            "it uses the day configured in \"Start week on\", not a fixed numbering independent of that setting",
-            "if fixed numbering is kept instead, the guide's wording is corrected to describe that behaviour accurately"
+            "it uses the day configured in \"Start week on\", never a fixed numbering independent of that setting",
+            "the guide states that week-based tokens and week numbers follow the configured \"Start week on\" day"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
@@ -6783,8 +6942,8 @@
         "cal:metadata-source-tags",
         "cal:metadata-source-tasks"
       ],
-      "what_it_does": "Adds three more kinds of small indicator dots under calendar days and weeks, beyond the word-count dot already being built: a plain has-a-note dot, a dot coloured or labelled from the note's frontmatter tags, and an unfilled dot when a note has incomplete task checkboxes — plus a workspace event other installed plugins could listen to in order to register their own indicator sources.",
-      "why_deferred": "The only dot source actually configured anywhere in the vault is the word-count-based one; no tag-based, task-based or streak-based indicator is set up in any readable plugin config, so nothing today shows a user has ever turned on or missed these.",
+      "what_it_does": "Adds four more indicator sources for the small dots under calendar days and weeks, beyond the note-exists dot and the word-count dots US-CAL-07 builds: a streak source, a source coloured or labelled from the note's frontmatter tags, an unfilled dot when a note has incomplete task checkboxes, and a workspace event other installed plugins could listen to in order to register indicator sources of their own.",
+      "why_deferred": "The only dot sources the vault configures are note existence and the word count. No streak, tag or task indicator is set up in any readable plugin config, and no installed plugin tries to register one.",
       "evidence": [
         "vault: the Calendar plugin's word-count-based heatmap dot (wordsPerDot) is the only dot source configured; no custom or metadata-based dot source appears in any readable config"
       ],
@@ -6818,15 +6977,16 @@
         "pn:get-periodic-notes-related",
         "pn:related-files-switcher-tab-handoff"
       ],
-      "what_it_does": "Lets a user type a free-text date query — 'next monday', 'in 3 weeks', 'last month' — into a modal and jump straight to that period's note; pressing Tab hands off to a second list of every cached note related to that period, optionally including finer granularities, for example every daily note inside a chosen month.",
+      "what_it_does": "Inside the date switcher, a second list of every cached note related to the chosen period, optionally including finer granularities — every daily note inside a chosen month, for example — reached by pressing Tab, plus the count badge that shows how many such notes exist. The date jump itself is not here: it is US-CMD-10.",
       "why_deferred": "The related-files list and its tab hand-off are a second surface inside the date-switcher modal, and nothing in the vault shows either being used. The natural-language date jump that shared that modal is not deferred: nldates-obsidian is installed and enabled, so that command does appear, and it moved to CMD.",
       "evidence": ".obsidian/community-plugins.json lists nldates-obsidian among the enabled plugins, and obsidian-periodic-notes/src/main.ts:90-101 registers 'Show date switcher...' whenever that plugin is present. An earlier version of this entry claimed the plugin was absent; it is not.",
       "cost_to_add_later": "high",
       "cost_rationale": "The source material itself flags the hand-off between the two modals — closing one, opening the other, replaying the typed query via a synthetic input event — as untested, fragile glue, and its keyboard shortcut reaches into an unexposed, undocumented Obsidian modal internal (the private `chooser` field); building this well means redesigning that hand-off, not porting it as-is.",
       "blocks_if_omitted": [
-        "NOTE epic: keep a callable 'list every cached note for a period, optionally at finer granularities' lookup (the get-periodic-notes-related behaviour) as part of the note-lookup API even though no UI calls it in v1 — both this switcher and any future one would depend on it existing."
+        "US-CMD-10 covers the date jump but not the count badge beside each suggestion, which needs this lookup. The badge is deferred with the list.",
+        "NOTE epic: nothing in the first release calls a 'list every cached note for a period' lookup, so it is not built. Adding it later must not require the note-lookup boundary to change shape — a period plus a granularity has to be enough to ask the question."
       ],
-      "revisit_when": "The user installs and starts relying on nldates-obsidian for other purposes, or specifically wants free-text date entry as an alternative to the calendar grid.",
+      "revisit_when": "The user wants to see, from the date switcher, what else exists inside a period — every day of a month, say — rather than jumping to one note.",
       "risk_of_deferring": "Minor — grid-based navigation still gets her to any date; this is a convenience layer that today would depend on a plugin she doesn't run."
     },
     {
@@ -6872,7 +7032,9 @@
       "id": "ICE-08",
       "title": "Mobile support",
       "kind": "deferred-feature",
-      "covers": [],
+      "covers": [
+        "calui:popover-mobile-fallback"
+      ],
       "what_it_does": "Running Calendaric on a phone or tablet.",
       "why_deferred": "DEC-24 declares isDesktopOnly true for the first release, which stops Obsidian installing the plugin on mobile at all. Desktop first was the stated position, and one desktop-only call is what stands in the way.",
       "evidence": "The guide-opening path calls an Electron API. DEC-03 already requires every desktop-only call to sit behind a single adapter, so mobile support means replacing that adapter, not reworking the views.",
@@ -7073,8 +7235,8 @@
       "role": "build"
     },
     "calui:popover-mobile-fallback": {
-      "epic": "CAL",
-      "role": "build"
+      "epic": "ICE",
+      "role": "icebox"
     },
     "calui:periodic-note-file-cache": {
       "epic": "NOTE",
@@ -7871,18 +8033,18 @@
     {
       "id": "DEC-25",
       "title": "Calendaric does not manage a granularity a predecessor still owns",
-      "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
-      "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
+      "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes only once that predecessor no longer has the granularity enabled. Choosing Calendaric in the notice is what performs that change: the notice disables the granularity in the predecessor's own configuration, and Calendaric resumes only after re-reading it and finding the granularity off.",
+      "rationale": "Two plugins creating the same daily note race each other and the loser's template output is lost. An earlier wording let the user pick Calendaric as owner without anything changing in the predecessor, which re-opens exactly that race. Ownership has to be a fact about the predecessor's configuration, not a preference stored on our side.",
       "decided_on": "2026-09-11",
       "resolves": []
     }
   ],
   "coverage": {
-    "build_total": 157,
-    "build_covered": 156,
+    "build_total": 156,
+    "build_covered": 155,
     "build_excused": 1,
-    "icebox_total": 22,
-    "icebox_covered": 22,
+    "icebox_total": 23,
+    "icebox_covered": 23,
     "excused": [
       {
         "uid": "pn:settings-router-navigation",

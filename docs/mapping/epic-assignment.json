@@ -436,8 +436,8 @@
     },
     {
       "uid": "calui:popover-mobile-fallback",
-      "epic": "CAL",
-      "role": "build",
+      "epic": "ICE",
+      "role": "icebox",
       "name": "Inline metadata box (mobile)",
       "surface": "ui",
       "category": "ui",

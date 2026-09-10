@@ -54,6 +54,8 @@ OVERRIDE = {
     "cal:metadata-source-tasks": "ICE",
     "cal:extend-metadata-sources-via-event": "ICE",
     "calui:drag-day-or-week-note": "ICE",
+    # The mobile inline metadata box: deferred with mobile itself, per DEC-24.
+    "calui:popover-mobile-fallback": "ICE",
     "calendaric:granularity-placeholder-groups": "ICE",
     "pn:loose-date-parsing-fallback-global": "ICE",
     # --- these read as UI but are really about configuration ---

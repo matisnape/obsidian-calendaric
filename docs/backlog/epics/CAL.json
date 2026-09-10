@@ -252,7 +252,7 @@
           "when": "the user clicks it",
           "then": [
             "a confirmation dialog appears naming the day before any file is created",
-            "accepting the dialog issues the create-and-open request",
+            "accepting the dialog creates the note and opens it in the active pane",
             "dismissing the dialog creates nothing and leaves the grid unchanged"
           ],
           "verifies": "behaviour",
@@ -275,16 +275,16 @@
         },
         {
           "id": "AC-CAL-03.5",
-          "given": "a day cell",
+          "given": "a day cell already has a note",
           "when": "the user hovers it while holding the preview modifier key",
           "then": [
-            "a native note preview is requested for that day's note path, whether or not the note exists"
+            "the correct native preview of that note's content appears near the cell",
+            "the grid does not navigate or open the note"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
-          "failure_path": true
+          "evidence": null
         },
         {
           "id": "AC-CAL-03.6",
@@ -298,6 +298,20 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-CAL-03.7",
+          "given": "a day cell has no note yet",
+          "when": "the user hovers it while holding the preview modifier key",
+          "then": [
+            "a preview is shown stating that the note does not exist yet",
+            "no file is created by hovering"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     },
@@ -361,10 +375,24 @@
         },
         {
           "id": "AC-CAL-04.4",
-          "given": "a week-number cell",
-          "when": "the user hovers it while holding the preview modifier key",
+          "given": "a week already has a note",
+          "when": "the user hovers its week-number cell while holding the preview modifier key",
           "then": [
-            "a native note preview is requested for that week's note path, whether or not the note exists"
+            "the correct native preview of that note's content appears near the cell",
+            "the grid does not navigate or open the note"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-04.5",
+          "given": "a week has no note yet",
+          "when": "the user hovers its week-number cell while holding the preview modifier key",
+          "then": [
+            "a preview is shown stating that the note does not exist yet",
+            "no file is created by hovering"
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
@@ -609,11 +637,12 @@
         },
         {
           "id": "AC-CAL-07.3",
-          "given": "the configured word-count threshold (default 250) is a positive whole number and a note's word count crosses one or more multiples of it",
+          "given": "the word-count threshold in effect for the cell is 250 (the default, or an explicit setting of 250)",
           "when": "its cell renders",
           "then": [
-            "one additional dot segment is filled for each multiple of the threshold the word count has crossed, up to the maximum",
-            "the fill never exceeds the maximum regardless of how long the note is",
+            "a note of 1, 249, 250, or 499 words fills exactly one dot segment",
+            "a note of 500 words fills exactly two dot segments",
+            "a note of 1250 words or more fills exactly five dot segments, and no more",
             "when the configured threshold value is not a positive whole number, the default of 250 is used to decide segment fill instead"
           ],
           "verifies": "behaviour",
@@ -672,8 +701,7 @@
       "priority": "should",
       "status": "todo",
       "covers": [
-        "calui:hover-popover-desktop",
-        "calui:popover-mobile-fallback"
+        "calui:hover-popover-desktop"
       ],
       "constrained_by": [],
       "granularity": [
@@ -1075,8 +1103,8 @@
     {
       "id": "US-CAL-13",
       "epic": "CAL",
-      "title": "Show which period an open note belongs to, and move between days from inside it",
-      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is and let me step to a neighbouring day, so that I do not have to decode the filename or go back to the calendar.",
+      "title": "Show which period an open note belongs to",
+      "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is, so that I do not have to decode the filename to know where I am.",
       "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
       "priority": "should",
       "status": "todo",
@@ -1092,9 +1120,7 @@
         "month",
         "year"
       ],
-      "depends_on": [
-        "US-NOTE-03"
-      ],
+      "depends_on": [],
       "open_questions": [],
       "acceptance_criteria": [
         {
@@ -1126,10 +1152,10 @@
         },
         {
           "id": "AC-CAL-13.3",
-          "given": "the feature is disabled in settings",
-          "when": "a note for a recognised period is displayed",
+          "given": "the feature is enabled and then disabled in settings",
+          "when": "a note for a recognised period is opened after the setting is disabled",
           "then": [
-            "no label appears in any open note"
+            "no label appears in that note"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -1139,12 +1165,11 @@
         },
         {
           "id": "AC-CAL-13.4",
-          "given": "the label is shown on an open daily note",
-          "when": "the user activates it",
+          "given": "the note matched for the label is an inexact, prefix match rather than an exact filename match",
+          "when": "the label is shown",
           "then": [
-            "a strip of the seven days of that note's week appears",
-            "the note's own day is marked, and today is marked when it falls in that week",
-            "the week starts on the configured start-of-week day"
+            "the label includes a marker indicating an inexact match",
+            "a label for an exactly-matched note shows no such marker"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -1153,11 +1178,11 @@
         },
         {
           "id": "AC-CAL-13.5",
-          "given": "the day strip is open",
-          "when": "the user activates a day that has no note",
+          "given": "a note is already open, either showing or not showing the label",
+          "when": "the feature setting is toggled",
           "then": [
-            "the note for that day is created and opens in the active pane",
-            "the configured template is applied"
+            "if the setting is now enabled, the label appears in that already-open note without the note being reopened",
+            "if the setting is now disabled, the label disappears from that already-open note without the note being reopened"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -1180,10 +1205,78 @@
         }
       ],
       "notes": [
-        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view."
+        "Moved out of ICE-04, which deferred this on evidence that only said no template or query references a timeline view. The feature does not need one: it mounts itself into every open markdown view.",
+        "Split per re-review finding 9: the day-strip navigation behaviour (stepping to a neighbouring day) is now its own story, US-CAL-14, because it is a distinct unit of value from showing the period label."
       ],
       "resolves": [
         "vault:enableTimelineComplication"
+      ]
+    },
+    {
+      "id": "US-CAL-14",
+      "epic": "CAL",
+      "title": "Move to a neighbouring day from an open note's label",
+      "story": "As someone reading a note from three weeks ago, I want to step to a neighbouring day directly from the label's day strip, so that I do not have to go back to the calendar to open it.",
+      "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [
+        "pn:timeline-complication-render"
+      ],
+      "constrained_by": [],
+      "granularity": [
+        "day"
+      ],
+      "depends_on": [
+        "US-NOTE-03",
+        "US-CAL-13"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-CAL-14.1",
+          "given": "the label is shown on an open daily note",
+          "when": "the user activates it",
+          "then": [
+            "a strip of the seven days of that note's week appears",
+            "the note's own day is marked, and today is marked when it falls in that week",
+            "the week starts on the configured start-of-week day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-CAL-14.2",
+          "given": "the day strip is open and a neighbouring day already has a note",
+          "when": "the user activates that day",
+          "then": [
+            "the existing note for that day opens in the active pane",
+            "no new file is created for that day"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CAL-14.3",
+          "given": "the day strip is open",
+          "when": "the user activates a day that has no note",
+          "then": [
+            "the note for that day is created and opens in the active pane",
+            "the configured template is applied"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        }
+      ],
+      "notes": [
+        "Split from US-CAL-13 per re-review finding 9."
       ]
     }
   ],

@@ -659,14 +659,30 @@
         {
           "id": "AC-MIG-06.5",
           "given": "Calendaric is refusing to manage a granularity because a predecessor still owns it",
-          "when": "the user disables the predecessor for that granularity, or picks Calendaric as the owner from the notice",
+          "when": "the user picks Calendaric as the owner from the notice",
           "then": [
-            "Calendaric resumes creating, templating and modifying notes for that granularity"
+            "the notice disables the granularity in the predecessor's own configuration",
+            "Calendaric re-reads the predecessor's configuration for that granularity",
+            "Calendaric resumes creating, templating and modifying notes for that granularity only after that re-read confirms the granularity is off"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-MIG-06.6",
+          "given": "the user has picked Calendaric as the owner from the notice, but the predecessor still has the granularity enabled when Calendaric re-reads its configuration",
+          "when": "Calendaric checks whether to resume management of that granularity",
+          "then": [
+            "Calendaric does not create, template or modify notes for that granularity",
+            "the coexistence notice or blocked state stays in place"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ],
       "decisions": [
@@ -681,8 +697,8 @@
         {
           "id": "DEC-25",
           "title": "Calendaric does not manage a granularity a predecessor still owns",
-          "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes when the user disables the predecessor for that granularity, or picks Calendaric as the owner in the notice.",
-          "rationale": "The old wording only forbade doing it silently, which a notice satisfies while both plugins keep writing to the same note. Two plugins creating the same daily note race each other and the loser's template output is lost. Refusing to write is the only outcome that matches the story's own title.",
+          "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes only once that predecessor no longer has the granularity enabled. Choosing Calendaric in the notice is what performs that change: the notice disables the granularity in the predecessor's own configuration, and Calendaric resumes only after re-reading it and finding the granularity off.",
+          "rationale": "Two plugins creating the same daily note race each other and the loser's template output is lost. An earlier wording let the user pick Calendaric as owner without anything changing in the predecessor, which re-opens exactly that race. Ownership has to be a fact about the predecessor's configuration, not a preference stored on our side.",
           "decided_on": "2026-09-11",
           "resolves": []
         }

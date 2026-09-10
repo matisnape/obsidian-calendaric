@@ -1,7 +1,7 @@
 {
   "epic": "ICE",
   "epic_title": "Kept for a later decision, not built now",
-  "summary": "26 capabilities the mapping surfaced but that the user chose not to build in this release, grouped into seven decision units: a disabled note granularity, a config mechanism with no current second use, three low-traffic calendar indicators, a feature whose own toggle is on but unused, two switcher UIs that depend on a plugin she does not run, one interaction built on an undocumented Obsidian internal, and one behaviour that should never be rebuilt at all. Most entries carry no cost to deferring; the one exception is calendar sets, where the first release's data shape decides whether adding a second set later is a feature or a migration.",
+  "summary": "23 capabilities the mapping surfaced but that are not built in this release, held in eight entries: a disabled note granularity, a configuration mechanism with no current second use, four calendar indicator sources nothing in the vault configures, the related-note list inside the date switcher, one interaction built on an undocumented Obsidian internal, one behaviour that should never be rebuilt at all, and mobile support. ICE-04 is kept as the record of a deferral that was reversed. Most entries cost nothing to defer; the exception is calendar sets, where the first release's data shape decides whether adding a second set later is a feature or a migration.",
   "entries": [
     {
       "id": "ICE-01",
@@ -75,8 +75,8 @@
         "cal:metadata-source-tags",
         "cal:metadata-source-tasks"
       ],
-      "what_it_does": "Adds three more kinds of small indicator dots under calendar days and weeks, beyond the word-count dot already being built: a plain has-a-note dot, a dot coloured or labelled from the note's frontmatter tags, and an unfilled dot when a note has incomplete task checkboxes — plus a workspace event other installed plugins could listen to in order to register their own indicator sources.",
-      "why_deferred": "The only dot source actually configured anywhere in the vault is the word-count-based one; no tag-based, task-based or streak-based indicator is set up in any readable plugin config, so nothing today shows a user has ever turned on or missed these.",
+      "what_it_does": "Adds four more indicator sources for the small dots under calendar days and weeks, beyond the note-exists dot and the word-count dots US-CAL-07 builds: a streak source, a source coloured or labelled from the note's frontmatter tags, an unfilled dot when a note has incomplete task checkboxes, and a workspace event other installed plugins could listen to in order to register indicator sources of their own.",
+      "why_deferred": "The only dot sources the vault configures are note existence and the word count. No streak, tag or task indicator is set up in any readable plugin config, and no installed plugin tries to register one.",
       "evidence": [
         "vault: the Calendar plugin's word-count-based heatmap dot (wordsPerDot) is the only dot source configured; no custom or metadata-based dot source appears in any readable config"
       ],
@@ -110,15 +110,16 @@
         "pn:get-periodic-notes-related",
         "pn:related-files-switcher-tab-handoff"
       ],
-      "what_it_does": "Lets a user type a free-text date query — 'next monday', 'in 3 weeks', 'last month' — into a modal and jump straight to that period's note; pressing Tab hands off to a second list of every cached note related to that period, optionally including finer granularities, for example every daily note inside a chosen month.",
+      "what_it_does": "Inside the date switcher, a second list of every cached note related to the chosen period, optionally including finer granularities — every daily note inside a chosen month, for example — reached by pressing Tab, plus the count badge that shows how many such notes exist. The date jump itself is not here: it is US-CMD-10.",
       "why_deferred": "The related-files list and its tab hand-off are a second surface inside the date-switcher modal, and nothing in the vault shows either being used. The natural-language date jump that shared that modal is not deferred: nldates-obsidian is installed and enabled, so that command does appear, and it moved to CMD.",
       "evidence": ".obsidian/community-plugins.json lists nldates-obsidian among the enabled plugins, and obsidian-periodic-notes/src/main.ts:90-101 registers 'Show date switcher...' whenever that plugin is present. An earlier version of this entry claimed the plugin was absent; it is not.",
       "cost_to_add_later": "high",
       "cost_rationale": "The source material itself flags the hand-off between the two modals — closing one, opening the other, replaying the typed query via a synthetic input event — as untested, fragile glue, and its keyboard shortcut reaches into an unexposed, undocumented Obsidian modal internal (the private `chooser` field); building this well means redesigning that hand-off, not porting it as-is.",
       "blocks_if_omitted": [
-        "NOTE epic: keep a callable 'list every cached note for a period, optionally at finer granularities' lookup (the get-periodic-notes-related behaviour) as part of the note-lookup API even though no UI calls it in v1 — both this switcher and any future one would depend on it existing."
+        "US-CMD-10 covers the date jump but not the count badge beside each suggestion, which needs this lookup. The badge is deferred with the list.",
+        "NOTE epic: nothing in the first release calls a 'list every cached note for a period' lookup, so it is not built. Adding it later must not require the note-lookup boundary to change shape — a period plus a granularity has to be enough to ask the question."
       ],
-      "revisit_when": "The user installs and starts relying on nldates-obsidian for other purposes, or specifically wants free-text date entry as an alternative to the calendar grid.",
+      "revisit_when": "The user wants to see, from the date switcher, what else exists inside a period — every day of a month, say — rather than jumping to one note.",
       "risk_of_deferring": "Minor — grid-based navigation still gets her to any date; this is a convenience layer that today would depend on a plugin she doesn't run."
     },
     {
@@ -164,7 +165,9 @@
       "id": "ICE-08",
       "title": "Mobile support",
       "kind": "deferred-feature",
-      "covers": [],
+      "covers": [
+        "calui:popover-mobile-fallback"
+      ],
       "what_it_does": "Running Calendaric on a phone or tablet.",
       "why_deferred": "DEC-24 declares isDesktopOnly true for the first release, which stops Obsidian installing the plugin on mobile at all. Desktop first was the stated position, and one desktop-only call is what stands in the way.",
       "evidence": "The guide-opening path calls an Electron API. DEC-03 already requires every desktop-only call to sit behind a single adapter, so mobile support means replacing that adapter, not reworking the views.",
@@ -177,6 +180,7 @@
   ],
   "uncovered": [],
   "notes": [
-    "pn:relative-date-humanization is used by both the Timeline complication (ICE-04, where it is covered) and the natural-language switcher (ICE-05); it has no user-visible behaviour of its own, so it is grouped with the feature it more directly renders for rather than split across both entries."
+    "pn:relative-date-humanization renders the label for both the Timeline complication and the date switcher. Both are now built, and it is covered by US-CAL-13.",
+    "ICE-04 covers nothing. It is kept as the record of a deferral that was reversed, so the numbering of the other entries stays stable."
   ]
 }

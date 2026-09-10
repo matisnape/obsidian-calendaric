@@ -463,7 +463,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -541,7 +540,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -617,7 +615,6 @@
         "day",
         "week",
         "month",
-        "quarter",
         "year"
       ],
       "depends_on": [],
@@ -629,7 +626,7 @@
           "when": "the plugin loads",
           "then": [
             "exactly one ribbon icon appears",
-            "it represents the first active granularity in day, week, month, quarter, year order"
+            "it represents the first active granularity in day, week, month, year order"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -679,6 +676,20 @@
           "when": "the plugin loads",
           "then": [
             "no ribbon icon is shown"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-08.6",
+          "given": "a reserved granularity, such as quarter, is present in the stored settings",
+          "when": "the plugin loads",
+          "then": [
+            "no command is generated for that granularity",
+            "no ribbon icon or context menu entry represents that granularity"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -899,10 +910,36 @@
           "status": "unverified",
           "evidence": null,
           "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.6",
+          "given": "the natural-language date plugin is installed and enabled, but no leaf is active in the workspace",
+          "when": "the user opens the command palette",
+          "then": [
+            "the date switcher command is not listed"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-CMD-10.7",
+          "given": "the date switcher is open and the user has chosen a result",
+          "when": "the user confirms while holding Cmd on macOS, or Ctrl on other platforms",
+          "then": [
+            "the resulting note opens in a new split pane instead of the active pane"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
         }
       ],
       "notes": [
-        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only."
+        "Moved out of ICE-05. The related-files list that shared this modal stays deferred: this story is the date jump only.",
+        "The '+N' related-note count badge shown on each suggestion, and the getPeriodicNotes lookup behind it, are deferred to ICE-05. No criterion in this story promises the badge."
       ]
     }
   ],
