@@ -387,16 +387,18 @@
           "title": "Opening and creating a note share one entry point",
           "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
           "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-NOTE-04.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-23",
           "title": "The first release supports day, week, month and year; quarter is reserved",
           "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
           "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -900,8 +902,10 @@
           "title": "Startup indexes without templating; anything appearing later is templated",
           "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
           "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-NOTE-10.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },

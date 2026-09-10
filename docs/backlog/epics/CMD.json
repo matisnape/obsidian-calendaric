@@ -232,8 +232,10 @@
           "title": "A command that cannot act says so",
           "decision": "Running a command whose precondition is not met shows a brief notice naming what was missing. It never fails silently.",
           "rationale": "A command that does nothing and says nothing is indistinguishable from a broken plugin. The old behaviour taught users to stop trusting the command.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-03.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -305,8 +307,10 @@
           "title": "Retire the standalone weekly-note command",
           "decision": "There is no separate 'Open Weekly Note' command. The generated per-granularity command set covers it, as it covers every other granularity.",
           "rationale": "It existed because weekly notes predated the generated command set. Keeping both means two command-palette entries doing the same thing, and one of them special-cased in the code.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-04.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -809,16 +813,18 @@
           "title": "The startup note is created for whichever granularity is configured",
           "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
           "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-09.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-23",
           "title": "The first release supports day, week, month and year; quarter is reserved",
           "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
           "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ]
     },

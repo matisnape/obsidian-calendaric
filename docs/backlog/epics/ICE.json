@@ -120,7 +120,7 @@
         "NOTE epic: nothing in the first release calls a 'list every cached note for a period' lookup, so it is not built. Adding it later must not require the note-lookup boundary to change shape — a period plus a granularity has to be enough to ask the question."
       ],
       "revisit_when": "The user wants to see, from the date switcher, what else exists inside a period — every day of a month, say — rather than jumping to one note.",
-      "risk_of_deferring": "Minor — grid-based navigation still gets her to any date; this is a convenience layer that today would depend on a plugin she doesn't run."
+      "risk_of_deferring": "Minor — jumping straight to a date still works. What is missing is the count of related notes beside each suggestion, and the Tab hand-off to the list of them."
     },
     {
       "id": "ICE-06",

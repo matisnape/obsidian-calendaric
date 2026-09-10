@@ -1272,10 +1272,19 @@
       "source": "pn"
     },
     {
-      "uid": "pn:timeline-complication-render",
+      "uid": "pn:timeline-complication-label",
       "epic": "CAL",
       "role": "build",
-      "name": "Timeline complication badge and week strip",
+      "name": "Timeline complication label",
+      "surface": "ui",
+      "category": "ui",
+      "source": "pn"
+    },
+    {
+      "uid": "pn:timeline-complication-day-strip",
+      "epic": "CAL",
+      "role": "build",
+      "name": "Timeline complication day strip",
       "surface": "ui",
       "category": "ui",
       "source": "pn"

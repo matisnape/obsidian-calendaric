@@ -402,16 +402,18 @@
           "title": "Desktop first, with the platform-specific surface behind one boundary",
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-SET-04.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-24",
           "title": "The first release is desktop only, and says so in the manifest",
           "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
           "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -577,7 +579,10 @@
           "status": "unverified",
           "evidence": null
         }
-      ]
+      ],
+      "shared_coverage": {
+        "cal:persist-plugin-settings": "Persisting settings is the same write for both stories: US-SET-06 specifies what survives a reload, US-SET-07 that a saved value takes effect at once."
+      }
     },
     {
       "id": "US-SET-07",
@@ -653,7 +658,10 @@
           "evidence": null,
           "failure_path": true
         }
-      ]
+      ],
+      "shared_coverage": {
+        "cal:persist-plugin-settings": "Persisting settings is the same write for both stories: US-SET-06 specifies what survives a reload, US-SET-07 that a saved value takes effect at once."
+      }
     }
   ],
   "uncovered": [

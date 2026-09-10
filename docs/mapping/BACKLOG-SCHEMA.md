@@ -69,6 +69,7 @@ Field rules:
 - `constrained_by` — `vault:*` uids whose real-world behaviour this story must not break. Empty array when none apply.
 - `granularity` — which periods the story applies to, or `["n-a"]`.
 - `depends_on` — story ids, including ids in other epics when you are sure of them (`US-FMT-01` etc.). Leave empty rather than guess a number.
+- `shared_coverage` — `{uid: reason}`, required for every uid in `covers[]` that another story or icebox entry also covers. Two owners make the reporting owner ambiguous, so sharing is allowed only when each owner says why. An unexplained duplicate fails the build.
 - `resolves` — mapped settings, commands, flows and P1 observations this story accounts for, which no capability of its own reaches. A setting is written `<source>:<key>`, a command and a flow `<source>:<id>`, an observation by its `OBS-nn` id. Most stories need none: the validator already treats a setting as covered when the story covers a capability the setting affects.
 - `open_questions` — a real decision a human must make. Do not invent one to fill the field; `[]` is the common case. Each entry is an object with a stable `id` (`Q-<EPIC>-<nn>.<m>`) and the `question` itself, so a decision can name the exact question it answers and remove only that one.
 

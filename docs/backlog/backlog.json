@@ -512,16 +512,18 @@
           "title": "Opening and creating a note share one entry point",
           "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
           "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-NOTE-04.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-23",
           "title": "The first release supports day, week, month and year; quarter is reserved",
           "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
           "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -1025,8 +1027,10 @@
           "title": "Startup indexes without templating; anything appearing later is templated",
           "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
           "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-NOTE-10.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1257,18 +1261,22 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-08.1",
+            "Q-TPL-03.1",
+            "Q-TPL-03.2"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-21",
           "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
           "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
           "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
-          "decided_on": "2026-09-11",
           "resolves": [
             "Q-FMT-01.1"
-          ]
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1578,8 +1586,10 @@
           "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
           "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
           "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-FMT-04.2"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1665,8 +1675,10 @@
           "title": "Format warnings inform, they do not block",
           "decision": "A format flagged as fragile or non-identifying shows a warning the user can read and dismiss. The value still saves.",
           "rationale": "The check is a heuristic. A user with a deliberate nested-path scheme should not be locked out by it, and a blocked save gives them nowhere to go.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-FMT-05.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1847,8 +1859,10 @@
           "title": "A file is the note for a period only when its folder matches too",
           "decision": "Recognising a file as a periodic note requires both the filename to match the granularity's format and the file to sit under that granularity's configured folder. Filename alone is not sufficient. No vault-wide loose fallback exists.",
           "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-FMT-07.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1878,8 +1892,10 @@
           "title": "The configured format is tried before the basename-only format derived from it",
           "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
           "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-FMT-08.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "acceptance_criteria": [
@@ -2182,8 +2198,12 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-08.1",
+            "Q-TPL-03.1",
+            "Q-TPL-03.2"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -2648,8 +2668,10 @@
           "title": "The plugin ships in English only",
           "decision": "All user-facing text is English. No localisation layer, no translated labels, no locale-dependent strings. Controls that the previous component library labelled with a translated word use an icon with an English tooltip instead.",
           "rationale": "Stated by the owner. It removes a whole class of open question about which surfaces need translating, and keeps narrow controls readable in a sidebar. Note this is about interface text only: date and weekday names still follow the configured locale, because those come from the date formatter, not from the plugin's own copy.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-02.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -2766,7 +2788,13 @@
           "evidence": null,
           "failure_path": true
         }
-      ]
+      ],
+      "shared_coverage": {
+        "calendaric:calendar-click-to-open-or-create": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:hover-link-preview": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:confirmation-modal-dialog": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "calendaric:confirm-before-create-modal": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose."
+      }
     },
     {
       "id": "US-CAL-04",
@@ -2860,10 +2888,18 @@
           "title": "Every gesture on a week-number cell resolves the same date",
           "decision": "Click, hover and right-click on a week-number cell all resolve to the same reference date for that week, whatever the configured week-start day.",
           "rationale": "The old behaviour could resolve a different date for click than for hover, so the preview showed one note and the click opened another. That is a defect, not a feature worth preserving.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-04.1"
+          ],
+          "decided_on": "2026-09-11"
         }
-      ]
+      ],
+      "shared_coverage": {
+        "calendaric:calendar-click-to-open-or-create": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:hover-link-preview": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:confirmation-modal-dialog": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "calendaric:confirm-before-create-modal": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose."
+      }
     },
     {
       "id": "US-CAL-05",
@@ -2957,8 +2993,10 @@
           "title": "The month header reacts to a configuration change immediately",
           "decision": "When monthly notes stop being available while the calendar is open, the next click on the month header already behaves as the fallback. No reopening of the view is required, in either direction.",
           "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-05.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -3548,8 +3586,10 @@
           "title": "One overlay-positioning mechanism, shared by every overlay",
           "decision": "The calendar's hover popover and the settings screen's autocomplete use the same positioning behaviour and the same implementation.",
           "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly the duplication this rewrite exists to remove. It also means one place to fix when a popover is clipped.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-12.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -3562,7 +3602,7 @@
       "priority": "should",
       "status": "todo",
       "covers": [
-        "pn:timeline-complication-render",
+        "pn:timeline-complication-label",
         "pn:timeline-lifecycle-per-leaf",
         "pn:relative-date-humanization"
       ],
@@ -3662,6 +3702,7 @@
         "Split per re-review finding 9: the day-strip navigation behaviour (stepping to a neighbouring day) is now its own story, US-CAL-14, because it is a distinct unit of value from showing the period label."
       ],
       "resolves": [
+        "pn:enableTimelineComplication",
         "vault:enableTimelineComplication"
       ]
     },
@@ -3669,16 +3710,19 @@
       "id": "US-CAL-14",
       "epic": "CAL",
       "title": "Move to a neighbouring day from an open note's label",
-      "story": "As someone reading a note from three weeks ago, I want to step to a neighbouring day directly from the label's day strip, so that I do not have to go back to the calendar to open it.",
+      "story": "As someone reading a note for any period, I want to step to a neighbouring day without leaving the note, so that I can move through the week from where I am.",
       "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
       "priority": "should",
       "status": "todo",
       "covers": [
-        "pn:timeline-complication-render"
+        "pn:timeline-complication-day-strip"
       ],
       "constrained_by": [],
       "granularity": [
-        "day"
+        "day",
+        "week",
+        "month",
+        "year"
       ],
       "depends_on": [
         "US-NOTE-03",
@@ -3688,12 +3732,12 @@
       "acceptance_criteria": [
         {
           "id": "AC-CAL-14.1",
-          "given": "the label is shown on an open daily note",
+          "given": "the label is shown on an open periodic note of any supported granularity — day, week, month or year",
           "when": "the user activates it",
           "then": [
             "a strip of the seven days of that note's week appears",
-            "the note's own day is marked, and today is marked when it falls in that week",
-            "the week starts on the configured start-of-week day"
+            "the week starts on the configured start-of-week day",
+            "the note's own day is marked when the note is a daily note, and today is marked when today falls in that week"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -3729,7 +3773,8 @@
         }
       ],
       "notes": [
-        "Split from US-CAL-13 per re-review finding 9."
+        "Split from US-CAL-13 per re-review finding 9.",
+        "The strip offers days whatever the open note's granularity: the source renders it whenever the note resolves to a period at all, with no daily-only guard."
       ]
     },
     {
@@ -4131,16 +4176,18 @@
           "title": "Desktop first, with the platform-specific surface behind one boundary",
           "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
           "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-SET-04.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-24",
           "title": "The first release is desktop only, and says so in the manifest",
           "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
           "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -4306,7 +4353,10 @@
           "status": "unverified",
           "evidence": null
         }
-      ]
+      ],
+      "shared_coverage": {
+        "cal:persist-plugin-settings": "Persisting settings is the same write for both stories: US-SET-06 specifies what survives a reload, US-SET-07 that a saved value takes effect at once."
+      }
     },
     {
       "id": "US-SET-07",
@@ -4382,7 +4432,10 @@
           "evidence": null,
           "failure_path": true
         }
-      ]
+      ],
+      "shared_coverage": {
+        "cal:persist-plugin-settings": "Persisting settings is the same write for both stories: US-SET-06 specifies what survives a reload, US-SET-07 that a saved value takes effect at once."
+      }
     },
     {
       "id": "US-CMD-01",
@@ -4613,8 +4666,10 @@
           "title": "A command that cannot act says so",
           "decision": "Running a command whose precondition is not met shows a brief notice naming what was missing. It never fails silently.",
           "rationale": "A command that does nothing and says nothing is indistinguishable from a broken plugin. The old behaviour taught users to stop trusting the command.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-03.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -4686,8 +4741,10 @@
           "title": "Retire the standalone weekly-note command",
           "decision": "There is no separate 'Open Weekly Note' command. The generated per-granularity command set covers it, as it covers every other granularity.",
           "rationale": "It existed because weekly notes predated the generated command set. Keeping both means two command-palette entries doing the same thing, and one of them special-cased in the code.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-04.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -5190,16 +5247,18 @@
           "title": "The startup note is created for whichever granularity is configured",
           "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
           "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CMD-09.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-23",
           "title": "The first release supports day, week, month and year; quarter is reserved",
           "decision": "The set of granularities the first release supports is day, week, month and year. Quarter is a reserved value: the type may name it and configuration may round-trip it, but no command is generated for it, no note is created for it, and no view offers it. Anything asking for quarter behaves the same way as any other granularity that is not enabled.",
           "rationale": "ARCH called quarter supported, NOTE used it as the example of an unsupported granularity, ICE-01 deferred it, and CMD still listed it for generated commands and startup opening. An agent reading the backlog could not tell whether quarter paths must work. This vault has quarter disabled, so nothing is lost by reserving it.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -5647,16 +5706,18 @@
           "title": "An import is offered when any field it would read carries a value",
           "decision": "A predecessor's import is offered when at least one field the importer reads carries a value, counting display and behaviour settings such as the week-start day, the create-confirmation toggle, the word-count threshold and the locale override, not only note format, folder and template. The import is suppressed only when every field it reads is unset.",
           "rationale": "In this vault the Calendar plugin's weekly format, folder and template are blank because weekly configuration lives in Periodic Notes, but week start, create confirmation, words per dot and locale override all carry real values. Suppressing the import there would silently drop settings the user chose. Offering to import literally nothing stays suppressed, which is the noise the original decision was aimed at.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-MIG-03.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-22",
           "title": "Words per dot is a global setting with a default of 250",
           "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
           "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -5781,8 +5842,10 @@
           "title": "Prefix matching is carried across on import",
           "decision": "The per-granularity allow-prefix-matching flag transfers from the Periodic Notes configuration into the imported configuration. It is not dropped.",
           "rationale": "The field has a direct equivalent in the new model. Dropping it silently turns off prefix matching for a vault that depends on it, and this vault does depend on it: its weekly notes are renamed to a longer title after creation and only resolve through a prefix match.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-MIG-04.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -5892,8 +5955,11 @@
           "title": "Detect each predecessor by both its published id and its development-build id",
           "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
           "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-MIG-05.1",
+            "Q-MIG-06.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -6011,16 +6077,19 @@
           "title": "Detect each predecessor by both its published id and its development-build id",
           "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
           "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-MIG-05.1",
+            "Q-MIG-06.1"
+          ],
+          "decided_on": "2026-09-11"
         },
         {
           "id": "DEC-25",
           "title": "Calendaric does not manage a granularity a predecessor still owns",
           "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes only once that predecessor no longer has the granularity enabled. Choosing Calendaric in the notice is what performs that change: the notice disables the granularity in the predecessor's own configuration, and Calendaric resumes only after re-reading it and finding the granularity off.",
           "rationale": "Two plugins creating the same daily note race each other and the loser's template output is lost. An earlier wording let the user pick Calendaric as owner without anything changing in the predecessor, which re-opens exactly that race. Ownership has to be a fact about the predecessor's configuration, not a preference stored on our side.",
-          "decided_on": "2026-09-11",
-          "resolves": []
+          "resolves": [],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -6123,8 +6192,10 @@
           "title": "Unrecognised configuration fields survive a round trip",
           "decision": "Configuration written by a newer version keeps its unrecognised fields when an older version loads and saves the file.",
           "rationale": "Same principle as preserving an unused named configuration group: running an older build once must not silently destroy settings, so that downgrading and upgrading again is safe.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-MIG-07.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -6577,8 +6648,10 @@
           "title": "The indicator interface changes additively only",
           "decision": "Once published, the contract a calendar indicator implements only gains optional members. Removing or repurposing an existing member is a breaking change that requires a new contract alongside the old one.",
           "rationale": "The previous indicator contract was rewritten in a single version bump and broke every implementation at once. An additive-only rule is the cheapest guarantee that keeps that from repeating.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-05.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -6863,8 +6936,12 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-08.1",
+            "Q-TPL-03.1",
+            "Q-TPL-03.2"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     }
@@ -6987,7 +7064,7 @@
         "NOTE epic: nothing in the first release calls a 'list every cached note for a period' lookup, so it is not built. Adding it later must not require the note-lookup boundary to change shape — a period plus a granularity has to be enough to ask the question."
       ],
       "revisit_when": "The user wants to see, from the date switcher, what else exists inside a period — every day of a month, say — rather than jumping to one note.",
-      "risk_of_deferring": "Minor — grid-based navigation still gets her to any date; this is a convenience layer that today would depend on a plugin she doesn't run."
+      "risk_of_deferring": "Minor — jumping straight to a date still works. What is missing is the count of related notes beside each suggestion, and the Tab hand-off to the list of them."
     },
     {
       "id": "ICE-06",
@@ -7606,7 +7683,11 @@
       "epic": "CAL",
       "role": "build"
     },
-    "pn:timeline-complication-render": {
+    "pn:timeline-complication-label": {
+      "epic": "CAL",
+      "role": "build"
+    },
+    "pn:timeline-complication-day-strip": {
       "epic": "CAL",
       "role": "build"
     },
@@ -7841,178 +7922,221 @@
       "title": "Week-based tokens and week numbers follow the configured week-start day",
       "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
       "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-ARCH-08.1",
+        "Q-TPL-03.1",
+        "Q-TPL-03.2"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-02",
       "title": "A file is the note for a period only when its folder matches too",
       "decision": "Recognising a file as a periodic note requires both the filename to match the granularity's format and the file to sit under that granularity's configured folder. Filename alone is not sufficient. No vault-wide loose fallback exists.",
       "rationale": "Today only the basename is checked, so two same-named files in different folders resolve identically, and an unrelated file whose name loosely resembles a date is cached as a periodic note. This also closes ICE-07, the icebox entry marked do-not-rebuild.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-FMT-07.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-03",
       "title": "Desktop first, with the platform-specific surface behind one boundary",
       "decision": "manifest.json declares isDesktopOnly: true. Any call into a desktop-only API lives behind a single adapter, so supporting mobile later means replacing that adapter rather than reworking the views.",
       "rationale": "The repository currently declares isDesktopOnly: false while calling an Electron API, which is a lie that fails at runtime on mobile. Declaring the truth costs nothing now; isolating the call keeps the option open.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-SET-04.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-04",
       "title": "Detect each predecessor by both its published id and its development-build id",
       "decision": "Calendaric detects the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin to offer a one-time import and to warn when a predecessor is still managing the same notes. Detection covers both ids for each: calendar and calendar-anks, periodic-notes and periodic-notes-anks. Whether a predecessor owns a granularity is decided by its own enabled flag, checked the same way for every granularity. The development-build ids may be dropped once no vault still runs one of those builds.",
       "rationale": "Calendaric has one id of its own, but the plugins it replaces do not. This vault runs calendar-anks and periodic-notes-anks, not the published ids. Probing only the published id would make both the import and the coexistence warning blind to the exact installations this rewrite replaces. The old asymmetry, where the mere presence of the Calendar plugin counted as proof that weekly notes were externally managed, does go.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-MIG-05.1",
+        "Q-MIG-06.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-05",
       "title": "The plugin ships in English only",
       "decision": "All user-facing text is English. No localisation layer, no translated labels, no locale-dependent strings. Controls that the previous component library labelled with a translated word use an icon with an English tooltip instead.",
       "rationale": "Stated by the owner. It removes a whole class of open question about which surfaces need translating, and keeps narrow controls readable in a sidebar. Note this is about interface text only: date and weekday names still follow the configured locale, because those come from the date formatter, not from the plugin's own copy.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CAL-02.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-06",
       "title": "Every gesture on a week-number cell resolves the same date",
       "decision": "Click, hover and right-click on a week-number cell all resolve to the same reference date for that week, whatever the configured week-start day.",
       "rationale": "The old behaviour could resolve a different date for click than for hover, so the preview showed one note and the click opened another. That is a defect, not a feature worth preserving.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CAL-04.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-07",
       "title": "The month header reacts to a configuration change immediately",
       "decision": "When monthly notes stop being available while the calendar is open, the next click on the month header already behaves as the fallback. No reopening of the view is required, in either direction.",
       "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CAL-05.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-08",
       "title": "One overlay-positioning mechanism, shared by every overlay",
       "decision": "The calendar's hover popover and the settings screen's autocomplete use the same positioning behaviour and the same implementation.",
       "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly the duplication this rewrite exists to remove. It also means one place to fix when a popover is clipped.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CAL-12.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-09",
       "title": "A command that cannot act says so",
       "decision": "Running a command whose precondition is not met shows a brief notice naming what was missing. It never fails silently.",
       "rationale": "A command that does nothing and says nothing is indistinguishable from a broken plugin. The old behaviour taught users to stop trusting the command.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CMD-03.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-10",
       "title": "Retire the standalone weekly-note command",
       "decision": "There is no separate 'Open Weekly Note' command. The generated per-granularity command set covers it, as it covers every other granularity.",
       "rationale": "It existed because weekly notes predated the generated command set. Keeping both means two command-palette entries doing the same thing, and one of them special-cased in the code.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CMD-04.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-11",
       "title": "The startup note is created for whichever granularity is configured",
       "decision": "If the note configured to open at startup does not exist, it is created, for every granularity that can be configured to open at startup.",
       "rationale": "One source plugin created it for day and week and silently did nothing for the rest. That is an oversight, not a design: a user who asks for the monthly note at startup means it the same way as the daily one.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-CMD-09.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-12",
       "title": "Opening and creating a note share one entry point",
       "decision": "Every caller goes through open-or-create, which checks existence first. There is no separate create path that skips that check.",
       "rationale": "Two entry points means two places where the file-already-exists case can be handled differently, which is how the old code ended up with three different answers to the same question.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-NOTE-04.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-13",
       "title": "Startup indexes without templating; anything appearing later is templated",
       "decision": "A matching empty file found while the index is first built is indexed and left untouched. A matching empty file that appears while Calendaric is running is templated, whoever created it: Calendaric itself, the user, or another plugin.",
       "rationale": "The line is drawn at startup, not at authorship. Templating everything found at startup would write into files the plugin has never seen, as a side effect of installing it. Refusing to template anything the user creates by hand would break the ordinary case of making tomorrow's note in the file explorer and expecting the template to fill it.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-NOTE-10.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-14",
       "title": "The configured format is tried before the basename-only format derived from it",
       "decision": "The user configures one format per granularity. Calendaric derives at most two candidates from it: the format as configured, which may contain path segments, and its basename segment on its own. The configured format is tried first. The derived basename-only format is tried only when the first does not match.",
       "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently after an unrelated change. Naming a declaration order would not fix that, because the user declares one format, not a list. Stating which derived candidate is tried first is the rule a user can predict from what they typed.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-FMT-08.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-15",
       "title": "Week-number precedence applies to weekly formats that also carry a month or day token",
       "decision": "For a weekly format containing a week-number token, week-number precedence applies when the format also carries a month token or a day token. A format with no week-number token is never affected by this rule.",
       "rationale": "The ambiguity exists only when a week number sits next to a month or day value in the same name. Wording the rule as whenever a day token is present described a case that cannot arise, and the source it cited already treats month and day as alternatives, not as a pair. AC-FMT-04.5 already states the correct rule; this text now agrees with it.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-FMT-04.2"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-16",
       "title": "Format warnings inform, they do not block",
       "decision": "A format flagged as fragile or non-identifying shows a warning the user can read and dismiss. The value still saves.",
       "rationale": "The check is a heuristic. A user with a deliberate nested-path scheme should not be locked out by it, and a blocked save gives them nowhere to go.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-FMT-05.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-17",
       "title": "An import is offered when any field it would read carries a value",
       "decision": "A predecessor's import is offered when at least one field the importer reads carries a value, counting display and behaviour settings such as the week-start day, the create-confirmation toggle, the word-count threshold and the locale override, not only note format, folder and template. The import is suppressed only when every field it reads is unset.",
       "rationale": "In this vault the Calendar plugin's weekly format, folder and template are blank because weekly configuration lives in Periodic Notes, but week start, create confirmation, words per dot and locale override all carry real values. Suppressing the import there would silently drop settings the user chose. Offering to import literally nothing stays suppressed, which is the noise the original decision was aimed at.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-MIG-03.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-18",
       "title": "Prefix matching is carried across on import",
       "decision": "The per-granularity allow-prefix-matching flag transfers from the Periodic Notes configuration into the imported configuration. It is not dropped.",
       "rationale": "The field has a direct equivalent in the new model. Dropping it silently turns off prefix matching for a vault that depends on it, and this vault does depend on it: its weekly notes are renamed to a longer title after creation and only resolve through a prefix match.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-MIG-04.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-19",
       "title": "Unrecognised configuration fields survive a round trip",
       "decision": "Configuration written by a newer version keeps its unrecognised fields when an older version loads and saves the file.",
       "rationale": "Same principle as preserving an unused named configuration group: running an older build once must not silently destroy settings, so that downgrading and upgrading again is safe.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-MIG-07.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-20",
       "title": "The indicator interface changes additively only",
       "decision": "Once published, the contract a calendar indicator implements only gains optional members. Removing or repurposing an existing member is a breaking change that requires a new contract alongside the old one.",
       "rationale": "The previous indicator contract was rewritten in a single version bump and broke every implementation at once. An additive-only rule is the cheapest guarantee that keeps that from repeating.",
-      "decided_on": "2026-09-10",
-      "resolves": []
+      "resolves": [
+        "Q-ARCH-05.1"
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-21",
       "title": "An unrecognised weekday token stays literal and raises a warning, not an error",
       "decision": "A {{name:fmt}} token whose name is not one of the seven weekday names is written into the filename as literal text, exactly as typed. Saving the format is not blocked. The format editor shows a warning naming the token it did not recognise, so a typo such as {{funday:DD}} is visible before it reaches a filename.",
       "rationale": "This question was open on US-FMT-01 and DEC-01 answered a different one, about which week start valid weekday tokens follow. Leaving text alone is what every other unrecognised sequence in a format string already does, so rejecting only this one would be inconsistent. DEC-16 already settled that format warnings inform rather than block.",
-      "decided_on": "2026-09-11",
       "resolves": [
         "Q-FMT-01.1"
-      ]
+      ],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-22",
       "title": "Words per dot is a global setting with a default of 250",
       "decision": "Calendaric keeps the word-count threshold that decides how many dots a day shows. It is one global number, default 250, editable in settings. A value that is not a positive whole number falls back to the default and the settings field says so. The Calendar import carries the existing wordsPerDot value across.",
       "rationale": "US-CAL-07 requires configured word-count thresholds while SET named no control and no default, and MIG dropped the existing value on the claim that Calendaric has no equivalent field. An implementation could satisfy every criterion and still leave the user no way to configure the behaviour CAL promises. This vault's Calendar plugin has wordsPerDot 250, so the default matches what the user already sees.",
-      "decided_on": "2026-09-11",
-      "resolves": []
+      "resolves": [],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-23",
@@ -8027,21 +8151,21 @@
       "title": "The first release is desktop only, and says so in the manifest",
       "decision": "manifest.json declares isDesktopOnly true, which means Obsidian will not install Calendaric on a phone or tablet. No story may promise phone behaviour while that stands. Hover-dependent surfaces still need a pointer-free path, because a desktop user can be on a keyboard or a touchscreen laptop, but that is an accessibility requirement, not a mobile one. Mobile support is an icebox entry, gated on replacing the desktop-only call behind DEC-03's adapter.",
       "rationale": "DEC-03 already declared desktop only, and US-CAL-08 was written for a laptop and a phone. Both cannot hold: isDesktopOnly true blocks installation on mobile outright, so a phone criterion could never be run, let alone passed. Desktop first without closing the door is the stated position, and one adapter plus an icebox entry is what keeps the door open.",
-      "decided_on": "2026-09-11",
-      "resolves": []
+      "resolves": [],
+      "decided_on": "2026-09-11"
     },
     {
       "id": "DEC-25",
       "title": "Calendaric does not manage a granularity a predecessor still owns",
       "decision": "When a predecessor plugin is enabled and has the same granularity enabled, Calendaric shows a notice and does not create, template or modify notes for that granularity. It still indexes and displays them. Management resumes only once that predecessor no longer has the granularity enabled. Choosing Calendaric in the notice is what performs that change: the notice disables the granularity in the predecessor's own configuration, and Calendaric resumes only after re-reading it and finding the granularity off.",
       "rationale": "Two plugins creating the same daily note race each other and the loser's template output is lost. An earlier wording let the user pick Calendaric as owner without anything changing in the predecessor, which re-opens exactly that race. Ownership has to be a fact about the predecessor's configuration, not a preference stored on our side.",
-      "decided_on": "2026-09-11",
-      "resolves": []
+      "resolves": [],
+      "decided_on": "2026-09-11"
     }
   ],
   "coverage": {
-    "build_total": 156,
-    "build_covered": 155,
+    "build_total": 157,
+    "build_covered": 156,
     "build_excused": 1,
     "icebox_total": 23,
     "icebox_covered": 23,

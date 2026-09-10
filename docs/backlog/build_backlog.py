@@ -238,9 +238,18 @@ def main() -> int:
     for uid in uncovered_ice:
         problems.append(f"icebox capability {uid} appears in no ICE entry")
 
+    # Two owners for one capability makes the reporting owner ambiguous. Sharing
+    # is allowed, but each owner has to say why it shares.
+    owner_story = {s["id"]: s for s in stories}
     for uid, owners in covered.items():
-        if by_uid.get(uid, {}).get("role") == "build" and len(owners) > 2:
-            warnings.append(f"{uid} is claimed by {len(owners)} stories: {', '.join(owners)}")
+        if len(owners) < 2:
+            continue
+        for owner in owners:
+            reason = (owner_story.get(owner, {}).get("shared_coverage") or {}).get(uid, "")
+            if not reason.strip():
+                problems.append(
+                    f"{uid} is covered by {len(owners)} owners ({', '.join(owners)}) and "
+                    f"{owner} gives no shared_coverage reason for it")
 
     # --- settings, commands, flows and P1 observations -----------------------
     # Each is covered when a story covers a capability it reaches, or when a

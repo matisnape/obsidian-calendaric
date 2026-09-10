@@ -164,6 +164,7 @@ differently, a place where the fork diverges.
 
 ```json
 {
+  "id": "OBS-dni-01",                 // OBS-<your source id>-<nn>, numbered from 01 within your file
   "severity": "P1",                   // P1 blocks the merge | P2 causes rework | P3 worth knowing
   "kind": "duplication",              // duplication | dead-code | version-skew | bug | divergence | gap | coupling
   "what": "Both repos implement week-number parsing, with different locale handling.",
@@ -171,6 +172,18 @@ differently, a place where the fork diverges.
   "why_it_matters": "Picking either one silently changes which file an existing note maps to."
 }
 ```
+
+`id` is required and permanent. A story or an icebox entry names it to say which
+observation it resolves, so it must not be derived from array position: inserting
+one observation would repoint every later reference. `merge.py` rejects a missing
+id, a duplicate, and any id whose source or number does not match the required
+form.
+
+Every `where` entry is checked. The form is
+`[<module-id>|<repo-dir>:]<path>[:<lines>]`, optionally followed by `@<sha>` or a
+parenthetical aside, both of which are ignored. The path must exist, relative to
+your source root or to its parent when you cite a sibling repository, and every
+line you cite must exist in it.
 
 ## Categories
 

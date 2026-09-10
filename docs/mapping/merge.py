@@ -212,13 +212,79 @@ def parse_line_spec(lines):
     return spans
 
 
+GIT_REFS = {"HEAD", "ORIG_HEAD", "FETCH_HEAD"}
+
+
+def cite(owner, source, text, problems, module_ids=()):
+    """Split one observation `where` entry into a checkable (path, lines) pair.
+
+    The real grammar in the sources is
+    `[<module-id>|<repo-dir>:]<path>[:<lines>][@<sha>][ (prose)]`.
+    Prose and sha are dropped; the module id is dropped; a repo directory
+    becomes the first path segment. A git ref stands for the repository, so it
+    is checked as that directory rather than as a file.
+    """
+    if not isinstance(text, str) or not text.strip():
+        problems.append(f"{owner} has a citation that is not a path: {text!r}")
+        return []
+    text = text.strip()
+    if text in ("—", "-", "n/a"):
+        return []
+    if text.endswith(")") and "(" in text:
+        text = text[:text.index("(")].strip()
+    text = re.sub(r"@[0-9a-f]{6,40}$", "", text).strip()
+    if not text:
+        return []
+
+    root = pathlib.Path(ROOTS.get(source) or ".")
+    parts = text.split(":")
+    prefix = ""
+    if len(parts) > 1:
+        head = parts[0].strip()
+        if head in module_ids:
+            parts = parts[1:]
+        elif (root / head).is_dir() or (root.parent / head).is_dir():
+            prefix, parts = head + "/", parts[1:]
+
+    lines = None
+    if len(parts) > 1:
+        # "125-171, specifically line 142" — take the spec, drop the aside.
+        m = re.match(r"\s*([\d\s-]+(?:,\s*[\d\s-]+)*)\s*(?:,.*)?$", parts[-1])
+        if m and re.search(r"\d", m.group(1)):
+            lines = m.group(1)
+            parts = parts[:-1]
+    path = ":".join(parts).strip()
+    if not path:
+        problems.append(f"{owner} cites {text!r}, which names no file")
+        return []
+    if path in GIT_REFS:
+        # Names the repository at a revision, not a file in it.
+        return [(owner, source, prefix or "./", None)] if prefix else []
+    return [(owner, source, prefix + path, lines)]
+
+
 def check_citations(out):
     """Every path:line citation must point at a real file and real lines."""
     problems = []
+    # An unreadable source root used to disable every check for that source.
+    for src in out["sources"]:
+        root = src.get("path")
+        if not isinstance(root, str) or not root or not pathlib.Path(root).is_dir():
+            problems.append(f"source {src['id']} has no readable root path: {root!r}")
     # Every record type that carries a path, not only capabilities.
-    records = [(c["uid"], c["source"], d.get("path"), d.get("lines"))
-               for c in out["capabilities"] for d in c.get("defined_in") or []]
-    for key, field in (("settings", "key"), ("commands", "id"), ("api_surface", "id")):
+    module_ids = {m["id"] for m in out["modules"]}
+    records = []
+    for c in out["capabilities"]:
+        for d in c.get("defined_in") or []:
+            path, lines = d.get("path"), d.get("lines")
+            if not isinstance(path, str):
+                problems.append(f"capability {c['uid']} defined_in path is not a string: {path!r}")
+                continue
+            records.append((c["uid"], c["source"], path, lines))
+    for obs in out["observations"]:
+        for where in obs.get("where") or []:
+            records += cite(obs.get("id", "?"), obs["source"], where, problems, module_ids)
+    for key, field in (("settings", "key"), ("commands", "id"), ("api_surface", "export")):
         for rec in out.get(key) or []:
             path = rec.get("path")
             owner = f"{rec['source']}:{rec.get(field, '?')}"
@@ -239,10 +305,14 @@ def check_citations(out):
         root = ROOTS.get(source)
         if not root or not isinstance(path, str) or not path or path in ("—", "-"):
             continue
-        if path.endswith("/"):
+        # A citation may name a sibling repository, so try the shared parent too.
+        candidates = [pathlib.Path(root) / path, pathlib.Path(root).parent / path]
+        if path.endswith("/") or path == "./":
+            if not any(c.is_dir() for c in candidates):
+                problems.append(f"{owner} cites missing directory {path}")
             continue
-        fp = pathlib.Path(root) / path
-        if not fp.is_file():
+        fp = next((c for c in candidates if c.is_file()), None)
+        if fp is None:
             problems.append(f"{owner} cites missing file {path}")
             continue
         spans = parse_line_spec(lines)
@@ -294,8 +364,12 @@ def main() -> int:
     seen_obs = set()
     for obs in out["observations"]:
         oid = obs.get("id")
+        expected = f"OBS-{obs['source']}-"
         if not oid:
             OBS_PROBLEMS.append(f"observation in {obs['source']} has no id: {obs['what'][:60]}")
+        elif not (isinstance(oid, str) and oid.startswith(expected)
+                  and re.fullmatch(r"\d{2}", oid[len(expected):])):
+            OBS_PROBLEMS.append(f"observation id {oid!r} is not {expected}<nn>")
         elif oid in seen_obs:
             OBS_PROBLEMS.append(f"observation id {oid} is used more than once")
         else:

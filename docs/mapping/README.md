@@ -50,7 +50,7 @@ with its `source`:
 - `commands` — command-palette entries, ribbon items, context menus.
 - `api_surface` — what other code can reach, with `stability` judged honestly.
 - `modules` — one record per source file, for the dependency graph.
-- `observations` — merge hazards, ranked `P1` / `P2` / `P3`, each with an `OBS-nn` id.
+- `observations` — merge hazards, ranked `P1` / `P2` / `P3`, each with a permanent `OBS-<source>-<nn>` id.
 
 Ids are unique inside one source only, so `merge.py` stamps every capability and
 every module with a `uid` of `<source>:<id>`. A bare reference resolves to the

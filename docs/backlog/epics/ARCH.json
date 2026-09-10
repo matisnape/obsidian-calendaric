@@ -447,8 +447,10 @@
           "title": "The indicator interface changes additively only",
           "decision": "Once published, the contract a calendar indicator implements only gains optional members. Removing or repurposing an existing member is a breaking change that requires a new contract alongside the old one.",
           "rationale": "The previous indicator contract was rewritten in a single version bump and broke every implementation at once. An additive-only rule is the cheapest guarantee that keeps that from repeating.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-05.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -733,8 +735,12 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-08.1",
+            "Q-TPL-03.1",
+            "Q-TPL-03.2"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     }

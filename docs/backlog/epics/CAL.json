@@ -195,8 +195,10 @@
           "title": "The plugin ships in English only",
           "decision": "All user-facing text is English. No localisation layer, no translated labels, no locale-dependent strings. Controls that the previous component library labelled with a translated word use an icon with an English tooltip instead.",
           "rationale": "Stated by the owner. It removes a whole class of open question about which surfaces need translating, and keeps narrow controls readable in a sidebar. Note this is about interface text only: date and weekday names still follow the configured locale, because those come from the date formatter, not from the plugin's own copy.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-02.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -313,7 +315,13 @@
           "evidence": null,
           "failure_path": true
         }
-      ]
+      ],
+      "shared_coverage": {
+        "calendaric:calendar-click-to-open-or-create": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:hover-link-preview": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:confirmation-modal-dialog": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "calendaric:confirm-before-create-modal": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose."
+      }
     },
     {
       "id": "US-CAL-04",
@@ -407,10 +415,18 @@
           "title": "Every gesture on a week-number cell resolves the same date",
           "decision": "Click, hover and right-click on a week-number cell all resolve to the same reference date for that week, whatever the configured week-start day.",
           "rationale": "The old behaviour could resolve a different date for click than for hover, so the preview showed one note and the click opened another. That is a defect, not a feature worth preserving.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-04.1"
+          ],
+          "decided_on": "2026-09-11"
         }
-      ]
+      ],
+      "shared_coverage": {
+        "calendaric:calendar-click-to-open-or-create": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:hover-link-preview": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "cal:confirmation-modal-dialog": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose.",
+        "calendaric:confirm-before-create-modal": "The day cell and the week-number cell share one open-or-create path, one confirmation dialog and one hover preview. Splitting the stories by which cell the user activates keeps each readable; the behaviour behind both is the same and is specified twice on purpose."
+      }
     },
     {
       "id": "US-CAL-05",
@@ -504,8 +520,10 @@
           "title": "The month header reacts to a configuration change immediately",
           "decision": "When monthly notes stop being available while the calendar is open, the next click on the month header already behaves as the fallback. No reopening of the view is required, in either direction.",
           "rationale": "The grid is already required to redraw as soon as settings are saved. A header that lags behind the grid it sits on would be inconsistent with the reactivity the same epic demands everywhere else.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-05.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ],
       "resolves": [
@@ -1095,8 +1113,10 @@
           "title": "One overlay-positioning mechanism, shared by every overlay",
           "decision": "The calendar's hover popover and the settings screen's autocomplete use the same positioning behaviour and the same implementation.",
           "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly the duplication this rewrite exists to remove. It also means one place to fix when a popover is clipped.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-CAL-12.1"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },
@@ -1109,7 +1129,7 @@
       "priority": "should",
       "status": "todo",
       "covers": [
-        "pn:timeline-complication-render",
+        "pn:timeline-complication-label",
         "pn:timeline-lifecycle-per-leaf",
         "pn:relative-date-humanization"
       ],
@@ -1209,6 +1229,7 @@
         "Split per re-review finding 9: the day-strip navigation behaviour (stepping to a neighbouring day) is now its own story, US-CAL-14, because it is a distinct unit of value from showing the period label."
       ],
       "resolves": [
+        "pn:enableTimelineComplication",
         "vault:enableTimelineComplication"
       ]
     },
@@ -1216,16 +1237,19 @@
       "id": "US-CAL-14",
       "epic": "CAL",
       "title": "Move to a neighbouring day from an open note's label",
-      "story": "As someone reading a note from three weeks ago, I want to step to a neighbouring day directly from the label's day strip, so that I do not have to go back to the calendar to open it.",
+      "story": "As someone reading a note for any period, I want to step to a neighbouring day without leaving the note, so that I can move through the week from where I am.",
       "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
       "priority": "should",
       "status": "todo",
       "covers": [
-        "pn:timeline-complication-render"
+        "pn:timeline-complication-day-strip"
       ],
       "constrained_by": [],
       "granularity": [
-        "day"
+        "day",
+        "week",
+        "month",
+        "year"
       ],
       "depends_on": [
         "US-NOTE-03",
@@ -1235,12 +1259,12 @@
       "acceptance_criteria": [
         {
           "id": "AC-CAL-14.1",
-          "given": "the label is shown on an open daily note",
+          "given": "the label is shown on an open periodic note of any supported granularity — day, week, month or year",
           "when": "the user activates it",
           "then": [
             "a strip of the seven days of that note's week appears",
-            "the note's own day is marked, and today is marked when it falls in that week",
-            "the week starts on the configured start-of-week day"
+            "the week starts on the configured start-of-week day",
+            "the note's own day is marked when the note is a daily note, and today is marked when today falls in that week"
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
@@ -1276,7 +1300,8 @@
         }
       ],
       "notes": [
-        "Split from US-CAL-13 per re-review finding 9."
+        "Split from US-CAL-13 per re-review finding 9.",
+        "The strip offers days whatever the open note's granularity: the source renders it whenever the note resolves to a period at all, with no daily-only guard."
       ]
     }
   ],

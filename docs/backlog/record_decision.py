@@ -35,6 +35,7 @@ DECISIONS = {
                      "it. Keeping the promise is the smaller change and the honest one. In this "
                      "vault the setting is Monday-first, so ISO and configured agree today and "
                      "no existing note is affected.",
+        "resolves": ["Q-ARCH-08.1", "Q-TPL-03.1", "Q-TPL-03.2"],
         "stories": {
             "FMT": ["US-FMT-01"],
             "TPL": ["US-TPL-03"],
@@ -50,6 +51,7 @@ DECISIONS = {
                      "folders resolve identically, and an unrelated file whose name loosely "
                      "resembles a date is cached as a periodic note. This also closes ICE-07, the "
                      "icebox entry marked do-not-rebuild.",
+        "resolves": ["Q-FMT-07.1"],
         "stories": {
             "FMT": ["US-FMT-07"],
         },
@@ -62,6 +64,7 @@ DECISIONS = {
         "rationale": "The repository currently declares isDesktopOnly: false while calling an "
                      "Electron API, which is a lie that fails at runtime on mobile. Declaring the "
                      "truth costs nothing now; isolating the call keeps the option open.",
+        "resolves": ["Q-SET-04.1"],
         "stories": {
             "SET": ["US-SET-04"],
         },
@@ -76,6 +79,7 @@ DECISIONS = {
                      "sidebar. Note this is about interface text only: date and weekday names "
                      "still follow the configured locale, because those come from the date "
                      "formatter, not from the plugin's own copy.",
+        "resolves": ["Q-CAL-02.1"],
         "stories": {"CAL": ["US-CAL-02"]},
     },
     "DEC-06": {
@@ -85,6 +89,7 @@ DECISIONS = {
         "rationale": "The old behaviour could resolve a different date for click than for hover, "
                      "so the preview showed one note and the click opened another. That is a "
                      "defect, not a feature worth preserving.",
+        "resolves": ["Q-CAL-04.1"],
         "stories": {"CAL": ["US-CAL-04"]},
     },
     "DEC-07": {
@@ -95,6 +100,7 @@ DECISIONS = {
         "rationale": "The grid is already required to redraw as soon as settings are saved. A "
                      "header that lags behind the grid it sits on would be inconsistent with the "
                      "reactivity the same epic demands everywhere else.",
+        "resolves": ["Q-CAL-05.1"],
         "stories": {"CAL": ["US-CAL-05"]},
     },
     "DEC-08": {
@@ -104,6 +110,7 @@ DECISIONS = {
         "rationale": "Two implementations of the same edge-avoidance and anchoring rules is exactly "
                      "the duplication this rewrite exists to remove. It also means one place to fix "
                      "when a popover is clipped.",
+        "resolves": ["Q-CAL-12.1"],
         "stories": {"CAL": ["US-CAL-12"]},
     },
     "DEC-09": {
@@ -112,6 +119,7 @@ DECISIONS = {
                     "what was missing. It never fails silently.",
         "rationale": "A command that does nothing and says nothing is indistinguishable from a "
                      "broken plugin. The old behaviour taught users to stop trusting the command.",
+        "resolves": ["Q-CMD-03.1"],
         "stories": {"CMD": ["US-CMD-03"]},
     },
     "DEC-10": {
@@ -121,6 +129,7 @@ DECISIONS = {
         "rationale": "It existed because weekly notes predated the generated command set. Keeping "
                      "both means two command-palette entries doing the same thing, and one of them "
                      "special-cased in the code.",
+        "resolves": ["Q-CMD-04.1"],
         "stories": {"CMD": ["US-CMD-04"]},
     },
     "DEC-11": {
@@ -130,6 +139,7 @@ DECISIONS = {
         "rationale": "One source plugin created it for day and week and silently did nothing for "
                      "the rest. That is an oversight, not a design: a user who asks for the "
                      "monthly note at startup means it the same way as the daily one.",
+        "resolves": ["Q-CMD-09.1"],
         "stories": {"CMD": ["US-CMD-09"]},
     },
     "DEC-12": {
@@ -139,6 +149,7 @@ DECISIONS = {
         "rationale": "Two entry points means two places where the file-already-exists case can be "
                      "handled differently, which is how the old code ended up with three different "
                      "answers to the same question.",
+        "resolves": ["Q-NOTE-04.1"],
         "stories": {"NOTE": ["US-NOTE-04"]},
     },
     "DEC-13": {
@@ -153,6 +164,7 @@ DECISIONS = {
                      "template anything the user creates by hand would break the "
                      "ordinary case of making tomorrow's note in the file explorer and "
                      "expecting the template to fill it.",
+        "resolves": ["Q-NOTE-10.1"],
         "stories": {
             "NOTE": ["US-NOTE-10"],
         },
@@ -170,6 +182,7 @@ DECISIONS = {
                      "declares one format, not a list. Stating which derived candidate "
                      "is tried first is the rule a user can predict from what they "
                      "typed.",
+        "resolves": ["Q-FMT-08.1"],
         "stories": {
             "FMT": ["US-FMT-08"],
         },
@@ -186,6 +199,7 @@ DECISIONS = {
                      "source it cited already treats month and day as alternatives, not "
                      "as a pair. AC-FMT-04.5 already states the correct rule; this text "
                      "now agrees with it.",
+        "resolves": ["Q-FMT-04.2"],
         "stories": {
             "FMT": ["US-FMT-04"],
         },
@@ -196,6 +210,7 @@ DECISIONS = {
                     "read and dismiss. The value still saves.",
         "rationale": "The check is a heuristic. A user with a deliberate nested-path scheme should "
                      "not be locked out by it, and a blocked save gives them nowhere to go.",
+        "resolves": ["Q-FMT-05.1"],
         "stories": {"FMT": ["US-FMT-05"]},
     },
     "DEC-17": {
@@ -213,6 +228,7 @@ DECISIONS = {
                      "there would silently drop settings the user chose. Offering to "
                      "import literally nothing stays suppressed, which is the noise the "
                      "original decision was aimed at.",
+        "resolves": ["Q-MIG-03.1"],
         "stories": {
             "MIG": ["US-MIG-03"],
         },
@@ -225,6 +241,7 @@ DECISIONS = {
                      "turns off prefix matching for a vault that depends on it, and this vault "
                      "does depend on it: its weekly notes are renamed to a longer title after "
                      "creation and only resolve through a prefix match.",
+        "resolves": ["Q-MIG-04.1"],
         "stories": {"MIG": ["US-MIG-04"]},
     },
     "DEC-19": {
@@ -234,6 +251,7 @@ DECISIONS = {
         "rationale": "Same principle as preserving an unused named configuration group: running an "
                      "older build once must not silently destroy settings, so that downgrading and "
                      "upgrading again is safe.",
+        "resolves": ["Q-MIG-07.1"],
         "stories": {"MIG": ["US-MIG-07"]},
     },
     "DEC-20": {
@@ -244,6 +262,7 @@ DECISIONS = {
         "rationale": "The previous indicator contract was rewritten in a single version bump and "
                      "broke every implementation at once. An additive-only rule is the cheapest "
                      "guarantee that keeps that from repeating.",
+        "resolves": ["Q-ARCH-05.1"],
         "stories": {"ARCH": ["US-ARCH-05"]},
     },
     "DEC-04": {
@@ -263,6 +282,7 @@ DECISIONS = {
                      "installations this rewrite replaces. The old asymmetry, where the "
                      "mere presence of the Calendar plugin counted as proof that weekly "
                      "notes were externally managed, does go.",
+        "resolves": ["Q-MIG-05.1", "Q-MIG-06.1"],
         "stories": {
             "MIG": ["US-MIG-05", "US-MIG-06"],
         },
@@ -368,16 +388,13 @@ DECISIONS = {
 }
 
 
-def main(dec_id: str) -> int:
+def plan(dec_id: str, loaded: dict):
+    """Resolve a decision's targets against `loaded`, returning (targets, problems)."""
     dec = DECISIONS.get(dec_id)
     if not dec:
-        print(f"unknown decision: {dec_id}")
-        return 1
+        return [], [f"unknown decision: {dec_id}"]
 
-    # Validate the whole operation before writing anything. A typo used to be
-    # reported as a warning and still exit 0, leaving the decision recorded
-    # against nothing.
-    loaded, problems, targets = {}, [], []
+    problems, targets = [], []
     for epic, story_ids in dec["stories"].items():
         path = EPICS / f"{epic}.json"
         if not path.exists():
@@ -404,14 +421,13 @@ def main(dec_id: str) -> int:
             problems.append(f"{dec_id} resolves {qid}, which is not an open question on "
                             f"{', '.join(s['id'] for _, s in targets)} and was not closed "
                             f"by {dec_id} before")
-    already = bool(resolved) and not (set(resolved) & open_ids)
 
-    if problems:
-        for text in problems:
-            print(f"  {text}")
-        print(f"{dec_id}: not recorded")
-        return 1
+    return targets, problems
 
+
+def apply(dec_id: str, targets):
+    dec = DECISIONS[dec_id]
+    resolved = list(dec.get("resolves") or [])
     for _, story in targets:
         existing = story.setdefault("decisions", [])
         record = {
@@ -429,16 +445,30 @@ def main(dec_id: str) -> int:
         story["open_questions"] = [q for q in story.get("open_questions") or []
                                    if q["id"] not in set(resolved)]
 
+    print(f"{dec_id}: recorded against {len(targets)} stories")
+
+
+def main(*dec_ids: str) -> int:
+    """Validate every named decision first, then write. All or nothing."""
+    loaded, plans, problems = {}, [], []
+    for dec_id in dec_ids:
+        targets, found = plan(dec_id, loaded)
+        problems += found
+        plans.append((dec_id, targets))
+
+    if problems:
+        for text in problems:
+            print(f"  {text}")
+        print(f"nothing recorded: {len(problems)} problems")
+        return 1
+
+    for dec_id, targets in plans:
+        apply(dec_id, targets)
     for epic, data in loaded.items():
         (EPICS / f"{epic}.json").write_text(
             json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-    print(f"{dec_id}: recorded against {len(targets)} stories"
-          + (" (text update)" if already and resolved else ""))
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        sys.exit(main(sys.argv[1]))
-    for d in DECISIONS:
-        main(d)
+    sys.exit(main(*(sys.argv[1:] or list(DECISIONS))))

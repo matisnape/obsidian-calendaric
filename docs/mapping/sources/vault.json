@@ -1149,7 +1149,7 @@
       "kind": "coupling",
       "what": "The weekly template, monthly template, and monthly-work template all embed views from a single shared 'Weekly Notes.base' file, and separately the weekly template's dataviewjs block independently hardcodes the daily-notes folder path ('_00 Planer/_01 Dziennik').",
       "where": [
-        "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base:1-144",
+        "_90 Ekstra/_91 Szablony/Bases/Weekly Notes.base:1-143",
         "_90 Ekstra/_91 Szablony/Weekly Periodic Template.md:129"
       ],
       "why_it_matters": "These are two independent couplings to the exact folder names in periodic-notes-anks.calendarSets[0] (daily folder, and each view's filename-parsing assumptions about title format). Renaming any planner folder or filename format in the merged plugin requires updating both the Templater scripts and the Bases file's view filters/parsing offsets in lockstep — there is no shared constant.",

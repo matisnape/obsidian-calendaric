@@ -269,8 +269,12 @@
           "title": "Week-based tokens and week numbers follow the configured week-start day",
           "decision": "The user's 'Start week on' setting is authoritative for week numbering and for the {{monday:fmt}}..{{sunday:fmt}} tokens, in both the filename format field and the note body. ISO week numbering is not hard-coded. The two surfaces must resolve the same weekday to the same date for the same setting.",
           "rationale": "The existing documentation already promises this and the code contradicts it. Keeping the promise is the smaller change and the honest one. In this vault the setting is Monday-first, so ISO and configured agree today and no existing note is affected.",
-          "decided_on": "2026-09-10",
-          "resolves": []
+          "resolves": [
+            "Q-ARCH-08.1",
+            "Q-TPL-03.1",
+            "Q-TPL-03.2"
+          ],
+          "decided_on": "2026-09-11"
         }
       ]
     },

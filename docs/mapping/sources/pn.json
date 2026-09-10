@@ -2321,11 +2321,11 @@
       "confidence": "verified"
     },
     {
-      "id": "timeline-complication-render",
-      "name": "Timeline complication badge and week strip",
+      "id": "timeline-complication-label",
+      "name": "Timeline complication label",
       "category": "ui",
       "surface": "ui",
-      "description": "Timeline.svelte renders a small badge (relative date label, e.g. 'Today'/'Last week', plus a forward-arrow icon if the note was only inexactly matched) fixed top-right of any open periodic note; clicking expands a 7-day strip (starting the note's locale week) with the note's own day highlighted and today marked; clicking a day opens/creates that day's note. Controlled by the enableTimelineComplication setting and re-checked on file-open and cache-resolve events.",
+      "description": "Timeline.svelte renders a small badge fixed top-right of any open periodic note: the relative date label ('Today', 'Last week'), plus a forward-arrow icon when the note was matched only inexactly. Controlled by the enableTimelineComplication setting and re-checked on file-open and cache-resolve events.",
       "granularity": [
         "day",
         "week",
@@ -2338,7 +2338,7 @@
           "module": "pn-timeline-view",
           "symbol": "Timeline.svelte",
           "path": "src/timeline/Timeline.svelte",
-          "lines": "1-213"
+          "lines": "1-107"
         }
       ],
       "used_by": [
@@ -2346,12 +2346,45 @@
       ],
       "depends_on_capability": [
         "find-note-in-cache",
-        "relative-date-humanization",
-        "open-periodic-note"
+        "relative-date-humanization"
       ],
       "behaviour_notes": [],
       "edge_cases": [
         "Nothing renders at all if the current view's file isn't found in the cache (cache.find returns null) — periodicData stays null and the {#if} guard hides the whole complication."
+      ],
+      "confidence": "verified"
+    },
+    {
+      "id": "timeline-complication-day-strip",
+      "name": "Timeline complication day strip",
+      "category": "ui",
+      "surface": "ui",
+      "description": "Activating the Timeline label expands a seven-day strip for the note's own week, starting on the locale week-start day, with the note's day highlighted and today marked. Activating a day opens that day's note, creating it when it does not exist.",
+      "granularity": [
+        "day",
+        "week",
+        "month",
+        "quarter",
+        "year"
+      ],
+      "defined_in": [
+        {
+          "module": "pn-timeline-view",
+          "symbol": "Timeline.svelte",
+          "path": "src/timeline/Timeline.svelte",
+          "lines": "109-213"
+        }
+      ],
+      "used_by": [
+        "pn-timeline-manager"
+      ],
+      "depends_on_capability": [
+        "timeline-complication-label",
+        "open-periodic-note"
+      ],
+      "behaviour_notes": [],
+      "edge_cases": [
+        "The strip is rendered for any granularity of periodic note, not only daily ones; the days it offers are always days."
       ],
       "confidence": "verified"
     },
@@ -2376,7 +2409,7 @@
         "pn-main"
       ],
       "depends_on_capability": [
-        "timeline-complication-render"
+        "timeline-complication-label"
       ],
       "behaviour_notes": [
         "cleanup() (called from plugin.unload) destroys every tracked component but does NOT unregister the 'layout-change' listener itself directly — that's handled by Obsidian's registerEvent auto-cleanup on plugin unload, not by this class."
@@ -2620,9 +2653,10 @@
         }
       ],
       "capabilities": [
-        "timeline-lifecycle-per-leaf",
-        "timeline-complication-render",
-        "open-periodic-note"
+        "open-periodic-note",
+        "timeline-complication-day-strip",
+        "timeline-complication-label",
+        "timeline-lifecycle-per-leaf"
       ],
       "confidence": "verified"
     },

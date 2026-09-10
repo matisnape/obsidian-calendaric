@@ -46,7 +46,8 @@ OVERRIDE = {
     "pn:get-periodic-notes-related": "ICE",
     # The Timeline complication is enabled in the live vault and mounts into every
     # open markdown view, so deferring it would remove a feature that runs today.
-    "pn:timeline-complication-render": "CAL", "pn:timeline-lifecycle-per-leaf": "CAL",
+    "pn:timeline-complication-label": "CAL", "pn:timeline-complication-day-strip": "CAL",
+    "pn:timeline-lifecycle-per-leaf": "CAL",
     "pn:relative-date-humanization": "CAL",
     # nldates-obsidian is installed and enabled, so this command does appear.
     "pn:nl-date-navigator": "CMD",
