@@ -12,7 +12,7 @@ function setup(): { leaves: FakeCalendarLeafPort; notices: string[] } {
 }
 
 describe("CalendarCoordinator.open", () => {
-	it("creates a calendar leaf, reveals it and focuses it when none is open", async () => {
+	it("AC-CMD-01.1: creates a calendar leaf, reveals it and focuses it when none is open", async () => {
 		const { leaves, notices } = setup();
 
 		await createCalendarCoordinator(leaves, (m) => notices.push(m)).open();
@@ -24,7 +24,7 @@ describe("CalendarCoordinator.open", () => {
 		expect(notices).toEqual([]);
 	});
 
-	it("reveals the existing leaf instead of creating a second one", async () => {
+	it("AC-CMD-01.3: reveals the existing leaf instead of creating a second one", async () => {
 		const { leaves, notices } = setup();
 		const existing = leaves.withExistingLeaf({ visible: true });
 
@@ -36,7 +36,7 @@ describe("CalendarCoordinator.open", () => {
 		expect(notices).toEqual([]);
 	});
 
-	it("reveals a leaf hidden in a collapsed sidebar", async () => {
+	it("AC-CMD-01.4: reveals a leaf hidden in a collapsed sidebar", async () => {
 		const { leaves, notices } = setup();
 		const existing = leaves.withExistingLeaf({ visible: false });
 
@@ -48,7 +48,7 @@ describe("CalendarCoordinator.open", () => {
 		expect(notices).toEqual([]);
 	});
 
-	it("notices the failure and leaves no leaf behind when creation fails", async () => {
+	it("AC-CMD-01.5: notices the failure and leaves no leaf behind when creation fails", async () => {
 		const { leaves, notices } = setup();
 		leaves.createFails = true;
 
@@ -59,7 +59,7 @@ describe("CalendarCoordinator.open", () => {
 		expect(notices).toEqual([CALENDAR_OPEN_FAILED]);
 	});
 
-	it("detaches the leaf it just created when revealing it fails", async () => {
+	it("AC-CMD-01.5: detaches the leaf it just created when revealing it fails", async () => {
 		const { leaves, notices } = setup();
 		// Arm the failure on whatever create() hands back.
 		const port = leaves;
@@ -78,7 +78,7 @@ describe("CalendarCoordinator.open", () => {
 		expect(notices).toEqual([CALENDAR_OPEN_FAILED]);
 	});
 
-	it("keeps a pre-existing leaf when revealing it fails", async () => {
+	it("AC-CMD-01.5: keeps a pre-existing leaf when revealing it fails", async () => {
 		const { leaves, notices } = setup();
 		const existing = leaves.withExistingLeaf({ visible: false });
 		existing.revealFails = true;
@@ -101,14 +101,14 @@ describe("calendarViewCommand", () => {
 		expect(CALENDAR_COMMAND_ID).toBe("show-calendar-view");
 	});
 
-	it("is listed when no calendar leaf is open", () => {
+	it("AC-CMD-01.2: is listed when no calendar leaf is open", () => {
 		const { leaves, notices } = setup();
 		const command = calendarViewCommand(leaves, createCalendarCoordinator(leaves, (m) => notices.push(m)).open);
 
 		expect(command.checkCallback?.(true)).toBe(true);
 	});
 
-	it("is not listed while a calendar leaf is visible", () => {
+	it("AC-CMD-01.2: is not listed while a calendar leaf is visible", () => {
 		const { leaves, notices } = setup();
 		leaves.withExistingLeaf({ visible: true });
 		const command = calendarViewCommand(leaves, createCalendarCoordinator(leaves, (m) => notices.push(m)).open);
@@ -116,7 +116,7 @@ describe("calendarViewCommand", () => {
 		expect(command.checkCallback?.(true)).toBe(false);
 	});
 
-	it("is listed when the leaf exists but is not on screen", () => {
+	it("AC-CMD-01.2, AC-CMD-01.4: is listed when the leaf exists but is not on screen", () => {
 		const { leaves, notices } = setup();
 		leaves.withExistingLeaf({ visible: false });
 		const command = calendarViewCommand(leaves, createCalendarCoordinator(leaves, (m) => notices.push(m)).open);
@@ -124,7 +124,7 @@ describe("calendarViewCommand", () => {
 		expect(command.checkCallback?.(true)).toBe(true);
 	});
 
-	it("opens nothing while the palette is only checking", () => {
+	it("AC-CMD-01.2: opens nothing while the palette is only checking", () => {
 		const { leaves, notices } = setup();
 		const command = calendarViewCommand(leaves, createCalendarCoordinator(leaves, (m) => notices.push(m)).open);
 
@@ -134,7 +134,7 @@ describe("calendarViewCommand", () => {
 		expect(leaves.find()).toBeNull();
 	});
 
-	it("opens the calendar view when invoked for real", async () => {
+	it("AC-CMD-01.1: opens the calendar view when invoked for real", async () => {
 		const { leaves, notices } = setup();
 		const command = calendarViewCommand(leaves, createCalendarCoordinator(leaves, (m) => notices.push(m)).open);
 
@@ -150,7 +150,7 @@ describe("calendarViewCommand", () => {
 });
 
 describe("CalendarCoordinator creation locking", () => {
-	it("creates one leaf when two callers race, because both see no leaf", async () => {
+	it("AC-CMD-01.3: creates one leaf when two callers race, because both see no leaf", async () => {
 		const { leaves, notices } = setup();
 		const release = leaves.deferCreation();
 		const { open } = createCalendarCoordinator(leaves, (m) => notices.push(m));
@@ -167,7 +167,7 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(notices).toEqual([]);
 	});
 
-	it("reveals once for a race, rather than once per caller", async () => {
+	it("AC-CMD-01.3: reveals once for a race, rather than once per caller", async () => {
 		const { leaves, notices } = setup();
 		const release = leaves.deferCreation();
 		const { open } = createCalendarCoordinator(leaves, (m) => notices.push(m));
@@ -180,7 +180,7 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(leaves.find()?.focusCount).toBe(1);
 	});
 
-	it("makes one leaf when startup and the command race", async () => {
+	it("AC-CMD-01.3: makes one leaf when startup and the command race", async () => {
 		const { leaves, notices } = setup();
 		const release = leaves.deferCreation();
 		const coordinator = createCalendarCoordinator(leaves, (m) => notices.push(m));
@@ -204,7 +204,7 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(leaves.createdActive).toEqual([false]);
 	});
 
-	it("creates the command's leaf active, because the user asked for it", async () => {
+	it("AC-CMD-01.1: creates the command's leaf active, because the user asked for it", async () => {
 		const { leaves, notices } = setup();
 		const coordinator = createCalendarCoordinator(leaves, (m) => notices.push(m));
 
@@ -235,7 +235,7 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(notices).toEqual([]);
 	});
 
-	it("creates nothing on startup when a leaf is already open", async () => {
+	it("AC-CMD-01.3: creates nothing on startup when a leaf is already open", async () => {
 		const { leaves, notices } = setup();
 		leaves.withExistingLeaf({ visible: false });
 		const coordinator = createCalendarCoordinator(leaves, (m) => notices.push(m));
@@ -245,7 +245,7 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(leaves.created).toEqual([]);
 	});
 
-	it("opens again after the first open has settled", async () => {
+	it("AC-CMD-01.3: opens again after the first open has settled", async () => {
 		const { leaves, notices } = setup();
 		const { open } = createCalendarCoordinator(leaves, (m) => notices.push(m));
 

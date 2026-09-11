@@ -135,14 +135,14 @@ function firstCalendarLeaf(app: App): CalendarLeafHandle {
 }
 
 describe("ObsidianCalendarLeaf.isVisible", () => {
-	it("is false when an ancestor hides the leaf, such as an inactive dock tab", () => {
+	it("AC-CMD-01.2: is false when an ancestor hides the leaf, such as an inactive dock tab", () => {
 		const leaf = makeLeaf({ shown: false });
 		const app = makeApp(makeWorkspace({ leaves: [leaf] }));
 
 		expect(firstCalendarLeaf(app).isVisible()).toBe(false);
 	});
 
-	it("is false when the leaf sits in a collapsed right sidebar", () => {
+	it("AC-CMD-01.4: is false when the leaf sits in a collapsed right sidebar", () => {
 		const rightSplit = { collapsed: true };
 		const leaf = makeLeaf({ root: rightSplit });
 		const app = makeApp(makeWorkspace({ leaves: [leaf], rightSplit }));
@@ -150,7 +150,7 @@ describe("ObsidianCalendarLeaf.isVisible", () => {
 		expect(firstCalendarLeaf(app).isVisible()).toBe(false);
 	});
 
-	it("is false when the leaf sits in a collapsed left sidebar", () => {
+	it("AC-CMD-01.4: is false when the leaf sits in a collapsed left sidebar", () => {
 		const leftSplit = { collapsed: true };
 		const leaf = makeLeaf({ root: leftSplit });
 		const app = makeApp(makeWorkspace({ leaves: [leaf], leftSplit }));
@@ -158,7 +158,7 @@ describe("ObsidianCalendarLeaf.isVisible", () => {
 		expect(firstCalendarLeaf(app).isVisible()).toBe(false);
 	});
 
-	it("is true when the leaf sits in an expanded sidebar", () => {
+	it("AC-CMD-01.2: is true when the leaf sits in an expanded sidebar", () => {
 		const rightSplit = { collapsed: false };
 		const leaf = makeLeaf({ root: rightSplit });
 		const app = makeApp(makeWorkspace({ leaves: [leaf], rightSplit }));
@@ -166,7 +166,7 @@ describe("ObsidianCalendarLeaf.isVisible", () => {
 		expect(firstCalendarLeaf(app).isVisible()).toBe(true);
 	});
 
-	it("is true for a shown leaf in the editor area, which has no sidebar", () => {
+	it("AC-CMD-01.2: is true for a shown leaf in the editor area, which has no sidebar", () => {
 		const leaf = makeLeaf({ root: { notASidedock: true } });
 		const app = makeApp(makeWorkspace({ leaves: [leaf] }));
 
@@ -175,7 +175,7 @@ describe("ObsidianCalendarLeaf.isVisible", () => {
 });
 
 describe("ObsidianCalendarLeaf", () => {
-	it("reveals the leaf through the workspace", async () => {
+	it("AC-CMD-01.3: reveals the leaf through the workspace", async () => {
 		const leaf = makeLeaf();
 		const workspace = makeWorkspace({ leaves: [leaf] });
 		const app = makeApp(workspace);
@@ -185,7 +185,7 @@ describe("ObsidianCalendarLeaf", () => {
 		expect(workspace.revealed).toEqual([leaf]);
 	});
 
-	it("asks for keyboard focus explicitly, because revealLeaf does not", () => {
+	it("AC-CMD-01.1: asks for keyboard focus explicitly, because revealLeaf does not", () => {
 		const leaf = makeLeaf();
 		const workspace = makeWorkspace({ leaves: [leaf] });
 		const app = makeApp(workspace);
@@ -195,7 +195,7 @@ describe("ObsidianCalendarLeaf", () => {
 		expect(workspace.activated).toEqual([{ leaf, focus: true }]);
 	});
 
-	it("detaches only its own leaf, and the detached one stops being found", () => {
+	it("AC-CMD-01.5: detaches only its own leaf, and the detached one stops being found", () => {
 		const mine = makeLeaf();
 		const other = makeLeaf();
 		const workspace = makeWorkspace({ leaves: [mine, other] });
@@ -211,19 +211,19 @@ describe("ObsidianCalendarLeaf", () => {
 });
 
 describe("ObsidianCalendarLeafAdapter", () => {
-	it("finds nothing when no calendar leaf is open", () => {
+	it("AC-CMD-01.3: finds nothing when no calendar leaf is open", () => {
 		const app = makeApp(makeWorkspace());
 
 		expect(new ObsidianCalendarLeafAdapter(app).find()).toBeNull();
 	});
 
-	it("finds nothing when a right-sidebar leaf exists but carries no calendar view", () => {
+	it("AC-CMD-01.3: finds nothing when a right-sidebar leaf exists but carries no calendar view", () => {
 		const app = makeApp(makeWorkspace({ leaves: [makeLeaf({ viewState: null })] }));
 
 		expect(new ObsidianCalendarLeafAdapter(app).find()).toBeNull();
 	});
 
-	it("walks create, find, reveal and focus as one sequence", async () => {
+	it("AC-CMD-01.1, AC-CMD-01.3, AC-CMD-01.4: walks create, find, reveal and focus as one sequence", async () => {
 		// Start from the shape the plugin actually meets: a collapsed right
 		// sidebar and no calendar leaf anywhere.
 		const rightSplit = { collapsed: true };
@@ -254,7 +254,7 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		expect(workspace.activated).toEqual([{ leaf: workspace.leaves[0], focus: true }]);
 	});
 
-	it("creates the leaf active when the caller asked for focus", async () => {
+	it("AC-CMD-01.1: creates the leaf active when the caller asked for focus", async () => {
 		const workspace = makeWorkspace({
 			rightLeafFactory: () => makeLeaf({ viewState: null }),
 		});
@@ -283,7 +283,7 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		});
 	});
 
-	it("throws when the workspace offers no right sidebar leaf", async () => {
+	it("AC-CMD-01.5: throws when the workspace offers no right sidebar leaf", async () => {
 		const app = makeApp(makeWorkspace({ rightLeafFactory: null }));
 
 		await expect(new ObsidianCalendarLeafAdapter(app).create({ active: true })).rejects.toThrow(
@@ -291,7 +291,7 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		);
 	});
 
-	it("detaches the half-built leaf when the view fails to initialize", async () => {
+	it("AC-CMD-01.5: detaches the half-built leaf when the view fails to initialize", async () => {
 		const workspace = makeWorkspace({
 			rightLeafFactory: () => makeLeaf({ viewState: null, setViewStateFails: true }),
 		});
