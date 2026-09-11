@@ -5,7 +5,7 @@ import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "../notes/noteUtils";
-import { createNote } from "../notes/noteCreate";
+import { createPeriodicNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
 
 /**
@@ -72,12 +72,6 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 		return;
 	}
 
-	// A folder of the same name already holds the path. Creating would fail
-	// inside the vault, so say so instead.
-	if (ports.vault.folderExists(path)) {
-		throw new Error(`A folder already uses ${path}, so the note cannot be created there.`);
-	}
-
 	if (click.confirmBeforeCreate) {
 		const accepted = await click.confirmCreate(describeCreate(date, granularity, path));
 		if (!accepted) return;
@@ -110,9 +104,12 @@ async function createNoteOrJoinTheWinner(
 	warn: (message: string) => void,
 ): Promise<NoteFile> {
 	try {
-		return await createNoteInTurn(vault, path, () =>
-			createNote(path, date, granularity, config, vault, warn),
-		);
+		return await createNoteInTurn(vault, path, async () => {
+			// Either outcome is the note this click asked for: `exists` is the
+			// note someone wrote first, and it opens exactly like a new one.
+			const creation = await createPeriodicNote(path, date, granularity, config, vault, warn);
+			return creation.file;
+		});
 	} catch (error) {
 		const winner = vault.getFile(path);
 		if (!winner) throw error;
@@ -135,7 +132,7 @@ const folderWrites = new WeakMap<object, Map<string, Promise<NoteFile>>>();
  * Write the note once the last note headed for the same folder is done.
  *
  * Re-reading the path after a failure does not cover this on its own, and
- * neither does coordinating per note path. `createNote` creates the missing
+ * neither does coordinating per note path. `createPeriodicNote` creates the missing
  * parent folder first and a vault rejects a folder that already exists, so two
  * activations aimed at the *same folder* — even at two different days — collide
  * there, and the loser fails before any note exists to fall back to.

@@ -5,7 +5,8 @@ import type { CalendaricSettings, StoredConfig } from "./settings/model";
 import { CalendarView } from "./ui/CalendarView";
 import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
 import { computeNotePath } from "./notes/noteUtils";
-import { createNote } from "./notes/noteCreate";
+import { createPeriodicNote } from "./notes/noteCreate";
+import { RELEASE_GRANULARITIES } from "./types";
 import { openNoteInNewTab } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
@@ -77,8 +78,11 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	private async openStartupNote(): Promise<void> {
-		const granularities = ["day", "week", "month", "quarter", "year"] as const;
-		for (const key of granularities) {
+		// Quarter is reserved (DEC-23): a stored configuration may still carry it,
+		// and it is skipped here exactly like a granularity that is switched off.
+		// Every other granularity in the release set opens the same way, so a
+		// monthly startup note is no longer silently dropped (AC-NOTE-04.2).
+		for (const key of RELEASE_GRANULARITIES) {
 			const config = this.settings[key];
 			if (!config.openAtStartup || !config.enabled) continue;
 
@@ -90,10 +94,8 @@ export default class CalendaricPlugin extends Plugin {
 			if (existing instanceof TFile) {
 				file = existing;
 			} else {
-				// Create silently — bypass confirmBeforeCreate on startup
-				// Only day/week notes are supported for creation; month/quarter/year are not yet implemented
-				if (key !== "day" && key !== "week") break;
-				file = await createNote(
+				// Create silently — bypass confirmBeforeCreate on startup.
+				const creation = await createPeriodicNote(
 					path,
 					date,
 					key,
@@ -101,6 +103,7 @@ export default class CalendaricPlugin extends Plugin {
 					new ObsidianVaultAdapter(this.app),
 					(message) => new Notice(message),
 				);
+				file = creation.file;
 			}
 
 			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app), path);

@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import moment from "moment";
-import { createNote } from "./noteCreate";
+import { createNote, createPeriodicNote } from "./noteCreate";
+import { computeNotePath } from "./noteUtils";
+import { openNoteIn } from "./noteOpen";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
-import type { PeriodicConfig } from "../types";
+import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
+import { RELEASE_GRANULARITIES } from "../types";
+import type { PeriodicConfig, ReleaseGranularity } from "../types";
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {
@@ -345,5 +350,197 @@ describe("createNote (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
 		expect(logged).toHaveBeenCalledTimes(1);
 		logged.mockRestore();
+	});
+});
+
+/**
+ * One configuration per granularity of the release set, each with the format
+ * and folder that granularity would really be configured with. The point of
+ * every test below is that the four behave identically, so they are always
+ * driven from this one table rather than from a hand-written case each.
+ */
+const RELEASE_CONFIGS: Record<ReleaseGranularity, PeriodicConfig> = {
+	day: makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" }),
+	week: makeConfig({ format: "gggg-[W]ww", folder: "journal/weekly" }),
+	month: makeConfig({ format: "YYYY-MM", folder: "journal/monthly" }),
+	year: makeConfig({ format: "YYYY", folder: "journal/yearly" }),
+};
+
+/** The path the release config for `granularity` resolves to for `DATE`. */
+function pathFor(granularity: ReleaseGranularity): string {
+	return computeNotePath(DATE, RELEASE_CONFIGS[granularity], new FakeVaultConfigPort());
+}
+
+/** Runs `check` once per granularity of the release set, on a vault of its own. */
+function forEachGranularity(check: (granularity: ReleaseGranularity) => Promise<void>): Promise<void[]> {
+	return Promise.all(RELEASE_GRANULARITIES.map(check));
+}
+
+describe("createPeriodicNote", () => {
+	it("AC-NOTE-04.1: writes the note at the resolved folder and filename, and returns it", async () => {
+		await forEachGranularity(async (granularity) => {
+			const vault = new FakeVaultPort();
+			const path = pathFor(granularity);
+
+			const result = await createPeriodicNote(
+				path,
+				DATE,
+				granularity,
+				RELEASE_CONFIGS[granularity],
+				vault,
+				noWarn,
+			);
+
+			expect(result).toEqual({ outcome: "created", file: { path } });
+			expect(vault.contentAt(path)).toBe("");
+		});
+	});
+
+	// The four paths are what "the resolved folder and filename for that
+	// granularity" means: a year note must not land on the day note's name.
+	it("AC-NOTE-04.1: resolves a distinct path per granularity", async () => {
+		const paths = RELEASE_GRANULARITIES.map(pathFor);
+
+		expect(paths).toEqual([
+			"journal/daily/2026-04-13.md",
+			"journal/weekly/2026-W16.md",
+			"journal/monthly/2026-04.md",
+			"journal/yearly/2026.md",
+		]);
+	});
+
+	it("AC-NOTE-04.2: reports the same collision outcome for every granularity", async () => {
+		const outcomes: string[] = [];
+
+		await forEachGranularity(async (granularity) => {
+			const vault = new FakeVaultPort();
+			const path = pathFor(granularity);
+			vault.seedFile(path, "written by hand");
+
+			const result = await createPeriodicNote(
+				path,
+				DATE,
+				granularity,
+				RELEASE_CONFIGS[granularity],
+				vault,
+				noWarn,
+			);
+
+			outcomes.push(result.outcome);
+			expect(result.file.path).toBe(path);
+			expect(vault.contentAt(path)).toBe("written by hand");
+		});
+
+		expect(outcomes).toEqual(["exists", "exists", "exists", "exists"]);
+	});
+
+	// Collected rather than asserted one by one: the criterion is that the four
+	// answers are the *same*, which a per-granularity assertion cannot state.
+	it("AC-NOTE-04.2: surfaces the same failure for every granularity when the write fails", async () => {
+		const messages: string[] = [];
+
+		await forEachGranularity(async (granularity) => {
+			const vault = new FakeVaultPort();
+			vault.createFileError = new Error("vault is read-only");
+
+			messages.push(
+				await createPeriodicNote(
+					pathFor(granularity),
+					DATE,
+					granularity,
+					RELEASE_CONFIGS[granularity],
+					vault,
+					noWarn,
+				).then(
+					() => "resolved, which it must not",
+					(error: Error) => error.message,
+				),
+			);
+		});
+
+		expect(messages).toEqual(RELEASE_GRANULARITIES.map(() => "vault is read-only"));
+	});
+
+	it("AC-NOTE-04.3: refuses a granularity outside the release set, by name, and writes nothing", async () => {
+		const vault = new FakeVaultPort();
+
+		await expect(
+			createPeriodicNote("journal/quarterly/2026-Q2.md", DATE, "quarter", makeConfig(), vault, noWarn),
+		).rejects.toThrow(/quarter[\s\S]*not supported in this release/);
+		expect(vault.contentAt("journal/quarterly/2026-Q2.md")).toBeUndefined();
+		expect(vault.createdFolders).toEqual([]);
+	});
+
+	it("AC-NOTE-04.4: creates the missing folder chain first, then the note", async () => {
+		await forEachGranularity(async (granularity) => {
+			const vault = new FakeVaultPort();
+			const path = pathFor(granularity);
+
+			const result = await createPeriodicNote(
+				path,
+				DATE,
+				granularity,
+				RELEASE_CONFIGS[granularity],
+				vault,
+				noWarn,
+			);
+
+			expect(result.outcome).toBe("created");
+			expect(vault.createdFolders).toEqual(["journal", RELEASE_CONFIGS[granularity].folder]);
+			expect(vault.contentAt(path)).toBe("");
+		});
+	});
+
+	it("AC-NOTE-04.5: leaves an existing note untouched and hands it back to be opened", async () => {
+		const vault = new FakeVaultPort();
+		const path = pathFor("day");
+		vault.seedFile(path, "yesterday's thinking");
+
+		const result = await createPeriodicNote(path, DATE, "day", RELEASE_CONFIGS.day, vault, noWarn);
+
+		expect(result).toEqual({ outcome: "exists", file: { path } });
+		expect(vault.contentAt(path)).toBe("yesterday's thinking");
+		// The report is what the caller opens: nothing else has to be looked up.
+		const workspace = new FakeWorkspacePort();
+		await openNoteIn(result.file, "reuse", workspace, path);
+		expect(workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+	});
+
+	// A note that is already there is not a template subject either: reading the
+	// template would expand tokens nobody asked for and warn about a template
+	// this call is never going to write.
+	it("AC-NOTE-04.5: reads no template and warns about none when the note already exists", async () => {
+		const vault = new FakeVaultPort();
+		const path = pathFor("day");
+		vault.seedFile(path, "yesterday's thinking");
+		const warn = vi.fn();
+
+		const result = await createPeriodicNote(
+			path,
+			DATE,
+			"day",
+			makeConfig({ ...RELEASE_CONFIGS.day, templatePath: "Templates/missing.md" }),
+			vault,
+			warn,
+		);
+
+		expect(result.outcome).toBe("exists");
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	it("AC-NOTE-04.6: names the occupied path and says it is not a Markdown note", async () => {
+		await forEachGranularity(async (granularity) => {
+			const vault = new FakeVaultPort();
+			const path = pathFor(granularity);
+			vault.seedFolder(path);
+
+			await expect(
+				createPeriodicNote(path, DATE, granularity, RELEASE_CONFIGS[granularity], vault, noWarn),
+			).rejects.toThrow(`${path} is not a Markdown note`);
+
+			// Nothing at the path was altered: it is still the folder it was.
+			expect(vault.folderExists(path)).toBe(true);
+			expect(vault.contentAt(path)).toBeUndefined();
+		});
 	});
 });
