@@ -12,7 +12,8 @@ type Granularity = "day" | "week";
  *
  * Does NOT open the file — that's the caller's responsibility.
  * Does NOT compute the path — that's the caller's responsibility too, via
- * `computeNotePath`, since path computation is not vault decision logic.
+ * `computeNotePath`, which resolves the default-folder fallback through its
+ * own VaultConfigPort rather than this function's VaultPort.
  */
 export async function createNote(
 	path: string,
