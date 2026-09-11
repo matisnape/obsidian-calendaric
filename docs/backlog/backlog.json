@@ -307,7 +307,7 @@
       "story": "As someone who has never manually created a folder for my notes, I want the plugin to create whatever folders a new note needs, so that turning on a granularity or pointing it at a new folder just works without a manual setup step.",
       "rationale": "A missing folder should never be the reason a note fails to be created.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "dni:resolve-note-path-and-ensure-folder",
         "pn:note-creation-path-and-folder-autocreate",
@@ -334,8 +334,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4) / > creates the missing target folder before creating the file / > accepts a folder another actor created between the check and the call (AC-NOTE-03.1) -- the last one covers the create-race the review round found.",
           "failure_path": true
         },
         {
@@ -347,8 +347,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteUtils.test.ts > falls back to Obsidian default new-file folder when none is configured (AC-NOTE-03.2) / > resolves to the vault root when neither the config nor Obsidian names a folder (AC-NOTE-03.2) / > takes the default folder only when the config names no folder at all (AC-NOTE-03.2).",
           "failure_path": true
         },
         {
@@ -360,8 +360,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteUtils.test.ts > accepts an empty configured folder as valid and already present (AC-NOTE-03.3) / > accepts the vault root written as a slash as valid and already present (AC-NOTE-03.3) / > keeps an explicit \"/\" as the vault root instead of taking the default folder (AC-NOTE-03.3); plus src/notes/noteCreate.test.ts > creates no folder for a note at the vault root (AC-NOTE-03.3).",
           "failure_path": true
         },
         {
@@ -374,8 +374,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteUtils.test.ts > flags a folder that does not exist yet as valid but not-yet-created (AC-NOTE-03.4) for the flag itself, and src/notes/noteCreate.test.ts > writes the note even though the whole folder chain was missing for the clause that the flag must not block creation. No settings-UI surface consumes the flag yet: US-SET-04 owns that wiring, which the review round confirmed as the correct scope split.",
           "failure_path": true
         },
         {
@@ -387,8 +387,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > creates every missing intermediate folder, top down (AC-NOTE-03.5) / > creates only the intermediate folders that are still missing (AC-NOTE-03.5) / > does not mistake a file for an existing folder in the chain / > refuses a path with an unusable segment before making any folder.",
           "failure_path": true
         }
       ]
@@ -4451,7 +4451,7 @@
       "story": "As a vault user who does not want to click a ribbon icon, I want a command that opens the calendar view, so that I can reach it entirely from the keyboard.",
       "rationale": "The calendar view has no ribbon icon of its own in the merged design, so the palette command is its only guaranteed entry point.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:open-calendar-view",
         "calendaric:open-calendar-view"
@@ -4473,8 +4473,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarCommand.test.ts > creates a calendar leaf, reveals it and focuses it when none is open / > creates the command leaf active, because the user asked for it; src/adapters/obsidianCalendarLeafAdapter.test.ts > walks create, find, reveal and focus as one sequence / > asks for keyboard focus explicitly, because revealLeaf does not / > creates the leaf active when the caller asked for focus. Creation and the explicit focus request are proven headless against a fake that models dock and visibility state. The clause that focus actually LANDS is testable_by integration and unverified: it needs a live Obsidian host, which this environment has none of."
         },
         {
           "id": "AC-CMD-01.2",
@@ -4485,8 +4485,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarCommand.test.ts > is listed when no calendar leaf is open / > is not listed while a calendar leaf is visible / > is listed when the leaf exists but is not on screen / > opens nothing while the palette is only checking. Note the reading this settles, agreed with Anna in the implementing pane: \"already open\" means VISIBLE, not merely existing, because initLeaf parks a leaf in the sidebar at startup -- on the exists reading the command would be hidden forever. Obsidian own palette filtering of a checkCallback command is integration-level and unverified here.",
           "failure_path": true
         },
         {
@@ -4499,8 +4499,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarCommand.test.ts > reveals the existing leaf instead of creating a second one / > creates one leaf when two callers race, because both see no leaf / > reveals once for a race, rather than once per caller / > makes one leaf when startup and the command race / > opens again after the first open has settled / > does not wedge after a failed open; plus src/adapters/obsidianCalendarLeafAdapter.test.ts > finds nothing when a right-sidebar leaf exists but carries no calendar view. Settled headless, including the concurrency the review rounds forced -- the first race test could not fail and was rewritten to defer creation until both callers had started.",
           "failure_path": true
         },
         {
@@ -4513,8 +4513,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/adapters/obsidianCalendarLeafAdapter.test.ts > is false when the leaf sits in a collapsed right sidebar / > is false when the leaf sits in a collapsed left sidebar / > is false when an ancestor hides the leaf, such as an inactive dock tab / > is true when the leaf sits in an expanded sidebar; src/ui/calendarCommand.test.ts > reveals a leaf hidden in a collapsed sidebar. The decision to reveal is proven; the sidebar actually expanding is Obsidian own revealLeaf behaviour (documented in obsidian.d.ts as uncollapsing a sidebar) and is testable_by integration -- unverified without a live host.",
           "failure_path": true
         },
         {
@@ -4527,8 +4527,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarCommand.test.ts > notices the failure and leaves no leaf behind when creation fails / > detaches the leaf it just created when revealing it fails / > keeps a pre-existing leaf when revealing it fails; src/adapters/obsidianCalendarLeafAdapter.test.ts > detaches only its own leaf, and the detached one stops being found / > throws when the workspace offers no right sidebar leaf / > detaches the half-built leaf when the view fails to initialize. Rollback ownership is proven headless -- it detaches only the leaf this invocation created, never a pre-existing one. The Notice reaching the user is integration-level and unverified.",
           "failure_path": true
         }
       ]
@@ -6501,7 +6501,7 @@
       "story": "As a maintainer, I want the whole codebase held to one strict type-checking standard, with every place it touches an API the compiler cannot verify walled off behind a single typed boundary, so that a wrong assumption about another plugin's shape is caught while compiling, not when a user hits a crash.",
       "rationale": "The target repository's tsconfig.json enables several of the strict-family flags individually but never sets the single \"strict\" option, and is missing others from that family. The old code reached into a companion plugin's internal state with a plain property read: one P1 defect read a Svelte store as if it were a plain object, and a feature it powered silently returned nothing for every user from the day it shipped.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
