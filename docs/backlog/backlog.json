@@ -6991,8 +6991,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review: .github/workflows/ci.yml has on: {pull_request: {branches: [master]}} and no push key — inspected verbatim, only workflow file in .github/workflows/."
         },
         {
           "id": "AC-ARCH-09.3",
@@ -7031,8 +7031,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review: ci.yml has no lint step; the comment above jobs.gates names DEC-26 as the reason and the exit condition (lint joins the workflow once the pre-existing debt is paid down)."
         }
       ],
       "decisions": [
