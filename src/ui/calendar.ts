@@ -234,7 +234,7 @@ export class CalendarWidget {
 
 		if (existing) {
 			if (existing instanceof TFile) {
-				await openNote(existing, event, this.workspace);
+				await openNote(existing, event, this.workspace, path);
 			}
 			return;
 		}
@@ -248,12 +248,12 @@ export class CalendarWidget {
 				body: `File ${filename} does not exist. Would you like to create it?`,
 				onAccept: async () => {
 					const file = await createNote(path, date, granularity, config, this.vault);
-					await openNote(file, event, this.workspace);
+					await openNote(file, event, this.workspace, path);
 				},
 			}).open();
 		} else {
 			const file = await createNote(path, date, granularity, config, this.vault);
-			await openNote(file, event, this.workspace);
+			await openNote(file, event, this.workspace, path);
 		}
 	}
 

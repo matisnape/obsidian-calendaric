@@ -41,7 +41,7 @@ describe("openNote", () => {
 	it("AC-NOTE-06.1: reuses the current unpinned tab on a plain click", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNote(FILE, makeClick(), workspace);
+		await openNote(FILE, makeClick(), workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "reuse" }]);
 	});
@@ -49,7 +49,7 @@ describe("openNote", () => {
 	it("AC-NOTE-06.2: opens a split on a Cmd click on macOS", async () => {
 		const workspace = macWorkspace();
 
-		await openNote(FILE, makeClick({ metaKey: true }), workspace);
+		await openNote(FILE, makeClick({ metaKey: true }), workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "split" }]);
 	});
@@ -57,7 +57,7 @@ describe("openNote", () => {
 	it("AC-NOTE-06.2: opens a split on a Ctrl click off macOS", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNote(FILE, makeClick({ ctrlKey: true }), workspace);
+		await openNote(FILE, makeClick({ ctrlKey: true }), workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "split" }]);
 	});
@@ -65,7 +65,7 @@ describe("openNote", () => {
 	it("AC-NOTE-06.1: reuses the current tab on a Ctrl click on macOS", async () => {
 		const workspace = macWorkspace();
 
-		await openNote(FILE, makeClick({ ctrlKey: true }), workspace);
+		await openNote(FILE, makeClick({ ctrlKey: true }), workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "reuse" }]);
 	});
@@ -75,7 +75,7 @@ describe("openNoteInNewTab", () => {
 	it("AC-NOTE-06.3: opens a new tab instead of reusing the active one", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNoteInNewTab(FILE, workspace);
+		await openNoteInNewTab(FILE, workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "tab" }]);
 	});
@@ -116,8 +116,8 @@ describe("opening a file that vanished (AC-NOTE-06.4)", () => {
 		const workspace = new FakeWorkspacePort();
 		workspace.markMissing(FILE.path);
 
-		await openNote(FILE, makeClick(), workspace);
-		await openNoteInNewTab(FILE, workspace);
+		await openNote(FILE, makeClick(), workspace, FILE.path);
+		await openNoteInNewTab(FILE, workspace, FILE.path);
 
 		expect(workspace.notices).toHaveLength(2);
 		expect(workspace.opened).toEqual([]);
@@ -159,6 +159,45 @@ describe("a note that moved after it was found (AC-NOTE-06.4)", () => {
 		expect(workspace.opened).toEqual([]);
 	});
 
+	it("AC-NOTE-06.4: a click on a moved note gives a notice and opens nothing", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+		workspace.markMoved(note, "archive/2026-04-13.md");
+
+		await openNote(note, makeClick(), workspace, FILE.path);
+
+		expect(workspace.notices).toEqual([
+			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
+		]);
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("AC-NOTE-06.4: the startup tab on a moved note gives a notice and opens nothing", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+		workspace.markMoved(note, "archive/2026-04-13.md");
+
+		await openNoteInNewTab(note, workspace, FILE.path);
+
+		expect(workspace.notices).toEqual([
+			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
+		]);
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("neither wrapper reads the lookup path back off the handle", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+		const newHome = "archive/2026-04-13.md";
+		workspace.markMoved(note, newHome);
+
+		await openNote(note, makeClick(), workspace, FILE.path);
+		await openNoteInNewTab(note, workspace, FILE.path);
+
+		expect(workspace.foundPaths).toEqual([FILE.path, FILE.path]);
+		expect(workspace.foundPaths).not.toContain(newHome);
+	});
+
 	it("opens normally when the note is still where it was found", async () => {
 		const workspace = new FakeWorkspacePort();
 		const note = { path: FILE.path };
@@ -174,7 +213,7 @@ describe("the path a note was found at (AC-NOTE-06.4)", () => {
 	it("is what the click route hands to the port", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNote(FILE, makeClick(), workspace);
+		await openNote(FILE, makeClick(), workspace, FILE.path);
 
 		expect(workspace.foundPaths).toEqual([FILE.path]);
 	});
@@ -182,7 +221,7 @@ describe("the path a note was found at (AC-NOTE-06.4)", () => {
 	it("is what the startup route hands to the port", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNoteInNewTab(FILE, workspace);
+		await openNoteInNewTab(FILE, workspace, FILE.path);
 
 		expect(workspace.foundPaths).toEqual([FILE.path]);
 	});

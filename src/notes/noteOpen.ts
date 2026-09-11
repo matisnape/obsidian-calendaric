@@ -37,19 +37,24 @@ export async function openNoteIn(
  * - Plain click: reuse — reuses the active unpinned tab
  * - Split modifier: split — opens a new pane beside the current view
  */
-export async function openNote(file: NoteFile, event: MouseEvent, workspace: WorkspacePort): Promise<void> {
+export async function openNote(
+	file: NoteFile,
+	event: MouseEvent,
+	workspace: WorkspacePort,
+	foundAtPath: string,
+): Promise<void> {
 	const mode = isSplitModifierPressed(event, workspace.isMacOS) ? "split" : "reuse";
-	// This entry point is handed an already-resolved file and never sees the
-	// lookup path, so it can only offer the handle's own. A note that moved
-	// before the click therefore still opens; see openNoteIn.
-	await openNoteIn(file, mode, workspace, file.path);
+	await openNoteIn(file, mode, workspace, foundAtPath);
 }
 
 /**
  * Open a periodic note in a new tab (used for "Open on startup"), which leaves
  * whatever the user had open where it was.
  */
-export async function openNoteInNewTab(file: NoteFile, workspace: WorkspacePort): Promise<void> {
-	// Same limit as openNote: no lookup path reaches here.
-	await openNoteIn(file, "tab", workspace, file.path);
+export async function openNoteInNewTab(
+	file: NoteFile,
+	workspace: WorkspacePort,
+	foundAtPath: string,
+): Promise<void> {
+	await openNoteIn(file, "tab", workspace, foundAtPath);
 }

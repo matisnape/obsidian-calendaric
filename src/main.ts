@@ -90,7 +90,7 @@ export default class CalendaricPlugin extends Plugin {
 				file = await createNote(path, date, key, config, new ObsidianVaultAdapter(this.app));
 			}
 
-			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app));
+			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app), path);
 			break; // Only one granularity can have openAtStartup (enforced by clearStartupNote)
 		}
 	}
