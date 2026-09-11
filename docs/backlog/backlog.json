@@ -6520,8 +6520,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review plus npx tsc --showConfig: tsconfig.json:9 sets \"strict\": true as the single strict-family setting, and no individually-enabled strict sub-flag remains. noImplicitReturns (line 10) and the other retained flags are outside the strict family, so they are not a hand-picked subset of it."
         },
         {
           "id": "AC-ARCH-04.2",
@@ -6532,8 +6532,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review: no \"any\" (explicit or asserted) remains in the companion-plugin boundary -- grep for \": any\" and \"as any\" across src/adapters/companionPluginPort.ts and src/adapters/obsidianCompanionPluginAdapter.ts returns nothing; the untyped registry is reached through unknown and narrowed. The any usages left in src/ are Obsidian-host internals (window.moment, vault.config, vault.adapter.basePath, require(\"electron\")), which this criterion does not cover -- it names a companion plugin runtime object."
         },
         {
           "id": "AC-ARCH-04.3",
@@ -6546,8 +6546,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review: src/adapters/companionPluginPort.ts is the single definition of the depended-on shape and src/adapters/obsidianCompanionPluginAdapter.ts is its only reader. vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > narrows a well-shaped plugin to the depended-on fields, plus the narrowing suite around it (absent registry, registry that is not a record, missing getPluginById, non-object lookup result, receiver preservation)."
         },
         {
           "id": "AC-ARCH-04.4",
@@ -6560,8 +6560,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > a host that throws > reports a mismatch when getPluginById throws / > reports a mismatch when a property getter throws / > does not let the exception escape the adapter; plus > an enabled plugin whose shape does not match > reports a mismatch when enabled is not a boolean / > reports a mismatch when the disable method is missing, and the disabled-state suite. Each mismatch yields an explicit reason and decideDailyNotesCard returns unreadable rather than an offer, so no silently-empty success path remains. The remaining clause -- that the user actually SEES the notice -- is testable_by manual and unverified: renderUnreadableCompanionNotice has no DOM test, since the repo has no jsdom harness for the settings tab.",
           "failure_path": true
         },
         {
@@ -6574,8 +6574,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "measured by the orchestrator, not reported: injecting `const __probe: number = \"not a number\"` into src/settings.test.ts made npm run build exit 2, and removing it returned exit 0. tsconfig.json include is src/**/*.ts, so the compiler now covers test files too -- which also closes the project-memory note that tsc skipped *.test.ts. The build fails rather than warning.",
           "failure_path": true
         }
       ]
