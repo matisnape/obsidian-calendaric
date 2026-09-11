@@ -226,8 +226,14 @@ function commitOf(ref) {
 function resolveTag(argv) {
 	const tagFlag = argv.indexOf("--tag");
 	if (tagFlag !== -1) return { tag: argv[tagFlag + 1], source: "--tag" };
-	if (process.env.GITHUB_REF_NAME) {
-		return { tag: process.env.GITHUB_REF_NAME, source: "GITHUB_REF_NAME" };
+	// GITHUB_REF, and only when it names a tag. GITHUB_REF_NAME alone does not say
+	// what kind of ref it came from: on a pull_request event it is "<number>/merge",
+	// a merge ref, and reading that as the release tag made a pull request look like
+	// a release of a version nobody tagged.
+	const ref = process.env.GITHUB_REF;
+	const TAG_PREFIX = "refs/tags/";
+	if (ref?.startsWith(TAG_PREFIX)) {
+		return { tag: ref.slice(TAG_PREFIX.length), source: "GITHUB_REF" };
 	}
 
 	let atHead = [];

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import {
@@ -204,9 +205,21 @@ describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named br
 
 	afterAll(() => repos.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
+	// A temporary repository must not inherit the caller's GITHUB_* or GIT_* variables.
+	// On a pull_request event GITHUB_REF_NAME is "<number>/merge", which the checker
+	// read as the release tag, so this block passed locally and failed in CI. GIT_DIR
+	// and its siblings would redirect these git calls out of the temporary repository
+	// the same way.
+	const HERMETIC_ENV = Object.fromEntries(
+		Object.entries(process.env).filter(
+			([name]) => !name.startsWith("GITHUB_") && !name.startsWith("GIT_"),
+		),
+	);
+
 	function git(dir, ...args) {
 		execFileSync("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", ...args], {
 			stdio: "pipe",
+			env: HERMETIC_ENV,
 		});
 	}
 
@@ -227,7 +240,7 @@ describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named br
 		return dir;
 	}
 
-	function runCheck(dir) {
+	function runCheck(dir, extraEnv = {}) {
 		// stdio must be spelled out. execFileSync inherits the child's stderr by
 		// default, so the expected-failure case below printed release-check's failure
 		// message onto the test gate's own stderr — which reads exactly like the real
@@ -235,7 +248,8 @@ describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named br
 		// temporary repository.
 		const stdio = ["ignore", "pipe", "pipe"];
 		try {
-			const out = execFileSync("node", ["release-check.mjs"], { cwd: dir, encoding: "utf8", stdio });
+			const env = { ...HERMETIC_ENV, ...extraEnv };
+			const out = execFileSync("node", ["release-check.mjs"], { cwd: dir, encoding: "utf8", stdio, env });
 			return { status: 0, out };
 		} catch (error) {
 			return { status: error.status, out: `${error.stdout}${error.stderr}` };
@@ -256,5 +270,39 @@ describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named br
 		const { status, out } = runCheck(dir);
 		expect(out).toContain("already exists at");
 		expect(status).toBe(1);
+	});
+
+	describe("AC-ARCH-06.3 — the release tag comes from a tag ref, not any ambient ref", () => {
+		it("ignores a pull-request merge ref", () => {
+			// What CI actually sets on a pull_request event. Reading the name alone
+			// made the checker compare manifest.json against "9/merge".
+			const dir = repoWithRefNamedAfterTheVersion((d) => git(d, "branch", "0.1.0"));
+			const { status, out } = runCheck(dir, {
+				GITHUB_REF: "refs/pull/9/merge",
+				GITHUB_REF_NAME: "9/merge",
+			});
+			expect(out).not.toContain("9/merge");
+			expect(out).toContain("release checks passed");
+			expect(status).toBe(0);
+		});
+
+		it("ignores a branch ref", () => {
+			const dir = repoWithRefNamedAfterTheVersion((d) => git(d, "branch", "0.1.0"));
+			const { status } = runCheck(dir, {
+				GITHUB_REF: "refs/heads/main",
+				GITHUB_REF_NAME: "main",
+			});
+			expect(status).toBe(0);
+		});
+
+		it("still reads the tag when the ref is a tag ref", () => {
+			const dir = repoWithRefNamedAfterTheVersion((d) => git(d, "branch", "0.1.0"));
+			const { status, out } = runCheck(dir, {
+				GITHUB_REF: "refs/tags/0.2.0",
+				GITHUB_REF_NAME: "0.2.0",
+			});
+			expect(out).toContain('release tag "0.2.0" does not match manifest.json version "0.1.0"');
+			expect(status).toBe(1);
+		});
 	});
 }, 20000);
