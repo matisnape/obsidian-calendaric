@@ -6980,7 +6980,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s — one combined job, one status check, exactly as specified."
+          "evidence": "measured by the orchestrator: gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s — one combined job, one status check, exactly as specified."
         },
         {
           "id": "AC-ARCH-09.2",
@@ -7020,7 +7020,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "detect-ci-gates.sh re-run after the merge: source=github-checks (real check-run data, not the yaml-fallback path) — it picked up the most recent open pull request's check-runs rather than #6 specifically (default branch has no push-triggered checks by design), but this already confirms real pipeline data is reachable, matching gh pr checks 6 on #6 itself (\"install, test, build\" pass). ci.gates in .claude/stack.json can be moved from provisional to confirmed."
+          "evidence": "measured by the orchestrator: detect-ci-gates.sh re-run after the merge: source=github-checks (real check-run data, not the yaml-fallback path) — it picked up the most recent open pull request's check-runs rather than #6 specifically (default branch has no push-triggered checks by design), but this already confirms real pipeline data is reachable, matching gh pr checks 6 on #6 itself (\"install, test, build\" pass). ci.gates in .claude/stack.json can be moved from provisional to confirmed."
         },
         {
           "id": "AC-ARCH-09.5",
