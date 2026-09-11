@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Check that a `pass` verdict citing a test is really held up by that test.
+"""Check that every `pass` verdict is held up by a test that names it.
 
 The convention is that a test which settles a criterion names that criterion's
 id in its `describe(...)` or `it(...)` title:
 
     it("AC-NOTE-03.5: creates every missing intermediate folder, top down")
 
-Nothing enforced it, so a criterion could read `pass` with evidence citing a
-test name while no test named it. The verdict then had nothing holding it in
-place, and a later refactor could delete or rename the test in silence.
+Nothing enforced it, so a criterion could read `pass` while no test named it.
+The verdict then had nothing holding it in place, and a later refactor could
+delete or rename the test in silence.
 
     python3 check_ac_coverage.py                 exit 1 when a problem is found
     python3 check_ac_coverage.py --report-only   always exit 0, still print
@@ -26,10 +26,16 @@ NO_REGRESSION_IDS. Three groups; only the first two fail:
                         counted, never failed: nothing can be tagged for it.
                         Auditable, not hidden.
 
-The evidence string is not read. Three successive attempts to classify it —
-enumerating test markers, inverting to a closed non-test set, anchoring that
-set to the front — each leaked a real test-backed verdict into the group that
-never fails. Prose has no fixed grammar; an id does.
+THE EVIDENCE STRING IS NOT PARSED, AND MUST NOT BECOME PARSED AGAIN. Three
+successive attempts to decide from it each leaked: enumerating the ways prose
+names a test, then inverting to a closed set of non-test markers, then
+anchoring that set to the front of the string. Every leak sent a real
+test-backed verdict into the group that never fails — the one direction this
+gate must not fail — and the last two arrived in opposite word orders
+("review, then test" and "test, then review"). Prose has no fixed grammar; an
+id does. Exempting a criterion means adding its id to NO_REGRESSION_IDS on
+purpose, which is visible in review; it must never again mean wording its
+evidence a particular way.
 
 A criterion that is `unverified`, `n-a` or `fail` with no test is not reported
 at all. Several criteria here are legitimately untestable in this environment
@@ -329,9 +335,10 @@ def self_check():
 
     end_to_end_check()
 
-    print("self-check passed: unbacked test claims and dangling refs fail, "
-          "review-backed passes are listed not failed, honest gaps stay quiet, "
-          "and main() returns the exit codes those verdicts call for")
+    print("self-check passed: a `pass` outside NO_REGRESSION_IDS with no test "
+          "fails whatever its evidence says, dangling refs fail, listed ones "
+          "are reported not failed, honest gaps stay quiet, and main() returns "
+          "the exit codes those verdicts call for")
 
 
 # AC-MIG-01.1 is here because it is in NO_REGRESSION_IDS; AC-NOTE-03.2 carries
@@ -394,8 +401,8 @@ def end_to_end_check():
 
     named = vitest_report("noteCreate > AC-NOTE-03.1: creates it")
 
-    # A tagged test claim and a review-backed verdict together exit 0: rule 2
-    # is listed, and listing must not fail the build.
+    # A tagged `pass` and an allowlisted one together exit 0: the allowlisted
+    # verdict is listed, and listing must not fail the build.
     code, out = run(named)
     assert code == 0, (code, out)
     assert "AC-MIG-01.1" in out and "NO REGRESSION" in out, out
@@ -429,7 +436,7 @@ def end_to_end_check():
     # clean run just because it yields no titles.
     # {"testResults": [{}]} is the dangerous one: it used to parse as zero
     # titles, and zero titles over a catalogue whose only `pass` is
-    # review-backed exits 0 having checked nothing.
+    # allowlisted exits 0 having checked nothing.
     for junk in ({}, {"testResults": "nope"}, [],
                  {"testResults": [{"assertionResults": [{}]}]},
                  {"testResults": [{}]},
