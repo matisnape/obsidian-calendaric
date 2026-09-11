@@ -6731,7 +6731,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review plus an independent check by the second-model reviewer, which verified the cited API references and version boundaries rather than taking them on trust. The floor is 1.13.7: the previous 0.15.0 was inherited from an old copy of the upstream sample plugin and never chosen for this project, while the code calls APIs requiring up to 1.7.2 (an awaitable revealLeaf, found reviewing US-CMD-01) and 1.1.0 (registerHoverLinkSource, found reviewing US-CAL-03) -- so the old value was actively false. 1.13.7 is the version the maintainer runs, verified on her machine; the newest release is 1.14.1 and a bump is expected when she updates."
+          "evidence": "code review plus an independent check by the second-model reviewer, which verified the cited API references and version boundaries rather than taking them on trust. The floor is 1.13.7: the previous 0.15.0 was inherited from an old copy of the upstream sample plugin and never chosen for this project, while the code calls APIs requiring up to 1.7.2 (an awaitable revealLeaf, found reviewing US-CMD-01) and 1.1.0 (registerHoverLinkSource, found reviewing US-CAL-03) -- so the old value was actively false. 1.13.7 is the newest PUBLIC release, confirmed against obsidianmd/obsidian-releases desktop-releases.json, where latestVersion reads 1.13.7 and the beta channel reads 1.14.1. The 1.14.x line is Catalyst early access, not a public release, so it is not a target: naming it here would lock the plugin out of every non-Catalyst install. No bump is pending."
         },
         {
           "id": "AC-ARCH-06.5",
