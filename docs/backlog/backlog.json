@@ -1692,7 +1692,7 @@
       "story": "As the system matching notes and calendar cells to periods, I want dates in the same period to share one note date, so that a time-of-day difference cannot make one day or week look like two.",
       "rationale": "Note lookup and duplicate detection need one consistent date for each period.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "dni:compute-date-uid"
       ],
