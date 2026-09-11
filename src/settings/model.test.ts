@@ -29,7 +29,7 @@ function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknow
 					format: "YYYY-MM-DD",
 					folder: "journal/day",
 					templatePath: "templates/day",
-					allowPrefixMatching: false,
+					allowPrefixMatch: false,
 					openAtStartup: false,
 				},
 				week: {
@@ -37,7 +37,7 @@ function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknow
 					format: "gggg-[W]ww",
 					folder: "journal/week",
 					templatePath: "templates/week",
-					allowPrefixMatching: true,
+					allowPrefixMatch: true,
 					openAtStartup: false,
 				},
 				month: {
@@ -45,7 +45,7 @@ function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknow
 					format: "YYYY-MM",
 					folder: "journal/month",
 					templatePath: "templates/month",
-					allowPrefixMatching: false,
+					allowPrefixMatch: false,
 					openAtStartup: false,
 				},
 				quarter: {
@@ -53,7 +53,7 @@ function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknow
 					format: "YYYY-[Q]Q",
 					folder: "journal/quarter",
 					templatePath: "",
-					allowPrefixMatching: false,
+					allowPrefixMatch: false,
 					openAtStartup: false,
 				},
 				year: {
@@ -61,7 +61,7 @@ function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknow
 					format: "YYYY",
 					folder: "journal/year",
 					templatePath: "templates/year",
-					allowPrefixMatching: true,
+					allowPrefixMatch: true,
 					openAtStartup: false,
 				},
 			},
@@ -78,7 +78,7 @@ const EXTRA_SET = {
 		format: "DD.MM.YYYY",
 		folder: "work/days",
 		templatePath: "work/templates/day",
-		allowPrefixMatching: true,
+		allowPrefixMatch: true,
 		openAtStartup: true,
 	},
 	week: {
@@ -86,7 +86,7 @@ const EXTRA_SET = {
 		format: "[W]ww-gggg",
 		folder: "work/weeks",
 		templatePath: "",
-		allowPrefixMatching: false,
+		allowPrefixMatch: false,
 		openAtStartup: false,
 	},
 };
@@ -101,7 +101,7 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 			expect(typeof config.format, granularity).toBe("string");
 			expect(typeof config.folder, granularity).toBe("string");
 			expect(typeof config.templatePath, granularity).toBe("string");
-			expect(typeof config.allowPrefixMatching, granularity).toBe("boolean");
+			expect(typeof config.allowPrefixMatch, granularity).toBe("boolean");
 		}
 	});
 
@@ -112,8 +112,8 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 		expect(settings.week.folder).toBe("journal/week");
 		expect(settings.month.format).toBe("YYYY-MM");
 		expect(settings.year.templatePath).toBe("templates/year");
-		expect(settings.week.allowPrefixMatching).toBe(true);
-		expect(settings.day.allowPrefixMatching).toBe(false);
+		expect(settings.week.allowPrefixMatch).toBe(true);
+		expect(settings.day.allowPrefixMatch).toBe(false);
 	});
 
 	it("never shares one config object between two granularities", () => {
@@ -126,10 +126,10 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 	it("does not alias the built-in defaults, so editing a loaded value cannot change them", () => {
 		const settings = toSettings(loadStoredConfig(undefined));
 		settings.month.folder = "edited";
-		settings.month.allowPrefixMatching = true;
+		settings.month.allowPrefixMatch = true;
 
 		expect(DEFAULT_PERIODIC_CONFIG.folder).toBe("");
-		expect(DEFAULT_PERIODIC_CONFIG.allowPrefixMatching).toBe(false);
+		expect(DEFAULT_PERIODIC_CONFIG.allowPrefixMatch).toBe(false);
 		expect(toSettings(loadStoredConfig(undefined)).month.folder).toBe("");
 	});
 
@@ -138,10 +138,10 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 		const settings = toSettings(stored);
 
 		settings.year.folder = "edited";
-		settings.year.allowPrefixMatching = true;
+		settings.year.allowPrefixMatch = true;
 
 		expect(DEFAULT_PERIODIC_CONFIG.folder).toBe("");
-		expect(DEFAULT_PERIODIC_CONFIG.allowPrefixMatching).toBe(false);
+		expect(DEFAULT_PERIODIC_CONFIG.allowPrefixMatch).toBe(false);
 		expect(toSettings(stored).year.folder).toBe("");
 		expect(settings.quarter.folder).toBe("");
 	});
@@ -165,7 +165,7 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 
 		expect(settings.day.format).toBe("YYYY-MM-DD");
 		expect(settings.day.folder).toBe("");
-		expect(settings.day.allowPrefixMatching).toBe(false);
+		expect(settings.day.allowPrefixMatch).toBe(false);
 		expect(settings.year.enabled).toBe(false);
 		expect(settings.year.format).toBe("");
 	});
@@ -176,10 +176,10 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 		const stored = loadStoredConfig(storedFixture());
 		const settings = toSettings(stored);
 
-		settings.day.allowPrefixMatching = true;
+		settings.day.allowPrefixMatch = true;
 		const saved = applySettings(stored, settings);
 
-		expect(getActiveSet(saved).day?.allowPrefixMatching).toBe(true);
+		expect(getActiveSet(saved).day?.allowPrefixMatch).toBe(true);
 	});
 
 	it("leaves every other granularity's stored settings unchanged", () => {
@@ -188,7 +188,7 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 		const untouched = { week: before.week, month: before.month, quarter: before.quarter, year: before.year };
 
 		const settings = toSettings(stored);
-		settings.day.allowPrefixMatching = true;
+		settings.day.allowPrefixMatch = true;
 		const after = getActiveSet(applySettings(stored, settings));
 
 		expect(after.week).toEqual(untouched.week);
@@ -198,14 +198,14 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 	});
 
 	it("writes no entry for a granularity the stored group never mentioned", () => {
-		const partial = { id: "Default", day: { enabled: true, format: "YYYY-MM-DD", allowPrefixMatching: false } };
+		const partial = { id: "Default", day: { enabled: true, format: "YYYY-MM-DD", allowPrefixMatch: false } };
 		const stored = loadStoredConfig({ activeCalendarSet: "Default", calendarSets: [partial] });
 
 		const settings = toSettings(stored);
-		settings.day.allowPrefixMatching = true;
+		settings.day.allowPrefixMatch = true;
 		const saved = applySettings(stored, settings);
 
-		expect(saved.calendarSets[0]?.day?.allowPrefixMatching).toBe(true);
+		expect(saved.calendarSets[0]?.day?.allowPrefixMatch).toBe(true);
 		for (const granularity of ["week", "month", "quarter", "year"] as const) {
 			expect(saved.calendarSets[0], granularity).not.toHaveProperty(granularity);
 		}
@@ -216,13 +216,13 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 		const stored = loadStoredConfig({ activeCalendarSet: "Default", calendarSets: [partial] });
 
 		const settings = toSettings(stored);
-		settings.day.allowPrefixMatching = true;
+		settings.day.allowPrefixMatch = true;
 		const saved = applySettings(stored, settings);
 
 		expect(saved.calendarSets[0]?.day).toEqual({
 			enabled: true,
 			format: "YYYY-MM-DD",
-			allowPrefixMatching: true,
+			allowPrefixMatch: true,
 		});
 	});
 
@@ -232,7 +232,7 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 			const before = getActiveSet(stored);
 			const settings = toSettings(stored);
 
-			settings[changed].allowPrefixMatching = !settings[changed].allowPrefixMatching;
+			settings[changed].allowPrefixMatch = !settings[changed].allowPrefixMatch;
 			const after = getActiveSet(applySettings(stored, settings));
 
 			for (const other of GRANULARITIES) {
@@ -337,7 +337,7 @@ describe("AC-SET-01.4 disabling a granularity keeps its configured values", () =
 		expect(week?.format).toBe("gggg-[W]ww");
 		expect(week?.folder).toBe("journal/week");
 		expect(week?.templatePath).toBe("templates/week");
-		expect(week?.allowPrefixMatching).toBe(true);
+		expect(week?.allowPrefixMatch).toBe(true);
 	});
 
 	it("shows the same values again when the granularity is re-enabled after a restart", () => {
@@ -352,7 +352,7 @@ describe("AC-SET-01.4 disabling a granularity keeps its configured values", () =
 		expect(reenabled.week.format).toBe("gggg-[W]ww");
 		expect(reenabled.week.folder).toBe("journal/week");
 		expect(reenabled.week.templatePath).toBe("templates/week");
-		expect(reenabled.week.allowPrefixMatching).toBe(true);
+		expect(reenabled.week.allowPrefixMatch).toBe(true);
 	});
 
 	it("keeps a disabled granularity's values through a load and save round trip", () => {

@@ -1,9 +1,8 @@
 import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "../types";
+import type { Granularity } from "../types";
 
 /** Every granularity Calendaric knows, in the order the UI and the commands use. */
-export const GRANULARITIES = ["day", "week", "month", "quarter", "year"] as const;
-
-export type Granularity = (typeof GRANULARITIES)[number];
+export const GRANULARITIES: readonly Granularity[] = ["day", "week", "month", "quarter", "year"];
 
 export const WEEK_START_OPTIONS = [
 	"locale",
@@ -114,7 +113,7 @@ function normalizeConfig(raw: unknown): PeriodicConfig {
 		format: asString(raw.format, DEFAULT_PERIODIC_CONFIG.format),
 		folder: asString(raw.folder, DEFAULT_PERIODIC_CONFIG.folder),
 		templatePath: asString(raw.templatePath, DEFAULT_PERIODIC_CONFIG.templatePath),
-		allowPrefixMatching: asBoolean(raw.allowPrefixMatching, DEFAULT_PERIODIC_CONFIG.allowPrefixMatching),
+		allowPrefixMatch: asBoolean(raw.allowPrefixMatch, DEFAULT_PERIODIC_CONFIG.allowPrefixMatch),
 		openAtStartup: asBoolean(raw.openAtStartup, DEFAULT_PERIODIC_CONFIG.openAtStartup),
 	};
 }
@@ -124,7 +123,7 @@ const CONFIG_FIELDS = [
 	"format",
 	"folder",
 	"templatePath",
-	"allowPrefixMatching",
+	"allowPrefixMatch",
 	"openAtStartup",
 ] as const;
 

@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
-import type { PeriodicConfig } from "./types";
+import type { Granularity, PeriodicConfig } from "./types";
 import { clearStartupNote } from "./settings/model";
-import type { Granularity, WeekStartOption } from "./settings/model";
+import type { WeekStartOption } from "./settings/model";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
@@ -275,9 +275,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "${PREFIX_MATCH_EXAMPLE[granularity]}".`,
 			)
 			.addToggle((toggle) => {
-				toggle.setValue(config.allowPrefixMatching);
+				toggle.setValue(config.allowPrefixMatch);
 				toggle.onChange(async (value) => {
-					config.allowPrefixMatching = value;
+					config.allowPrefixMatch = value;
 					await this.save();
 				});
 			});
