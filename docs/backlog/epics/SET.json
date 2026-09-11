@@ -1,7 +1,7 @@
 {
   "epic": "SET",
   "epic_title": "Configuration model and settings UI",
-  "summary": "SET owns the shape of Calendaric's configuration (what is stored per granularity versus what is global), the settings screen that edits it, persisting it safely across restarts and hand-edits, and the guarantee that a saved change reaches the rest of the plugin without restarting Obsidian. It stops at the boundary of what a value means: FMT decides whether a format string is valid, TPL decides what a template does, NOTE decides how a folder is used to create a note, and MIG owns importing configuration from other plugins and upgrading old stored shapes \u2014 SET owns the field that holds each of those values and the feedback shown when a value is rejected.",
+  "summary": "SET owns the shape of Calendaric's configuration (what is stored per granularity versus what is global), the settings screen that edits it, persisting it safely across restarts and hand-edits, and the guarantee that a saved change reaches the rest of the plugin without restarting Obsidian. It stops at the boundary of what a value means: FMT decides whether a format string is valid, TPL decides what a template does, NOTE decides how a folder is used to create a note, and MIG owns importing configuration from other plugins and upgrading old stored shapes — SET owns the field that holds each of those values and the feedback shown when a value is rejected.",
   "stories": [
     {
       "id": "US-SET-01",
@@ -10,7 +10,7 @@
       "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
       "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "pn:calendar-set-model",
         "pn:get-active-calendar-set",
@@ -674,9 +674,9 @@
     "Of the 80 mapped settings-map rows, most are the SAME logical field recorded once per source plugin (dni, cal, pn, calendaric, vault, forks); they do not each need a distinct key in the new model. Concluded canonical survivors: 6 per-granularity fields (enabled, format, folder, templatePath, openAtStartup, allowPrefixMatch) for day/week/month/year, plus roughly 7 global fields (week start, show week numbers, confirm-before-create, locale override, words-per-dot, the single implicit configuration group, and the internal daily-notes-import-shown flag).",
     "Dropped as explicitly dead (stored and editable but never read by anything, per the map's own notes): cal's weeklyNoteFormat/weeklyNoteTemplate/weeklyNoteFolder, pn's hasMigratedDailyNoteSettings, hasMigratedWeeklyNoteSettings, installedVersion, and pn's dead-duplicate ISettings localeOverride/weekStart fields. AC-SET-06.5 asserts none of these come back.",
     "Dropped as icebox-scoped, not because they are wrong: every quarterly-granularity row (periodic-notes.settings.quarterly.*, the vault's calendarSets[].quarter, and the placeholder Monthly/Quarterly/Yearly UI groups), enableTimelineComplication, and calendar-set plurality (activeCalendarSet as a user-facing choice). The underlying array/id may still exist internally as the single implicit group's id; it is just never exposed as a choice.",
-    "Collapsed as duplicate multi-source read paths now replaced by one source of truth (US-SET-03): daily-notes.format/folder/template (core plugin copy), calendar.options.weeklyNoteFormat/Folder/Template (legacy Calendar-plugin copy), and every periodic-notes.settings.<granularity>.enabled 'use Periodic Notes settings' precedence flag \u2014 with a single stored value per field there is nothing left to choose between.",
+    "Collapsed as duplicate multi-source read paths now replaced by one source of truth (US-SET-03): daily-notes.format/folder/template (core plugin copy), calendar.options.weeklyNoteFormat/Folder/Template (legacy Calendar-plugin copy), and every periodic-notes.settings.<granularity>.enabled 'use Periodic Notes settings' precedence flag — with a single stored value per field there is nothing left to choose between.",
     "Out of SET's scope entirely: app.vault.getConfig('weekStart') and ('localeOverride') read Obsidian's own vault-wide config rather than a Calendaric-owned key, and Templater's templates_folder/trigger_on_file_creation_mode/folder_templates and the core daily-notes.json format belong to the plugins MIG imports from, not to Calendaric's own configuration shape.",
     "Roughly a third of the acceptance criteria in this epic are testable_by manual or integration rather than unit, because the behaviour under test is either a live settings-screen interaction (inline validation feedback, the guide link) or requires the calendar view and command palette to observe reactivity end to end.",
-    "US-SET-04 and US-SET-06 reference 'invalid stored data' and 'the format/folder/template check fails' without asserting what specifically makes a value invalid \u2014 that judgment belongs to FMT (format), NOTE (folder) and TPL (template); this epic only owns that the field shows the feedback and that saving still succeeds."
+    "US-SET-04 and US-SET-06 reference 'invalid stored data' and 'the format/folder/template check fails' without asserting what specifically makes a value invalid — that judgment belongs to FMT (format), NOTE (folder) and TPL (template); this epic only owns that the field shows the feedback and that saving still succeeds."
   ]
 }
