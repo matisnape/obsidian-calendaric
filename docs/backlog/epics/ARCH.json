@@ -693,7 +693,7 @@
           "given": "the guide is opened from within the plugin's settings",
           "when": "that open action runs",
           "then": [
-            "it works on every platform the manifest declares support for",
+            "the guide opens successfully on every platform the manifest declares support for",
             "opening the guide does not depend on a desktop-only capability when the manifest declares mobile support"
           ],
           "verifies": "behaviour",

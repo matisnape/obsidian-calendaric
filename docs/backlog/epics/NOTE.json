@@ -545,7 +545,7 @@
           "given": "the resolved file was deleted or moved between being found and being opened",
           "when": "opening it is attempted",
           "then": [
-            "a clear notice is shown",
+            "a notice says that the file could not be opened because it no longer exists at the resolved path",
             "no unrelated file is opened in its place"
           ],
           "verifies": "behaviour",

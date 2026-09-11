@@ -671,7 +671,7 @@
           "given": "the resolved file was deleted or moved between being found and being opened",
           "when": "opening it is attempted",
           "then": [
-            "a clear notice is shown",
+            "a notice says that the file could not be opened because it no longer exists at the resolved path",
             "no unrelated file is opened in its place"
           ],
           "verifies": "behaviour",
@@ -2144,7 +2144,7 @@
           "given": "a vault configured with Start week on: Sunday — not a unit fixture — and a weekly note whose own date falls on the Sunday that starts its week",
           "when": "substitution runs",
           "then": [
-            "{{monday:FORMAT}} resolves to the calendar Monday immediately following that Sunday, i.e. the Monday inside this Sunday-started week",
+            "{{monday:FORMAT}} resolves to the calendar Monday one day after that Sunday, inside this Sunday-started week",
             "it does not resolve to a Monday belonging to a different, Monday-start grouping of the same date",
             "this is checked against that live configuration before release, because every template in the development vault assumes a Monday-first week"
           ],
@@ -6901,7 +6901,7 @@
           "given": "the guide is opened from within the plugin's settings",
           "when": "that open action runs",
           "then": [
-            "it works on every platform the manifest declares support for",
+            "the guide opens successfully on every platform the manifest declares support for",
             "opening the guide does not depend on a desktop-only capability when the manifest declares mobile support"
           ],
           "verifies": "behaviour",

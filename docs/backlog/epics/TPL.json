@@ -212,7 +212,7 @@
           "given": "a vault configured with Start week on: Sunday — not a unit fixture — and a weekly note whose own date falls on the Sunday that starts its week",
           "when": "substitution runs",
           "then": [
-            "{{monday:FORMAT}} resolves to the calendar Monday immediately following that Sunday, i.e. the Monday inside this Sunday-started week",
+            "{{monday:FORMAT}} resolves to the calendar Monday one day after that Sunday, inside this Sunday-started week",
             "it does not resolve to a Monday belonging to a different, Monday-start grouping of the same date",
             "this is checked against that live configuration before release, because every template in the development vault assumes a Monday-first week"
           ],
