@@ -245,11 +245,14 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 	return { ...stored, ...pickGlobals(settings), calendarSets };
 }
 
-export function getActiveGranularities(configs: Partial<GranularityConfigs>): Granularity[] {
+/** Anything that can answer whether a granularity is on: flattened settings, or a stored group. */
+type EnabledSource = Partial<Record<Granularity, { enabled?: boolean }>>;
+
+export function getActiveGranularities(configs: EnabledSource): Granularity[] {
 	return GRANULARITIES.filter((granularity) => configs[granularity]?.enabled === true);
 }
 
-export function getInactiveGranularities(configs: Partial<GranularityConfigs>): Granularity[] {
+export function getInactiveGranularities(configs: EnabledSource): Granularity[] {
 	return GRANULARITIES.filter((granularity) => configs[granularity]?.enabled !== true);
 }
 
