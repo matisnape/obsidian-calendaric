@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that every acceptance criterion marked `pass` is named by a test.
+"""Check that a `pass` verdict citing a test is really held up by that test.
 
 The convention is that a test which settles a criterion names that criterion's
 id in its `describe(...)` or `it(...)` title:
@@ -8,23 +8,29 @@ id in its `describe(...)` or `it(...)` title:
 
 Nothing enforced it, so a criterion could read `pass` with evidence citing a
 test name while no test named it. The verdict then had nothing holding it in
-place, and a later refactor could delete the test in silence.
+place, and a later refactor could delete or rename the test in silence.
 
     python3 check_ac_coverage.py                 exit 1 when a problem is found
     python3 check_ac_coverage.py --report-only   always exit 0, still print
     python3 check_ac_coverage.py --self-check    prove this script works
 
-Two failure modes, and they are not symmetric:
+The gate compares a verdict's own evidence string against reality, in three
+groups. Only the first two fail:
 
-  unbacked verdict    a criterion reads `pass`, no test title names its id
-  dangling reference  a test title names an id no epic file defines
+  unbacked test claim   `pass`, evidence cites a test, no test title names the
+                        id. This is the drift worth failing on: the verdict
+                        claims a regression that cannot be found.
+  dangling reference    a test title names an id no epic file defines. A typo,
+                        or a criterion renumbered out from under the test.
+  no regression behind  `pass`, evidence cites review or a one-off observation
+                        instead of a test. Listed and counted, never failed:
+                        nothing can be tagged for it. Auditable, not hidden.
 
-A criterion that is `unverified`, `n-a` or `fail` with no test is NOT a
-problem. Several criteria here are legitimately untestable in this environment
+A criterion that is `unverified`, `n-a` or `fail` with no test is not reported
+at all. Several criteria here are legitimately untestable in this environment
 (AC-CAL-01.5 wants a jsdom harness, parts of US-CMD-01 want a live Obsidian
 host). A gate demanding universal coverage would be permanently red for honest
-reasons, which teaches everyone to ignore it. This gates consistency with the
-recorded verdict, not coverage.
+reasons, which teaches everyone to ignore it.
 """
 import argparse
 import json
@@ -40,16 +46,65 @@ REPO_ROOT = HERE.parent.parent
 
 AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b")
 
+# Read off the 30 evidence strings that exist today rather than assumed.
+#
+# Two shapes claim a test run, and neither is reliably a LEADING marker:
+#
+#   "vitest: src/fmt/noteDate.test.ts > computeNoteDate > ..."   the usual one
+#   "grep confirms ...; vitest: src/notes/templateTokens.test.ts (13 tests)"
+#       AC-ARCH-03.4 puts the marker after a semicolon, so anchoring to the
+#       start of the string would miss it
+#   "FakeVaultPort/FakeWorkspacePort cover ... (src/notes/noteCreate.test.ts)"
+#       AC-ARCH-03.2 carries no marker word at all, only test file paths
+#
+# Three shapes claim something that is not a test run:
+#
+#   "code review: ci.yml has on: {pull_request: ...} and no push key"
+#   "gh pr checks 6 on the real merged PR: one check named ... reported pass"
+#   "detect-ci-gates.sh re-run after the merge: source=github-checks"
+#
+# Both of the last two contain the bare word "test" — it is the CI job name,
+# "install, test, build" — so a bare `test` substring would misread them as
+# test claims. Match the runner name and the test-file suffix, nothing looser.
+TEST_CLAIM = re.compile(r"vitest|\.test\.ts", re.IGNORECASE)
+
+# A verdict is only excused from rule 1 when it says out loud what settled it
+# instead of a test. Recognising the phrasing, rather than treating "no test
+# marker" as proof of no test claim, is what keeps this fail-closed: a future
+# evidence string that cites a test in wording nobody anticipated ("covered by
+# the noteCreate suite") lands in rule 1 and gets noticed, not in rule 2 where
+# it would never fail. `.sh` covers a named script run, as in AC-ARCH-09.4.
+NON_TEST_CLAIM = re.compile(
+    r"code review|gh pr checks|grep confirms|measured by|observed|inspected"
+    r"|descoped|\.sh\b",
+    re.IGNORECASE,
+)
+
+
+def claims_a_test(evidence):
+    """Fail closed: a verdict too vague to read is treated as claiming a test.
+
+    A false alarm costs one tagged title. A missed unbacked verdict is the
+    thing this gate exists to prevent. A test claim beats a non-test claim in
+    the same string, because "vitest: ... plus code review of the wiring"
+    (AC-MIG-01.2) does name a test that must still be findable.
+    """
+    if not evidence or not evidence.strip():
+        return True
+    if TEST_CLAIM.search(evidence):
+        return True
+    return not NON_TEST_CLAIM.search(evidence)
+
 
 def load_criteria(epics_dir):
-    """Every criterion in the catalogue, as (epic, story_id, ac_id, status)."""
+    """Every criterion, as (epic, story_id, ac_id, status, evidence)."""
     out = []
     for path in sorted(epics_dir.glob("*.json")):
         data = json.loads(path.read_text())
         for story in data.get("stories", []):
             for ac in story.get("acceptance_criteria", []):
                 out.append((data["epic"], story["id"], ac["id"],
-                            ac.get("status", "unverified")))
+                            ac.get("status", "unverified"), ac.get("evidence")))
     return out
 
 
@@ -84,47 +139,71 @@ def tagged_ids(titles):
 
 
 def check(criteria, tagged):
-    """(unbacked, dangling). Pure, so --self-check can drive it directly."""
-    known = {ac_id for _, _, ac_id, _ in criteria}
-    unbacked = [c for c in criteria if c[3] == "pass" and c[2] not in tagged]
+    """(unbacked, no_regression, dangling). Pure, so --self-check drives it."""
+    known = {c[2] for c in criteria}
+    untagged_pass = [c for c in criteria if c[3] == "pass" and c[2] not in tagged]
+    unbacked = [c for c in untagged_pass if claims_a_test(c[4])]
+    no_regression = [c for c in untagged_pass if not claims_a_test(c[4])]
     dangling = sorted(tagged - known)
-    return unbacked, dangling
+    return unbacked, no_regression, dangling
 
 
-def report(unbacked, dangling, total_tagged):
+def by_story(rows):
+    last = None
+    for epic, story_id, ac_id, _, _ in rows:
+        if story_id != last:
+            print(f"  {epic} / {story_id}")
+            last = story_id
+        print(f"    {ac_id}")
+
+
+def report(unbacked, no_regression, dangling, total_tagged):
     print(f"AC coverage: {total_tagged} criteria named by tests, "
-          f"{len(unbacked)} unbacked, {len(dangling)} dangling\n")
+          f"{len(unbacked)} unbacked, {len(dangling)} dangling, "
+          f"{len(no_regression)} passing without regression\n")
 
     if unbacked:
-        print(f"UNBACKED VERDICTS ({len(unbacked)}) — "
-              "marked `pass`, no test names the id")
-        last_story = None
-        for epic, story_id, ac_id, _ in unbacked:
-            if story_id != last_story:
-                print(f"  {epic} / {story_id}")
-                last_story = story_id
-            print(f"    {ac_id}")
+        print(f"UNBACKED TEST CLAIMS ({len(unbacked)}) — FAIL. Evidence cites a "
+              "test, no test names the id.")
+        by_story(unbacked)
         print()
 
     if dangling:
-        print(f"DANGLING REFERENCES ({len(dangling)}) — "
-              "named by a test, defined by no epic file")
+        print(f"DANGLING REFERENCES ({len(dangling)}) — FAIL. Named by a test, "
+              "defined by no epic file.")
         for ac_id in dangling:
             print(f"    {ac_id}")
         print()
 
+    if no_regression:
+        print(f"PASSING WITH NO REGRESSION BEHIND THEM ({len(no_regression)}) — "
+              "not a failure. The verdict rests on review or a one-off "
+              "observation, so there is no test to name. Nothing to tag; each "
+              "one is a decision about whether the verdict should stand.")
+        by_story(no_regression)
+        print()
+
     if not unbacked and not dangling:
-        print("No problems.")
+        print("No failures.")
 
 
 def self_check():
-    """Catches both failure modes, stays quiet on an honest `unverified`."""
+    """Both failure modes fire, and the two `pass` kinds are told apart."""
     catalogue = [
-        ("NOTE", "US-NOTE-03", "AC-NOTE-03.1", "pass"),
-        ("NOTE", "US-NOTE-03", "AC-NOTE-03.2", "pass"),
-        ("NOTE", "US-NOTE-03", "AC-NOTE-03.3", "unverified"),
-        ("CAL", "US-CAL-01", "AC-CAL-01.5", "n-a"),
-        ("CAL", "US-CAL-01", "AC-CAL-01.6", "fail"),
+        # (epic, story, ac_id, status, evidence)
+        ("NOTE", "US-NOTE-03", "AC-NOTE-03.1", "pass",
+         "vitest: src/notes/noteCreate.test.ts > creates the folder"),
+        ("NOTE", "US-NOTE-03", "AC-NOTE-03.2", "pass",
+         "vitest: src/notes/noteCreate.test.ts > deletes nothing"),
+        ("NOTE", "US-NOTE-03", "AC-NOTE-03.3", "unverified", None),
+        ("ARCH", "US-ARCH-09", "AC-ARCH-09.2", "pass",
+         "code review: ci.yml has no push key — inspected verbatim"),
+        ("ARCH", "US-ARCH-09", "AC-ARCH-09.1", "pass",
+         "gh pr checks 6: one check named 'install, test, build' passed in 19s"),
+        ("ARCH", "US-ARCH-03", "AC-ARCH-03.2", "pass",
+         "FakeVaultPort covers it (src/notes/noteOpen.test.ts)"),
+        ("CAL", "US-CAL-01", "AC-CAL-01.5", "n-a", "needs a jsdom harness"),
+        ("CAL", "US-CAL-01", "AC-CAL-01.6", "fail", "measured by hand: wrong"),
     ]
     tagged = tagged_ids([
         "noteCreate > AC-NOTE-03.1: creates the folder",
@@ -133,20 +212,48 @@ def self_check():
     ])
     assert tagged == {"AC-NOTE-03.1", "AC-NOTE-99.9"}, tagged
 
-    unbacked, dangling = check(catalogue, tagged)
+    unbacked, no_regression, dangling = check(catalogue, tagged)
+    unbacked_ids = [c[2] for c in unbacked]
+    no_regression_ids = [c[2] for c in no_regression]
 
-    assert [c[2] for c in unbacked] == ["AC-NOTE-03.2"], unbacked
+    # Rule 1. A vitest-claiming `pass` with no test naming it is a failure.
+    assert "AC-NOTE-03.2" in unbacked_ids, unbacked_ids
+    # And so is the unmarked string that only names a .test.ts path.
+    assert "AC-ARCH-03.2" in unbacked_ids, unbacked_ids
+    assert len(unbacked_ids) == 2, unbacked_ids
+
+    # Rule 2. Review- and observation-backed `pass` verdicts never fail, and
+    # they must be listed, not dropped. "install, test, build" is a CI job
+    # name, so AC-ARCH-09.1 proves the bare word `test` does not trip rule 1.
+    assert "AC-ARCH-09.2" in no_regression_ids, no_regression_ids
+    assert "AC-ARCH-09.1" in no_regression_ids, no_regression_ids
+    assert len(no_regression_ids) == 2, no_regression_ids
+    assert not set(no_regression_ids) & set(unbacked_ids)
+
+    # Rule 3. A test naming an id the catalogue does not define is a failure.
     assert dangling == ["AC-NOTE-99.9"], dangling
 
-    # The asymmetry this gate exists for: an untestable criterion with no test
-    # is honest, so unverified / n-a / fail must never appear above.
+    # Rule 4. The asymmetry this gate exists for: an untestable criterion with
+    # no test is honest, so unverified / n-a / fail never appear anywhere.
     quiet = {"AC-NOTE-03.3", "AC-CAL-01.5", "AC-CAL-01.6"}
-    assert quiet.isdisjoint({c[2] for c in unbacked}), unbacked
+    assert quiet.isdisjoint(set(unbacked_ids) | set(no_regression_ids))
 
-    # And a `pass` that IS named stays quiet too, or the gate is just noise.
-    assert check(catalogue[:1], {"AC-NOTE-03.1"}) == ([], [])
+    # A `pass` that IS named stays quiet too, or the gate is just noise.
+    assert check(catalogue[:1], {"AC-NOTE-03.1"}) == ([], [], [])
 
-    print("self-check passed: both failure modes caught, honest gaps quiet")
+    # Fail closed. Empty evidence, and evidence that names neither a test nor
+    # a recognised non-test source, both count as claiming a test: an
+    # unanticipated way of citing one must surface, not slip into rule 2.
+    assert claims_a_test(None) and claims_a_test("   ")
+    assert claims_a_test("covered by the noteCreate suite")
+    # A test claim wins over a non-test claim in the same string.
+    assert claims_a_test("vitest: dailyNotesImport.test.ts plus code review")
+    # And the recognised non-test phrasings really are recognised.
+    assert not claims_a_test("code review: settings.ts renders the banner")
+    assert not claims_a_test("detect-ci-gates.sh re-run: source=github-checks")
+
+    print("self-check passed: unbacked test claims and dangling refs fail, "
+          "review-backed passes are listed not failed, honest gaps stay quiet")
 
 
 def main():
@@ -163,8 +270,8 @@ def main():
 
     criteria = load_criteria(EPICS_DIR)
     tagged = tagged_ids(test_titles(REPO_ROOT))
-    unbacked, dangling = check(criteria, tagged)
-    report(unbacked, dangling, len(tagged))
+    unbacked, no_regression, dangling = check(criteria, tagged)
+    report(unbacked, no_regression, dangling, len(tagged))
 
     if args.report_only:
         print("report-only: not failing the build")

@@ -47,13 +47,18 @@ jobs:
         run: npm run build
 
       # REPORT ONLY, ON PURPOSE. `--report-only` prints the findings and exits 0,
-      # so this step cannot turn a pull request red today. Five already-merged
-      # stories (US-ARCH-03, US-ARCH-09, US-FMT-06, US-MIG-01, US-TPL-02) carry
-      # 21 `pass` verdicts whose tests never named their criterion ids, so a
-      # blocking gate would make master red the moment it merged. Flipping it to
-      # blocking is a separate, deliberate pass: retro-tag those tests first,
-      # then drop `--report-only` here. This state is temporary, not the
-      # intended one.
+      # so this step cannot turn a pull request red today. Four already-merged
+      # stories (US-ARCH-03, US-FMT-06, US-MIG-01, US-TPL-02) carry 15 `pass`
+      # verdicts whose evidence cites a real vitest test that never named its
+      # criterion id, so a blocking gate would make master red the moment it
+      # merged. Flipping it to blocking is a separate, deliberate pass: add the
+      # ids to those 15 test titles, then drop `--report-only` here. This state
+      # is temporary, not the intended one.
+      #
+      # The six further `pass` verdicts the step lists under "passing with no
+      # regression behind them" (US-ARCH-09, plus AC-MIG-01.1 and .5) do not
+      # block the flip. They rest on code review and on observed check runs, so
+      # there is nothing to tag; they are listed to stay countable.
       - name: ac coverage (report only)
         run: python3 docs/backlog/check_ac_coverage.py --report-only
 

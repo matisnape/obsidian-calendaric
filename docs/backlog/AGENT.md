@@ -39,7 +39,7 @@ legal, so a wrong status cannot land.
 | `build_backlog.py` | The gate. Merges the epic files and refuses to write when the data is wrong. |
 | `set_status.py` | The only supported way to change a story status. |
 | `report.py` | Read the board. `--next`, `--agent`, `--story <id>`. |
-| `check_ac_coverage.py` | Checks that every `pass` criterion is named by a test title, and that no test names an id that does not exist. `npm run check:ac`. |
+| `check_ac_coverage.py` | Checks a `pass` verdict against its own evidence: if the evidence cites a test, a test must name the criterion id. `npm run check:ac`. |
 | `../test_gates.py` | 31 cases that each mutate one record and require the gate to reject it. |
 | `../calendaric.html` | A read-only browser view of `backlog.json`. |
 | `../mapping/` | Where the stories came from: the capability map of the four old plugins. |
@@ -116,10 +116,12 @@ cannot be reviewed against either story's criteria.
    `python3 build_backlog.py`. A judged criterion with no evidence fails the
    gate.
 
-   Name the criterion's id in the title of the test that settles it, so the
-   verdict has something holding it in place:
+   When the evidence cites a test, name the criterion's id in that test's
+   title, so the verdict has something holding it in place:
    `it("AC-NOTE-03.5: creates every missing intermediate folder, top down")`.
-   `npm run check:ac` lists every `pass` criterion no test names.
+   `npm run check:ac` fails on a `pass` whose evidence claims a test no test
+   title names. A `pass` resting on `code review:` or an observed run instead
+   is listed separately and does not fail — there is nothing to tag for it.
 7. **Review.** Open the pull request, then
    `python3 set_status.py US-CAL-14 in-review`.
 8. **Close.** After the merge, `python3 set_status.py US-CAL-14 done`.
