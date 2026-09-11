@@ -6959,7 +6959,7 @@
       "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
       "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first — see DEC-26.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
