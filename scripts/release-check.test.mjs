@@ -228,8 +228,15 @@ describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named br
 	}
 
 	function runCheck(dir) {
+		// stdio must be spelled out. execFileSync inherits the child's stderr by
+		// default, so the expected-failure case below printed release-check's failure
+		// message onto the test gate's own stderr — which reads exactly like the real
+		// repository failing its release check, for a tag that only ever existed in a
+		// temporary repository.
+		const stdio = ["ignore", "pipe", "pipe"];
 		try {
-			return { status: 0, out: execFileSync("node", ["release-check.mjs"], { cwd: dir, encoding: "utf8" }) };
+			const out = execFileSync("node", ["release-check.mjs"], { cwd: dir, encoding: "utf8", stdio });
+			return { status: 0, out };
 		} catch (error) {
 			return { status: error.status, out: `${error.stdout}${error.stderr}` };
 		}

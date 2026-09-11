@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classify, runGates, GATES } from "./verify.mjs";
+import { classify, runGates, GATES, LINT_DEBT_NOTE } from "./verify.mjs";
 
 const ok = () => ({ status: 0 });
 
@@ -54,5 +54,14 @@ describe("AC-ARCH-06.6 — a gate that cannot run fails loudly and names itself"
 
 	it("still distinguishes a gate that ran and found real problems", () => {
 		expect(classify("test", { status: 1 })).toMatchObject({ gate: "test", ran: true });
+	});
+
+	it("explains the lint gate, which is red on a clean tree by decision", () => {
+		// A red lint gate here reads as "I broke something" and for now that is
+		// usually wrong, so the failure output has to say why.
+		expect(LINT_DEBT_NOTE).toContain("DEC-26");
+		expect(LINT_DEBT_NOTE).toContain("predate this");
+		// No error count: a number written into the note goes stale without failing.
+		expect(LINT_DEBT_NOTE).not.toMatch(/\d+ errors?/);
 	});
 });

@@ -58,6 +58,17 @@ export function runGates(gates, run) {
 	return verdicts;
 }
 
+// Printed whenever the lint gate itself fails, because the first reading of a red
+// lint gate here is "I broke something", and for now that is usually wrong. Deliberately
+// carries no error count: a number written into this file goes stale silently, and the
+// command below is the measurement.
+export const LINT_DEBT_NOTE = `
+  About the lint gate: eslint already fails on master with errors that predate this
+  rewrite, so this gate is red on a clean tree too, and a release stays blocked until
+  that debt is paid down. DEC-26 records the decision and its exit condition — lint is
+  excluded from the pull-request gate and left in place here on purpose. Run
+  \`npm run lint\` on master and compare the counts before concluding you caused this.`;
+
 function runNpmScript(gate) {
 	const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {};
 	if (!scripts[gate]) return { missing: true };
@@ -78,6 +89,7 @@ function main() {
 	for (const f of failures) {
 		console.error(`  - ${f.gate}: ${f.ran ? "" : "COULD NOT RUN — "}${f.reason}`);
 	}
+	if (failures.some((f) => f.gate === "lint" && f.ran)) console.error(LINT_DEBT_NOTE);
 	return 1;
 }
 
