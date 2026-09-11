@@ -37,8 +37,12 @@ jobs:
           node-version: 24.12.0
           cache: npm
 
+      # --ignore-scripts because package.json's prepare hook builds. Without it a
+      # type error fails this step and the test step never runs, so the pull request
+      # would report an install failure for what is really a build failure, with the
+      # test gate silently skipped. The build step below runs the same build anyway.
       - name: install
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: test
         run: npm test
