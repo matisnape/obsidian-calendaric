@@ -32,6 +32,22 @@ export class FakeCalendarLeafPort implements CalendarLeafPort {
 	leaf: FakeCalendarLeaf | null = null;
 	created: FakeCalendarLeaf[] = [];
 	createFails = false;
+	private createGate: Promise<void> | null = null;
+
+	/**
+	 * Hold create() open until the returned function is called.
+	 *
+	 * Without this a fake publishes its leaf in the same tick it is asked for
+	 * one, so racing callers never both observe an empty workspace and a
+	 * serialization test passes even when serialization is broken.
+	 */
+	deferCreation(): () => void {
+		let release: () => void = () => undefined;
+		this.createGate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		return release;
+	}
 
 	/** Seed a leaf that predates the call under test. */
 	withExistingLeaf(options: { visible: boolean }): FakeCalendarLeaf {
@@ -47,6 +63,7 @@ export class FakeCalendarLeafPort implements CalendarLeafPort {
 	}
 
 	async create(): Promise<FakeCalendarLeaf> {
+		if (this.createGate) await this.createGate;
 		if (this.createFails) throw new Error("workspace refused the calendar leaf");
 		const leaf = new FakeCalendarLeaf();
 		this.leaf = leaf;

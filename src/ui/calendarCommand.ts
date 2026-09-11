@@ -7,47 +7,91 @@ export const CALENDAR_OPEN_FAILED = "Calendaric: the calendar view could not be 
 export type Notify = (message: string) => void;
 
 /**
- * Open the calendar view, reusing the leaf that is already there.
+ * Coordinates every calendar-leaf creation in the plugin.
  *
- * A half-created leaf shows an empty pane the user cannot repair from the UI,
- * so a failed open is rolled back. Only the leaf this call created is rolled
- * back: losing the user's own calendar is worse than a failed reveal.
+ * Two separate guarantees, so two separate locks:
+ *
+ * - One in-flight creation. Startup and the palette command both reach for the
+ *   leaf, and each reads the workspace before it creates, so without a shared
+ *   lock they can both find nothing and each make one.
+ * - One in-flight open. Two palette invocations share a single reveal rather
+ *   than revealing once per caller.
+ *
+ * One coordinator per plugin instance; a second instance would defeat both.
  */
-export async function openCalendarView(leaves: CalendarLeafPort, notify: Notify): Promise<void> {
-	const existing = leaves.find();
-	let created: CalendarLeafHandle | null = null;
-	try {
-		// The assignment records what this call created, so the rollback below
-		// can tell it apart from a leaf that was already open.
-		const leaf = existing ?? (created = await leaves.create());
-		await leaf.reveal();
-		leaf.focus();
-	} catch {
-		created?.detach();
-		notify(CALENDAR_OPEN_FAILED);
-	}
+export interface CalendarCoordinator {
+	/** Create the leaf if none exists, without revealing or focusing it. */
+	readonly ensure: () => Promise<void>;
+	/**
+	 * Create the leaf if needed, then reveal it and give it focus.
+	 *
+	 * Declared as a property rather than a method so callers can pass it on
+	 * without binding: it closes over the coordinator's locks, not over `this`.
+	 */
+	readonly open: () => Promise<void>;
 }
 
-/**
- * An open function that survives being called twice at once.
- *
- * openCalendarView reads the workspace and then awaits creation, so two callers
- * arriving in that window would both see no leaf and each make one. They share
- * the first open instead. One opener per plugin instance: the whole point is
- * that every caller in the plugin goes through the same in-flight promise.
- */
-export function createCalendarOpener(leaves: CalendarLeafPort, notify: Notify): () => Promise<void> {
-	let inFlight: Promise<void> | null = null;
+export function createCalendarCoordinator(leaves: CalendarLeafPort, notify: Notify): CalendarCoordinator {
+	let creating: Promise<CalendarLeafHandle> | null = null;
+	let opening: Promise<void> | null = null;
 
-	return () => {
-		if (!inFlight) {
-			inFlight = openCalendarView(leaves, notify).finally(() => {
-				// Clear it even when the open failed, so one failure does not
-				// wedge the command for the rest of the session.
-				inFlight = null;
-			});
+	/**
+	 * The shared creation, plus whether this caller is the one that started it.
+	 * Only the starter may roll the leaf back, so a failed reveal in one caller
+	 * never removes a leaf another caller is already using.
+	 */
+	function share(): { creation: Promise<CalendarLeafHandle>; started: boolean } {
+		if (creating) return { creation: creating, started: false };
+
+		const creation = leaves.create();
+		creating = creation;
+		const clear = () => {
+			creating = null;
+		};
+		// Both arms, so a failed creation does not wedge every later attempt,
+		// and attaching a rejection handler here keeps the shared promise from
+		// counting as unhandled.
+		creation.then(clear, clear);
+		return { creation, started: true };
+	}
+
+	async function openOnce(): Promise<void> {
+		const existing = leaves.find();
+		let mine: CalendarLeafHandle | null = null;
+		try {
+			let leaf = existing;
+			if (!leaf) {
+				const { creation, started } = share();
+				leaf = await creation;
+				if (started) mine = leaf;
+			}
+			await leaf.reveal();
+			leaf.focus();
+		} catch {
+			mine?.detach();
+			notify(CALENDAR_OPEN_FAILED);
 		}
-		return inFlight;
+	}
+
+	return {
+		ensure: async () => {
+			if (leaves.find()) return;
+			try {
+				await share().creation;
+			} catch {
+				// Startup is not a user action, so it reports nothing; the
+				// adapter has already removed whatever it half-built.
+			}
+		},
+
+		open: () => {
+			if (!opening) {
+				opening = openOnce().finally(() => {
+					opening = null;
+				});
+			}
+			return opening;
+		},
 	};
 }
 

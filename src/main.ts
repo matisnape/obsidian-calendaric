@@ -9,7 +9,7 @@ import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
-import { calendarViewCommand, createCalendarOpener } from "./ui/calendarCommand";
+import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import type { NoteFile } from "./adapters/vaultPort";
 
 
@@ -31,29 +31,25 @@ export default class CalendaricPlugin extends Plugin {
 			(window as any).moment?.locale(this.settings.overrideLocale);
 		}
 
+		const calendarLeaves = new ObsidianCalendarLeafAdapter(this.app);
+		// One coordinator for the whole plugin. Startup and the palette command
+		// both reach for the calendar leaf, and they share this creation lock,
+		// so neither can make a second one while the other is still creating.
+		const calendar = createCalendarCoordinator(calendarLeaves, (message) => {
+			new Notice(message);
+		});
+
 		this.app.workspace.onLayoutReady(() => {
-			this.initLeaf();
+			// Startup parks the leaf without revealing or focusing it.
+			void calendar.ensure();
 			void this.openStartupNote();
 		});
 
-		const calendarLeaves = new ObsidianCalendarLeafAdapter(this.app);
-		// One opener for the whole plugin, so two callers racing to open the
-		// calendar share one leaf instead of making two.
-		const openCalendar = createCalendarOpener(calendarLeaves, (message) => {
-			new Notice(message);
-		});
-		this.addCommand(calendarViewCommand(calendarLeaves, openCalendar));
+		this.addCommand(calendarViewCommand(calendarLeaves, calendar.open));
 	}
 
 	onunload() {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
-	}
-
-	initLeaf(): void {
-		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) return;
-		const rightLeaf = this.app.workspace.getRightLeaf(false);
-		if (!rightLeaf) return;
-		void rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
 	}
 
 	onSettingsChange(): void {

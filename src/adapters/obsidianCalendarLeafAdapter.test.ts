@@ -85,25 +85,26 @@ function makeApp(workspace: FakeWorkspace): App {
 				return wrap(leaf);
 			},
 
-			revealLeaf: async (leaf: { fake: FakeLeaf }) => {
+			// Returns void, not a promise: revealLeaf only became awaitable in
+			// Obsidian 1.7.2, and the manifest declares 0.15.0. Awaiting this
+			// still has to work.
+			revealLeaf: (leaf: { fake: FakeLeaf }): void => {
 				workspace.revealed.push(leaf.fake);
 				if (leaf.fake.root === workspace.leftSplit) workspace.leftSplit.collapsed = false;
 				if (leaf.fake.root === workspace.rightSplit) workspace.rightSplit.collapsed = false;
 				leaf.fake.shown = true;
 			},
 
-			setActiveLeaf: (
-				leaf: { fake: FakeLeaf },
-				pushHistoryOrParams?: boolean | { focus?: boolean },
-				focus?: boolean,
-			) => {
-				// Accept both signatures so the fixture cannot hide which one
-				// the adapter picked; the assertions check the focus that arrived.
-				const requested =
-					typeof pushHistoryOrParams === "object"
-						? pushHistoryOrParams.focus
-						: focus;
-				workspace.activated.push({ leaf: leaf.fake, focus: requested });
+			setActiveLeaf: (leaf: { fake: FakeLeaf }, pushHistory?: unknown, focus?: unknown) => {
+				// Only the three-argument overload exists on 0.15.0. Rejecting
+				// the object form is the point: it is what lets this gate catch
+				// a call that needs a newer host than the manifest promises.
+				if (typeof pushHistory !== "boolean" || typeof focus !== "boolean") {
+					throw new TypeError(
+						"setActiveLeaf on Obsidian 0.15.0 takes (leaf, pushHistory, focus)",
+					);
+				}
+				workspace.activated.push({ leaf: leaf.fake, focus });
 			},
 		},
 	};
