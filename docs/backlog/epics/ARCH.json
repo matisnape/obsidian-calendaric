@@ -293,7 +293,7 @@
       "story": "As a maintainer, I want the whole codebase held to one strict type-checking standard, with every place it touches an API the compiler cannot verify walled off behind a single typed boundary, so that a wrong assumption about another plugin's shape is caught while compiling, not when a user hits a crash.",
       "rationale": "The target repository's tsconfig.json enables several of the strict-family flags individually but never sets the single \"strict\" option, and is missing others from that family. The old code reached into a companion plugin's internal state with a plain property read: one P1 defect read a Svelte store as if it were a plain object, and a feature it powered silently returned nothing for every user from the day it shipped.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
