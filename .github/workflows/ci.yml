@@ -1,0 +1,37 @@
+name: CI
+
+# Pull requests only. This account has a limited Actions run-minute budget, so a
+# push to a branch with no open pull request must not start a run. See US-ARCH-09.
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  # One job, so the pull request gets exactly one status check. The steps run in
+  # order and the job stops at the first non-zero exit, which names the failed
+  # step in the log.
+  gates:
+    name: install, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: test
+        run: npm test
+
+      - name: build
+        run: npm run build
+
+      # No lint step. eslint fails on master with pre-existing errors, so a lint
+      # gate would make every pull request red regardless of its content. DEC-26
+      # records the reason and the exit condition: lint joins this workflow once a
+      # separate cleanup story pays the debt down. Until then every agent runs
+      # lint locally and confirms its own diff adds no new errors.
