@@ -120,12 +120,65 @@ async function createNoteOrJoinTheWinner(
 	vault: VaultPort,
 ): Promise<NoteFile> {
 	try {
-		return await createNote(path, date, granularity, config, vault);
+		return await createNoteInTurn(vault, path, () =>
+			createNote(path, date, granularity, config, vault),
+		);
 	} catch (error) {
 		const winner = vault.getFile(path);
 		if (!winner) throw error;
 		return winner;
 	}
+}
+
+/**
+ * The note creation currently in flight for each parent folder, per vault.
+ *
+ * Keyed by the vault rather than kept by the widget, because the activations
+ * that collide do not share a widget: a click, the same click in a second
+ * calendar pane, a command and the startup note all write to the one vault.
+ * The map is weak, so a vault that goes away takes its entries with it.
+ */
+const folderWrites = new WeakMap<VaultPort, Map<string, Promise<NoteFile>>>();
+
+/**
+ * Write the note once the last note headed for the same folder is done.
+ *
+ * Re-reading the path after a failure does not cover this on its own, and
+ * neither does coordinating per note path. `createNote` creates the missing
+ * parent folder first and a vault rejects a folder that already exists, so two
+ * activations aimed at the *same folder* — even at two different days — collide
+ * there, and the loser fails before any note exists to fall back to.
+ *
+ * Taking turns per folder settles both shapes: the second activation finds the
+ * folder already made, and when it wanted the very same note it fails on the
+ * file instead, which the caller answers by opening what the winner wrote.
+ * Serialising costs nothing a person would notice — these are clicks.
+ */
+async function createNoteInTurn(
+	vault: VaultPort,
+	path: string,
+	write: () => Promise<NoteFile>,
+): Promise<NoteFile> {
+	let byFolder = folderWrites.get(vault);
+	if (!byFolder) {
+		byFolder = new Map();
+		folderWrites.set(vault, byFolder);
+	}
+	const folders = byFolder;
+	const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+
+	const previous = folders.get(folder);
+	// Either arm starts this write: a predecessor that failed still leaves the
+	// folder question answered, and its rejection belongs to its own caller.
+	const mine = previous ? previous.then(write, write) : write();
+	folders.set(folder, mine);
+
+	const forget = (): void => {
+		if (folders.get(folder) === mine) folders.delete(folder);
+	};
+	void mine.then(forget, forget);
+
+	return await mine;
 }
 
 /**

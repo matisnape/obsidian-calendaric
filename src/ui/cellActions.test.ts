@@ -13,6 +13,7 @@ import {
 import { getMonthGrid } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
+import type { NoteFile } from "../adapters/vaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import type { PeriodicConfig } from "../types";
@@ -61,6 +62,55 @@ function stubConfirm(answer: boolean, spy?: (request: CreateRequest) => void) {
 
 function pathFor(date: string): string {
 	return computeNotePath(moment(date), dayConfig, new FakeVaultConfigPort());
+}
+
+/**
+ * A vault that races the way the real one does.
+ *
+ * Every write parks until the test releases it, and the park happens *before*
+ * the folder is registered — so a second activation looks while the folder is
+ * still missing, which is the window the first race fix left open. Obsidian
+ * rejects a folder that already exists, so this fake does too; without that,
+ * the race cannot be reproduced at all.
+ */
+class RacingVault extends FakeVaultPort {
+	createFolderCalls: string[] = [];
+	/** How many of the next note writes must fail. */
+	failWrites = 0;
+	private open = false;
+	private parked: (() => void)[] = [];
+
+	override async createFolder(path: string): Promise<void> {
+		this.createFolderCalls.push(path);
+		await this.park();
+		if (this.pathExists(path)) throw new Error(`Folder already exists: ${path}`);
+		await super.createFolder(path);
+	}
+
+	override async createFile(path: string, content: string): Promise<NoteFile> {
+		await this.park();
+		if (this.failWrites > 0) {
+			this.failWrites -= 1;
+			throw new Error("vault is read-only");
+		}
+		return super.createFile(path, content);
+	}
+
+	/** Lets every parked write through, and every later one straight past. */
+	release(): void {
+		this.open = true;
+		for (const resume of this.parked.splice(0)) resume();
+	}
+
+	private async park(): Promise<void> {
+		if (this.open) return;
+		await new Promise<void>((resolve) => this.parked.push(resolve));
+	}
+}
+
+/** Drains every pending microtask, so parked activations reach their awaits. */
+function flushMicrotasks(): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /** A plain click on `DAY`, on a Mac, with creation unconfirmed — override one field per test. */
@@ -244,6 +294,71 @@ describe("openOrCreateNote", () => {
 
 		const expected = { file: { path: pathFor(DAY) }, mode: "reuse" };
 		expect(ports.workspace.opened).toEqual([expected, expected]);
+	});
+
+	it("AC-CAL-03.2: one click creates while the other waits, even mid folder creation", async () => {
+		const vault = new RacingVault();
+		const ports: Ports = {
+			vault,
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		};
+
+		const both = Promise.all([clickDay(ports), clickDay(ports)]);
+		// The first click is parked inside the folder creation, so the second one
+		// looks while neither the folder nor the note exists. Only one creation
+		// may have started.
+		await flushMicrotasks();
+		expect(vault.createFolderCalls).toEqual(["Daily"]);
+
+		vault.release();
+		await both;
+
+		const expected = { file: { path: pathFor(DAY) }, mode: "reuse" };
+		expect(ports.workspace.opened).toEqual([expected, expected]);
+		expect(vault.contentAt(pathFor(DAY))).toBe("");
+	});
+
+	it("AC-CAL-03.2: two clicks on different days each get their own note", async () => {
+		const vault = new RacingVault();
+		const ports: Ports = {
+			vault,
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		};
+
+		const both = Promise.all([
+			clickDay(ports, { date: moment(DAY) }),
+			clickDay(ports, { date: moment("2026-04-14") }),
+		]);
+		await flushMicrotasks();
+		vault.release();
+		await both;
+
+		expect(vault.contentAt(pathFor(DAY))).toBe("");
+		expect(vault.contentAt(pathFor("2026-04-14"))).toBe("");
+	});
+
+	it("AC-CAL-03.2: a failed write does not block the next click on that folder", async () => {
+		const vault = new RacingVault();
+		vault.failWrites = 1;
+		const ports: Ports = {
+			vault,
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		};
+
+		// The second click queues behind the first, which is about to fail: its
+		// turn must still come.
+		const first = clickDay(ports).catch((error: unknown) => error);
+		const second = clickDay(ports);
+		await flushMicrotasks();
+		vault.release();
+
+		expect(await first).toEqual(new Error("vault is read-only"));
+		await second;
+		expect(vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
 	});
 
 	it("AC-CAL-03.2: rethrows a create failure that left no note behind", async () => {
