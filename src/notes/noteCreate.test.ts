@@ -159,6 +159,25 @@ describe("createNote (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
 	});
 
+	it("AC-TPL-01.4: substitutes {{title}} with the note's filename, without its extension", async () => {
+		// The title comes from the path the note is being written to, not from the
+		// configured format -- so a path whose basename cannot be produced by that
+		// format is what separates the two sources.
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+
+		const file = await createNote(
+			"journal/daily/Monday review.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			noWarn,
+		);
+
+		expect(vault.contentAt(file.path)).toBe("# Monday review");
+	});
+
 	it("creates an empty note when the configured template is absent (AC-ARCH-03.3: template absent, AC-NOTE-05.3)", async () => {
 		const vault = new FakeVaultPort();
 
