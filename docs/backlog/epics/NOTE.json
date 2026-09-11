@@ -489,7 +489,7 @@
       "story": "As someone jumping between notes quickly, I want opening a note to reuse my current view by default but let me force a new tab or a split when I ask for it, so that navigating never fights the layout I already have open.",
       "rationale": "Where a note opens is as much a part of the experience as whether it opens at all.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calendaric:open-note-in-active-leaf",
         "calendaric:open-note-in-new-tab"
