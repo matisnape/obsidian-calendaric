@@ -199,7 +199,7 @@
       "story": "As someone relying on periodic notes, I want each granularity's effective format, folder and template to resolve to one predictable value, so that I never have to guess which of several possible sources of that setting actually won.",
       "rationale": "The old plugins let format, folder and template be set in more than one place at once; a single resolver removes the guesswork the vault currently gets right only by coincidence.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:get-periodic-note-settings",
         "dni:resolve-daily-settings",
