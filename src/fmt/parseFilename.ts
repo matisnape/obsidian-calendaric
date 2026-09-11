@@ -22,7 +22,15 @@ type FieldKind =
 
 interface TokenGroup {
 	kind: FieldKind;
+	// Set only for a weekday field nested inside {{weekday:fmt}} — it names
+	// that wrapper's ISO weekday (e.g. Sunday=7), not the format's own date,
+	// so it must be checked against that specific day, not the overall match.
+	anchorIsoWeekday?: number;
 }
+
+const WEEKDAY_ISO: Record<string, number> = {
+	monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7,
+};
 
 interface Tokenized {
 	pattern: string;
@@ -79,7 +87,7 @@ function tokenForRun(run: string): { regex: string; kind: FieldKind } | null {
  * Mirrors the format-string syntax `noteUtils.formatWithWeekTokens` writes:
  * moment.js tokens, `[literal]` escapes, and `{{weekday:fmt}}` week tokens.
  */
-function tokenize(format: string): Tokenized {
+function tokenize(format: string, anchorIsoWeekday?: number): Tokenized {
 	let pattern = "";
 	const groups: TokenGroup[] = [];
 	let i = 0;
@@ -99,8 +107,10 @@ function tokenize(format: string): Tokenized {
 			const end = format.indexOf("}}", i + 2);
 			const colon = end === -1 ? -1 : format.indexOf(":", i + 2);
 			if (end !== -1 && colon !== -1 && colon < end) {
+				const weekdayName = format.slice(i + 2, colon).toLowerCase();
+				const targetIso = WEEKDAY_ISO[weekdayName];
 				const tokenFmt = format.slice(colon + 1, end);
-				const nested = tokenize(tokenFmt);
+				const nested = tokenize(tokenFmt, targetIso);
 				pattern += nested.pattern;
 				groups.push(...nested.groups);
 				i = end + 2;
@@ -115,7 +125,7 @@ function tokenize(format: string): Tokenized {
 			const built = tokenForRun(run);
 			if (built) {
 				pattern += `(${built.regex})`;
-				groups.push({ kind: built.kind });
+				groups.push({ kind: built.kind, anchorIsoWeekday });
 			} else {
 				pattern += escapeRegex(run);
 			}
@@ -163,7 +173,7 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 	let day: number | undefined;
 	let isoWeek: number | undefined;
 	let localeWeek: number | undefined;
-	const weekdayChecks: number[] = [];
+	const weekdayChecks: { expected: number; anchorIsoWeekday: number | undefined }[] = [];
 
 	groups.forEach((group, idx) => {
 		const raw = match[idx + 1];
@@ -187,7 +197,7 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 			case "weekdayMin":
 			case "weekdayNum": {
 				const idx = weekdayIndex(group.kind, raw);
-				if (idx !== undefined) weekdayChecks.push(idx);
+				if (idx !== undefined) weekdayChecks.push({ expected: idx, anchorIsoWeekday: group.anchorIsoWeekday });
 				break;
 			}
 		}
@@ -206,9 +216,12 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 		const wy = localeWeekYear ?? year;
 		if (wy === undefined) return null;
 		// A periodic week's identity is its Monday (see noteUtils' {{monday:..}}
-		// convention) even when the format labels the week with locale (Sunday-
-		// start) numbering — .day(1) is locale-aware, unlike .isoWeekday(1).
-		const candidate = window.moment().weekYear(wy).week(localeWeek).day(1);
+		// convention) even when the format labels the week with locale numbering.
+		// .day(1) is only "Monday" when the locale week starts Sun or Mon; for a
+		// Tue..Sat week start it lands on the wrong day (even the wrong week), so
+		// walk forward from the locale week's real start to the next Monday.
+		const start = window.moment().weekYear(wy).week(localeWeek).startOf("week");
+		const candidate = start.isValid() ? start.add((1 - start.isoWeekday() + 7) % 7, "days") : start;
 		date = candidate.isValid() ? candidate : null;
 	} else if (year !== undefined && month !== undefined) {
 		const candidate = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
@@ -219,8 +232,14 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 
 	// A weekday name/number is redundant with Y/M/D or a week number — it must
 	// still describe the same date, or the string never formats to this value
-	// for any date (AC-FMT-04.1).
-	if (weekdayChecks.some((expected) => expected !== date.day())) return null;
+	// for any date (AC-FMT-04.1). A weekday nested inside {{weekday:fmt}} names
+	// a different day of the same week (e.g. {{sunday:ddd}}), so it is checked
+	// against that day, not against the match's own date.
+	const mismatch = weekdayChecks.some(({ expected, anchorIsoWeekday }) => {
+		const actual = anchorIsoWeekday === undefined ? date.day() : date.clone().isoWeekday(anchorIsoWeekday).day();
+		return expected !== actual;
+	});
+	if (mismatch) return null;
 
 	return date;
 }

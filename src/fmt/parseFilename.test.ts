@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import moment from "moment";
 import { parseFilename } from "./parseFilename";
 import { formatWithWeekTokens } from "../notes/noteUtils";
@@ -36,6 +36,58 @@ describe("parseFilename — locale week tokens use locale week semantics, not IS
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2027-01-04");
 	});
+});
+
+describe("parseFilename — a nested weekday token names a different day of the same week", () => {
+	// {{sunday:ddd}} always formats to "Sun", regardless of which week — it
+	// must be checked against the Sunday of that week, not the note's own
+	// Monday (whose weekday is always "Mon").
+	const format = "gggg-[W]ww, {{monday:ddd}} - {{sunday:ddd}}";
+	const monday = moment("2024-01-01");
+
+	it("recognises an exact match", () => {
+		const filename = formatWithWeekTokens(format, monday) + ".md";
+		const result = parseFilename(filename, format, false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
+		expect(result?.prefixMatch).toBe(false);
+	});
+
+	it("recognises a prefix match", () => {
+		const filename = formatWithWeekTokens(format, monday) + " extra.md";
+		const result = parseFilename(filename, format, true);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
+		expect(result?.prefixMatch).toBe(true);
+	});
+});
+
+describe("parseFilename — locale week Monday selection holds for every week-start day", () => {
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it.each([0, 1, 2, 3, 4, 5, 6])(
+		"resolves the week's real Monday when the locale week starts on dow=%i",
+		(dow) => {
+			const localeName = `fmt04-test-dow-${dow}`;
+			moment.updateLocale(localeName, { week: { dow, doy: 6 } });
+			moment.locale(localeName);
+
+			const format = "gggg-[W]ww";
+			const filename = moment().weekYear(2027).week(3).format(format);
+
+			// Independent oracle: walk forward from the locale week's real
+			// start to the next ISO Monday, day by day (not the modulo
+			// formula under test).
+			const oracle = moment().weekYear(2027).week(3).startOf("week");
+			while (oracle.isoWeekday() !== 1) oracle.add(1, "day");
+
+			const result = parseFilename(filename, format, false);
+			expect(result).not.toBeNull();
+			expect(result?.date.format("YYYY-MM-DD")).toBe(oracle.format("YYYY-MM-DD"));
+		},
+	);
 });
 
 describe("parseFilename — AC-FMT-04.2 moved out of its nested folder", () => {
@@ -94,13 +146,21 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 		}
 	});
 
-	it("recognises 60 consecutive weekly notes 'gggg-[W]ww, {{monday:DD.MM}} - {{sunday:DD.MM}}'", () => {
-		const format = "gggg-[W]ww, {{monday:DD.MM}} - {{sunday:DD.MM}}";
+	it("recognises 60 consecutive weekly notes via the configured 'gggg-[W]ww' format with prefix matching", () => {
+		// The real vault's weekly granularity is configured with the bare
+		// "gggg-[W]ww" format and allowPrefixMatch on; each file's descriptive
+		// "DD.MM - DD.MM" range is NOT part of the configured format, so these
+		// are recognised as prefix matches, not exact ones.
+		const format = "gggg-[W]ww";
 		let monday = moment("2024-01-01"); // Monday, ISO week 1 of 2024
 		for (let i = 0; i < 60; i++) {
-			const filename = formatWithWeekTokens(format, monday) + ".md";
-			const result = parseFilename(filename, format, false);
+			const weekLabel = formatWithWeekTokens(format, monday);
+			const sunday = monday.clone().add(6, "days");
+			const filename = `${weekLabel}, ${monday.format("DD.MM")} - ${sunday.format("DD.MM")}.md`;
+			const result = parseFilename(filename, format, true);
+			expect(result).not.toBeNull();
 			expect(result?.date.format("YYYY-MM-DD")).toBe(monday.format("YYYY-MM-DD"));
+			expect(result?.prefixMatch).toBe(true);
 			monday = monday.clone().add(1, "week");
 		}
 	});
