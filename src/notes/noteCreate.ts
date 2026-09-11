@@ -11,9 +11,9 @@ type Granularity = "day" | "week";
  * If a template is configured, its content is read and tokens substituted
  * before the file is created.
  *
- * `warn` carries a template problem to wherever the user can see it. It stays
- * optional because a template that cannot be read must never cost the user the
- * note, so a caller with nowhere to show a warning still gets a note.
+ * `warn` carries a template problem to wherever the user can see it. It is
+ * required rather than optional because a caller that forgets it turns a
+ * template the user configured into a silently blank note.
  *
  * Does NOT open the file — that's the caller's responsibility.
  * Does NOT compute the path — that's the caller's responsibility too, via
@@ -26,7 +26,7 @@ export async function createNote(
 	granularity: Granularity,
 	config: PeriodicConfig,
 	vault: VaultPort,
-	warn?: (message: string) => void,
+	warn: (message: string) => void,
 ): Promise<NoteFile> {
 	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
 	await ensureFolderChain(folder, vault);
@@ -35,8 +35,15 @@ export async function createNote(
 	const file = await vault.createFile(path, template.content);
 
 	// The fold state describes lines, so it can only be attached once those lines
-	// exist as a file.
-	if (template.foldState) await vault.applyFoldState(file, template.foldState);
+	// exist as a file. By then the note is already the user's — a failure here
+	// must not reject, or the caller never gets the file back to open it.
+	if (template.foldState) {
+		try {
+			await vault.applyFoldState(file, template.foldState);
+		} catch (error) {
+			console.error(`Calendaric could not apply the template's fold state to: ${path}`, error);
+		}
+	}
 
 	return file;
 }
@@ -97,12 +104,12 @@ async function readTemplate(
 	config: PeriodicConfig,
 	notePath: string,
 	vault: VaultPort,
-	warn?: (message: string) => void,
+	warn: (message: string) => void,
 ): Promise<NoteTemplate> {
 	if (!config.templatePath) return BLANK_NOTE;
 
 	const reportUnreadable = (): NoteTemplate => {
-		warn?.(`Calendaric could not read the template: ${config.templatePath}`);
+		warn(`Calendaric could not read the template: ${config.templatePath}`);
 		return BLANK_NOTE;
 	};
 
@@ -115,7 +122,7 @@ async function readTemplate(
 		const raw = await vault.readFile(templateFile);
 		return {
 			content: substituteTemplateTokens(raw, date, granularity, config, title),
-			foldState: vault.readFoldState(templateFile),
+			foldState: readFoldState(templateFile, vault),
 		};
 	} catch (error) {
 		// The vault named the file and then refused it — deleted between the two
@@ -123,5 +130,22 @@ async function readTemplate(
 		// the note and the warning.
 		console.error(`Calendaric could not read the template: ${config.templatePath}`, error);
 		return reportUnreadable();
+	}
+}
+
+/**
+ * The template's fold state, or none when it cannot be read.
+ *
+ * Kept out of the content read so that a fold store which refuses to answer
+ * costs the note its folds and nothing else. Folds are a convenience on top of
+ * the content, and the user is not told, because the template they configured
+ * did arrive.
+ */
+function readFoldState(templateFile: NoteFile, vault: VaultPort): FoldState | null {
+	try {
+		return vault.readFoldState(templateFile);
+	} catch (error) {
+		console.error(`Calendaric could not read the fold state of: ${templateFile.path}`, error);
+		return null;
 	}
 }

@@ -17,6 +17,9 @@ function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 
 const DATE = moment("2026-04-13T14:30:00");
 
+/** For the cases that are not about warnings: `warn` is required, so every call names one. */
+const noWarn = () => undefined;
+
 describe("createNote", () => {
 	it("creates the file with empty content when no template is configured (AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
@@ -32,7 +35,7 @@ describe("createNote", () => {
 	it("creates the missing target folder before creating the file (AC-ARCH-03.3: target folder missing)", async () => {
 		const vault = new FakeVaultPort();
 
-		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(vault.createdFolders).toEqual(["journal", "journal/daily"]);
 	});
@@ -40,7 +43,7 @@ describe("createNote", () => {
 	it("creates every missing intermediate folder, top down (AC-NOTE-03.5)", async () => {
 		const vault = new FakeVaultPort();
 
-		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(vault.createdFolders).toEqual(["journal", "journal/daily", "journal/daily/2026"]);
 	});
@@ -49,7 +52,7 @@ describe("createNote", () => {
 		const vault = new FakeVaultPort();
 		vault.seedFolder("journal");
 
-		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(vault.createdFolders).toEqual(["journal/daily", "journal/daily/2026"]);
 	});
@@ -57,7 +60,7 @@ describe("createNote", () => {
 	it("writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4)", async () => {
 		const vault = new FakeVaultPort();
 
-		const file = await createNote("a/b/c/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		const file = await createNote("a/b/c/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(file.path).toBe("a/b/c/2026-04-13.md");
 		expect(vault.contentAt("a/b/c/2026-04-13.md")).toBe("");
@@ -66,7 +69,7 @@ describe("createNote", () => {
 	it("creates no folder for a note at the vault root (AC-NOTE-03.3)", async () => {
 		const vault = new FakeVaultPort();
 
-		await createNote("2026-04-13.md", DATE, "day", makeConfig(), vault);
+		await createNote("2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(vault.createdFolders).toEqual([]);
 		expect(vault.contentAt("2026-04-13.md")).toBe("");
@@ -77,7 +80,7 @@ describe("createNote", () => {
 		vault.seedFolder("journal");
 		vault.seedFolder("journal/daily");
 
-		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(vault.createdFolders).toEqual([]);
 	});
@@ -86,7 +89,7 @@ describe("createNote", () => {
 		const vault = new FakeVaultPort();
 		vault.loseCreateFolderRace("journal");
 
-		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
 
 		expect(file.path).toBe("journal/daily/2026-04-13.md");
 		expect(vault.contentAt("journal/daily/2026-04-13.md")).toBe("");
@@ -100,7 +103,7 @@ describe("createNote", () => {
 		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
 
 		await expect(
-			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("EACCES: permission denied");
 	});
 
@@ -109,7 +112,7 @@ describe("createNote", () => {
 		vault.seedFile("journal", "a note sitting where a folder belongs");
 
 		await expect(
-			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("File already exists at: journal");
 	});
 
@@ -121,7 +124,7 @@ describe("createNote", () => {
 		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
 
 		await expect(
-			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("EACCES: permission denied");
 	});
 
@@ -129,7 +132,7 @@ describe("createNote", () => {
 		const vault = new FakeVaultPort();
 
 		await expect(
-			createNote("journal/../daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/../daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("Cannot create a folder for the path: journal/../daily");
 		expect(vault.createdFolders).toEqual([]);
 	});
@@ -144,6 +147,7 @@ describe("createNote", () => {
 			"day",
 			makeConfig({ templatePath: "Templates/daily.md" }),
 			vault,
+			noWarn,
 		);
 
 		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
@@ -158,6 +162,7 @@ describe("createNote", () => {
 			"day",
 			makeConfig({ templatePath: "Templates/missing.md" }),
 			vault,
+			noWarn,
 		);
 
 		expect(vault.contentAt(file.path)).toBe("");
@@ -168,7 +173,7 @@ describe("createNote", () => {
 		vault.seedFile("journal/daily/2026-04-13.md", "existing content");
 
 		await expect(
-			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("File already exists: journal/daily/2026-04-13.md");
 	});
 
@@ -180,7 +185,7 @@ describe("createNote", () => {
 		vault.createFileError = new Error("Invalid filename format");
 
 		await expect(
-			createNote("journal/daily/2026:04:13.md", DATE, "day", makeConfig(), vault),
+			createNote("journal/daily/2026:04:13.md", DATE, "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("Invalid filename format");
 	});
 
@@ -191,7 +196,7 @@ describe("createNote", () => {
 		vault.createFileError = new Error("Unparseable date string");
 
 		await expect(
-			createNote("journal/daily/Invalid-date.md", moment.invalid(), "day", makeConfig(), vault),
+			createNote("journal/daily/Invalid-date.md", moment.invalid(), "day", makeConfig(), vault, noWarn),
 		).rejects.toThrow("Unparseable date string");
 	});
 	it("expands every token the template carries, not only the title (AC-NOTE-05.1)", async () => {
@@ -207,6 +212,7 @@ describe("createNote", () => {
 			"day",
 			makeConfig({ templatePath: "Templates/daily.md" }),
 			vault,
+			noWarn,
 		);
 
 		expect(vault.contentAt(file.path)).toBe(
@@ -270,6 +276,7 @@ describe("createNote", () => {
 			"day",
 			makeConfig({ templatePath: "Templates/daily.md" }),
 			vault,
+			noWarn,
 		);
 
 		expect(vault.appliedFoldStates).toEqual([{ path: file.path, foldState }]);
@@ -285,8 +292,57 @@ describe("createNote", () => {
 			"day",
 			makeConfig({ templatePath: "Templates/daily.md" }),
 			vault,
+			noWarn,
 		);
 
 		expect(vault.appliedFoldStates).toEqual([]);
+	});
+	// The template itself read fine. Losing its folds is a cosmetic loss; losing
+	// the content the user wrote the template for is not.
+	it("keeps the template content when its fold state cannot be read (AC-NOTE-05.1, AC-NOTE-05.4)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+		vault.failReadFoldState("Templates/daily.md", new Error("fold store unavailable"));
+		const warn = vi.fn();
+		const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			warn,
+		);
+
+		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
+		expect(vault.appliedFoldStates).toEqual([]);
+		expect(warn).not.toHaveBeenCalled();
+		expect(logged).toHaveBeenCalledTimes(1);
+		logged.mockRestore();
+	});
+
+	// The note exists by the time the folds are applied, so a failure there must
+	// not reject: the caller still has to get the file back to open it.
+	it("returns the created note even when applying the fold state fails (AC-NOTE-05.4)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+		vault.seedFoldState("Templates/daily.md", { folds: [{ from: 0, to: 4 }], lines: 12 });
+		vault.failApplyFoldState("journal/daily/2026-04-13.md", new Error("fold save failed"));
+		const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			noWarn,
+		);
+
+		expect(file.path).toBe("journal/daily/2026-04-13.md");
+		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
+		expect(logged).toHaveBeenCalledTimes(1);
+		logged.mockRestore();
 	});
 });
