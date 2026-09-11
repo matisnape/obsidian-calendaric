@@ -1,6 +1,5 @@
 import type { Moment } from "moment";
-
-export type Granularity = "day" | "week" | "month" | "year";
+import type { Granularity } from "../types";
 
 export function computeNoteDate(date: Moment, granularity: Granularity = "day"): string {
 	const periodStart = date.clone().startOf(granularity);

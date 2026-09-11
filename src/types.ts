@@ -1,5 +1,8 @@
 import type { Moment } from "moment";
 
+/** Quarter is reserved (DEC-23): the type names it, no release-1 behavior uses it. */
+export type Granularity = "day" | "week" | "month" | "quarter" | "year";
+
 export interface PeriodicConfig {
 	enabled: boolean;
 	format: string;
