@@ -35,6 +35,10 @@ export class FakeVaultPort implements VaultPort {
 		return this.files.get(path);
 	}
 
+	folderExists(path: string): boolean {
+		return this.folders.has(path);
+	}
+
 	pathExists(path: string): boolean {
 		return this.folders.has(path) || this.files.has(path);
 	}
@@ -47,6 +51,8 @@ export class FakeVaultPort implements VaultPort {
 
 		const failure = this.folderErrors.get(path);
 		if (failure) throw failure;
+
+		if (this.files.has(path)) throw new Error(`File already exists at: ${path}`);
 
 		this.createdFolders.push(path);
 		this.folders.add(path);

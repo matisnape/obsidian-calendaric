@@ -3,6 +3,9 @@ export interface NoteFile {
 }
 
 export interface VaultPort {
+	/** True only for a folder. A file at the same path answers false. */
+	folderExists(path: string): boolean;
+	/** True for anything at the path, folder or file. */
 	pathExists(path: string): boolean;
 	createFolder(path: string): Promise<void>;
 	createFile(path: string, content: string): Promise<NoteFile>;

@@ -47,12 +47,14 @@ async function ensureFolderChain(folder: string, vault: VaultPort): Promise<void
 
 	for (let depth = 1; depth <= segments.length; depth++) {
 		const partial = segments.slice(0, depth).join("/");
-		if (vault.pathExists(partial)) continue;
+		if (vault.folderExists(partial)) continue;
 
 		try {
 			await vault.createFolder(partial);
 		} catch (error) {
-			if (!vault.pathExists(partial)) throw error;
+			// Only a folder at this path means the race was won. Anything else
+			// there — a file, say — leaves the chain broken, so the error stands.
+			if (!vault.folderExists(partial)) throw error;
 		}
 	}
 }

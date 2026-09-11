@@ -102,6 +102,27 @@ describe("createNote", () => {
 		).rejects.toThrow("EACCES: permission denied");
 	});
 
+	it("does not mistake a file for an existing folder in the chain", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note sitting where a folder belongs");
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("File already exists at: journal");
+	});
+
+	// The race recovery asks "is the folder there now?". A file at that path is
+	// not the folder we wanted, so it must not count as the race being won.
+	it("rethrows a folder failure when only a file appeared at the path", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note sitting where a folder belongs");
+		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("EACCES: permission denied");
+	});
+
 	it("renders the configured template into the note content", async () => {
 		const vault = new FakeVaultPort();
 		vault.seedFile("Templates/daily.md", "# {{title}}");

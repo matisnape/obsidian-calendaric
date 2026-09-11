@@ -167,6 +167,15 @@ describe("checkNoteFolder", () => {
 		expect(check).toEqual({ path: "Inbox", valid: true, notYetCreated: true });
 	});
 
+	it("rejects a folder path already occupied by a file", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal/daily", "a note, not a folder");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: false, notYetCreated: false });
+	});
+
 	it("rejects a path with an empty or dot segment", () => {
 		const vault = new FakeVaultPort();
 

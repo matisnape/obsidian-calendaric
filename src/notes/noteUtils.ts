@@ -112,5 +112,11 @@ export function checkNoteFolder(
 		.some((segment) => segment === "" || segment === "." || segment === "..");
 	if (hasUnusableSegment) return { path, valid: false, notYetCreated: false };
 
-	return { path, valid: true, notYetCreated: !vault.pathExists(path) };
+	if (vault.folderExists(path)) return { path, valid: true, notYetCreated: false };
+
+	// Something that is not a folder already owns the path, so creating the
+	// folder there cannot succeed and the path is not merely pending.
+	if (vault.pathExists(path)) return { path, valid: false, notYetCreated: false };
+
+	return { path, valid: true, notYetCreated: true };
 }
