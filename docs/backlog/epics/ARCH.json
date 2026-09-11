@@ -462,7 +462,7 @@
       "story": "As a release owner, I want one clean build to run every gate and produce every release artifact, so that releases are reproducible.",
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "forks:git-dependency-self-build"
       ],
