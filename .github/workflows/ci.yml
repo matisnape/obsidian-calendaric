@@ -2,9 +2,22 @@ name: CI
 
 # Pull requests only. This account has a limited Actions run-minute budget, so a
 # push to a branch with no open pull request must not start a run. See US-ARCH-09.
+#
+# No `branches:` filter, and that is deliberate. It filters the BASE branch, so
+# `branches: [master]` meant a pull request stacked on another branch matched
+# nothing and ran no job at all -- not a pending check, an empty check list,
+# which reads on the pull request page as "no gate configured" rather than as
+# "not run". Two stacked pull requests reached MERGEABLE that way. The budget is
+# still protected: a stacked pull request runs the job once, and its rebase onto
+# master later is a force-push, which is a `synchronize` event it would have paid
+# for anyway.
+#
+# `types:` is left at the default (opened, synchronize, reopened) on purpose.
+# Adding `edited` would catch the retarget GitHub performs when a parent branch
+# merges -- but that retarget does not change the code, so the honest fix there
+# is to rebase the child and force-push it, which produces `synchronize`.
 on:
   pull_request:
-    branches: [master]
 
 # The job only needs to read the code. Without this, a pull request from a branch
 # in this repository runs npm scripts with a writable token.
@@ -50,43 +63,22 @@ jobs:
       - name: build
         run: npm run build
 
-      # NOT ENFORCED YET, ON PURPOSE. The checker runs in its normal blocking
-      # mode and really does exit non-zero; `continue-on-error` is what keeps
-      # that off the pull request status today. Five already-merged stories
-      # (US-ARCH-03, US-ARCH-09, US-FMT-06, US-MIG-01, US-TPL-02) carry 17
-      # `pass` verdicts with no test title naming their criterion id, so
-      # enforcing now would make master red the moment this merged.
-      #
-      # Fifteen of those are a tagging job: a real vitest test settles each one
-      # and only the id is missing from its title. The other two,
-      # AC-ARCH-09.1 and AC-ARCH-09.4, rest on an observed check run and on a
-      # script re-run. Nothing can be tagged for those, so they are settled by
-      # adding them to NO_REGRESSION_IDS in check_ac_coverage.py or by
-      # accepting them as blocking — a decision, not a tagging job.
-      #
-      # To enforce: settle those 17, then delete the
-      # `continue-on-error` line below. Nothing else changes — the command is
-      # already the one that will run for real, so the log here shows exactly
-      # what a red build will show. This state is temporary, not the intended
-      # one, and the step is named so the log says so too.
+      # ENFORCED. A `pass` verdict whose criterion id no test title names now
+      # fails the pull request, the same as a failing test. The step ran behind
+      # `continue-on-error` while five merged stories still carried 17 such
+      # verdicts; the retro-tagging pass settled every one, so the exception is
+      # gone rather than dormant.
       #
       # `npm run check:ac` rather than the script directly, because that script
       # runs its own --self-check first. The checker's regression cases are
       # then part of what CI executes instead of something only a human
       # remembers to run.
       #
-      # `continue-on-error` rather than the script's own `--report-only`
-      # because --report-only suppresses classified findings only: a vitest
-      # crash, a malformed report or a temp-file failure would still exit
-      # non-zero and redden the pull request, which is the opposite of a soft
-      # rollout.
-      #
-      # The four `pass` verdicts the step lists under "passing with no
-      # regression behind them" (AC-ARCH-09.2, AC-ARCH-09.5, AC-MIG-01.1,
-      # AC-MIG-01.5) do not block the flip. They rest on code review, so there
-      # is nothing to tag; they are listed to stay countable.
-      - name: ac coverage (not enforced yet)
-        continue-on-error: true
+      # A criterion genuinely settled by observation, not by a test, is exempted
+      # by its id in NO_REGRESSION_IDS in check_ac_coverage.py, which is visible
+      # in review. It is never exempted by wording its evidence a particular
+      # way, and never by softening this step.
+      - name: ac coverage
         run: npm run check:ac
 
       # No lint step. eslint fails on master with pre-existing errors, so a lint
