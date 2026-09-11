@@ -222,7 +222,6 @@ describe("CalendarCoordinator creation locking", () => {
 		expect(leaves.created).toHaveLength(1);
 		expect(leaves.find()?.revealCount).toBe(0);
 		expect(leaves.find()?.focusCount).toBe(0);
-		expect(leaves.find()?.isVisible()).toBe(false);
 	});
 
 	it("leaves startup silent when creation fails, because it is not a user action", async () => {

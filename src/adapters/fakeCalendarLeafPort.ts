@@ -67,8 +67,11 @@ export class FakeCalendarLeafPort implements CalendarLeafPort {
 	async create(options: { active: boolean }): Promise<FakeCalendarLeaf> {
 		if (this.createGate) await this.createGate;
 		if (this.createFails) throw new Error("workspace refused the calendar leaf");
+		// active is the creation intent, recorded on its own. It is not
+		// visibility: a leaf can be created active inside a collapsed dock and
+		// still be off screen, so only reveal() and fixture setup move
+		// visibility.
 		const leaf = new FakeCalendarLeaf();
-		leaf.visible = options.active;
 		this.leaf = leaf;
 		this.created.push(leaf);
 		this.createdActive.push(options.active);
