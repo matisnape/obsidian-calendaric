@@ -117,7 +117,7 @@
       "story": "As someone journaling day by day, I want {{yesterday}} and {{tomorrow}} in a daily note's template to resolve to the adjacent calendar days, so that I can link into my journal's timeline without typing dates.",
       "rationale": "This is a daily-only convenience carried over from the source plugins; the rewrite should keep the asymmetry explicit rather than silently extending or dropping it.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:template-token-yesterday-tomorrow",
         "calendaric:template-token-yesterday-tomorrow"
@@ -140,8 +140,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > substitutes {{yesterday}} / > formats {{yesterday}} and {{tomorrow}} with the configured daily format"
         },
         {
           "id": "AC-TPL-02.2",
@@ -153,8 +153,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > substitutes {{tomorrow}}"
         },
         {
           "id": "AC-TPL-02.3",
@@ -166,8 +166,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > does not substitute {{yesterday}} for weekly granularity / > does not substitute {{tomorrow}} for weekly granularity / > leaves both adjacent-day tokens intact in a weekly template",
           "failure_path": true
         }
       ]
