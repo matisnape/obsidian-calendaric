@@ -20,6 +20,16 @@ export class FakeWorkspacePort implements WorkspacePort {
 		this.missing.add(path);
 	}
 
+	/**
+	 * Mirrors an Obsidian move: the path is rewritten on the handle itself, and
+	 * the path the note was found at stops holding it. Both halves matter — a
+	 * fake that only rewrote the handle would let a lookup follow the note.
+	 */
+	markMoved(file: NoteFile, newPath: string): void {
+		this.missing.add(file.path);
+		file.path = newPath;
+	}
+
 	async openInLeaf(file: NoteFile, foundAtPath: string, mode: LeafMode): Promise<OpenResult> {
 		this.foundPaths.push(foundAtPath);
 		this.onOpen?.();

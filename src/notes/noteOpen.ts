@@ -14,16 +14,17 @@ export function isSplitModifierPressed(event: MouseEvent, isMacOS: boolean): boo
  * Open a periodic note in one of the three destinations, and say so when the
  * note stopped being what sits at its path.
  *
- * `foundAtPath` is where the caller found the note. It defaults to the path the
- * file carries now, which is right whenever the caller resolved it moments ago.
- * A caller holding a note across a longer gap should pass the path it looked at,
- * because a move rewrites `file.path` on the object itself.
+ * `foundAtPath` is where the caller looked the note up, and it is required
+ * rather than defaulted. Defaulting it to `file.path` would read the path back
+ * off the handle, which a move rewrites in place — a moved note would then open
+ * at its new home instead of being reported, and AC-NOTE-06.4 asks for the
+ * report. Only the caller that performed the lookup still knows that path.
  */
 export async function openNoteIn(
 	file: NoteFile,
 	mode: LeafMode,
 	workspace: WorkspacePort,
-	foundAtPath: string = file.path,
+	foundAtPath: string,
 ): Promise<void> {
 	const result = await workspace.openInLeaf(file, foundAtPath, mode);
 	if (result === "missing") {
@@ -38,7 +39,10 @@ export async function openNoteIn(
  */
 export async function openNote(file: NoteFile, event: MouseEvent, workspace: WorkspacePort): Promise<void> {
 	const mode = isSplitModifierPressed(event, workspace.isMacOS) ? "split" : "reuse";
-	await openNoteIn(file, mode, workspace);
+	// This entry point is handed an already-resolved file and never sees the
+	// lookup path, so it can only offer the handle's own. A note that moved
+	// before the click therefore still opens; see openNoteIn.
+	await openNoteIn(file, mode, workspace, file.path);
 }
 
 /**
@@ -46,5 +50,6 @@ export async function openNote(file: NoteFile, event: MouseEvent, workspace: Wor
  * whatever the user had open where it was.
  */
 export async function openNoteInNewTab(file: NoteFile, workspace: WorkspacePort): Promise<void> {
-	await openNoteIn(file, "tab", workspace);
+	// Same limit as openNote: no lookup path reaches here.
+	await openNoteIn(file, "tab", workspace, file.path);
 }

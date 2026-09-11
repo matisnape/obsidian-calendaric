@@ -85,7 +85,7 @@ describe("openNoteIn", () => {
 	it.each(["reuse", "split", "tab"] as const)("opens the note in the %s destination", async (mode) => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNoteIn(FILE, mode, workspace);
+		await openNoteIn(FILE, mode, workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode }]);
 	});
@@ -96,7 +96,7 @@ describe("opening a file that vanished (AC-NOTE-06.4)", () => {
 		const workspace = new FakeWorkspacePort();
 		workspace.markMissing(FILE.path);
 
-		await openNoteIn(FILE, "reuse", workspace);
+		await openNoteIn(FILE, "reuse", workspace, FILE.path);
 
 		expect(workspace.notices).toEqual([
 			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
@@ -107,7 +107,7 @@ describe("opening a file that vanished (AC-NOTE-06.4)", () => {
 		const workspace = new FakeWorkspacePort();
 		workspace.markMissing(FILE.path);
 
-		await openNoteIn(FILE, "split", workspace);
+		await openNoteIn(FILE, "split", workspace, FILE.path);
 
 		expect(workspace.opened).toEqual([]);
 	});
@@ -126,31 +126,68 @@ describe("opening a file that vanished (AC-NOTE-06.4)", () => {
 	it("stays quiet when the file opens", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNoteIn(FILE, "tab", workspace);
+		await openNoteIn(FILE, "tab", workspace, FILE.path);
 
 		expect(workspace.notices).toEqual([]);
 	});
 });
 
+describe("a note that moved after it was found (AC-NOTE-06.4)", () => {
+	it("AC-NOTE-06.4: gives a notice naming the path it was found at, and opens nothing", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+		workspace.markMoved(note, "archive/2026-04-13.md");
+
+		await openNoteIn(note, "reuse", workspace, FILE.path);
+
+		expect(workspace.notices).toEqual([
+			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
+		]);
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("AC-NOTE-06.4: does not follow the note to its new home", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+		const newHome = "archive/2026-04-13.md";
+		workspace.markMoved(note, newHome);
+
+		await openNoteIn(note, "split", workspace, FILE.path);
+
+		expect(workspace.foundPaths).toEqual([FILE.path]);
+		expect(workspace.foundPaths).not.toContain(newHome);
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("opens normally when the note is still where it was found", async () => {
+		const workspace = new FakeWorkspacePort();
+		const note = { path: FILE.path };
+
+		await openNoteIn(note, "reuse", workspace, FILE.path);
+
+		expect(workspace.opened).toEqual([{ file: note, mode: "reuse" }]);
+		expect(workspace.notices).toEqual([]);
+	});
+});
+
 describe("the path a note was found at (AC-NOTE-06.4)", () => {
-	it("defaults to the file's own path", async () => {
+	it("is what the click route hands to the port", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNoteIn(FILE, "reuse", workspace);
+		await openNote(FILE, makeClick(), workspace);
 
 		expect(workspace.foundPaths).toEqual([FILE.path]);
 	});
 
-	it("is carried by the click and the startup routes alike", async () => {
+	it("is what the startup route hands to the port", async () => {
 		const workspace = new FakeWorkspacePort();
 
-		await openNote(FILE, makeClick(), workspace);
 		await openNoteInNewTab(FILE, workspace);
 
-		expect(workspace.foundPaths).toEqual([FILE.path, FILE.path]);
+		expect(workspace.foundPaths).toEqual([FILE.path]);
 	});
 
-	it("can be given explicitly, so a caller that knows where it looked keeps that path", async () => {
+	it("is the caller's, not the file's, so a move cannot redirect the lookup", async () => {
 		const workspace = new FakeWorkspacePort();
 		const moved = { path: "archive/2026-04-13.md" };
 
@@ -168,7 +205,7 @@ describe("the path a note was found at (AC-NOTE-06.4)", () => {
 			handle.path = "archive/2026-04-13.md";
 		};
 
-		await openNoteIn(handle, "reuse", workspace);
+		await openNoteIn(handle, "reuse", workspace, FILE.path);
 
 		expect(workspace.notices).toEqual([
 			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
