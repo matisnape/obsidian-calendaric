@@ -117,7 +117,7 @@
       "story": "As someone journaling day by day, I want {{yesterday}} and {{tomorrow}} in a daily note's template to resolve to the adjacent calendar days, so that I can link into my journal's timeline without typing dates.",
       "rationale": "This is a daily-only convenience carried over from the source plugins; the rewrite should keep the asymmetry explicit rather than silently extending or dropping it.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "dni:template-token-yesterday-tomorrow",
         "calendaric:template-token-yesterday-tomorrow"
