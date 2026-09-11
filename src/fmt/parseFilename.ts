@@ -7,13 +7,18 @@ export interface ParseFilenameResult {
 
 type FieldKind =
 	| "year"
-	| "weekYear"
+	| "isoWeekYear"
+	| "localeWeekYear"
 	| "monthNum"
 	| "monthName"
 	| "monthNameShort"
 	| "day"
 	| "isoWeek"
-	| "ignore";
+	| "localeWeek"
+	| "weekdayFull"
+	| "weekdayShort"
+	| "weekdayMin"
+	| "weekdayNum";
 
 interface TokenGroup {
 	kind: FieldKind;
@@ -46,8 +51,12 @@ function altRegex(names: string[]): string {
 function tokenForRun(run: string): { regex: string; kind: FieldKind } | null {
 	switch (run) {
 		case "YYYY": return { regex: "\\d{4}", kind: "year" };
-		case "GGGG": return { regex: "\\d{4}", kind: "weekYear" };
-		case "gggg": return { regex: "\\d{4}", kind: "weekYear" };
+		// GGGG/WW are ISO week tokens (Monday-start); gggg/ww are locale week
+		// tokens (locale-dependent start, "en" default is Sunday-start) — the
+		// two number the last/first week of a year differently near the
+		// boundary, so they must resolve through separate moment APIs.
+		case "GGGG": return { regex: "\\d{4}", kind: "isoWeekYear" };
+		case "gggg": return { regex: "\\d{4}", kind: "localeWeekYear" };
 		case "MMMM": return { regex: altRegex(MONTHS), kind: "monthName" };
 		case "MMM": return { regex: altRegex(MONTHS_SHORT), kind: "monthNameShort" };
 		case "MM": return { regex: "\\d{2}", kind: "monthNum" };
@@ -56,12 +65,12 @@ function tokenForRun(run: string): { regex: string; kind: FieldKind } | null {
 		case "D": return { regex: "\\d{1,2}", kind: "day" };
 		case "WW": return { regex: "\\d{2}", kind: "isoWeek" };
 		case "W": return { regex: "\\d{1,2}", kind: "isoWeek" };
-		case "ww": return { regex: "\\d{2}", kind: "isoWeek" };
-		case "w": return { regex: "\\d{1,2}", kind: "isoWeek" };
-		case "dddd": return { regex: altRegex(WEEKDAYS), kind: "ignore" };
-		case "ddd": return { regex: altRegex(WEEKDAYS_SHORT), kind: "ignore" };
-		case "dd": return { regex: altRegex(WEEKDAYS_MIN), kind: "ignore" };
-		case "d": return { regex: "\\d", kind: "ignore" };
+		case "ww": return { regex: "\\d{2}", kind: "localeWeek" };
+		case "w": return { regex: "\\d{1,2}", kind: "localeWeek" };
+		case "dddd": return { regex: altRegex(WEEKDAYS), kind: "weekdayFull" };
+		case "ddd": return { regex: altRegex(WEEKDAYS_SHORT), kind: "weekdayShort" };
+		case "dd": return { regex: altRegex(WEEKDAYS_MIN), kind: "weekdayMin" };
+		case "d": return { regex: "\\d", kind: "weekdayNum" };
 		default: return null;
 	}
 }
@@ -125,19 +134,44 @@ function pad2(n: number): string {
 	return String(n).padStart(2, "0");
 }
 
+function weekdayIndex(kind: FieldKind, raw: string): number | undefined {
+	switch (kind) {
+		case "weekdayFull": {
+			const idx = WEEKDAYS.findIndex((d) => d.toLowerCase() === raw.toLowerCase());
+			return idx === -1 ? undefined : idx;
+		}
+		case "weekdayShort": {
+			const idx = WEEKDAYS_SHORT.findIndex((d) => d.toLowerCase() === raw.toLowerCase());
+			return idx === -1 ? undefined : idx;
+		}
+		case "weekdayMin": {
+			const idx = WEEKDAYS_MIN.findIndex((d) => d.toLowerCase() === raw.toLowerCase());
+			return idx === -1 ? undefined : idx;
+		}
+		case "weekdayNum":
+			return parseInt(raw, 10);
+		default:
+			return undefined;
+	}
+}
+
 function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null {
 	let year: number | undefined;
-	let weekYear: number | undefined;
+	let isoWeekYear: number | undefined;
+	let localeWeekYear: number | undefined;
 	let month: number | undefined;
 	let day: number | undefined;
 	let isoWeek: number | undefined;
+	let localeWeek: number | undefined;
+	const weekdayChecks: number[] = [];
 
 	groups.forEach((group, idx) => {
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
 		switch (group.kind) {
 			case "year": year ??= parseInt(raw, 10); break;
-			case "weekYear": weekYear ??= parseInt(raw, 10); break;
+			case "isoWeekYear": isoWeekYear ??= parseInt(raw, 10); break;
+			case "localeWeekYear": localeWeekYear ??= parseInt(raw, 10); break;
 			case "monthNum": month ??= parseInt(raw, 10); break;
 			case "monthName":
 				month ??= MONTHS.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1;
@@ -147,23 +181,48 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 				break;
 			case "day": day ??= parseInt(raw, 10); break;
 			case "isoWeek": isoWeek ??= parseInt(raw, 10); break;
-			case "ignore": break;
+			case "localeWeek": localeWeek ??= parseInt(raw, 10); break;
+			case "weekdayFull":
+			case "weekdayShort":
+			case "weekdayMin":
+			case "weekdayNum": {
+				const idx = weekdayIndex(group.kind, raw);
+				if (idx !== undefined) weekdayChecks.push(idx);
+				break;
+			}
 		}
 	});
 
 	// Week-number tokens win over any month/day fragment in the same format
 	// (AC-FMT-04.5) — a weekday-token's DD.MM display fragment is redundant
 	// with the week number and must never override it.
+	let date: Moment | null = null;
 	if (isoWeek !== undefined) {
-		const wy = weekYear ?? year;
+		const wy = isoWeekYear ?? year;
 		if (wy === undefined) return null;
-		const date = window.moment().isoWeekYear(wy).isoWeek(isoWeek).startOf("isoWeek");
-		return date.isValid() ? date : null;
+		const candidate = window.moment().isoWeekYear(wy).isoWeek(isoWeek).startOf("isoWeek");
+		date = candidate.isValid() ? candidate : null;
+	} else if (localeWeek !== undefined) {
+		const wy = localeWeekYear ?? year;
+		if (wy === undefined) return null;
+		// A periodic week's identity is its Monday (see noteUtils' {{monday:..}}
+		// convention) even when the format labels the week with locale (Sunday-
+		// start) numbering — .day(1) is locale-aware, unlike .isoWeekday(1).
+		const candidate = window.moment().weekYear(wy).week(localeWeek).day(1);
+		date = candidate.isValid() ? candidate : null;
+	} else if (year !== undefined && month !== undefined) {
+		const candidate = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
+		date = candidate.isValid() ? candidate : null;
 	}
 
-	if (year === undefined || month === undefined) return null;
-	const date = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
-	return date.isValid() ? date : null;
+	if (!date) return null;
+
+	// A weekday name/number is redundant with Y/M/D or a week number — it must
+	// still describe the same date, or the string never formats to this value
+	// for any date (AC-FMT-04.1).
+	if (weekdayChecks.some((expected) => expected !== date.day())) return null;
+
+	return date;
 }
 
 function stripMdExtension(path: string): string {

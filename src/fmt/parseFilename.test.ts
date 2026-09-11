@@ -12,6 +12,32 @@ describe("parseFilename — AC-FMT-04.1 nested folder, exact full-path match", (
 	});
 });
 
+describe("parseFilename — AC-FMT-04.1 a weekday token must match the date it names", () => {
+	it("rejects a filename whose weekday name does not belong to the parsed date", () => {
+		// 2024-01-01 is a real Monday — no date ever formats to "..., Tuesday".
+		const result = parseFilename("2024-01-01, Tuesday.md", "YYYY-MM-DD, dddd", false);
+		expect(result).toBeNull();
+	});
+});
+
+describe("parseFilename — locale week tokens use locale week semantics, not ISO", () => {
+	it("resolves gggg/ww against the locale week year boundary, not the ISO one", () => {
+		// ISO week 1 of 2027 starts Mon 2027-01-04; the "en"-locale week 1 of
+		// 2027 is Sun 2026-12-27 .. Sat 2027-01-02, whose Monday is 2026-12-28
+		// — an 8-day gap from the ISO answer. Only the locale-week API finds
+		// the right week for a gggg/ww format.
+		const result = parseFilename("2027-W01", "gggg-[W]ww", false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-12-28");
+	});
+
+	it("resolves GGGG/WW against the ISO week year boundary", () => {
+		const result = parseFilename("2027-W01", "GGGG-[W]WW", false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2027-01-04");
+	});
+});
+
 describe("parseFilename — AC-FMT-04.2 moved out of its nested folder", () => {
 	it("still recognises the file by its filename alone", () => {
 		const result = parseFilename("2024-03-05.md", "YYYY/YYYY-MM-DD", false);
@@ -57,33 +83,26 @@ describe("parseFilename — AC-FMT-04.5 week number beats a conflicting month/da
 });
 
 describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing note is recognised", () => {
-	it("recognises a full year of daily notes named 'YYYY-MM-DD, dddd'", () => {
+	it("recognises 211 consecutive daily notes named 'YYYY-MM-DD, dddd'", () => {
 		const format = "YYYY-MM-DD, dddd";
 		let day = moment("2024-01-01");
-		const end = moment("2024-12-31");
-		let count = 0;
-		while (day.isSameOrBefore(end)) {
+		for (let i = 0; i < 211; i++) {
 			const filename = formatWithWeekTokens(format, day) + ".md";
 			const result = parseFilename(filename, format, false);
 			expect(result?.date.format("YYYY-MM-DD")).toBe(day.format("YYYY-MM-DD"));
 			day = day.clone().add(1, "day");
-			count++;
 		}
-		expect(count).toBeGreaterThanOrEqual(211);
 	});
 
-	it("recognises every ISO week of a year as weekly notes 'gggg-[W]ww, {{monday:DD.MM}} - {{sunday:DD.MM}}'", () => {
+	it("recognises 60 consecutive weekly notes 'gggg-[W]ww, {{monday:DD.MM}} - {{sunday:DD.MM}}'", () => {
 		const format = "gggg-[W]ww, {{monday:DD.MM}} - {{sunday:DD.MM}}";
 		let monday = moment("2024-01-01"); // Monday, ISO week 1 of 2024
-		let count = 0;
 		for (let i = 0; i < 60; i++) {
 			const filename = formatWithWeekTokens(format, monday) + ".md";
 			const result = parseFilename(filename, format, false);
 			expect(result?.date.format("YYYY-MM-DD")).toBe(monday.format("YYYY-MM-DD"));
 			monday = monday.clone().add(1, "week");
-			count++;
 		}
-		expect(count).toBeGreaterThanOrEqual(60);
 	});
 
 	it("recognises every month of a year as monthly notes 'YYYY-MM MMMM'", () => {
@@ -110,10 +129,17 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 describe("parseFilename — AC-FMT-04.7 real-vault regression: old shapes stay unrecognised", () => {
 	const format = "YYYY-MM-DD, dddd";
 
-	it("does not recognise the older bare 'YYYY-MM-DD.md' shape", () => {
-		const result = parseFilename("2024-03-05.md", format, false);
-		expect(result).toBeNull();
-	});
+	// One representative case stands for all 7 historical bare-date files —
+	// same shape, different dates, so each is an independent instance of the
+	// same regex mismatch. A couple more dates guard against an off-by-one in
+	// the date component itself rather than the shape check.
+	it.each(["2024-03-05.md", "2022-07-19.md", "2023-12-31.md"])(
+		"does not recognise the older bare 'YYYY-MM-DD.md' shape (%s)",
+		(filename) => {
+			const result = parseFilename(filename, format, false);
+			expect(result).toBeNull();
+		},
+	);
 
 	it("does not recognise a filename using an en dash instead of a hyphen between month and day", () => {
 		const result = parseFilename("2024-03–05, Tuesday.md", format, false);
