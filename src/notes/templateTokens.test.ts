@@ -77,9 +77,8 @@ describe("substituteTemplateTokens — daily", () => {
 
 	it("does not mutate the date it was given", () => {
 		// Asserting the final state is not enough: both values are computed eagerly, so a
-		// missing clone() subtracts a day and adds it straight back. Watch the two mutating
-		// methods on the caller's own moment instead — clone() returns a different object,
-		// so a correct implementation never touches these.
+		// missing clone() subtracts a day and adds it straight back. clone() returns a
+		// different object, so a correct implementation never calls these two on `date`.
 		const date = moment("2026-04-13T14:30:00");
 		const subtract = vi.spyOn(date, "subtract");
 		const add = vi.spyOn(date, "add");

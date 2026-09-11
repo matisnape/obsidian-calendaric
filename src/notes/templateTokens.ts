@@ -43,9 +43,8 @@ export function substituteTemplateTokens(
 	out = out.replace(/\{\{title\}\}/g, title);
 
 	if (granularity === "day") {
-		// {{yesterday}} / {{tomorrow}}
-		// formatWithWeekTokens, not plain format(): computeNotePath() names files the same
-		// way, and these tokens exist to link to those files.
+		// These tokens exist to link to the adjacent notes, and computeNotePath() names
+		// those files with formatWithWeekTokens(). Plain format() would diverge from it.
 		const yesterday = formatWithWeekTokens(config.format, date.clone().subtract(1, "day"));
 		const tomorrow = formatWithWeekTokens(config.format, date.clone().add(1, "day"));
 		out = out.replace(/\{\{yesterday\}\}/g, yesterday);
