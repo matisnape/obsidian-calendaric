@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import moment from "moment";
 import { substituteTemplateTokens } from "./templateTokens";
 import type { PeriodicConfig } from "../types";
@@ -76,12 +76,18 @@ describe("substituteTemplateTokens — daily", () => {
 	});
 
 	it("does not mutate the date it was given", () => {
-		// One token per call on purpose: with both in one template, a missing clone() would
-		// subtract a day and then add it back, and a final-state assertion would still pass.
+		// Asserting the final state is not enough: both values are computed eagerly, so a
+		// missing clone() subtracts a day and adds it straight back. Watch the two mutating
+		// methods on the caller's own moment instead — clone() returns a different object,
+		// so a correct implementation never touches these.
 		const date = moment("2026-04-13T14:30:00");
-		substituteTemplateTokens("{{yesterday}}", date, "day", makeConfig(), "t");
-		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
-		substituteTemplateTokens("{{tomorrow}}", date, "day", makeConfig(), "t");
+		const subtract = vi.spyOn(date, "subtract");
+		const add = vi.spyOn(date, "add");
+
+		substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", date, "day", makeConfig(), "t");
+
+		expect(subtract).not.toHaveBeenCalled();
+		expect(add).not.toHaveBeenCalled();
 		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
