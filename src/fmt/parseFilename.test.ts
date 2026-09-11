@@ -3,6 +3,8 @@ import moment from "moment";
 // Importing a locale makes it active, so pin the default back for every
 // test that does not ask for another one.
 import "moment/locale/pl";
+import "moment/locale/ar";
+import "moment/locale/ar-dz";
 moment.locale("en");
 import { parseFilename } from "./parseFilename";
 import { formatWithWeekTokens } from "../notes/noteUtils";
@@ -599,5 +601,52 @@ describe("parseFilename — month and weekday names follow the active locale", (
 		moment.locale("pl");
 
 		expect(parseFilename("2026-April-15", "YYYY-MMMM-DD", false)).toBeNull();
+	});
+});
+
+describe("parseFilename — digits and punctuation the locale rewrites on output", () => {
+	// moment postformats its own output: several locales replace ASCII digits
+	// with their own numerals, and some rewrite punctuation. The writer emits
+	// that form, so the parser has to match it and decode it back.
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it("round-trips a daily name written in the locale's own digits", () => {
+		moment.locale("ar");
+		const format = "YYYY-MM-DD";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("٢٠٢٦-٠٤-١٥");
+		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+	});
+
+	it("round-trips a weekly name written in the locale's own digits", () => {
+		moment.locale("ar");
+		const format = "GGGG-[W]WW";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("٢٠٢٦-W١٦");
+		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("round-trips a name whose punctuation the locale rewrites", () => {
+		// ar-dz keeps ASCII digits but writes an Arabic comma, so punctuation
+		// alone is enough to break a parser that matches the raw format text.
+		moment.locale("ar-dz");
+		const format = "YYYY-MM-DD[, ]dddd";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-04-15، الأربعاء");
+		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+	});
+
+	it("round-trips digits and rewritten punctuation together", () => {
+		moment.locale("ar");
+		const format = "YYYY-MM-DD[, ]dddd";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("٢٠٢٦-٠٤-١٥، الأربعاء");
+		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 });

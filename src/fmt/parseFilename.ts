@@ -39,7 +39,7 @@ interface TokenGroup {
 interface Tokenized {
 	pattern: string;
 	groups: TokenGroup[];
-	names: LocaleNames;
+	tables: LocaleTables;
 }
 
 /**
@@ -56,19 +56,41 @@ interface Tokenized {
  * matchOne's re-render comparison rejects a candidate whose own rendering
  * disagrees with the name.
  */
-interface LocaleNames {
+interface LocaleTables {
 	months: string[][];
 	monthsShort: string[][];
 	weekdays: string[][];
 	weekdaysShort: string[][];
 	weekdaysMin: string[][];
+	/** The ten digit glyphs this locale writes numbers with. */
+	digits: string;
 }
 
 function unique(...names: string[]): string[] {
 	return [...new Set(names)];
 }
 
-function localeNames(format: string): LocaleNames {
+/**
+ * moment rewrites its own finished output before returning it: 23 bundled
+ * locales replace the ASCII digits with their own numerals, and some rewrite
+ * punctuation too — ar writes "٢٠٢٦-٠٤-١٥، الأربعاء" where the format says
+ * "YYYY-MM-DD[, ]dddd". That rewritten form is what lands in the filename, so
+ * it is what a pattern has to match. preparse is moment's own inverse.
+ */
+function postformat(text: string): string {
+	return window.moment.localeData().postformat(text);
+}
+
+function preparse(text: string): string {
+	return window.moment.localeData().preparse(text);
+}
+
+function digitClass(digits: string, min: number, max = min): string {
+	const set = [...new Set(digits)].map(escapeRegex).join("");
+	return `[${set}]{${min}${max === min ? "" : `,${max}`}}`;
+}
+
+function localeTables(format: string): LocaleTables {
 	const data = window.moment.localeData();
 	const months = Array.from({ length: 12 }, (_, i) => window.moment().date(1).month(i));
 	const days = Array.from({ length: 7 }, (_, i) => window.moment().day(i));
@@ -79,10 +101,11 @@ function localeNames(format: string): LocaleNames {
 		weekdays: days.map((d) => unique(data.weekdays(d, format), data.weekdays(d, "dddd"))),
 		weekdaysShort: days.map((d) => unique(data.weekdaysShort(d))),
 		weekdaysMin: days.map((d) => unique(data.weekdaysMin(d))),
+		digits: postformat("0123456789"),
 	};
 }
 
-function mergeNames(outer: LocaleNames, inner: LocaleNames): LocaleNames {
+function mergeTables(outer: LocaleTables, inner: LocaleTables): LocaleTables {
 	const merge = (a: string[][], b: string[][]) => a.map((names, i) => unique(...names, ...(b[i] ?? [])));
 	return {
 		months: merge(outer.months, inner.months),
@@ -90,6 +113,7 @@ function mergeNames(outer: LocaleNames, inner: LocaleNames): LocaleNames {
 		weekdays: merge(outer.weekdays, inner.weekdays),
 		weekdaysShort: merge(outer.weekdaysShort, inner.weekdaysShort),
 		weekdaysMin: merge(outer.weekdaysMin, inner.weekdaysMin),
+		digits: outer.digits,
 	};
 }
 
@@ -110,34 +134,35 @@ function escapeRegex(s: string): string {
 function altRegex(table: string[][]): string {
 	return table
 		.flat()
+		.map(postformat)
 		.sort((a, b) => b.length - a.length)
 		.map(escapeRegex)
 		.join("|");
 }
 
-function tokenForRun(run: string, names: LocaleNames): { regex: string; kind: FieldKind } | null {
+function tokenForRun(run: string, tables: LocaleTables): { regex: string; kind: FieldKind } | null {
 	switch (run) {
-		case "YYYY": return { regex: "\\d{4}", kind: "year" };
+		case "YYYY": return { regex: digitClass(tables.digits, 4), kind: "year" };
 		// GGGG/WW are ISO week tokens (Monday-start); gggg/ww are locale week
 		// tokens (locale-dependent start, "en" default is Sunday-start) — the
 		// two number the last/first week of a year differently near the
 		// boundary, so they must resolve through separate moment APIs.
-		case "GGGG": return { regex: "\\d{4}", kind: "isoWeekYear" };
-		case "gggg": return { regex: "\\d{4}", kind: "localeWeekYear" };
-		case "MMMM": return { regex: altRegex(names.months), kind: "monthName" };
-		case "MMM": return { regex: altRegex(names.monthsShort), kind: "monthNameShort" };
-		case "MM": return { regex: "\\d{2}", kind: "monthNum" };
-		case "M": return { regex: "\\d{1,2}", kind: "monthNum" };
-		case "DD": return { regex: "\\d{2}", kind: "day" };
-		case "D": return { regex: "\\d{1,2}", kind: "day" };
-		case "WW": return { regex: "\\d{2}", kind: "isoWeek" };
-		case "W": return { regex: "\\d{1,2}", kind: "isoWeek" };
-		case "ww": return { regex: "\\d{2}", kind: "localeWeek" };
-		case "w": return { regex: "\\d{1,2}", kind: "localeWeek" };
-		case "dddd": return { regex: altRegex(names.weekdays), kind: "weekdayFull" };
-		case "ddd": return { regex: altRegex(names.weekdaysShort), kind: "weekdayShort" };
-		case "dd": return { regex: altRegex(names.weekdaysMin), kind: "weekdayMin" };
-		case "d": return { regex: "\\d", kind: "weekdayNum" };
+		case "GGGG": return { regex: digitClass(tables.digits, 4), kind: "isoWeekYear" };
+		case "gggg": return { regex: digitClass(tables.digits, 4), kind: "localeWeekYear" };
+		case "MMMM": return { regex: altRegex(tables.months), kind: "monthName" };
+		case "MMM": return { regex: altRegex(tables.monthsShort), kind: "monthNameShort" };
+		case "MM": return { regex: digitClass(tables.digits, 2), kind: "monthNum" };
+		case "M": return { regex: digitClass(tables.digits, 1, 2), kind: "monthNum" };
+		case "DD": return { regex: digitClass(tables.digits, 2), kind: "day" };
+		case "D": return { regex: digitClass(tables.digits, 1, 2), kind: "day" };
+		case "WW": return { regex: digitClass(tables.digits, 2), kind: "isoWeek" };
+		case "W": return { regex: digitClass(tables.digits, 1, 2), kind: "isoWeek" };
+		case "ww": return { regex: digitClass(tables.digits, 2), kind: "localeWeek" };
+		case "w": return { regex: digitClass(tables.digits, 1, 2), kind: "localeWeek" };
+		case "dddd": return { regex: altRegex(tables.weekdays), kind: "weekdayFull" };
+		case "ddd": return { regex: altRegex(tables.weekdaysShort), kind: "weekdayShort" };
+		case "dd": return { regex: altRegex(tables.weekdaysMin), kind: "weekdayMin" };
+		case "d": return { regex: digitClass(tables.digits, 1), kind: "weekdayNum" };
 		default: return null;
 	}
 }
@@ -149,7 +174,7 @@ function tokenForRun(run: string, names: LocaleNames): { regex: string; kind: Fi
 function tokenize(format: string, nested = false): Tokenized {
 	let pattern = "";
 	const groups: TokenGroup[] = [];
-	let names = localeNames(format);
+	let tables = localeTables(format);
 	let wrappers = 0;
 	let i = 0;
 
@@ -159,7 +184,7 @@ function tokenize(format: string, nested = false): Tokenized {
 		if (ch === "[") {
 			const end = format.indexOf("]", i + 1);
 			const literal = end === -1 ? format.slice(i + 1) : format.slice(i + 1, end);
-			pattern += escapeRegex(literal);
+			pattern += escapeRegex(postformat(literal));
 			i = end === -1 ? format.length : end + 1;
 			continue;
 		}
@@ -176,7 +201,7 @@ function tokenize(format: string, nested = false): Tokenized {
 				const wrapper = wrappers++;
 				// A wrapper's own format may draw a different inflection out of
 				// the locale, so its spellings join the table used for lookup.
-				names = mergeNames(names, inner.names);
+				tables = mergeTables(tables, inner.tables);
 				pattern += inner.pattern;
 				groups.push(...inner.groups.map((group) => ({ ...group, wrapper, wrapperIsoDay })));
 				i = end + 2;
@@ -193,8 +218,8 @@ function tokenize(format: string, nested = false): Tokenized {
 			let j = i + 1;
 			while (j < format.length && format[j] === escaped) j++;
 			let run = format.slice(i + 1, j);
-			while (run.length > 1 && !tokenForRun(run, names)) run = run.slice(0, -1);
-			pattern += escaped === "\\" ? "" : escapeRegex(run);
+			while (run.length > 1 && !tokenForRun(run, tables)) run = run.slice(0, -1);
+			pattern += escaped === "\\" ? "" : escapeRegex(postformat(run));
 			i += 1 + run.length;
 			continue;
 		}
@@ -203,22 +228,22 @@ function tokenize(format: string, nested = false): Tokenized {
 			let j = i + 1;
 			while (j < format.length && format[j] === ch) j++;
 			const run = format.slice(i, j);
-			const built = tokenForRun(run, names);
+			const built = tokenForRun(run, tables);
 			if (built) {
 				pattern += `(${built.regex})`;
 				groups.push({ kind: built.kind, nested });
 			} else {
-				pattern += escapeRegex(run);
+				pattern += escapeRegex(postformat(run));
 			}
 			i = j;
 			continue;
 		}
 
-		pattern += escapeRegex(ch);
+		pattern += escapeRegex(postformat(ch));
 		i++;
 	}
 
-	return { pattern, groups, names };
+	return { pattern, groups, tables };
 }
 
 export type WeekSemantics = "iso" | "locale";
@@ -286,17 +311,17 @@ interface BuiltDate {
  * module gives every weekly match. matchOne's re-render check then rejects the
  * candidate if it does not reproduce the name.
  */
-function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], names: LocaleNames): BuiltDate[] {
+function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], tables: LocaleTables): BuiltDate[] {
 	const candidates: BuiltDate[] = [];
 
-	const topLevel = buildFrom(match, groups, (group) => !group.nested, names);
+	const topLevel = buildFrom(match, groups, (group) => !group.nested, tables);
 	if (topLevel) candidates.push(topLevel);
 
 	const wrappers = new Map(
 		groups.filter((group) => group.wrapper !== undefined).map((group) => [group.wrapper, group]),
 	);
 	for (const [wrapper, sample] of wrappers) {
-		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, names, sample.wrapperIsoDay);
+		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, tables, sample.wrapperIsoDay);
 		// Every wrapper renders through isoWeekday(), so the day it names lies
 		// in the format's own ISO week; that week's Monday is the date every
 		// weekly match returns.
@@ -309,7 +334,7 @@ function buildFrom(
 	match: RegExpExecArray,
 	groups: TokenGroup[],
 	include: (group: TokenGroup) => boolean,
-	names: LocaleNames,
+	tables: LocaleTables,
 	wrapperIsoDay?: number,
 ): BuiltDate | null {
 	let year: number | undefined;
@@ -325,15 +350,15 @@ function buildFrom(
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
 		switch (group.kind) {
-			case "year": year ??= parseInt(raw, 10); break;
-			case "isoWeekYear": isoWeekYear ??= parseInt(raw, 10); break;
-			case "localeWeekYear": localeWeekYear ??= parseInt(raw, 10); break;
-			case "monthNum": month ??= parseInt(raw, 10); break;
-			case "monthName": month ??= indexOfName(names.months, raw) + 1; break;
-			case "monthNameShort": month ??= indexOfName(names.monthsShort, raw) + 1; break;
-			case "day": day ??= parseInt(raw, 10); break;
-			case "isoWeek": isoWeek ??= parseInt(raw, 10); break;
-			case "localeWeek": localeWeek ??= parseInt(raw, 10); break;
+			case "year": year ??= parseInt(preparse(raw), 10); break;
+			case "isoWeekYear": isoWeekYear ??= parseInt(preparse(raw), 10); break;
+			case "localeWeekYear": localeWeekYear ??= parseInt(preparse(raw), 10); break;
+			case "monthNum": month ??= parseInt(preparse(raw), 10); break;
+			case "monthName": month ??= indexOfName(tables.months, raw) + 1; break;
+			case "monthNameShort": month ??= indexOfName(tables.monthsShort, raw) + 1; break;
+			case "day": day ??= parseInt(preparse(raw), 10); break;
+			case "isoWeek": isoWeek ??= parseInt(preparse(raw), 10); break;
+			case "localeWeek": localeWeek ??= parseInt(preparse(raw), 10); break;
 			default: break; // a weekday name/number never constructs either
 		}
 	});
@@ -381,7 +406,7 @@ function stripMdExtension(path: string): string {
 }
 
 function matchOne(input: string, format: string, allowPrefixMatch: boolean): ParseFilenameResult | null {
-	const { pattern, groups, names } = tokenize(format);
+	const { pattern, groups, tables } = tokenize(format);
 	// Case-sensitive: a filename's characters must match the format exactly
 	// (AC-FMT-04.1, AC-FMT-04.7) — moment's own output (month/weekday names,
 	// [literal] text) is already the correctly-cased string to match against.
@@ -400,7 +425,7 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	// fragment (nested in {{weekday:fmt}} or not — the AC names no such
 	// restriction) once a week number decides the date; every other field,
 	// year/week/weekday alike, must still match exactly.
-	for (const built of buildCandidates(match, groups, names)) {
+	for (const built of buildCandidates(match, groups, tables)) {
 		const rendered = formatWithWeekTokens(format, built.date);
 		const renderedMatch = regex.exec(rendered);
 		if (!renderedMatch) continue;

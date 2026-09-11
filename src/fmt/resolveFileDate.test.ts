@@ -3,6 +3,7 @@ import moment from "moment";
 // Importing a locale makes it active, so pin the default back for every
 // test that does not ask for another one.
 import "moment/locale/pl";
+import "moment/locale/ar";
 moment.locale("en");
 import { resolveFileDate } from "./resolveFileDate";
 import { computeNoteDate } from "./noteDate";
@@ -60,6 +61,25 @@ describe("resolveFileDate — AC-FMT-07.1 a daily filename written in the vault'
 
 		expect(result?.granularity).toBe("day");
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.1/.2 a vault whose locale rewrites digits", () => {
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it("recognises the daily and weekly notes the plugin writes under the ar locale", () => {
+		moment.locale("ar");
+		const configs = { day: config("YYYY-MM-DD", "Daily"), week: config("GGGG-[W]WW", "Weekly") };
+
+		const day = resolveFileDate("Daily/٢٠٢٦-٠٤-١٥.md", configs, NO_DEFAULT_FOLDER);
+		const week = resolveFileDate("Weekly/٢٠٢٦-W١٦.md", configs, NO_DEFAULT_FOLDER);
+
+		expect(day?.granularity).toBe("day");
+		expect(day?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(week?.granularity).toBe("week");
+		expect(week?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 });
 
