@@ -44,7 +44,18 @@ HERE = pathlib.Path(__file__).parent
 EPICS_DIR = HERE / "epics"
 REPO_ROOT = HERE.parent.parent
 
-AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b")
+# The trailing lookahead rejects a further `.<digits>`, so "AC-NOTE-03.1.2" in
+# a title yields nothing rather than quietly satisfying the real AC-NOTE-03.1.
+# A malformed id must not be able to back a verdict. Yielding nothing is the
+# safe direction: the criterion it nearly named stays unbacked and fails.
+# build_backlog.py anchors the same shape with `^AC-<EPIC>-<nn>.<m>$` when it
+# validates the catalogue; this is the title-side half, where the id is
+# embedded in prose and cannot be anchored.
+AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b(?!\.\d)")
+
+# The four verdicts a criterion may carry, per AGENT.md. Kept in step with
+# build_backlog.py's AC_STATUSES, which is the gate that enforces them.
+AC_STATUSES = ("unverified", "pass", "fail", "n-a")
 
 # Read off the 30 evidence strings that exist today rather than assumed.
 #
@@ -132,8 +143,20 @@ def load_criteria(epics_dir):
             sys.exit(f"{path} is not an epic object")
         for story in data.get("stories", []):
             for ac in story.get("acceptance_criteria", []):
+                status = ac.get("status", "unverified")
+                # Every rule here keys on `status == "pass"`, so a typo like
+                # "passed" makes a criterion invisible to the gate meant to
+                # police it — it is neither reported nor counted, and the run
+                # can print "No failures". build_backlog.py:137 is the primary
+                # guard and rejects the same typo with a better message; this
+                # is a cheap second assertion for the case where the checker
+                # runs against a tree where that gate has not been re-run.
+                if status not in AC_STATUSES:
+                    sys.exit(f"{ac['id']}: status {status!r} is not one of "
+                             f"{AC_STATUSES} — run build_backlog.py, which "
+                             "validates the catalogue properly")
                 out.append((data["epic"], story["id"], ac["id"],
-                            ac.get("status", "unverified"), ac.get("evidence")))
+                            status, ac.get("evidence")))
     if not out:
         sys.exit(f"catalogue at {epics_dir} holds no acceptance criteria — "
                  "refusing to report success over an empty catalogue")
@@ -150,11 +173,21 @@ def parse_report(data):
     if not isinstance(data, dict) or not isinstance(data.get("testResults"), list):
         sys.exit("not a vitest JSON report: no `testResults` list")
     titles = []
-    for suite in data["testResults"]:
-        for a in suite.get("assertionResults", []):
-            if "fullName" not in a:
-                sys.exit("vitest report has an assertion with no `fullName`; "
-                         "the reporter shape this script reads has changed")
+    for i, suite in enumerate(data["testResults"]):
+        # A suite with no `assertionResults` is not an empty suite, it is a
+        # shape this script cannot read. `.get(..., [])` would turn it into
+        # zero titles, and zero titles over a review-only catalogue prints
+        # "No failures" after checking nothing at all.
+        if not isinstance(suite, dict) or not isinstance(
+                suite.get("assertionResults"), list):
+            sys.exit(f"vitest report: testResults[{i}] has no "
+                     "`assertionResults` list; the reporter shape this script "
+                     "reads has changed")
+        for a in suite["assertionResults"]:
+            if not isinstance(a, dict) or not isinstance(a.get("fullName"), str):
+                sys.exit(f"vitest report: an assertion in testResults[{i}] has "
+                         "no string `fullName`; the reporter shape this script "
+                         "reads has changed")
             titles.append(a["fullName"])
     return titles
 
@@ -271,6 +304,12 @@ def self_check():
         "no criterion in this title at all",
     ])
     assert tagged == {"AC-NOTE-03.1", "AC-NOTE-99.9"}, tagged
+
+    # A malformed id must not back a real criterion. "AC-NOTE-03.1.2" used to
+    # yield "AC-NOTE-03.1" and silently satisfy it.
+    assert tagged_ids(["suite > AC-NOTE-03.1.2: typo in the id"]) == set()
+    assert tagged_ids(["suite > AC-NOTE-03.12: a real twelfth criterion"]) == \
+        {"AC-NOTE-03.12"}
 
     unbacked, no_regression, dangling = check(catalogue, tagged)
     unbacked_ids = [c[2] for c in unbacked]
@@ -407,7 +446,14 @@ def end_to_end_check():
 
     # Arbitrary valid JSON is not a vitest report, and must not read as a
     # clean run just because it yields no titles.
-    for junk in ({}, {"testResults": "nope"}, [], {"testResults": [{"assertionResults": [{}]}]}):
+    # {"testResults": [{}]} is the dangerous one: it used to parse as zero
+    # titles, and zero titles over a catalogue whose only `pass` is
+    # review-backed exits 0 having checked nothing.
+    for junk in ({}, {"testResults": "nope"}, [],
+                 {"testResults": [{"assertionResults": [{}]}]},
+                 {"testResults": [{}]},
+                 {"testResults": [{"assertionResults": "nope"}]},
+                 {"testResults": [{"assertionResults": [{"fullName": 7}]}]}):
         try:
             code, out = run(junk)
         except SystemExit as e:
@@ -428,6 +474,47 @@ def end_to_end_check():
                 assert e.code and "catalogue" in str(e.code), e.code
             else:
                 raise AssertionError(f"empty catalogue accepted: {epics}")
+
+    # An out-of-enum status is the hand-written typo that would hide a
+    # criterion from the gate policing it: every rule keys on `== "pass"`, so
+    # "passed" is neither reported nor counted.
+    typo = json.loads(json.dumps(SYNTHETIC_EPIC))
+    typo["stories"][0]["acceptance_criteria"][0]["status"] = "passed"
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        epics = tmp / "epics"
+        epics.mkdir()
+        (epics / "NOTE.json").write_text(json.dumps(typo))
+        (tmp / "report.json").write_text(json.dumps(named))
+        try:
+            main(["--epics-dir", str(epics),
+                  "--vitest-json", str(tmp / "report.json")])
+        except SystemExit as e:
+            assert "passed" in str(e.code) and "build_backlog" in str(e.code), e.code
+        else:
+            raise AssertionError("out-of-enum status accepted")
+
+    # A review-only catalogue is where an unchecked report is most dangerous:
+    # nothing is taggable, so zero titles look exactly like a clean run.
+    review_only = json.loads(json.dumps(SYNTHETIC_EPIC))
+    review_only["stories"][0]["acceptance_criteria"] = [
+        {"id": "AC-NOTE-03.2", "status": "pass",
+         "evidence": "code review: the folder walk is top down"},
+    ]
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        epics = tmp / "epics"
+        epics.mkdir()
+        (epics / "NOTE.json").write_text(json.dumps(review_only))
+        (tmp / "report.json").write_text(json.dumps({"testResults": [{}]}))
+        try:
+            main(["--epics-dir", str(epics),
+                  "--vitest-json", str(tmp / "report.json")])
+        except SystemExit as e:
+            assert "assertionResults" in str(e.code), e.code
+        else:
+            raise AssertionError("unreadable report over a review-only "
+                                 "catalogue reported success")
 
 
 def main(argv=None):
