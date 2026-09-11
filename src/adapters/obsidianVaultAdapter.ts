@@ -6,6 +6,10 @@ import type { NoteFile, VaultPort } from "./vaultPort";
 export class ObsidianVaultAdapter implements VaultPort {
 	constructor(private app: App) {}
 
+	get backingVault(): object {
+		return this.app.vault;
+	}
+
 	folderExists(path: string): boolean {
 		return this.app.vault.getAbstractFileByPath(path) instanceof TFolder;
 	}

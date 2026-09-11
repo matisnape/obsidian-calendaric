@@ -133,12 +133,13 @@ async function createNoteOrJoinTheWinner(
 /**
  * The note creation currently in flight for each parent folder, per vault.
  *
- * Keyed by the vault rather than kept by the widget, because the activations
- * that collide do not share a widget: a click, the same click in a second
- * calendar pane, a command and the startup note all write to the one vault.
- * The map is weak, so a vault that goes away takes its entries with it.
+ * Keyed by `backingVault` and not by the port, because the activations that
+ * collide do not share a port either: every calendar pane builds its own
+ * adapter over the same vault, so keying on the adapter gives each pane a
+ * private queue and leaves them racing. The map is weak, so a vault that goes
+ * away takes its entries with it.
  */
-const folderWrites = new WeakMap<VaultPort, Map<string, Promise<NoteFile>>>();
+const folderWrites = new WeakMap<object, Map<string, Promise<NoteFile>>>();
 
 /**
  * Write the note once the last note headed for the same folder is done.
@@ -159,10 +160,10 @@ async function createNoteInTurn(
 	path: string,
 	write: () => Promise<NoteFile>,
 ): Promise<NoteFile> {
-	let byFolder = folderWrites.get(vault);
+	let byFolder = folderWrites.get(vault.backingVault);
 	if (!byFolder) {
 		byFolder = new Map();
-		folderWrites.set(vault, byFolder);
+		folderWrites.set(vault.backingVault, byFolder);
 	}
 	const folders = byFolder;
 	const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";

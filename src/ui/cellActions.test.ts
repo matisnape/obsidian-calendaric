@@ -8,12 +8,13 @@ import {
 	openOrCreateNote,
 	splitModifierPressed,
 	type CellClick,
+	type CellPorts,
 	type CreateRequest,
 } from "./cellActions";
 import { getMonthGrid } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
-import type { NoteFile } from "../adapters/vaultPort";
+import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import type { PeriodicConfig } from "../types";
@@ -108,13 +109,51 @@ class RacingVault extends FakeVaultPort {
 	}
 }
 
+/**
+ * One calendar pane's port over a vault another pane is also holding.
+ *
+ * Every pane builds its own adapter, so this is the realistic shape: two
+ * distinct port objects, one vault behind them.
+ */
+class PortOverSharedVault implements VaultPort {
+	constructor(private shared: FakeVaultPort) {}
+
+	get backingVault(): object {
+		return this.shared.backingVault;
+	}
+
+	pathExists(path: string): boolean {
+		return this.shared.pathExists(path);
+	}
+
+	getFile(path: string): NoteFile | null {
+		return this.shared.getFile(path);
+	}
+
+	createFolder(path: string): Promise<void> {
+		return this.shared.createFolder(path);
+	}
+
+	createFile(path: string, content: string): Promise<NoteFile> {
+		return this.shared.createFile(path, content);
+	}
+
+	readFile(file: NoteFile): Promise<string> {
+		return this.shared.readFile(file);
+	}
+
+	getTemplateFile(templatePath: string): NoteFile | null {
+		return this.shared.getTemplateFile(templatePath);
+	}
+}
+
 /** Drains every pending microtask, so parked activations reach their awaits. */
 function flushMicrotasks(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /** A plain click on `DAY`, on a Mac, with creation unconfirmed — override one field per test. */
-function clickDay(ports: Ports, overrides: Partial<CellClick> = {}): Promise<void> {
+function clickDay(ports: CellPorts, overrides: Partial<CellClick> = {}): Promise<void> {
 	return openOrCreateNote({
 		date: moment(DAY),
 		granularity: "day",
@@ -317,6 +356,32 @@ describe("openOrCreateNote", () => {
 		const expected = { file: { path: pathFor(DAY) }, mode: "reuse" };
 		expect(ports.workspace.opened).toEqual([expected, expected]);
 		expect(vault.contentAt(pathFor(DAY))).toBe("");
+	});
+
+	it("AC-CAL-03.2: two calendar panes on one vault take turns, not each their own", async () => {
+		const shared = new RacingVault();
+		const paneOne = {
+			vault: new PortOverSharedVault(shared),
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		};
+		const paneTwo = {
+			vault: new PortOverSharedVault(shared),
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		};
+
+		const both = Promise.all([clickDay(paneOne), clickDay(paneTwo)]);
+		await flushMicrotasks();
+		expect(shared.createFolderCalls).toEqual(["Daily"]);
+
+		shared.release();
+		await both;
+
+		const expected = { file: { path: pathFor(DAY) }, mode: "reuse" };
+		expect(paneOne.workspace.opened).toEqual([expected]);
+		expect(paneTwo.workspace.opened).toEqual([expected]);
+		expect(shared.contentAt(pathFor(DAY))).toBe("");
 	});
 
 	it("AC-CAL-03.2: two clicks on different days each get their own note", async () => {
