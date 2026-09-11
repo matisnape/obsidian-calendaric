@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isMetaPressed, openNote, openNoteInNewTab } from "./noteOpen";
+import { isSplitModifierPressed, openNote, openNoteIn, openNoteInNewTab } from "./noteOpen";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 
 const FILE = { path: "journal/daily/2026-04-13.md" };
@@ -8,22 +8,37 @@ function makeClick(overrides: Partial<MouseEvent> = {}): MouseEvent {
 	return { metaKey: false, ctrlKey: false, ...overrides } as MouseEvent;
 }
 
-describe("isMetaPressed", () => {
-	it("is true when the meta key is pressed", () => {
-		expect(isMetaPressed(makeClick({ metaKey: true }))).toBe(true);
+function macWorkspace(): FakeWorkspacePort {
+	const workspace = new FakeWorkspacePort();
+	workspace.isMacOS = true;
+	return workspace;
+}
+
+describe("isSplitModifierPressed (AC-NOTE-06.2)", () => {
+	it("is true for Cmd on macOS", () => {
+		expect(isSplitModifierPressed(makeClick({ metaKey: true }), true)).toBe(true);
 	});
 
-	it("is true when the ctrl key is pressed", () => {
-		expect(isMetaPressed(makeClick({ ctrlKey: true }))).toBe(true);
+	it("is false for Ctrl on macOS, where Ctrl+click is the context-menu gesture", () => {
+		expect(isSplitModifierPressed(makeClick({ ctrlKey: true }), true)).toBe(false);
 	});
 
-	it("is false for a plain click", () => {
-		expect(isMetaPressed(makeClick())).toBe(false);
+	it("is true for Ctrl off macOS", () => {
+		expect(isSplitModifierPressed(makeClick({ ctrlKey: true }), false)).toBe(true);
+	});
+
+	it("is false for Cmd off macOS", () => {
+		expect(isSplitModifierPressed(makeClick({ metaKey: true }), false)).toBe(false);
+	});
+
+	it("is false for a plain click on either platform", () => {
+		expect(isSplitModifierPressed(makeClick(), true)).toBe(false);
+		expect(isSplitModifierPressed(makeClick(), false)).toBe(false);
 	});
 });
 
 describe("openNote", () => {
-	it("reuses the current leaf on a plain click", async () => {
+	it("AC-NOTE-06.1: reuses the current unpinned tab on a plain click", async () => {
 		const workspace = new FakeWorkspacePort();
 
 		await openNote(FILE, makeClick(), workspace);
@@ -31,21 +46,88 @@ describe("openNote", () => {
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "reuse" }]);
 	});
 
-	it("opens a split leaf on a meta/ctrl click", async () => {
-		const workspace = new FakeWorkspacePort();
+	it("AC-NOTE-06.2: opens a split on a Cmd click on macOS", async () => {
+		const workspace = macWorkspace();
 
 		await openNote(FILE, makeClick({ metaKey: true }), workspace);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "split" }]);
 	});
+
+	it("AC-NOTE-06.2: opens a split on a Ctrl click off macOS", async () => {
+		const workspace = new FakeWorkspacePort();
+
+		await openNote(FILE, makeClick({ ctrlKey: true }), workspace);
+
+		expect(workspace.opened).toEqual([{ file: FILE, mode: "split" }]);
+	});
+
+	it("AC-NOTE-06.1: reuses the current tab on a Ctrl click on macOS", async () => {
+		const workspace = macWorkspace();
+
+		await openNote(FILE, makeClick({ ctrlKey: true }), workspace);
+
+		expect(workspace.opened).toEqual([{ file: FILE, mode: "reuse" }]);
+	});
 });
 
 describe("openNoteInNewTab", () => {
-	it("opens a new tab leaf", async () => {
+	it("AC-NOTE-06.3: opens a new tab instead of reusing the active one", async () => {
 		const workspace = new FakeWorkspacePort();
 
 		await openNoteInNewTab(FILE, workspace);
 
 		expect(workspace.opened).toEqual([{ file: FILE, mode: "tab" }]);
+	});
+});
+
+describe("openNoteIn", () => {
+	it.each(["reuse", "split", "tab"] as const)("opens the note in the %s destination", async (mode) => {
+		const workspace = new FakeWorkspacePort();
+
+		await openNoteIn(FILE, mode, workspace);
+
+		expect(workspace.opened).toEqual([{ file: FILE, mode }]);
+	});
+});
+
+describe("opening a file that vanished (AC-NOTE-06.4)", () => {
+	it("AC-NOTE-06.4: reports that the file no longer exists at the resolved path", async () => {
+		const workspace = new FakeWorkspacePort();
+		workspace.markMissing(FILE.path);
+
+		await openNoteIn(FILE, "reuse", workspace);
+
+		expect(workspace.notices).toEqual([
+			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
+		]);
+	});
+
+	it("AC-NOTE-06.4: opens nothing in its place", async () => {
+		const workspace = new FakeWorkspacePort();
+		workspace.markMissing(FILE.path);
+
+		await openNoteIn(FILE, "split", workspace);
+
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("AC-NOTE-06.4: reports through the same path for a click and for the startup tab", async () => {
+		const workspace = new FakeWorkspacePort();
+		workspace.markMissing(FILE.path);
+
+		await openNote(FILE, makeClick(), workspace);
+		await openNoteInNewTab(FILE, workspace);
+
+		expect(workspace.notices).toHaveLength(2);
+		expect(workspace.opened).toEqual([]);
+	});
+
+	it("stays quiet when the file opens", async () => {
+		const workspace = new FakeWorkspacePort();
+
+		await openNoteIn(FILE, "tab", workspace);
+
+		expect(workspace.notices).toEqual([]);
 	});
 });
