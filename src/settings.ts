@@ -1,15 +1,13 @@
 import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "./types";
 import {
-	isDailyNotesPluginEnabled,
-	getLegacyDailyNoteSettings,
-	disableDailyNotesPlugin,
-	shouldOfferDailyNotesImport,
+	decideDailyNotesCard,
 	planDailyNotesImport,
 	applyDailyNotesImport,
 	DEFAULT_DAY_FORMAT,
 } from "./settings/dailyNotesImport";
-import type { DailyNotesImportKey } from "./settings/dailyNotesImport";
+import type { DailyNotesImportKey, LegacyDailyNoteSettings } from "./settings/dailyNotesImport";
+import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import { DailyNotesImportConflictModal } from "./settings/dailyNotesImportModal";
 import type CalendaricPlugin from "./main";
 
@@ -123,31 +121,63 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	// -------------------------------------------------------------------------
 	private renderImportCard(containerEl: HTMLElement): void {
 		const { app, settings } = this.plugin;
+		const card = decideDailyNotesCard(new ObsidianCompanionPluginAdapter(app), settings);
 
-		// AC-MIG-01.6: no banner at all while the core plugin is off.
-		if (!isDailyNotesPluginEnabled(app)) return;
+		// AC-MIG-01.6: no banner at all while the core plugin is absent or off.
+		if (card.kind === "hidden") return;
 
-		// AC-MIG-01.4: the import banner is replaced by the "still active" notice once it ran.
-		if (!shouldOfferDailyNotesImport(app, settings)) {
-			const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
-			notice.createEl("strong", { text: "Daily Notes plugin is still active" });
-			notice.createEl("p", {
-				text: "Both plugins may create daily notes. Consider disabling the core Daily Notes plugin.",
-			});
-			const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
-			const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
-			disableBtn.addEventListener("click", async () => {
-				disableDailyNotesPlugin(app);
-				await this.save();
-				this.display();
-			});
-			const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
-			dismissBtn.addEventListener("click", () => {
-				notice.remove();
-			});
+		if (card.kind === "unreadable") {
+			this.renderUnreadableCompanionNotice(containerEl, card.problem);
 			return;
 		}
 
+		if (card.kind === "still-active") {
+			this.renderStillActiveNotice(containerEl, card.disable);
+			return;
+		}
+
+		this.renderImportOffer(containerEl, card.legacy, card.disable);
+	}
+
+	/**
+	 * AC-ARCH-04.4: the companion plugin is there but its object is not what this
+	 * code reads. The import is withdrawn and named as broken, because running it
+	 * would store empty values while looking like it succeeded.
+	 */
+	private renderUnreadableCompanionNotice(containerEl: HTMLElement, problem: string): void {
+		const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--warning" });
+		notice.createEl("strong", { text: "Daily Notes settings could not be read" });
+		notice.createEl("p", {
+			text: `${problem} Calendaric cannot import them, so enter the format, folder and template below by hand.`,
+		});
+	}
+
+	// AC-MIG-01.4: the import banner is replaced by this notice once it ran.
+	private renderStillActiveNotice(containerEl: HTMLElement, disableCompanion: () => void): void {
+		const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
+		notice.createEl("strong", { text: "Daily Notes plugin is still active" });
+		notice.createEl("p", {
+			text: "Both plugins may create daily notes. Consider disabling the core Daily Notes plugin.",
+		});
+		const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
+		const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
+		disableBtn.addEventListener("click", async () => {
+			disableCompanion();
+			await this.save();
+			this.display();
+		});
+		const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
+		dismissBtn.addEventListener("click", () => {
+			notice.remove();
+		});
+	}
+
+	private renderImportOffer(
+		containerEl: HTMLElement,
+		legacy: LegacyDailyNoteSettings,
+		disableCompanion: () => void,
+	): void {
+		const { app, settings } = this.plugin;
 		const card = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
 		card.createEl("strong", { text: "Daily Notes plugin detected" });
 		card.createEl("p", {
@@ -158,7 +188,6 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
 		importBtn.addEventListener("click", async () => {
-			const legacy = getLegacyDailyNoteSettings(app);
 			const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
 				const previousDay = { ...settings.day };
 				const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
@@ -187,7 +216,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
 		disableBtn.addEventListener("click", async () => {
-			disableDailyNotesPlugin(app);
+			disableCompanion();
 			settings.hasMigratedDailyNoteSettings = true;
 			await this.save();
 			this.display();

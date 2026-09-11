@@ -11,7 +11,9 @@ import type { NoteFile } from "./adapters/vaultPort";
 
 
 export default class CalendaricPlugin extends Plugin {
-	settings: CalendaricSettings;
+	// Obsidian constructs the plugin before onload() can read the saved data, so
+	// the field starts on the defaults rather than on an assertion that it is set.
+	settings: CalendaricSettings = { ...DEFAULT_SETTINGS };
 
 	async onload() {
 		await this.loadSettings();

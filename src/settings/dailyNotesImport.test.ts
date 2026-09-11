@@ -1,142 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-	isDailyNotesPluginEnabled,
-	getLegacyDailyNoteSettings,
-	disableDailyNotesPlugin,
-	shouldOfferDailyNotesImport,
+	decideDailyNotesCard,
 	planDailyNotesImport,
 	applyDailyNotesImport,
 	DEFAULT_DAY_FORMAT,
 } from "./dailyNotesImport";
 import type { DailyNotesImportTarget } from "./dailyNotesImport";
-import type { App } from "obsidian";
-
-function makeApp(pluginOverride?: object): App {
-	return {
-		internalPlugins: {
-			getPluginById: (_id: string) => pluginOverride ?? null,
-		},
-	} as unknown as App;
-}
-
-// ── isDailyNotesPluginEnabled ────────────────────────────────────────────────
-
-describe("isDailyNotesPluginEnabled", () => {
-	it("returns true when the plugin is enabled", () => {
-		const app = makeApp({ enabled: true });
-		expect(isDailyNotesPluginEnabled(app)).toBe(true);
-	});
-
-	it("returns false when the plugin is disabled", () => {
-		const app = makeApp({ enabled: false });
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-
-	it("returns false when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-
-	it("returns false when internalPlugins is absent", () => {
-		const app = { internalPlugins: null } as unknown as App;
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-});
-
-// ── getLegacyDailyNoteSettings ───────────────────────────────────────────────
-
-describe("getLegacyDailyNoteSettings", () => {
-	it("returns stored format, folder, and template when all are set", () => {
-		const app = makeApp({
-			enabled: true,
-			instance: {
-				options: {
-					format: "DD-MM-YYYY",
-					folder: "Journal",
-					template: "templates/daily",
-				},
-			},
-		});
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "DD-MM-YYYY",
-			folder: "Journal",
-			template: "templates/daily",
-		});
-	});
-
-	it("returns empty strings when options object is missing", () => {
-		const app = makeApp({ enabled: true, instance: {} });
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty strings when instance is missing", () => {
-		const app = makeApp({ enabled: true });
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty strings when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty string for format when only folder and template are set", () => {
-		const app = makeApp({
-			enabled: true,
-			instance: { options: { folder: "Notes", template: "tmpl" } },
-		});
-		const result = getLegacyDailyNoteSettings(app);
-		expect(result.format).toBe("");
-		expect(result.folder).toBe("Notes");
-		expect(result.template).toBe("tmpl");
-	});
-});
-
-// ── disableDailyNotesPlugin ──────────────────────────────────────────────────
-
-describe("disableDailyNotesPlugin", () => {
-	it("calls disable(true) on the plugin", () => {
-		const disable = vi.fn();
-		const app = makeApp({ enabled: true, disable });
-		disableDailyNotesPlugin(app);
-		expect(disable).toHaveBeenCalledOnce();
-		expect(disable).toHaveBeenCalledWith(true);
-	});
-
-	it("does not throw when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(() => disableDailyNotesPlugin(app)).not.toThrow();
-	});
-});
-
-describe("shouldOfferDailyNotesImport", () => {
-	it("offers the import when the plugin is enabled and nothing was imported yet", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget())).toBe(true);
-	});
-
-	it("does not offer the import when the plugin is disabled", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: false }), makeTarget())).toBe(false);
-	});
-
-	it("does not offer the import when the plugin is absent", () => {
-		expect(shouldOfferDailyNotesImport(makeApp(undefined), makeTarget())).toBe(false);
-	});
-
-	it("does not offer the import again once it has completed", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget({}, true))).toBe(false);
-	});
-});
+import type {
+	CompanionPluginPort,
+	CompanionPluginRead,
+	DailyNotesPluginState,
+} from "../adapters/companionPluginPort";
 
 describe("planDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
@@ -234,3 +108,74 @@ function makeTarget(day: Partial<DailyNotesImportTarget["day"]> = {}, imported =
 		day: { enabled: false, format: "", folder: "", templatePath: "", ...day },
 	};
 }
+
+describe("decideDailyNotesCard", () => {
+	function port(read: CompanionPluginRead<DailyNotesPluginState>): CompanionPluginPort {
+		return { readDailyNotes: () => read };
+	}
+
+	function readable(over: Partial<DailyNotesPluginState> = {}): CompanionPluginPort {
+		return port({
+			ok: true,
+			value: {
+				enabled: true,
+				format: "DD-MM-YYYY",
+				folder: "Journal",
+				template: "templates/daily",
+				disable: vi.fn(),
+				...over,
+			},
+		});
+	}
+
+	it("hides the card when the companion plugin is absent (AC-MIG-01.6)", () => {
+		const card = decideDailyNotesCard(port({ ok: false, reason: "absent", problem: "gone" }), makeTarget());
+		expect(card.kind).toBe("hidden");
+	});
+
+	it("hides the card when the companion plugin is installed but off (AC-MIG-01.6)", () => {
+		expect(decideDailyNotesCard(readable({ enabled: false }), makeTarget()).kind).toBe("hidden");
+	});
+
+	// AC-ARCH-04.4: a mismatch surfaces as an explicit problem, never as a silent
+	// empty import that looks like it worked.
+	it("reports the problem when the companion plugin does not match the expected shape", () => {
+		const card = decideDailyNotesCard(
+			port({ ok: false, reason: "mismatch", problem: "options sit behind a 'subscribe' accessor" }),
+			makeTarget(),
+		);
+		expect(card.kind).toBe("unreadable");
+		if (card.kind !== "unreadable") return;
+		expect(card.problem).toBe("options sit behind a 'subscribe' accessor");
+	});
+
+	it("offers the import with the narrowed values when nothing was imported yet", () => {
+		const card = decideDailyNotesCard(readable(), makeTarget());
+		expect(card.kind).toBe("offer");
+		if (card.kind !== "offer") return;
+		expect(card.legacy).toEqual({ format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" });
+	});
+
+	it("shows the still-active notice once the import has run (AC-MIG-01.4)", () => {
+		const card = decideDailyNotesCard(readable(), makeTarget({}, true));
+		expect(card.kind).toBe("still-active");
+	});
+
+	it("carries the companion plugin's own disable through to the card", () => {
+		const disable = vi.fn();
+		const card = decideDailyNotesCard(readable({ disable }), makeTarget());
+		expect(card.kind).toBe("offer");
+		if (card.kind !== "offer") return;
+		card.disable();
+		expect(disable).toHaveBeenCalledOnce();
+	});
+
+	it("never reports an importable offer without a readable companion plugin", () => {
+		for (const read of [
+			{ ok: false, reason: "absent", problem: "p" } as const,
+			{ ok: false, reason: "mismatch", problem: "p" } as const,
+		]) {
+			expect(decideDailyNotesCard(port(read), makeTarget()).kind).not.toBe("offer");
+		}
+	});
+});
