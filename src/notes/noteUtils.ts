@@ -150,3 +150,87 @@ export function checkNoteFolder(
 
 	return { path, valid: true, notYetCreated: chain.some((segment) => !vault.folderExists(segment)) };
 }
+
+/**
+ * The characters of `format` that moment reads as tokens, with both of its
+ * escapes removed.
+ *
+ * Moment escapes two ways and each one hides a week token. A `[...]` span
+ * prints verbatim, so the default `gggg-[W]ww` writes a literal "W". A
+ * backslash makes the token run after it literal, so `\WW` writes "WW" rather
+ * than an ISO week. The two are not interchangeable: an unterminated `[` is not
+ * an escape at all — moment prints the bracket and keeps reading tokens, which
+ * is why `gggg-[Www` renders "2027-[5201".
+ *
+ * A backslash escapes exactly one token, so the scan consumes at most two
+ * identical characters after it — moment's longest week token, `WW` or `ww`.
+ * `\WWW` therefore writes a literal "WW" and still leaves a real `W` behind.
+ * Two is the right cap for every question this scan answers: a longer run
+ * belongs to some other token, and mis-splitting one of those cannot invent or
+ * hide a `w` or a `W`.
+ */
+function tokenChars(format: string): string {
+	let chars = "";
+
+	for (let i = 0; i < format.length; i++) {
+		const ch = format[i];
+
+		if (ch === "[") {
+			const end = format.indexOf("]", i + 1);
+			if (end !== -1) {
+				i = end;
+				continue;
+			}
+		} else if (ch === "\\") {
+			const escaped = format[i + 1];
+			i++;
+			if (escaped !== undefined && format[i + 1] === escaped) i++;
+			continue;
+		}
+
+		chars += ch;
+	}
+
+	return chars;
+}
+
+/** Reads a week number off `date` using whichever week token `tokens` carries. */
+function weekNumberFor(date: Moment, tokens: string): number | null {
+	if (tokens.includes("W")) return date.isoWeek();
+	if (tokens.includes("w")) return date.week();
+	return null;
+}
+
+/**
+ * The week number the plugin shows for a date.
+ *
+ * The weekly-note format decides, because the same number is printed into the
+ * weekly note's filename by `formatWithWeekTokens`, and moment's ISO week
+ * (`W`/`WW`) and locale week (`w`/`ww`) name a week differently near a year
+ * boundary: 2026-12-28 is ISO 2026-W53 but locale 2027-W01. Deriving both from
+ * one function keeps the calendar's week column and the note name from naming
+ * the same week two ways.
+ *
+ * A top-level token wins, because moment resolves it against this date. Failing
+ * that, the number comes from the first `{{weekday:fmt}}` span that names a
+ * week, resolved against its own weekday exactly as `formatWithWeekTokens`
+ * resolves it — `{{monday:GGGG-[W]WW}}` writes 2026-W52 for Sun 2026-12-27,
+ * whose own locale week is 1.
+ *
+ * When no token anywhere names a week the filename carries no week number to
+ * agree with, and the locale week is shown. The column still has to show
+ * something: AC-CAL-01.4 asks for a week-number cell on every row.
+ */
+export function getWeekNumber(date: Moment, weekFormat: string): number {
+	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(WEEK_TOKEN_RE, "")));
+	if (topLevel !== null) return topLevel;
+
+	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
+		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
+		if (isoDay === undefined) continue;
+		const nested = weekNumberFor(date.clone().isoWeekday(isoDay), tokenChars(tokenFmt));
+		if (nested !== null) return nested;
+	}
+
+	return date.week();
+}

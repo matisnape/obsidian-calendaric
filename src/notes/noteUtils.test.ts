@@ -4,6 +4,7 @@ import {
 	applyWeekTokens,
 	formatWithWeekTokens,
 	computeNotePath,
+	getWeekNumber,
 	resolveNoteFolder,
 	checkNoteFolder,
 	folderChainSegments,
@@ -251,4 +252,211 @@ describe("folderChainSegments", () => {
 	it("lists nothing for the vault root", () => {
 		expect(folderChainSegments("")).toEqual([]);
 	});
+});
+
+describe("getWeekNumber", () => {
+	// 2026-12-28 is a Monday where the two week systems disagree: the ISO week
+	// calls it 2026-W53, the locale week calls it 2027-W01.
+	const DIVERGENT = moment("2026-12-28");
+
+	it("uses the ISO week when the format carries an ISO week token", () => {
+		expect(getWeekNumber(DIVERGENT, "GGGG-[W]WW")).toBe(53);
+	});
+
+	it("uses the locale week when the format carries a locale week token", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww")).toBe(1);
+	});
+
+	it("reads the [W] of the default format as a literal, not as an ISO token", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww")).not.toBe(DIVERGENT.isoWeek());
+	});
+
+	it("ignores a week token nested inside {{weekday:fmt}}", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww, {{monday:GGGG-[W]WW}}")).toBe(1);
+	});
+
+	it("falls back to the locale week when the format names no week", () => {
+		expect(getWeekNumber(DIVERGENT, "YYYY-MM-DD")).toBe(DIVERGENT.week());
+	});
+
+	it("agrees with the number formatWithWeekTokens writes into the filename", () => {
+		for (const fmt of ["gggg-[W]ww", "GGGG-[W]WW"]) {
+			const padded = String(getWeekNumber(DIVERGENT, fmt)).padStart(2, "0");
+			expect(formatWithWeekTokens(fmt, DIVERGENT)).toContain(`W${padded}`);
+		}
+	});
+});
+
+describe("getWeekNumber with awkward formats", () => {
+	const DIVERGENT_DATE = moment("2026-12-28");
+
+	it("keeps a double-brace span that formatWithWeekTokens does not recognise", () => {
+		// `notaday` is not a weekday, so formatWithWeekTokens hands the span to
+		// moment, which renders the WW inside it as an ISO week number. Stripping
+		// the span would hide a week number the filename really carries.
+		const fmt = "gggg-[W]ww, {{notaday:WW}}";
+		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE)).toContain("53");
+		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
+	});
+
+	it("keeps an unterminated double-brace span", () => {
+		const fmt = "gggg-[W]ww, {{monday:WW";
+		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
+	});
+
+	it("strips a recognised weekday span whatever its case", () => {
+		expect(getWeekNumber(DIVERGENT_DATE, "gggg-[W]ww, {{MONDAY:GGGG-[W]WW}}")).toBe(1);
+	});
+
+	it("strips every recognised weekday name", () => {
+		const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+		for (const day of days) {
+			expect(getWeekNumber(DIVERGENT_DATE, `gggg-[W]ww, {{${day}:WW}}`)).toBe(1);
+		}
+	});
+
+	it("is unaffected by a brace span that carries no week token", () => {
+		expect(getWeekNumber(DIVERGENT_DATE, "GGGG-[W]WW, {{notaday:DD}}")).toBe(53);
+	});
+});
+
+describe("getWeekNumber for nested-only formats", () => {
+	// 2026-12-27 is a Sunday. The Monday its week token resolves to is 12-21, in
+	// ISO week 52, while the date's own locale week is 1 — the review's case.
+	const SUNDAY = moment("2026-12-27");
+
+	it("numbers a nested-only ISO format by the weekday the token resolves to", () => {
+		const fmt = "{{monday:GGGG-[W]WW}}";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-W52");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(52);
+	});
+
+	it("numbers a nested-only locale format by the same weekday", () => {
+		const fmt = "{{monday:gggg-[W]ww}}";
+		const expected = SUNDAY.clone().isoWeekday(1).week();
+		expect(expected).not.toBe(SUNDAY.week());
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toContain(`W${String(expected).padStart(2, "0")}`);
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(expected);
+	});
+
+	it("prefers a top-level week token over a nested one", () => {
+		expect(getWeekNumber(SUNDAY, "gggg-[W]ww, {{monday:GGGG-[W]WW}}")).toBe(SUNDAY.week());
+	});
+
+	it("skips a nested span that carries no week token", () => {
+		const fmt = "{{monday:DD.MM}}, {{sunday:GGGG-[W]WW}}";
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.clone().isoWeekday(7).isoWeek());
+	});
+
+	it("skips an unrecognised weekday span when looking for a nested token", () => {
+		// `notaday` is left for moment, which renders its WW against the date
+		// itself — so the top-level pass already claims this format.
+		expect(getWeekNumber(SUNDAY, "{{notaday:WW}}")).toBe(SUNDAY.isoWeek());
+	});
+
+	it("falls back to the locale week when no token anywhere names a week", () => {
+		expect(getWeekNumber(SUNDAY, "{{monday:DD.MM}} – {{sunday:DD.MM}}")).toBe(SUNDAY.week());
+	});
+});
+
+describe("getWeekNumber with moment escapes", () => {
+	// 2026-12-27 is a Sunday in ISO week 52 whose own locale week is 1, so the
+	// two systems cannot be confused for one another.
+	const SUNDAY = moment("2026-12-27");
+
+	it("ignores a backslash-escaped ISO token and uses the real locale one", () => {
+		// moment renders this as "2026-WWW 01": the escaped WW is literal text and
+		// the only week number in the name is the locale 01.
+		const fmt = "GGGG-[W]\\WW ww";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-WWW 01");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("falls back when every week token in the format is escaped", () => {
+		const fmt = "YYYY-MM-DD \\WW";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-12-27 WW");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("ignores a week token inside a bracket span", () => {
+		const fmt = "[WW]ww";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("WW01");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("keeps reading tokens after an unterminated bracket", () => {
+		// moment does not swallow the rest of the format; it prints the "[" and
+		// carries on, rendering "2027-[5201" — so the ISO 52 is really in the name.
+		const fmt = "gggg-[Www";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2027-[5201");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
+	});
+
+	it("treats a doubled backslash as escaping the backslash, not the token", () => {
+		const fmt = "\\\\W";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("52");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
+	});
+
+	it("applies the same escape rules inside a weekday span", () => {
+		// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53
+		// and whose locale week is 1 — the escaped WW must not win.
+		const date = moment("2027-01-03");
+		const fmt = "{{monday:\\WW ww}}";
+		expect(formatWithWeekTokens(fmt, date)).toBe("WW 01");
+		expect(getWeekNumber(date, fmt)).toBe(date.clone().isoWeekday(1).week());
+	});
+});
+
+describe("getWeekNumber escape permutations", () => {
+	// 2026-12-27 is a Sunday in ISO week 52 whose own locale week is 1, so an
+	// ISO answer and a locale answer can never be mistaken for one another.
+	const DATE = moment("2026-12-27");
+
+	// `writes` is what moment renders for the format, measured rather than
+	// reasoned about; `weekNumber` is the number that name really carries.
+	const CASES: { format: string; writes: string; weekNumber: number }[] = [
+		{ format: "gggg-[W]ww", writes: "2027-W01", weekNumber: 1 },
+		{ format: "GGGG-[W]WW", writes: "2026-W52", weekNumber: 52 },
+		{ format: "[WW]ww", writes: "WW01", weekNumber: 1 },
+		{ format: "gggg-[Www", writes: "2027-[5201", weekNumber: 52 },
+		{ format: "[\\W]WW", writes: "\\W52", weekNumber: 52 },
+		{ format: "\\WW", writes: "WW", weekNumber: 1 },
+		{ format: "\\WWW", writes: "WW52", weekNumber: 52 },
+		{ format: "\\WWW ww", writes: "WW52 01", weekNumber: 52 },
+		{ format: "\\www", writes: "ww1", weekNumber: 1 },
+		{ format: "\\W W", writes: "W 52", weekNumber: 52 },
+		{ format: "\\\\W", writes: "52", weekNumber: 52 },
+		{ format: "\\[WW", writes: "[52", weekNumber: 52 },
+		{ format: "\\Wo", writes: "Wo", weekNumber: 1 },
+		{ format: "\\Wow", writes: "Wo1", weekNumber: 1 },
+		{ format: "ww\\WW", writes: "01WW", weekNumber: 1 },
+	];
+
+	for (const { format, writes, weekNumber } of CASES) {
+		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
+			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
+		});
+	}
+});
+
+describe("getWeekNumber escape permutations inside a weekday span", () => {
+	// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53 and
+	// whose locale week is 1, while the date's own locale week is 2.
+	const DATE = moment("2027-01-03");
+
+	const CASES: { format: string; writes: string; weekNumber: number }[] = [
+		{ format: "{{monday:\\WWW}}", writes: "WW53", weekNumber: 53 },
+		{ format: "{{monday:\\WW ww}}", writes: "WW 01", weekNumber: 1 },
+		{ format: "{{monday:\\WW}}", writes: "WW", weekNumber: 2 },
+		{ format: "{{monday:[WW]ww}}", writes: "WW01", weekNumber: 1 },
+	];
+
+	for (const { format, writes, weekNumber } of CASES) {
+		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
+			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
+		});
+	}
 });

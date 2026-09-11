@@ -1,6 +1,7 @@
 import type { Moment } from "moment";
 import type { WeekStartOption } from "../settings";
 import type { ICalendarDay, ICalendarMonth } from "../types";
+import { getWeekNumber } from "../notes/noteUtils";
 
 /**
  * Convert a WeekStartOption to a numeric weekday (0=Sun, 1=Mon, ..., 6=Sat).
@@ -33,13 +34,29 @@ export function getWeekdayHeaders(weekStart: number): string[] {
 }
 
 /**
+ * The date that identifies a grid row's week.
+ *
+ * The row's own first day, never the ISO Monday of it: a row runs from
+ * `weekStart` to `weekStart + 6`, so on a Sunday-start grid the ISO Monday of
+ * `days[0]` sits in the week before the row. The week number, the dot and the
+ * click target all read this one date, or the column names a different week
+ * than the note the cell opens.
+ */
+export function getWeekAnchor(days: ICalendarDay[]): Moment {
+	return days[0]!.date.clone();
+}
+
+/**
  * Generate 6 weeks × 7 days grid for the given month.
  * @param displayedMonth - any moment in the month to display
  * @param weekStart - numeric weekday (0=Sun ... 6=Sat)
+ * @param weekFormat - the configured weekly-note format, which decides the
+ *   week-numbering system (see `getWeekNumber`)
  */
 export function getMonthGrid(
 	displayedMonth: Moment,
-	weekStart: number
+	weekStart: number,
+	weekFormat: string
 ): ICalendarMonth {
 	const today = window.moment().startOf("day");
 	const startOfMonth = displayedMonth.clone().startOf("month");
@@ -67,7 +84,7 @@ export function getMonthGrid(
 			cursor.add(1, "day");
 		}
 		weeks.push({
-			weekNumber: days[0]!.date.isoWeek(),
+			weekNumber: getWeekNumber(getWeekAnchor(days), weekFormat),
 			days,
 		});
 	}
