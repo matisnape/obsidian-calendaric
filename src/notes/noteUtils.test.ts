@@ -20,6 +20,7 @@ function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 		format: "YYYY-MM-DD",
 		folder: "",
 		templatePath: "",
+		allowPrefixMatching: false,
 		openAtStartup: false,
 		...overrides,
 	};

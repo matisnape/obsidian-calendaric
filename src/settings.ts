@@ -1,51 +1,16 @@
 import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
-import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "./types";
+import type { PeriodicConfig } from "./types";
+import { clearStartupNote } from "./settings/model";
+import type { Granularity, WeekStartOption } from "./settings/model";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import type CalendaricPlugin from "./main";
 
-export type WeekStartOption =
-	| "locale"
-	| "monday"
-	| "tuesday"
-	| "wednesday"
-	| "thursday"
-	| "friday"
-	| "saturday"
-	| "sunday";
-
-export interface CalendaricSettings {
-	weekStart: WeekStartOption;
-	showWeekNumbers: boolean;
-	confirmBeforeCreate: boolean;
-	overrideLocale: string;
-	hasMigratedDailyNoteSettings: boolean;
-	day: PeriodicConfig;
-	week: PeriodicConfig;
-	month: PeriodicConfig;
-	quarter: PeriodicConfig;
-	year: PeriodicConfig;
-}
-
-export const DEFAULT_SETTINGS: CalendaricSettings = {
-	weekStart: "monday",
-	showWeekNumbers: true,
-	confirmBeforeCreate: true,
-	overrideLocale: "",
-	hasMigratedDailyNoteSettings: false,
-	day: { ...DEFAULT_PERIODIC_CONFIG, enabled: true },
-	week: { ...DEFAULT_PERIODIC_CONFIG, enabled: true },
-	month: { ...DEFAULT_PERIODIC_CONFIG },
-	quarter: { ...DEFAULT_PERIODIC_CONFIG },
-	year: { ...DEFAULT_PERIODIC_CONFIG },
-};
-
-export function clearStartupNote(settings: CalendaricSettings): void {
-	for (const key of ["day", "week", "month", "quarter", "year"] as const) {
-		settings[key].openAtStartup = false;
-	}
-}
+// The configuration model lives in ./settings/model, which knows nothing about
+// Obsidian. Re-exported here so the rest of the plugin keeps one import path.
+export { DEFAULT_SETTINGS, clearStartupNote } from "./settings/model";
+export type { CalendaricSettings, WeekStartOption } from "./settings/model";
 
 const WEEK_START_OPTIONS: Record<WeekStartOption, string> = {
 	locale: "Locale default",
@@ -58,8 +23,8 @@ const WEEK_START_OPTIONS: Record<WeekStartOption, string> = {
 	sunday: "Sunday",
 };
 
+/** The granularities whose settings the screen can edit today. */
 type ActiveGranularity = "day" | "week";
-type Granularity = ActiveGranularity | "month" | "quarter" | "year";
 
 const GRANULARITY_LABELS: Record<Granularity, string> = {
 	day: "Daily Notes",
@@ -293,6 +258,20 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
 				text.onChange(async (value) => {
 					config.templatePath = value;
+					await this.save();
+				});
+			});
+
+		// Allow prefix matching
+		new Setting(content)
+			.setName("Allow prefix matching")
+			.setDesc(
+				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "2026-W07, 09.02 - 15.02".`,
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(config.allowPrefixMatching);
+				toggle.onChange(async (value) => {
+					config.allowPrefixMatching = value;
 					await this.save();
 				});
 			});
