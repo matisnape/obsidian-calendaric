@@ -59,7 +59,8 @@ Quick starting guide for new plugin devs:
 - [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
 - This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
 - Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+- A GitHub action runs install, test and build on every pull request against `master`.
+- That action does **not** run lint. eslint currently reports errors that already exist on `master`, so a lint gate would fail every pull request whatever it changed. Run `npm run lint` yourself and check that your own change adds no new errors.
 
 ## Funding URL
 
