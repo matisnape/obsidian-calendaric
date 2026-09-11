@@ -82,6 +82,14 @@
   color: var(--text-normal);
 }
 
+/* Inactive: the grid already shows the current month, so there is nowhere to return to. */
+.calendaric-today-btn.is-disabled,
+.calendaric-today-btn.is-disabled:hover {
+  background-color: transparent;
+  color: var(--text-faint);
+  cursor: default;
+}
+
 /* ===== Grid ===== */
 .calendaric-grid {
   border-collapse: collapse;

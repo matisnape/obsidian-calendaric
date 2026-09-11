@@ -8,6 +8,7 @@ import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
+import { MonthNavigation } from "./calendarNav";
 import { hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
@@ -30,13 +31,14 @@ export class CalendarWidget implements HoverParent {
 	private containerEl: HTMLElement;
 	private app: App;
 	private settings: CalendaricSettings;
-	private displayedMonth: Moment;
+	private nav: MonthNavigation;
 	private vaultConfig: ObsidianVaultConfigAdapter;
 	private vault: ObsidianVaultAdapter;
 	private workspace: ObsidianWorkspaceAdapter;
 
 	// DOM references for partial updates
 	private titleEl!: HTMLElement;
+	private todayBtnEl!: HTMLElement;
 	private gridBodyEl!: HTMLTableSectionElement;
 	private dots: DotScanner;
 	private activeFilePath: string | null = null;
@@ -46,7 +48,10 @@ export class CalendarWidget implements HoverParent {
 		this.containerEl = containerEl;
 		this.app = app;
 		this.settings = settings;
-		this.displayedMonth = window.moment();
+		this.nav = new MonthNavigation(
+			() => window.moment(),
+			() => this.renderGrid(),
+		);
 		this.vaultConfig = new ObsidianVaultConfigAdapter(app);
 		this.vault = new ObsidianVaultAdapter(app);
 		this.workspace = new ObsidianWorkspaceAdapter(app);
@@ -79,19 +84,23 @@ export class CalendarWidget implements HoverParent {
 			attr: { "aria-label": "Previous month" },
 		});
 		prevBtn.innerHTML = svgArrow;
-		prevBtn.addEventListener("click", () => this.goToPrevMonth());
+		prevBtn.addEventListener("click", () => this.nav.prev());
 
-		navButtons.createDiv({
+		this.todayBtnEl = navButtons.createDiv({
 			cls: "calendaric-today-btn",
 			text: "Today",
-		}).addEventListener("click", () => this.goToToday());
+		});
+		// The control decides nothing itself: MonthNavigation is inert on the
+		// current month, so a click here while the button reads as inactive
+		// changes no month and asks for no re-render.
+		this.todayBtnEl.addEventListener("click", () => this.nav.toToday());
 
 		const nextBtn = navButtons.createDiv({
 			cls: "calendaric-nav-btn calendaric-nav-btn--next",
 			attr: { "aria-label": "Next month" },
 		});
 		nextBtn.innerHTML = svgArrow;
-		nextBtn.addEventListener("click", () => this.goToNextMonth());
+		nextBtn.addEventListener("click", () => this.nav.next());
 
 		// Grid table
 		const table = wrapper.createEl("table", { cls: "calendaric-grid" });
@@ -114,25 +123,32 @@ export class CalendarWidget implements HoverParent {
 
 	/** Re-render just the grid body + title (on navigation). */
 	private renderGrid(): void {
+		const displayedMonth = this.nav.month;
+
 		// Update title
 		this.titleEl.empty();
 		this.titleEl.createEl("span", {
 			cls: "calendaric-month",
-			text: this.displayedMonth.format("MMM"),
+			text: displayedMonth.format("MMM"),
 		});
 		this.titleEl.createEl("span", {
 			cls: "calendaric-year",
-			text: this.displayedMonth.format("YYYY"),
+			text: displayedMonth.format("YYYY"),
 		});
+
+		// Nothing to return to while the grid already shows the current month.
+		const atCurrentMonth = this.nav.atCurrentMonth;
+		this.todayBtnEl.toggleClass("is-disabled", atCurrentMonth);
+		this.todayBtnEl.setAttribute("aria-disabled", String(atCurrentMonth));
 
 		// Rebuild tbody
 		this.gridBodyEl.empty();
 
 		const weekStart = resolveWeekStart(this.settings.weekStart);
-		const grid = getMonthGrid(this.displayedMonth, weekStart, this.settings.week.format);
+		const grid = getMonthGrid(displayedMonth, weekStart, this.settings.week.format);
 
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
-		const dayPaths = this.dots.getDayNotePaths(this.displayedMonth, this.settings.day);
+		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
 		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
 
 		for (const week of grid) {
@@ -189,21 +205,6 @@ export class CalendarWidget implements HoverParent {
 				}
 			}
 		}
-	}
-
-	goToPrevMonth(): void {
-		this.displayedMonth = this.displayedMonth.clone().subtract(1, "month");
-		this.renderGrid();
-	}
-
-	goToNextMonth(): void {
-		this.displayedMonth = this.displayedMonth.clone().add(1, "month");
-		this.renderGrid();
-	}
-
-	goToToday(): void {
-		this.displayedMonth = window.moment();
-		this.renderGrid();
 	}
 
 	/** Lightweight refresh — re-renders grid with current settings (e.g. on minute tick). */
