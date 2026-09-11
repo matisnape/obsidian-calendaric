@@ -639,8 +639,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteOpen.test.ts > AC-NOTE-06.1: reuses the current unpinned tab on a plain click / > AC-NOTE-06.1: reuses the current tab on a Ctrl click on macOS; plus src/adapters/obsidianWorkspaceAdapter.test.ts > AC-NOTE-06.1: asks for the active leaf so the current unpinned tab is reused. Reuse goes through getLeaf(false), which Obsidian own typings name as the replacement for the deprecated getUnpinnedLeaf. Whether the reused tab is the one the user perceives as active needs a live host."
         },
         {
           "id": "AC-NOTE-06.2",
@@ -651,8 +651,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteOpen.test.ts > isSplitModifierPressed (AC-NOTE-06.2) suite, including > AC-NOTE-06.2: opens a split on a Cmd click on macOS and > AC-NOTE-06.2: opens a split on a Ctrl click off macOS; plus the adapter test > AC-NOTE-06.2: asks for a split leaf. The platform split matters: a first implementation treated Ctrl and Meta as equivalent everywhere, so a macOS Ctrl-click wrongly split -- both platforms are now asserted separately rather than against one mocked platform."
         },
         {
           "id": "AC-NOTE-06.3",
@@ -663,8 +663,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteOpen.test.ts > AC-NOTE-06.3: opens a new tab instead of reusing the active one, plus the adapter test > AC-NOTE-06.3: asks for a tab leaf. PARTIAL, reported rather than judged complete: the criterion says as part of the STARTUP FLOW, and that call sits in src/main.ts, which has no test harness and which five other live branches own -- so the tab-versus-reuse decision is proven while the startup wiring itself is unverified and needs a live host."
         },
         {
           "id": "AC-NOTE-06.4",
@@ -676,8 +676,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/adapters/obsidianWorkspaceAdapter.test.ts > AC-NOTE-06.4 suite -- reports the file as missing when the path no longer resolves / claims no leaf and opens nothing / opens nothing when an unrelated file has taken over the path / opens nothing when the note moved away and another file took its old path / opens nothing when a folder now occupies the path; plus src/notes/noteOpen.test.ts > AC-NOTE-06.4: reports that the file no longer exists at the resolved path. Three review rounds went into this one criterion: it first followed a moved file to its new location, which satisfied the no-unrelated-file clause but not the notice clause, and the wrappers rebuilt the path from the mutable file.path so a retained handle escaped the check. foundAtPath is now a required parameter carrying the immutable looked-up path, so no call site can reintroduce that silently. Honest limits: the criterion is testable_by integration, so Obsidian own object-identity and path-mutation behaviour, and the Notice actually appearing, remain unobserved here.",
           "failure_path": true
         }
       ]
