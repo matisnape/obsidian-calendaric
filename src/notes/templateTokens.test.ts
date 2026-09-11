@@ -55,9 +55,47 @@ describe("substituteTemplateTokens — daily", () => {
 		expect(result).toBe("2026-04-14");
 	});
 
+	it("formats {{yesterday}} and {{tomorrow}} with the configured daily format", () => {
+		const config = makeConfig({ format: "DD.MM.YYYY" });
+		const result = substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", DAILY_DATE, "day", config, "t");
+		expect(result).toBe("12.04.2026|14.04.2026");
+	});
+
+	it("crosses month and year boundaries", () => {
+		const newYear = moment("2026-01-01T09:00:00");
+		const result = substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", newYear, "day", makeConfig(), "t");
+		expect(result).toBe("2025-12-31|2026-01-02");
+	});
+
+	it("resolves week tokens in the daily format, so the value matches the adjacent note's filename", () => {
+		// computeNotePath() names files with formatWithWeekTokens(). {{yesterday}} has to
+		// render the same string, or the link it produces points at a file that does not exist.
+		const config = makeConfig({ format: "{{monday:DD.MM}}-YYYY-MM-DD" });
+		const result = substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", DAILY_DATE, "day", config, "t");
+		expect(result).toBe("06.04-2026-04-12|13.04-2026-04-14");
+	});
+
+	it("does not mutate the date it was given", () => {
+		const date = moment("2026-04-13T14:30:00");
+		substituteTemplateTokens("{{yesterday}}{{tomorrow}}", date, "day", makeConfig(), "t");
+		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
 	it("does not substitute {{yesterday}} for weekly granularity", () => {
 		const result = substituteTemplateTokens("{{yesterday}}", DAILY_DATE, "week", makeConfig(), "t");
 		expect(result).toBe("{{yesterday}}");
+	});
+
+	it("does not substitute {{tomorrow}} for weekly granularity", () => {
+		const result = substituteTemplateTokens("{{tomorrow}}", DAILY_DATE, "week", makeConfig(), "t");
+		expect(result).toBe("{{tomorrow}}");
+	});
+
+	it("leaves both adjacent-day tokens intact in a weekly template", () => {
+		const template = "# Week {{monday:DD.MM}}\n{{yesterday}} / {{tomorrow}}";
+		const config = makeConfig({ format: "gggg-[W]ww" });
+		const result = substituteTemplateTokens(template, moment("2026-04-13"), "week", config, "t");
+		expect(result).toBe("# Week 13.04\n{{yesterday}} / {{tomorrow}}");
 	});
 });
 

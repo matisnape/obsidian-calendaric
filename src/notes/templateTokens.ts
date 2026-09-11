@@ -44,8 +44,10 @@ export function substituteTemplateTokens(
 
 	if (granularity === "day") {
 		// {{yesterday}} / {{tomorrow}}
-		const yesterday = date.clone().subtract(1, "day").format(config.format);
-		const tomorrow = date.clone().add(1, "day").format(config.format);
+		// formatWithWeekTokens, not plain format(): computeNotePath() names files the same
+		// way, and these tokens exist to link to those files.
+		const yesterday = formatWithWeekTokens(config.format, date.clone().subtract(1, "day"));
+		const tomorrow = formatWithWeekTokens(config.format, date.clone().add(1, "day"));
 		out = out.replace(/\{\{yesterday\}\}/g, yesterday);
 		out = out.replace(/\{\{tomorrow\}\}/g, tomorrow);
 	}
