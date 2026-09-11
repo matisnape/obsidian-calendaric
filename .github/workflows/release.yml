@@ -52,11 +52,13 @@ jobs:
       - name: release checks
         run: npm run release-check --silent
 
-      # npm ci runs the prepare script, which builds (AC-ARCH-06.7): a consumer
-      # installing this repository from source gets main.js without a second
-      # command.
+      # --ignore-scripts because package.json's prepare hook builds, and a build runs
+      # tsc. Without the flag a type error fails the install step, the job stops, and
+      # lint and test never run at all — a green-looking pipeline with two gates
+      # silently skipped, which is the exact failure AC-ARCH-06.5 and AC-ARCH-06.6
+      # exist to prevent. The prepare path is checked below instead, after the gates.
       - name: install
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # type-check, lint and test. Any one failing fails this step, and the step
       # names which gate it was. Nothing downstream runs, so a failing gate cannot
@@ -64,11 +66,15 @@ jobs:
       - name: verify
         run: npm run verify
 
-      # npm ci already produced main.js through prepare. Building again here is
-      # cheap and keeps the release from silently depending on a lifecycle hook
-      # staying in package.json.
-      - name: build
-        run: npm run build
+      # Builds, and proves the prepare hook is what produces main.js: AC-ARCH-06.7
+      # requires that installing from source needs no second command. The install
+      # step skipped scripts, so this is the only place prepare runs, and main.js is
+      # absent until it does. Running it after the gates means a failure here can
+      # never be mistaken for, or hide, a gate that did not run.
+      - name: build via the prepare hook
+        run: |
+          npm run prepare
+          test -f main.js
 
       - name: check for optional styles
         id: styles

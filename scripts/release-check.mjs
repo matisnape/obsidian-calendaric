@@ -12,17 +12,25 @@ import { execFileSync } from "node:child_process";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-// The official semver grammar, trimmed to what a plugin version can be. Obsidian's
-// own plugin validation rejects anything else.
+// The official grammar from semver.org, verbatim. A trimmed version of it accepted
+// "1.0.0-01": the spec forbids a leading zero on a numeric prerelease identifier,
+// and the difference matters because two versions that differ only there compare
+// equal under any comparator that parses them as numbers.
 const SEMVER =
-	/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+	/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 
 /**
  * Returns a list of human-readable problems. An empty list means the release is
  * allowed to publish. `tag` and `previousManifest` are optional: a local run has
  * no tag, and the very first release has no previous one.
  */
-export function checkRelease({ manifest, versions, tag = null, previousManifest = null }) {
+export function checkRelease({
+	manifest,
+	versions,
+	tag = null,
+	previousVersion = null,
+	previousManifest = null,
+}) {
 	const problems = [];
 	const version = manifest?.version;
 
@@ -64,6 +72,17 @@ export function checkRelease({ manifest, versions, tag = null, previousManifest 
 		}
 	}
 
+	// versions.json is append-only in practice: Obsidian serves an older plugin build
+	// to an older app by looking the version up here. Releasing a version that is not
+	// above every entry already in the ledger leaves those clients on a build that no
+	// longer exists.
+	if (previousVersion && version && SEMVER.test(version) && compareSemver(previousVersion, version) >= 0) {
+		problems.push(
+			`versions.json already records ${JSON.stringify(previousVersion)}, which is not lower than ` +
+				`this release's ${JSON.stringify(version)}. A release must move the version forward.`,
+		);
+	}
+
 	// AGENTS.md: the id is stable API once a release exists. Nothing enforces that
 	// but this check, because renaming it only breaks users at update time.
 	if (previousManifest && previousManifest.id !== manifest?.id) {
@@ -89,30 +108,107 @@ export function checkRelease({ manifest, versions, tag = null, previousManifest 
  * Deriving the expected tag rather than discovering it also means a checkout with
  * no tags is caught: the caller knows a tag must exist and can fail instead of
  * reporting "no previous release" for a plugin that has had several.
+ *
+ * This returns the highest entry other than the current one, NOT the highest entry
+ * below it. Filtering by "below" meant a release that went backwards found no
+ * predecessor and skipped the id check — the one case where a mistake is most
+ * likely. A backwards release is caught by `checkRelease` instead, which can say so.
  */
 export function previousReleaseVersion(versions, currentVersion) {
-	return (
-		Object.keys(versions)
-			.filter((v) => compareSemver(v, currentVersion) < 0)
-			.sort(compareSemver)
-			.pop() ?? null
-	);
+	const others = Object.keys(versions).filter((v) => v !== currentVersion);
+	if (others.length === 0) return null;
+	return others.sort(compareSemver).at(-1);
 }
 
-function compareSemver(a, b) {
-	const parse = (v) => v.split("-")[0].split(".").map(Number);
-	const [aMajor, aMinor, aPatch] = parse(a);
-	const [bMajor, bMinor, bPatch] = parse(b);
-	return aMajor - bMajor || aMinor - bMinor || aPatch - bPatch;
+/**
+ * Semantic Versioning precedence, per the spec's rule 11.
+ *
+ * The short version this replaced compared only the three numbers, which made
+ * `1.0.0-alpha` equal to `1.0.0` and turned any version carrying build metadata
+ * into NaN. Both bugs had the same consequence: the previous release became
+ * invisible and the manifest id stability check silently did not run.
+ */
+export function compareSemver(a, b) {
+	// Build metadata is explicitly ignored when determining precedence (rule 10).
+	const [aCore, aPre] = splitVersion(a);
+	const [bCore, bPre] = splitVersion(b);
+
+	for (let i = 0; i < 3; i++) {
+		if (aCore[i] !== bCore[i]) return aCore[i] - bCore[i];
+	}
+
+	// A version with a prerelease has lower precedence than the same core version
+	// without one.
+	if (aPre.length === 0 && bPre.length === 0) return 0;
+	if (aPre.length === 0) return 1;
+	if (bPre.length === 0) return -1;
+
+	for (let i = 0; i < Math.max(aPre.length, bPre.length); i++) {
+		// A larger set of prerelease fields wins when all the preceding ones are equal.
+		if (i >= aPre.length) return -1;
+		if (i >= bPre.length) return 1;
+
+		const [x, y] = [aPre[i], bPre[i]];
+		const [xNum, yNum] = [/^\d+$/.test(x), /^\d+$/.test(y)];
+		if (xNum && yNum) {
+			if (Number(x) !== Number(y)) return Number(x) - Number(y);
+		} else if (xNum !== yNum) {
+			// Numeric identifiers always have lower precedence than alphanumeric ones.
+			return xNum ? -1 : 1;
+		} else if (x !== y) {
+			return x < y ? -1 : 1;
+		}
+	}
+	return 0;
+}
+
+function splitVersion(version) {
+	const withoutBuild = version.split("+")[0];
+	const dash = withoutBuild.indexOf("-");
+	const core = (dash === -1 ? withoutBuild : withoutBuild.slice(0, dash)).split(".").map(Number);
+	const pre = dash === -1 ? [] : withoutBuild.slice(dash + 1).split(".");
+	return [core, pre];
 }
 
 function git(...args) {
 	return execFileSync("git", args, { encoding: "utf8" });
 }
 
-function main(argv) {
+/**
+ * The tag under test. `npm version` creates the tag on HEAD, so a local run right
+ * after a version bump has a real tag to check — the README tells the release owner
+ * to run this command at exactly that point, and reporting "no tag" there would
+ * check less than the README claims it checks.
+ */
+function resolveTag(argv) {
 	const tagFlag = argv.indexOf("--tag");
-	const tag = tagFlag === -1 ? (process.env.GITHUB_REF_NAME ?? null) : argv[tagFlag + 1];
+	if (tagFlag !== -1) return { tag: argv[tagFlag + 1], source: "--tag" };
+	if (process.env.GITHUB_REF_NAME) {
+		return { tag: process.env.GITHUB_REF_NAME, source: "GITHUB_REF_NAME" };
+	}
+
+	let atHead = [];
+	try {
+		atHead = git("tag", "--points-at", "HEAD").split("\n").filter(Boolean);
+	} catch {
+		return { tag: null, source: "no git" };
+	}
+
+	if (atHead.length === 1) return { tag: atHead[0], source: "tag on HEAD" };
+	if (atHead.length > 1) {
+		// Guessing which one is the release would be the wrong kind of helpful.
+		return { tag: null, source: `ambiguous — ${atHead.length} tags on HEAD: ${atHead.join(", ")}`, ambiguous: true };
+	}
+	return { tag: null, source: "no tag on HEAD — checking the manifest and versions.json only" };
+}
+
+function main(argv) {
+	const { tag, source, ambiguous } = resolveTag(argv);
+	if (ambiguous) {
+		console.error(`cannot tell which tag is the release: ${source}`);
+		console.error("re-run with --tag <version>.");
+		return 1;
+	}
 
 	const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
 	const versions = JSON.parse(readFileSync("versions.json", "utf8"));
@@ -135,12 +231,12 @@ function main(argv) {
 		}
 	}
 
-	console.log(`tag:             ${tag ?? "(none — local run)"}`);
+	console.log(`tag:             ${tag ?? "(none)"} [${source}]`);
 	console.log(`manifest id:     ${manifest.id}`);
 	console.log(`manifest version: ${manifest.version} (minAppVersion ${manifest.minAppVersion})`);
 	console.log(`previous release: ${previousTag ?? "(none — this is the first release)"}`);
 
-	const problems = checkRelease({ manifest, versions, tag, previousManifest });
+	const problems = checkRelease({ manifest, versions, tag, previousVersion: previousTag, previousManifest });
 	if (problems.length === 0) {
 		console.log("\nrelease checks passed.");
 		return 0;

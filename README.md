@@ -32,7 +32,10 @@ Quick starting guide for new plugin devs:
 2. Run `npm version patch` (or `minor`, or `major`). That bumps `package.json`, copies the
    version into `manifest.json`, adds the `"version": "minAppVersion"` row to `versions.json`,
    and creates a git tag. `.npmrc` sets `tag-version-prefix=""`, so the tag has no leading `v`.
-3. Run `npm run release-check` to confirm the manifest, `versions.json` and the tag agree.
+3. Run `npm run release-check`. With no arguments it reads the tag pointing at `HEAD` — the
+   one step 2 just created — and checks it against `manifest.json` and `versions.json`. Pass
+   `--tag <version>` to check a different one. If no tag points at `HEAD` it says so and checks
+   only the manifest and `versions.json`.
 4. Push the tag. `.github/workflows/release.yml` then runs the release checks, `npm run verify`
    and the build, and opens a **draft** GitHub release with `main.js`, `manifest.json` and
    `styles.css` attached.
