@@ -242,19 +242,18 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	if (!built) return null;
 
 	// The candidate date must reproduce the exact text it was matched
-	// against — re-render it through the real forward formatter and compare
-	// group by group with the same regex re-applied to that rendering. Any
-	// literal portion of the pattern is guaranteed identical between the two
-	// matches already (both had to satisfy the same literal regex text), so
-	// only captured group values can ever differ. AC-FMT-04.5 exempts only a
-	// nested month/day fragment, and only once a week number decides the
-	// date — every other field, nested or not, year/week/weekday alike,
-	// must still match exactly.
+	// against, or it never describes it at all. Comparing captured group
+	// values suffices — any literal portion of the pattern is already
+	// guaranteed identical between the two matches (both had to satisfy the
+	// same literal text to match at all). AC-FMT-04.5 exempts any month/day
+	// fragment (nested in {{weekday:fmt}} or not — the AC names no such
+	// restriction) once a week number decides the date; every other field,
+	// year/week/weekday alike, must still match exactly.
 	const rendered = formatWithWeekTokens(format, built.date);
 	const renderedMatch = regex.exec(rendered);
 	if (!renderedMatch) return null;
 	for (const [i, group] of groups.entries()) {
-		if (built.usedWeekPath && group.nested && isMonthOrDayKind(group.kind)) continue;
+		if (built.usedWeekPath && isMonthOrDayKind(group.kind)) continue;
 		if (match[i + 1] !== renderedMatch[i + 1]) return null;
 	}
 

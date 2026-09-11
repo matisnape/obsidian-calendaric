@@ -190,6 +190,23 @@ describe("parseFilename — AC-FMT-04.5's tolerance is scoped to month/day fragm
 		const result = parseFilename("2024-W02, 9999-W99 extra.md", format, true);
 		expect(result).toBeNull();
 	});
+
+	// AC-FMT-04.5 names no restriction to a nested {{weekday:fmt}} wrapper —
+	// "a month or day token" alongside a week-number token is tolerated
+	// either way. ISO week 2 of 2024 starts Monday 2024-01-08.
+	it("tolerates a conflicting month/day fragment that is not nested at all (exact match)", () => {
+		const result = parseFilename("2024-W02, 99.99.md", "GGGG-[W]WW, DD.MM", false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-08");
+		expect(result?.prefixMatch).toBe(false);
+	});
+
+	it("tolerates a conflicting month/day fragment that is not nested at all (prefix match)", () => {
+		const result = parseFilename("2024-W02, 99.99 extra.md", "GGGG-[W]WW, DD.MM", true);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-08");
+		expect(result?.prefixMatch).toBe(true);
+	});
 });
 
 describe("parseFilename — the core invariant: a match must reproduce its own text", () => {
