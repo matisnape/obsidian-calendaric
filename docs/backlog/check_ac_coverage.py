@@ -57,63 +57,45 @@ AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b(?!\.\d)")
 # build_backlog.py's AC_STATUSES, which is the gate that enforces them.
 AC_STATUSES = ("unverified", "pass", "fail", "n-a")
 
-# Read off the 30 evidence strings that exist today rather than assumed.
+# Which evidence counts as claiming a test is decided by INVERSION, and the
+# inversion is the whole point.
 #
-# Two shapes claim a test run, and neither is reliably a LEADING marker:
+# The first two versions of this enumerated the ways prose names a test —
+# "vitest:", then also ".test.ts", "suite", "spec", "covered by". Each
+# enumeration leaked within a round: first "covered by the noteCreate suite;
+# code review of the wiring", then "code review plus the computeNoteDate test:
+# does not mutate the input date". Both were real `pass` verdicts resting on
+# real tests, and both were classified as review-backed and dropped from the
+# failing list. The reason is structural, not a missing pattern: the ways
+# English can name a test are unbounded, so any allowlist of them fails OPEN at
+# its edge, which is the one direction this gate must never fail.
 #
-#   "vitest: src/fmt/noteDate.test.ts > computeNoteDate > ..."   the usual one
-#   "grep confirms ...; vitest: src/notes/templateTokens.test.ts (13 tests)"
-#       AC-ARCH-03.4 puts the marker after a semicolon, so anchoring to the
-#       start of the string would miss it
-#   "FakeVaultPort/FakeWorkspacePort cover ... (src/notes/noteCreate.test.ts)"
-#       AC-ARCH-03.2 carries no marker word at all, only test file paths
+# So the closed set is the other side. These are the prefixes the orchestrator
+# writes when a verdict rests on something that is not a test. Everything else
+# — every unrecognised wording, every mixed string, empty evidence — claims a
+# test by construction and must be backed by a test title naming the id.
+# Adding a spelling here can only ever make the gate weaker, so it is a
+# deliberate act; forgetting one makes the gate noisier, which is safe.
 #
-# Three shapes claim something that is not a test run:
-#
-#   "code review: ci.yml has on: {pull_request: ...} and no push key"
-#   "gh pr checks 6 on the real merged PR: one check named ... reported pass"
-#   "detect-ci-gates.sh re-run after the merge: source=github-checks"
-#
-# Both of the last two contain the bare word "test" — it is the CI job name,
-# "install, test, build" — and AC-MIG-01.1 says outright "no automated test
-# since AC is testable_by: manual". Measured against all 30 strings, a bare
-# `test` marker would drag AC-ARCH-09.1, AC-ARCH-09.4 and AC-MIG-01.1 into the
-# blocking list, where nothing could ever clear them. So `test` alone is not a
-# marker. `suite`, `spec`, `covered by`, `regression`, `coverage` and a literal
-# `describe(`/`it(` collide with none of the six, and they are how a test gets
-# named when the runner is not.
-TEST_CLAIM = re.compile(
-    r"vitest|\.test\.ts|\bsuites?\b|\bspecs?\b|covered by|\bregression\b"
-    r"|\bcoverage\b|\b(?:describe|it)\(",
-    re.IGNORECASE,
-)
-
-# A verdict is only excused from rule 1 when it says out loud what settled it
-# instead of a test. Recognising the phrasing, rather than treating "no test
-# marker" as proof of no test claim, is what keeps this fail-closed: a future
-# evidence string that cites a test in wording nobody anticipated lands in rule
-# 1 and gets noticed, not in rule 2 where it would never fail. `.sh` covers a
-# named script run, as in AC-ARCH-09.4.
-NON_TEST_CLAIM = re.compile(
-    r"code review|gh pr checks|grep confirms|measured by|observed|inspected"
-    r"|descoped|\.sh\b",
+# Anchored at the start, so "code review:" excuses a verdict only when it is
+# what the verdict is founded on. A string that merely mentions a review later
+# ("... plus code review of the wiring") still claims a test.
+NON_TEST_PREFIX = re.compile(
+    r"\s*(?:code review:|measured by the orchestrator:)",
     re.IGNORECASE,
 )
 
 
 def claims_a_test(evidence):
-    """Fail closed: anything that might name a test is treated as naming one.
+    """True unless the evidence opens with a recognised non-test marker.
 
-    A test marker ANYWHERE in the string wins, even when the string also cites
-    a review. "covered by the noteCreate suite; code review of the wiring"
-    mixes both, and reading it as review-only would let an unbacked test claim
-    settle into the non-failing list — the exact fail-open this must not have.
-    Mixed is rule 1. So is evidence naming no recognised source at all, and so
-    is empty evidence. A false alarm costs one tagged title; a missed unbacked
-    verdict is the thing this gate exists to prevent.
+    Fail closed by construction: the recognised set is small and closed, and
+    everything outside it — unfamiliar wording, a mixed string, no evidence at
+    all — is treated as claiming a test. A false alarm costs one tagged title.
+    A missed unbacked verdict is the thing this gate exists to prevent.
 
-    Sniffing prose is not the right long-term shape. The eventual one is a
-    validated `evidence_kind` field on the criterion itself, set when the
+    Sniffing prose at all is not the right long-term shape. The eventual one is
+    a validated `evidence_kind` field on the criterion itself, set when the
     verdict is recorded, which removes the guessing entirely. Deferred because
     it is a schema change across 60-plus criteria already recorded in the epic
     files, and those files are held by eleven live branches; it folds into the
@@ -121,9 +103,7 @@ def claims_a_test(evidence):
     """
     if not evidence or not evidence.strip():
         return True
-    if TEST_CLAIM.search(evidence):
-        return True
-    return not NON_TEST_CLAIM.search(evidence)
+    return not NON_TEST_PREFIX.match(evidence)
 
 
 def load_criteria(epics_dir):
@@ -292,9 +272,13 @@ def self_check():
         ("ARCH", "US-ARCH-09", "AC-ARCH-09.2", "pass",
          "code review: ci.yml has no push key — inspected verbatim"),
         ("ARCH", "US-ARCH-09", "AC-ARCH-09.1", "pass",
-         "gh pr checks 6: one check named 'install, test, build' passed in 19s"),
+         "measured by the orchestrator: check 'install, test, build' passed in 19s"),
         ("ARCH", "US-ARCH-03", "AC-ARCH-03.2", "pass",
          "FakeVaultPort covers it (src/notes/noteOpen.test.ts)"),
+        ("FMT", "US-FMT-06", "AC-FMT-06.2", "pass",
+         "code review plus the computeNoteDate test: does not mutate the input date"),
+        ("FMT", "US-FMT-06", "AC-FMT-06.3", "pass",
+         "settled while pairing on Thursday"),
         ("CAL", "US-CAL-01", "AC-CAL-01.5", "n-a", "needs a jsdom harness"),
         ("CAL", "US-CAL-01", "AC-CAL-01.6", "fail", "measured by hand: wrong"),
     ]
@@ -319,11 +303,16 @@ def self_check():
     assert "AC-NOTE-03.2" in unbacked_ids, unbacked_ids
     # And so is the unmarked string that only names a .test.ts path.
     assert "AC-ARCH-03.2" in unbacked_ids, unbacked_ids
-    assert len(unbacked_ids) == 2, unbacked_ids
+    # The round 4 leak: a test named after a review marker that has no colon.
+    assert "AC-FMT-06.2" in unbacked_ids, unbacked_ids
+    # Evidence matching no marker at all must reach the reported list too, not
+    # just be classified correctly in isolation.
+    assert "AC-FMT-06.3" in unbacked_ids, unbacked_ids
+    assert len(unbacked_ids) == 4, unbacked_ids
 
     # Rule 2. Review- and observation-backed `pass` verdicts never fail, and
-    # they must be listed, not dropped. "install, test, build" is a CI job
-    # name, so AC-ARCH-09.1 proves the bare word `test` does not trip rule 1.
+    # they must be listed, not dropped. Both markers in the closed set are
+    # exercised: "code review:" and "measured by the orchestrator:".
     assert "AC-ARCH-09.2" in no_regression_ids, no_regression_ids
     assert "AC-ARCH-09.1" in no_regression_ids, no_regression_ids
     assert len(no_regression_ids) == 2, no_regression_ids
@@ -340,21 +329,30 @@ def self_check():
     # A `pass` that IS named stays quiet too, or the gate is just noise.
     assert check(catalogue[:1], {"AC-NOTE-03.1"}) == ([], [], [])
 
-    # Fail closed. Empty evidence, and evidence that names neither a test nor
-    # a recognised non-test source, both count as claiming a test: an
-    # unanticipated way of citing one must surface, not slip into rule 2.
+    # Fail closed by construction. Anything the closed set does not open with
+    # claims a test, so these must all be rule 1.
     assert claims_a_test(None) and claims_a_test("   ")
-    assert claims_a_test("covered by the noteCreate suite")
-    # A test claim wins over a non-test claim in the same string, whichever
-    # marker comes first and whether or not the runner is the one named. This
-    # exact string fell into rule 2 before: "code review" was recognised and
-    # "the noteCreate suite" was not, so an unbacked test claim never failed.
-    assert claims_a_test("vitest: dailyNotesImport.test.ts plus code review")
+    # Each of the three strings that leaked past an enumerating classifier.
+    # Round 2: a test named in prose the allowlist did not know.
     assert claims_a_test("covered by the noteCreate suite; code review of the wiring")
+    # Round 4: "code review" without its colon, then a bare "test:".
+    assert claims_a_test(
+        "code review plus the computeNoteDate test: does not mutate the input date")
+    # And the general case an allowlist can never cover: wording nobody
+    # anticipated, matching no marker at all.
+    assert claims_a_test("settled while pairing on Thursday")
+    assert claims_a_test("vitest: dailyNotesImport.test.ts plus code review")
+    # A marker only excuses the verdict when it is what the verdict opens with.
+    # This string carries a full "code review:" marker, colon and all, but not
+    # at the front — un-anchoring the match would read it as review-backed and
+    # drop a real test claim, which is the round 2 leak in a new disguise.
+    assert claims_a_test(
+        "the computeNoteDate suite settles this; code review: wiring checked too")
     assert claims_a_test("code review of the wiring, plus the noteCreate suite")
     # And the recognised non-test phrasings really are recognised.
     assert not claims_a_test("code review: settings.ts renders the banner")
-    assert not claims_a_test("detect-ci-gates.sh re-run: source=github-checks")
+    assert not claims_a_test("measured by the orchestrator: 19s on the merged PR")
+    assert not claims_a_test("  Code Review: leading space, any case")
 
     end_to_end_check()
 
@@ -474,6 +472,29 @@ def end_to_end_check():
                 assert e.code and "catalogue" in str(e.code), e.code
             else:
                 raise AssertionError(f"empty catalogue accepted: {epics}")
+
+    # Everything above calls main() in-process, so the `sys.exit(main())`
+    # wiring at the bottom of this file is itself unguarded: swapping it for a
+    # bare main() would leave all of it green while the real gate always
+    # exited 0. Assert the process exit code the shell actually sees.
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        epics = tmp / "epics"
+        epics.mkdir()
+        (epics / "NOTE.json").write_text(json.dumps(SYNTHETIC_EPIC))
+        base = [sys.executable, str(pathlib.Path(__file__).resolve()),
+                "--epics-dir", str(epics), "--vitest-json", str(tmp / "r.json")]
+
+        (tmp / "r.json").write_text(json.dumps(vitest_report("noteCreate > creates it")))
+        proc = subprocess.run(base, capture_output=True, text=True)
+        assert proc.returncode == 1, (proc.returncode, proc.stdout, proc.stderr)
+
+        proc = subprocess.run([*base, "--report-only"], capture_output=True, text=True)
+        assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
+
+        (tmp / "r.json").write_text(json.dumps(named))
+        proc = subprocess.run(base, capture_output=True, text=True)
+        assert proc.returncode == 0, (proc.returncode, proc.stdout, proc.stderr)
 
     # An out-of-enum status is the hand-written typo that would hide a
     # criterion from the gate policing it: every rule keys on `== "pass"`, so

@@ -48,12 +48,22 @@ jobs:
 
       # NOT ENFORCED YET, ON PURPOSE. The checker runs in its normal blocking
       # mode and really does exit non-zero; `continue-on-error` is what keeps
-      # that off the pull request status today. Four already-merged stories
-      # (US-ARCH-03, US-FMT-06, US-MIG-01, US-TPL-02) carry 15 `pass` verdicts
-      # whose evidence cites a real vitest test that never named its criterion
-      # id, so enforcing now would make master red the moment this merged.
+      # that off the pull request status today. Five already-merged stories
+      # (US-ARCH-03, US-ARCH-09, US-FMT-06, US-MIG-01, US-TPL-02) carry 17
+      # `pass` verdicts with no test title naming their criterion id, so
+      # enforcing now would make master red the moment this merged.
       #
-      # To enforce: add the ids to those 15 test titles, then delete the
+      # Fifteen of those are a tagging job: the evidence names a real vitest
+      # test. The other two, AC-ARCH-09.1 and AC-ARCH-09.4, rest on an observed
+      # check run and on a script re-run, but their evidence opens with wording
+      # the checker's closed non-test marker set does not recognise ("gh pr
+      # checks ..." and "detect-ci-gates.sh ..."). They are counted as test
+      # claims because anything outside that closed set is, by design. Either
+      # reword those two to open with a recognised marker, or accept them as
+      # blocking. That set is deliberately hard to widen: every spelling added
+      # to it makes the gate weaker.
+      #
+      # To enforce: settle those 17, then delete the
       # `continue-on-error` line below. Nothing else changes — the command is
       # already the one that will run for real, so the log here shows exactly
       # what a red build will show. This state is temporary, not the intended
@@ -70,10 +80,10 @@ jobs:
       # non-zero and redden the pull request, which is the opposite of a soft
       # rollout.
       #
-      # The six further `pass` verdicts the step lists under "passing with no
-      # regression behind them" (US-ARCH-09, plus AC-MIG-01.1 and .5) do not
-      # block the flip. They rest on code review and on observed check runs, so
-      # there is nothing to tag; they are listed to stay countable.
+      # The four `pass` verdicts the step lists under "passing with no
+      # regression behind them" (AC-ARCH-09.2, AC-ARCH-09.5, AC-MIG-01.1,
+      # AC-MIG-01.5) do not block the flip. They rest on code review, so there
+      # is nothing to tag; they are listed to stay countable.
       - name: ac coverage (not enforced yet)
         continue-on-error: true
         run: npm run check:ac

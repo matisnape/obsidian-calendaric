@@ -120,8 +120,12 @@ cannot be reviewed against either story's criteria.
    title, so the verdict has something holding it in place:
    `it("AC-NOTE-03.5: creates every missing intermediate folder, top down")`.
    `npm run check:ac` fails on a `pass` whose evidence claims a test no test
-   title names. A `pass` resting on `code review:` or an observed run instead
-   is listed separately and does not fail — there is nothing to tag for it.
+   title names. Evidence claims a test unless it OPENS with `code review:` or
+   `measured by the orchestrator:` — those two are the whole recognised set,
+   and a verdict resting on one of them is listed separately and does not
+   fail, because there is nothing to tag for it. Anything else, including a
+   review mentioned mid-sentence, counts as claiming a test. Write one of
+   those two prefixes when a verdict does not rest on a test.
 7. **Review.** Open the pull request, then
    `python3 set_status.py US-CAL-14 in-review`.
 8. **Close.** After the merge, `python3 set_status.py US-CAL-14 done`.
