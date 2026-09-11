@@ -36,14 +36,23 @@ export async function createNote(
  * every segment is tested before it is created. Walking the chain explicitly
  * keeps the guarantee ours rather than resting on how one call treats missing
  * parents.
+ *
+ * Each await hands the event loop back, and two notes can be created at once —
+ * both startup notes share a folder chain, and Sync writes folders of its own.
+ * So the existence test can go stale before the call it guards, which makes a
+ * failure on an existing folder the result we wanted rather than an error.
  */
 async function ensureFolderChain(folder: string, vault: VaultPort): Promise<void> {
 	const segments = folder.split("/");
 
 	for (let depth = 1; depth <= segments.length; depth++) {
 		const partial = segments.slice(0, depth).join("/");
-		if (!vault.pathExists(partial)) {
+		if (vault.pathExists(partial)) continue;
+
+		try {
 			await vault.createFolder(partial);
+		} catch (error) {
+			if (!vault.pathExists(partial)) throw error;
 		}
 	}
 }

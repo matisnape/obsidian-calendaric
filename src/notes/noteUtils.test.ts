@@ -93,6 +93,12 @@ describe("computeNotePath", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
 		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("Inbox/2026-04-13.md");
 	});
+
+	it("builds a vault-root path for an explicit \"/\" folder, ignoring the default folder", () => {
+		const configWithDefault = new FakeVaultConfigPort("Inbox");
+		const config = makeConfig({ format: "YYYY-MM-DD", folder: "/" });
+		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("2026-04-13.md");
+	});
 });
 
 describe("resolveNoteFolder", () => {
@@ -107,6 +113,18 @@ describe("resolveNoteFolder", () => {
 	it("resolves to the vault root when neither the config nor Obsidian names a folder (AC-NOTE-03.2)", () => {
 		expect(resolveNoteFolder("", new FakeVaultConfigPort())).toBe("");
 	});
+
+	it("keeps an explicit \"/\" as the vault root instead of taking the default folder (AC-NOTE-03.3)", () => {
+		expect(resolveNoteFolder("/", new FakeVaultConfigPort("Inbox"))).toBe("");
+	});
+
+	it("takes the default folder only when the config names no folder at all (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("   ", new FakeVaultConfigPort("Inbox"))).toBe("Inbox");
+	});
+
+	it("strips surrounding slashes from a configured folder", () => {
+		expect(resolveNoteFolder("/journal/daily/", new FakeVaultConfigPort("Inbox"))).toBe("journal/daily");
+	});
 });
 
 describe("checkNoteFolder", () => {
@@ -118,6 +136,12 @@ describe("checkNoteFolder", () => {
 
 	it("accepts the vault root written as a slash as valid and already present (AC-NOTE-03.3)", () => {
 		const check = checkNoteFolder("/", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("reads an explicit \"/\" as the vault root even when Obsidian names a default folder (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("/", new FakeVaultConfigPort("Inbox"), new FakeVaultPort());
 
 		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
 	});

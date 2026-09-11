@@ -80,6 +80,28 @@ describe("createNote", () => {
 		expect(vault.createdFolders).toEqual([]);
 	});
 
+	it("accepts a folder another actor created between the check and the call (AC-NOTE-03.1)", async () => {
+		const vault = new FakeVaultPort();
+		vault.loseCreateFolderRace("journal");
+
+		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(file.path).toBe("journal/daily/2026-04-13.md");
+		expect(vault.contentAt("journal/daily/2026-04-13.md")).toBe("");
+		expect(vault.createdFolders).toEqual(["journal/daily"]);
+	});
+
+	// Guards the fix for the race above against swallowing every failure: the
+	// folder is still absent afterwards, so the error has to come back out.
+	it("rethrows a folder failure that left the folder absent", async () => {
+		const vault = new FakeVaultPort();
+		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("EACCES: permission denied");
+	});
+
 	it("renders the configured template into the note content", async () => {
 		const vault = new FakeVaultPort();
 		vault.seedFile("Templates/daily.md", "# {{title}}");

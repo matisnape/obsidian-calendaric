@@ -62,20 +62,20 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
 }
 
 /**
- * Resolve the note folder: if empty, fall back to Obsidian's default new-file
- * location setting.
+ * Resolve the note folder: if none is configured, fall back to Obsidian's
+ * default new-file location setting.
+ *
+ * Emptiness is judged before the slashes come off, because `/` is the user
+ * naming the vault root. That is a configured answer and it must win over the
+ * Obsidian default, unlike a folder left unset.
  */
 export function resolveNoteFolder(folder: string, vaultConfig: VaultConfigPort): string {
-	const configured = normaliseFolder(folder);
-	if (configured !== "") return configured;
+	if (folder.trim() !== "") return normaliseFolder(folder);
 
 	return normaliseFolder(vaultConfig.getDefaultNewFileFolder());
 }
 
-/**
- * Leading and trailing slashes carry no meaning in a vault path, so a folder
- * written as `/` is the vault root — the same thing as an unconfigured folder.
- */
+/** Leading and trailing slashes carry no meaning in a vault path. */
 function normaliseFolder(folder: string): string {
 	return folder.trim().replace(/^\/+|\/+$/g, "");
 }

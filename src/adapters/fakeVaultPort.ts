@@ -4,8 +4,24 @@ import type { NoteFile, VaultPort } from "./vaultPort";
 export class FakeVaultPort implements VaultPort {
 	private folders = new Set<string>();
 	private files = new Map<string, string>();
+	private lostFolderRaces = new Set<string>();
+	private folderErrors = new Map<string, Error>();
 	createdFolders: string[] = [];
 	createFileError: Error | null = null;
+
+	/**
+	 * Arrange for another actor to win the race for this folder: the next
+	 * `createFolder(path)` finds it already there and fails, the way Obsidian
+	 * does when the folder exists.
+	 */
+	loseCreateFolderRace(path: string): void {
+		this.lostFolderRaces.add(path);
+	}
+
+	/** Arrange for `createFolder(path)` to fail with the folder still absent. */
+	failCreateFolder(path: string, error: Error): void {
+		this.folderErrors.set(path, error);
+	}
 
 	seedFolder(path: string): void {
 		this.folders.add(path);
@@ -24,6 +40,14 @@ export class FakeVaultPort implements VaultPort {
 	}
 
 	async createFolder(path: string): Promise<void> {
+		if (this.lostFolderRaces.delete(path)) {
+			this.folders.add(path);
+			throw new Error(`Folder already exists: ${path}`);
+		}
+
+		const failure = this.folderErrors.get(path);
+		if (failure) throw failure;
+
 		this.createdFolders.push(path);
 		this.folders.add(path);
 	}
