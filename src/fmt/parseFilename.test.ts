@@ -89,6 +89,37 @@ describe("parseFilename — a nested weekday token names a different day of the 
 	});
 });
 
+describe("parseFilename — a nested weekday token's own year may cross the week's year boundary", () => {
+	// ISO week 53 of 2020 is Mon 2020-12-28 .. Sun 2021-01-03 — the week's own
+	// year (2020) and the nested {{sunday:..}}'s year (2021) legitimately
+	// disagree. That must not be treated as an inconsistent capture.
+	it("resolves an ISO week whose nested Sunday fragment falls in the next calendar year", () => {
+		const format = "Weeks/GGGG-[W]WW, {{monday:YYYY-MM-DD}} - {{sunday:YYYY-MM-DD}}";
+		const result = parseFilename(
+			"Weeks/2020-W53, 2020-12-28 - 2021-01-03.md",
+			format,
+			false,
+		);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2020-12-28");
+		expect(result?.prefixMatch).toBe(false);
+	});
+
+	it("resolves a locale week whose nested Sunday fragment falls in the next calendar year", () => {
+		// Under the "en" locale, the Monday 2020-12-28 falls in locale week
+		// 2021-W01 even though the week itself starts in December 2020.
+		const format = "gggg-[W]ww, {{monday:YYYY-MM-DD}} - {{sunday:YYYY-MM-DD}}";
+		const result = parseFilename(
+			"2021-W01, 2020-12-28 - 2021-01-03.md",
+			format,
+			false,
+		);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2020-12-28");
+		expect(result?.prefixMatch).toBe(false);
+	});
+});
+
 describe("parseFilename — locale week Monday selection holds for every week-start day", () => {
 	afterEach(() => {
 		moment.locale("en");

@@ -191,9 +191,19 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 		conflict: current !== undefined && current !== next,
 	});
 
+	const isWeekdayKind = (kind: FieldKind): boolean =>
+		kind === "weekdayFull" || kind === "weekdayShort" || kind === "weekdayMin" || kind === "weekdayNum";
+
 	groups.forEach((group, idx) => {
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
+		// A non-weekday field nested inside {{weekday:fmt}} (e.g. the YYYY-MM-DD
+		// in {{sunday:YYYY-MM-DD}}) describes that specific day, not the format's
+		// own date — e.g. across a Dec/Jan ISO-week boundary, {{sunday:..}}'s
+		// year legitimately differs from the week's year. It must never feed
+		// the top-level date/conflict tracking; only a nested weekday NAME is
+		// checked, and only against its own anchored day (see weekdayChecks).
+		if (group.anchorIsoWeekday !== undefined && !isWeekdayKind(group.kind)) return;
 		switch (group.kind) {
 			case "year": {
 				const r = combine(year, parseInt(raw, 10));
