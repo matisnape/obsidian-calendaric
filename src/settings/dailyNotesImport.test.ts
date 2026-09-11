@@ -120,15 +120,6 @@ describe("disableDailyNotesPlugin", () => {
 	});
 });
 
-// ── shouldOfferDailyNotesImport ──────────────────────────────────────────────
-
-function makeTarget(day: Partial<DailyNotesImportTarget["day"]> = {}, imported = false): DailyNotesImportTarget {
-	return {
-		hasMigratedDailyNoteSettings: imported,
-		day: { enabled: false, format: "", folder: "", templatePath: "", ...day },
-	};
-}
-
 describe("shouldOfferDailyNotesImport", () => {
 	it("offers the import when the plugin is enabled and nothing was imported yet", () => {
 		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget())).toBe(true);
@@ -146,8 +137,6 @@ describe("shouldOfferDailyNotesImport", () => {
 		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget({}, true))).toBe(false);
 	});
 });
-
-// ── planDailyNotesImport ─────────────────────────────────────────────────────
 
 describe("planDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
@@ -190,8 +179,6 @@ describe("planDailyNotesImport", () => {
 		}
 	});
 });
-
-// ── applyDailyNotesImport ────────────────────────────────────────────────────
 
 describe("applyDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
@@ -240,3 +227,10 @@ describe("applyDailyNotesImport", () => {
 		expect(target.day.enabled).toBe(true);
 	});
 });
+
+function makeTarget(day: Partial<DailyNotesImportTarget["day"]> = {}, imported = false): DailyNotesImportTarget {
+	return {
+		hasMigratedDailyNoteSettings: imported,
+		day: { enabled: false, format: "", folder: "", templatePath: "", ...day },
+	};
+}

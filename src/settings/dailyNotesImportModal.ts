@@ -28,7 +28,7 @@ export class DailyNotesImportConflictModal extends Modal {
 
 		const boxes = new Map<DailyNotesImportKey, HTMLInputElement>();
 		for (const field of this.conflicts) {
-			const row = contentEl.createDiv({ cls: "calendaric-import-conflict" });
+			const row = contentEl.createEl("label", { cls: "calendaric-import-conflict" });
 			const box = row.createEl("input", { type: "checkbox" });
 			boxes.set(field.key, box);
 			row.createEl("strong", { text: field.label });

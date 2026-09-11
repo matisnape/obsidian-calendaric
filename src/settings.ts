@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "./types";
 import {
 	isDailyNotesPluginEnabled,
@@ -160,8 +160,18 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		importBtn.addEventListener("click", async () => {
 			const legacy = getLegacyDailyNoteSettings(app);
 			const run = async (confirmed: DailyNotesImportKey[]) => {
+				const previousDay = { ...settings.day };
+				const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
 				applyDailyNotesImport(settings, legacy, confirmed);
-				await this.save();
+				try {
+					await this.save();
+				} catch (error) {
+					Object.assign(settings.day, previousDay);
+					settings.hasMigratedDailyNoteSettings = previouslyMigrated;
+					console.error("Calendaric: the Daily Notes import could not be saved", error);
+					new Notice("Could not save the Daily Notes import.");
+					return;
+				}
 				this.display();
 			};
 

@@ -33,3 +33,7 @@ export class Modal {
 	open(): void {}
 	close(): void {}
 }
+
+export class Notice {
+	constructor(_message: string) {}
+}
