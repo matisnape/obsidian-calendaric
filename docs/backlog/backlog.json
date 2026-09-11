@@ -1469,7 +1469,7 @@
       "story": "As someone who already has years of periodic notes on disk, I want the plugin to recognise which date and granularity each filename represents, even when the note lives in a dated subfolder or carries an extra descriptive suffix, so that my existing notes keep working after I switch to this plugin.",
       "rationale": "Two independent old implementations of this exact behaviour exist and disagree; this story is the single specification the rewrite must follow so an existing vault keeps recognising its own notes.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:parse-date-from-filename",
         "pn:strict-then-prefix-date-parsing",
@@ -1692,7 +1692,7 @@
       "story": "As the system matching notes and calendar cells to periods, I want dates in the same period to share one note date, so that a time-of-day difference cannot make one day or week look like two.",
       "rationale": "Note lookup and duplicate detection need one consistent date for each period.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:compute-date-uid"
       ],
@@ -2049,7 +2049,7 @@
       "story": "As someone journaling day by day, I want {{yesterday}} and {{tomorrow}} in a daily note's template to resolve to the adjacent calendar days, so that I can link into my journal's timeline without typing dates.",
       "rationale": "This is a daily-only convenience carried over from the source plugins; the rewrite should keep the asymmetry explicit rather than silently extending or dropping it.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "dni:template-token-yesterday-tomorrow",
         "calendaric:template-token-yesterday-tomorrow"
@@ -3791,7 +3791,7 @@
       "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
       "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "pn:calendar-set-model",
         "pn:get-active-calendar-set",
@@ -5396,7 +5396,7 @@
       "story": "As someone who already uses Obsidian's built-in Daily Notes plugin, I want Calendaric to offer to copy its folder, format and template into my day configuration, so that I do not have to retype settings I already have working.",
       "rationale": "This vault currently has the core Daily Notes plugin configured and enabled, so this is a real, present-day migration path, not a hypothetical one.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "calendaric:read-legacy-daily-notes-config",
         "calendaric:import-daily-notes-settings",
@@ -6417,7 +6417,7 @@
       "story": "As someone maintaining Calendaric, I want the logic that decides what happens — not only pure date math — to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
       "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths — a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date — that this epic's testing seam must make reachable.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
