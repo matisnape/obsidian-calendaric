@@ -1,11 +1,13 @@
 import { App, Modal } from "obsidian";
 
 interface ConfirmationModalParams {
-	/** e.g. "New Daily Note" */
+	/** e.g. "New daily note" */
 	title: string;
-	/** e.g. "File 2026-04-13.md does not exist. Would you like to create it?" */
+	/** e.g. "Monday, April 13, 2026 has no daily note yet. Create 2026-04-13.md?" */
 	body: string;
 	onAccept: () => Promise<void>;
+	/** Called when the modal closes unaccepted, so a caller waiting on the answer gets one. */
+	onDismiss?: () => void;
 }
 
 /**
@@ -14,6 +16,7 @@ interface ConfirmationModalParams {
  */
 export class ConfirmationModal extends Modal {
 	private params: ConfirmationModalParams;
+	private accepted = false;
 
 	constructor(app: App, params: ConfirmationModalParams) {
 		super(app);
@@ -33,6 +36,8 @@ export class ConfirmationModal extends Modal {
 
 		const createBtn = buttons.createEl("button", { text: "Create", cls: "mod-cta" });
 		createBtn.addEventListener("click", async () => {
+			// Set before the await: closing mid-accept must not read as a dismissal.
+			this.accepted = true;
 			await this.params.onAccept();
 			this.close();
 		});
@@ -40,5 +45,6 @@ export class ConfirmationModal extends Modal {
 
 	onClose(): void {
 		this.contentEl.empty();
+		if (!this.accepted) this.params.onDismiss?.();
 	}
 }

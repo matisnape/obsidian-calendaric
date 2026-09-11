@@ -209,7 +209,7 @@
       "story": "As someone keeping a daily journal, I want clicking any day in the grid to take me to that day's note, offering to create it if it does not exist yet, so that the grid is a single place to reach any day.",
       "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:day-cell-interactions",
         "calendaric:calendar-click-to-open-or-create",
@@ -233,8 +233,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.1 cases -- an existing note is opened through the workspace port in the active-pane mode, and nothing is written to the vault. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.2",
@@ -245,8 +245,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.2 cases (nine of them) -- a missing note is created and then opened, with no confirmation step, and concurrent activations create exactly one note. That last part took three review rounds: the coordination first keyed on nothing, then on the adapter instance (which is per calendar pane), and now on the underlying vault. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.3",
@@ -259,8 +259,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.3 cases -- the confirmation is requested BEFORE anything is written (asserted by checking the file does not exist at the moment of asking), and dismissing it creates nothing. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port.",
           "failure_path": true
         },
         {
@@ -272,8 +272,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.4 cases (six) -- the split destination is chosen on the platform-correct modifier, asserted separately for macOS and non-macOS after a first implementation treated Ctrl and Meta as equivalent everywhere, and the note is created first when missing. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.5",
@@ -286,7 +286,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: the criterion asks that the correct NATIVE preview of the note content appears near the cell. This plugin only emits the hover-link event and registers the source; the preview itself is rendered by Obsidian Page Preview plugin, honouring its own per-source modifier setting. Tests cover the payload and the modifier gate (src/ui/cellActions.test.ts, AC-CAL-03.5 cases), which is our whole half -- but whether a correct preview appears cannot be claimed from here and needs a live host."
         },
         {
           "id": "AC-CAL-03.6",
@@ -298,8 +298,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.6 cases -- a day from an adjacent month resolves to its own date and gets the same open-or-create treatment, and the click does not mutate the cell Moment. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port. The clause that the grid keeps showing the same month is structural: no month state reaches openOrCreateNote at all."
         },
         {
           "id": "AC-CAL-03.7",
@@ -312,7 +312,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "UNSETTLED, reported rather than judged: same boundary as AC-CAL-03.5. The test asserts the linktext handed over for a missing note and that nothing is written to the vault, but the \"note does not exist yet\" text comes from Obsidian, not from this plugin, so its appearance is unverified without a live host.",
           "failure_path": true
         }
       ],

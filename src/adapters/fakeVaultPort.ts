@@ -23,6 +23,11 @@ export class FakeVaultPort implements VaultPort {
 		this.folderErrors.set(path, error);
 	}
 
+	/** A fake is its own vault; a wrapper around one answers this same object. */
+	get backingVault(): object {
+		return this;
+	}
+
 	/** Seeds the folder and every ancestor, because a vault cannot hold one without the others. */
 	seedFolder(path: string): void {
 		const segments = path.split("/");
@@ -45,6 +50,10 @@ export class FakeVaultPort implements VaultPort {
 
 	pathExists(path: string): boolean {
 		return this.folders.has(path) || this.files.has(path);
+	}
+
+	getFile(path: string): NoteFile | null {
+		return this.files.has(path) ? { path } : null;
 	}
 
 	async createFolder(path: string): Promise<void> {

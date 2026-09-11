@@ -6,12 +6,23 @@ import type { NoteFile, VaultPort } from "./vaultPort";
 export class ObsidianVaultAdapter implements VaultPort {
 	constructor(private app: App) {}
 
+	get backingVault(): object {
+		return this.app.vault;
+	}
+
 	folderExists(path: string): boolean {
 		return this.app.vault.getAbstractFileByPath(path) instanceof TFolder;
 	}
 
 	pathExists(path: string): boolean {
 		return this.app.vault.getAbstractFileByPath(path) !== null;
+	}
+
+	getFile(path: string): NoteFile | null {
+		const file = this.app.vault.getAbstractFileByPath(path);
+		// Only a note counts. A TFolder at the same path still answers pathExists,
+		// which is how callers tell "occupied" from "free".
+		return file instanceof TFile ? file : null;
 	}
 
 	async createFolder(path: string): Promise<void> {
