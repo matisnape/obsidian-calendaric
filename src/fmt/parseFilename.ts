@@ -23,12 +23,9 @@ type FieldKind =
 
 interface TokenGroup {
 	kind: FieldKind;
-	// True for any field nested inside {{weekday:fmt}} — it describes that
+	// True for a field nested inside {{weekday:fmt}} — it describes that
 	// wrapper's own day, not the format's own date, so it never feeds
-	// top-level date construction. AC-FMT-04.5 also exempts a nested
-	// month/day field from matchOne's re-render comparison when a
-	// week-number token decides the date; every other field (nested or not)
-	// is still compared exactly.
+	// top-level date construction (see matchOne for validation rules).
 	nested?: boolean;
 }
 
@@ -149,8 +146,8 @@ function isMonthOrDayKind(kind: FieldKind): boolean {
 interface BuiltDate {
 	date: Moment;
 	// True once a week-number token decided the date — the only case
-	// AC-FMT-04.5 grants any tolerance in, and only for a nested month/day
-	// fragment specifically (see matchOne).
+	// AC-FMT-04.5 grants any tolerance in, and only for a month/day-kind
+	// field, nested or not (see matchOne).
 	usedWeekPath: boolean;
 }
 
