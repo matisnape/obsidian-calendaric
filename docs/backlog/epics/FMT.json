@@ -648,8 +648,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.1 a daily filename under the daily folder > recognises the file as that day note / > recognises a note nested in a subfolder under the configured folder / > resolves against the default new-file folder when no folder is configured; > AC-FMT-07.1 a daily filename written in the vault locale > recognises a note whose weekday name came from the configured locale; > AC-FMT-07.1/.2 a vault whose locale rewrites digits > recognises the daily and weekly notes the plugin writes under the ar locale. Independently re-verified by the orchestrator with a throwaway probe: for en, pl, ar, ar-dz, de and fr, computeNotePath writes the filename and resolveFileDate reads it back to the same granularity -- and the probe is not vacuous, since moment genuinely writes \u0662\u0660\u0662\u0666-\u0660\u0664-\u0661\u0665 under ar. DEFERRED EXCEPTION, deliberate: adversarial escape grammars the settings UI cannot produce (a terminal backslash, and \\DDD following a bracket span) are not handled; recorded as accepted debt after three review rounds on the escape scanner rather than judged a failure."
         },
         {
           "id": "AC-FMT-07.2",
@@ -660,8 +660,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.2 a weekly filename that is no valid daily name > recognises the file as that week note; > AC-FMT-07.2 a weekly format written only with a weekday wrapper > recognises the note the plugin writes under that format / > partitions by ISO week, because the wrapper pins the name to the ISO Monday; > AC-FMT-07.2 day is tried before week > returns the day identity when one filename satisfies both formats; plus the ar-locale case above. The multi-wrapper ordering defect (only the first buildable candidate was validated) was found in review and fixed: candidates are now returned top-level-first and re-rendered until one validates."
         },
         {
           "id": "AC-FMT-07.3",
@@ -672,8 +672,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.3 a filename matching neither format > returns no identity for a name carrying extra text, with prefix matching off / > returns no identity for a name carrying no date at all.",
           "failure_path": true
         },
         {
@@ -685,8 +685,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.4 the identity equals the one computed elsewhere > produces the day identity the calendar grid produces for the same date / > produces the week identity the calendar grid produces for any day of that week / > gives the Sunday that ends the week the same identity as that week note / > does not give the Sunday of the previous week that week identity / > never gives a day-note and a week-note of the same date one identity; > AC-FMT-07.4 the configured week format decides the week > puts the Sunday that opens a locale week inside that week note / > keeps the Sunday that opens the next locale week out of it / > gives the two Sundays opposite answers under the two formats; > AC-FMT-07.4 identity agrees with the filename across a year boundary. SCOPE NOTE established in review: identity is a per-day property, not a row-stable one -- see the project memory note, row stability needs a filename-writer change and belongs to AC-FMT-03.2."
         },
         {
           "id": "AC-FMT-07.5",
@@ -697,8 +697,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.5 a daily filename outside the daily folder (vault root, a different folder, and a folder sharing a name prefix with the configured one). Mutation-checked by the implementer: forcing stripFolder to return the path unchanged fails 10 of 12 tests in that file.",
           "failure_path": true
         }
       ],
