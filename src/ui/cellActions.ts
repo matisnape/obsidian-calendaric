@@ -3,9 +3,10 @@ import type { HoverParent } from "obsidian";
 import type { PeriodicConfig } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
-import type { LeafMode, WorkspacePort } from "../adapters/workspacePort";
+import type { WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "../notes/noteUtils";
 import { createNote } from "../notes/noteCreate";
+import { openNote } from "../notes/noteOpen";
 
 /**
  * What a day or week cell does when the user clicks or hovers it.
@@ -48,26 +49,9 @@ export interface CellClick {
 	granularity: Granularity;
 	config: PeriodicConfig;
 	confirmBeforeCreate: boolean;
-	/** `Platform.isMacOS` — which modifier means "open in a split". */
-	isMacOS: boolean;
 	event: MouseEvent;
 	ports: CellPorts;
 	confirmCreate: ConfirmCreate;
-}
-
-/**
- * Whether a click asked for a split pane.
- *
- * The two modifiers are not interchangeable. On macOS a Ctrl-click is the
- * secondary click — the platform turns it into a context menu — so reading it
- * as Cmd would split a pane the user never asked for.
- *
- * Duplicates US-NOTE-06's `isMetaPressed`, which this stack cannot reach:
- * note-06 branches off master. Reconcile the two into one helper once both
- * have merged.
- */
-export function splitModifierPressed(event: MouseEvent, isMacOS: boolean): boolean {
-	return isMacOS ? event.metaKey : event.ctrlKey;
 }
 
 /**
@@ -79,17 +63,18 @@ export function splitModifierPressed(event: MouseEvent, isMacOS: boolean): boole
 export async function openOrCreateNote(click: CellClick): Promise<void> {
 	const { date, granularity, config, ports } = click;
 	const path = computeNotePath(date, config, ports.vaultConfig);
-	const mode: LeafMode = splitModifierPressed(click.event, click.isMacOS) ? "split" : "reuse";
 
 	const existing = ports.vault.getFile(path);
 	if (existing) {
-		await ports.workspace.openInLeaf(existing, mode);
+		// `openNote` decides the destination from the platform's split modifier,
+		// which the workspace port knows and this function does not.
+		await openNote(existing, click.event, ports.workspace, path);
 		return;
 	}
 
-	// Something that is not a note — a folder of the same name — already holds
-	// the path. Creating would fail deep inside the vault, so say so instead.
-	if (ports.vault.pathExists(path)) {
+	// A folder of the same name already holds the path. Creating would fail
+	// inside the vault, so say so instead.
+	if (ports.vault.folderExists(path)) {
 		throw new Error(`A folder already uses ${path}, so the note cannot be created there.`);
 	}
 
@@ -99,7 +84,7 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 	}
 
 	const created = await createNoteOrJoinTheWinner(path, date, granularity, config, ports.vault);
-	await ports.workspace.openInLeaf(created, mode);
+	await openNote(created, click.event, ports.workspace, path);
 }
 
 /**

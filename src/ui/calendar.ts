@@ -1,5 +1,4 @@
 import type { Moment } from "moment";
-import { Notice, Platform } from "obsidian";
 import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
@@ -229,15 +228,17 @@ export class CalendarWidget implements HoverParent {
 				granularity,
 				config: this.settings[granularity],
 				confirmBeforeCreate: this.settings.confirmBeforeCreate,
-				isMacOS: Platform.isMacOS,
 				event,
 				ports: { vault: this.vault, vaultConfig: this.vaultConfig, workspace: this.workspace },
 				confirmCreate: (request) => this.askToCreate(request),
 			});
 		} catch (error) {
 			// The click is the last caller: an unhandled rejection here would be
-			// a cell that silently does nothing.
-			new Notice(error instanceof Error ? error.message : "Calendaric could not open that note.");
+			// a cell that silently does nothing. The notice rides the workspace
+			// port, the way US-NOTE-06 reports a note that vanished.
+			this.workspace.showNotice(
+				error instanceof Error ? error.message : "Calendaric could not open that note.",
+			);
 		}
 	}
 

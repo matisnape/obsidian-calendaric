@@ -6,7 +6,6 @@ import {
 	HOVER_LINK_SOURCE,
 	hoverPreviewRequest,
 	openOrCreateNote,
-	splitModifierPressed,
 	type CellClick,
 	type CellPorts,
 	type CreateRequest,
@@ -46,6 +45,13 @@ function makePorts(existingPaths: string[] = []): Ports {
 	const vault = new FakeVaultPort();
 	for (const path of existingPaths) vault.seedFile(path, "");
 	return { vault, vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() };
+}
+
+/** The same ports, on a Mac: there Cmd splits and Ctrl opens the context menu. */
+function makeMacPorts(existingPaths: string[] = []): Ports {
+	const ports = makePorts(existingPaths);
+	ports.workspace.isMacOS = true;
+	return ports;
 }
 
 /** A confirm stub that records what it was asked and answers `answer`. */
@@ -122,6 +128,10 @@ class PortOverSharedVault implements VaultPort {
 		return this.shared.backingVault;
 	}
 
+	folderExists(path: string): boolean {
+		return this.shared.folderExists(path);
+	}
+
 	pathExists(path: string): boolean {
 		return this.shared.pathExists(path);
 	}
@@ -147,6 +157,16 @@ class PortOverSharedVault implements VaultPort {
 	}
 }
 
+/**
+ * Indexes a grid whose length the compiler cannot know. A missing cell fails the
+ * test naming the index, instead of throwing on a property of undefined.
+ */
+function at<T>(items: readonly T[], index: number): T {
+	const item = items[index];
+	if (item === undefined) throw new Error(`no grid element at index ${index}`);
+	return item;
+}
+
 /** Drains every pending microtask, so parked activations reach their awaits. */
 function flushMicrotasks(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
@@ -159,30 +179,12 @@ function clickDay(ports: CellPorts, overrides: Partial<CellClick> = {}): Promise
 		granularity: "day",
 		config: dayConfig,
 		confirmBeforeCreate: false,
-		isMacOS: true,
 		event: makeClick(),
 		ports,
 		confirmCreate: stubConfirm(false).confirm,
 		...overrides,
 	});
 }
-
-describe("splitModifierPressed", () => {
-	it("AC-CAL-03.4: on macOS only Cmd splits, so Ctrl-click stays in the active pane", () => {
-		expect(splitModifierPressed(makeClick({ metaKey: true }), true)).toBe(true);
-		expect(splitModifierPressed(makeClick({ ctrlKey: true }), true)).toBe(false);
-	});
-
-	it("AC-CAL-03.4: off macOS only Ctrl splits", () => {
-		expect(splitModifierPressed(makeClick({ ctrlKey: true }), false)).toBe(true);
-		expect(splitModifierPressed(makeClick({ metaKey: true }), false)).toBe(false);
-	});
-
-	it("AC-CAL-03.1: a plain click never splits, on either platform", () => {
-		expect(splitModifierPressed(makeClick(), true)).toBe(false);
-		expect(splitModifierPressed(makeClick(), false)).toBe(false);
-	});
-});
 
 describe("openOrCreateNote", () => {
 	it("AC-CAL-03.1: opens the existing note in the active pane", async () => {
@@ -227,7 +229,9 @@ describe("openOrCreateNote", () => {
 
 		expect(existedWhenAsked).toBeUndefined();
 		expect(confirm.asked).toHaveLength(1);
-		expect(confirm.asked[0]!.body).toContain(moment(DAY).format("LL"));
+		expect(confirm.asked.map((request) => request.body).join("\n")).toContain(
+			moment(DAY).format("LL"),
+		);
 	});
 
 	it("AC-CAL-03.3: accepting creates the note and opens it in the active pane", async () => {
@@ -251,7 +255,7 @@ describe("openOrCreateNote", () => {
 
 	it("AC-CAL-03.4: a Cmd-click on a Mac opens the existing note in a split", async () => {
 		const path = pathFor(DAY);
-		const ports = makePorts([path]);
+		const ports = makeMacPorts([path]);
 
 		await clickDay(ports, { event: makeClick({ metaKey: true }) });
 
@@ -260,7 +264,7 @@ describe("openOrCreateNote", () => {
 
 	it("AC-CAL-03.4: a Ctrl-click on a Mac opens in the active pane, not a split", async () => {
 		const path = pathFor(DAY);
-		const ports = makePorts([path]);
+		const ports = makeMacPorts([path]);
 
 		await clickDay(ports, { event: makeClick({ ctrlKey: true }) });
 
@@ -271,13 +275,31 @@ describe("openOrCreateNote", () => {
 		const path = pathFor(DAY);
 		const ports = makePorts([path]);
 
-		await clickDay(ports, { isMacOS: false, event: makeClick({ ctrlKey: true }) });
+		await clickDay(ports, { event: makeClick({ ctrlKey: true }) });
 
 		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "split" }]);
 	});
 
-	it("AC-CAL-03.4: a modifier click creates the missing note first, then splits", async () => {
+	it("AC-CAL-03.4: a Cmd-click off macOS opens in the active pane, not a split", async () => {
+		const path = pathFor(DAY);
+		const ports = makePorts([path]);
+
+		await clickDay(ports, { event: makeClick({ metaKey: true }) });
+
+		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+	});
+
+	it("AC-CAL-03.4: a Cmd-click off macOS still creates the missing note", async () => {
 		const ports = makePorts();
+
+		await clickDay(ports, { event: makeClick({ metaKey: true }) });
+
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
+	});
+
+	it("AC-CAL-03.4: a modifier click creates the missing note first, then splits", async () => {
+		const ports = makeMacPorts();
 
 		await clickDay(ports, {
 			confirmBeforeCreate: true,
@@ -291,11 +313,14 @@ describe("openOrCreateNote", () => {
 
 	it("AC-CAL-03.6: a trailing adjacent-month day opens its own month's note", async () => {
 		const grid = getMonthGrid(moment("2026-04-15"), 1, WEEK_FORMAT);
-		const trailing = grid.at(-1)!.days.find((day) => day.isAdjacentMonth)!;
+		// The last row of an April 2026 grid is May 4-10, so its first cell is a
+		// trailing adjacent-month day. Asserted below rather than assumed.
+		const trailing = at(at(grid, grid.length - 1).days, 0);
 		const ports = makePorts();
 
 		await clickDay(ports, { date: trailing.date });
 
+		expect(trailing.isAdjacentMonth).toBe(true);
 		expect(trailing.date.month()).toBe(4);
 		expect(ports.workspace.opened).toEqual([
 			{ file: { path: `Daily/${trailing.date.format("YYYY-MM-DD")}.md` }, mode: "reuse" },
@@ -304,7 +329,7 @@ describe("openOrCreateNote", () => {
 
 	it("AC-CAL-03.6: leaves the clicked cell's own date untouched, so the grid keeps its month", async () => {
 		const grid = getMonthGrid(moment("2026-04-15"), 1, WEEK_FORMAT);
-		const leading: Moment = grid[0]!.days[0]!.date;
+		const leading: Moment = at(at(grid, 0).days, 0).date;
 		const before = leading.format();
 
 		await clickDay(makePorts(), { date: leading });
@@ -450,16 +475,14 @@ describe("hoverPreviewRequest", () => {
 
 	it("AC-CAL-03.5: asks Obsidian to preview the note under the hovered cell", () => {
 		const notePath = pathFor(DAY);
+		const event = makeClick({ metaKey: true });
 
-		const request = hoverPreviewRequest({
-			event: makeClick({ metaKey: true }),
-			hoverParent,
-			targetEl,
-			notePath,
-		});
+		const request = hoverPreviewRequest({ event, hoverParent, targetEl, notePath });
 
+		// The hovered event is handed on as it came, so Page preview reads the
+		// modifier the user actually held.
 		expect(request).toEqual({
-			event: expect.objectContaining({ metaKey: true }),
+			event,
 			source: HOVER_LINK_SOURCE,
 			hoverParent,
 			targetEl,
