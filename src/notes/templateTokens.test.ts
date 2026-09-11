@@ -76,8 +76,12 @@ describe("substituteTemplateTokens — daily", () => {
 	});
 
 	it("does not mutate the date it was given", () => {
+		// One token per call on purpose: with both in one template, a missing clone() would
+		// subtract a day and then add it back, and a final-state assertion would still pass.
 		const date = moment("2026-04-13T14:30:00");
-		substituteTemplateTokens("{{yesterday}}{{tomorrow}}", date, "day", makeConfig(), "t");
+		substituteTemplateTokens("{{yesterday}}", date, "day", makeConfig(), "t");
+		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		substituteTemplateTokens("{{tomorrow}}", date, "day", makeConfig(), "t");
 		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
