@@ -16,9 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # mise.toml is this repo's own Node pin, so the gate runs the version the
+      # project actually develops against instead of a second version to keep in
+      # step with it. setup-node reads mise.toml natively.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version-file: mise.toml
           cache: npm
 
       - name: install
