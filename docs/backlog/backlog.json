@@ -2511,8 +2511,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.1: the grid is a full 6x7 rectangle > returns 6 rows of 7 days for 24 consecutive months and every week start / > covers 42 consecutive days with no gap or repeat / > still returns 6 rows for a 28-day February that starts on the week start. Evidence is on the grid data model, not the rendered table -- renderGrid (calendar.ts:142-197) is two unconditional loops over that data, which is code review rather than measurement."
         },
         {
           "id": "AC-CAL-01.2",
@@ -2524,8 +2524,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle > fills the leading cells with the trailing days of the previous month / > marks exactly the displayed month own days as not adjacent, in order. The visual distinction itself is a CSS opacity rule on the isAdjacentMonth flag, confirmed by code review."
         },
         {
           "id": "AC-CAL-01.3",
@@ -2537,8 +2537,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle > fills the trailing cells with the leading days of the next month / > marks exactly the displayed month own days as not adjacent, in order."
         },
         {
           "id": "AC-CAL-01.4",
@@ -2550,8 +2550,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.4: one anchor for the number, the dot and the click > row anchor matches the displayed number for weekStart=0..6 (14 cases across 2026-12-15 and 2027-01-15) / > numbers a Sunday-start row by its own week, not the previous one; > AC-CAL-01.4: the week number agrees with the weekly note name > matches the weekly note path of every row across the year boundary / > follows the locale week when the weekly note format uses ww / > ... uses WW; > AC-CAL-01.4: nested-only weekly formats > numbers every row to match the note path a nested-only format writes; plus src/ui/calendarDots.test.ts > DotScanner.getWeekNotePaths > scans exactly the rows the grid draws, one anchor per row / > finds the note of a Sunday-start row under the row own week. This criterion drove the real defect this ticket fixed: the displayed number and the note actually opened disagreed for any non-Monday week start."
         },
         {
           "id": "AC-CAL-01.5",
@@ -2563,7 +2563,7 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: the disabled-week-number-column branch is DOM-only (calendar.ts:105 for the header cell, calendar.ts:145 for the row cells, both on settings.showWeekNumbers). Code review says it is correct, but reading is not measuring. The repo has no jsdom harness and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass) that jsdom does not provide, so a rendering test needs a new dependency plus mocks for those helpers -- a separate story. This criterion blocks US-CAL-01 from reaching done until that harness exists."
         },
         {
           "id": "AC-CAL-01.6",
@@ -2574,8 +2574,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.6: dates stay correct across leap years and year boundaries > keeps 29 February inside a leap-year grid / > produces no 29 February in a non-leap year / > carries the next year on December trailing days / > carries the previous year on January leading days.",
           "failure_path": true
         }
       ],
