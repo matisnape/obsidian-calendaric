@@ -10,7 +10,7 @@
       "story": "As a vault user who does not want to click a ribbon icon, I want a command that opens the calendar view, so that I can reach it entirely from the keyboard.",
       "rationale": "The calendar view has no ribbon icon of its own in the merged design, so the palette command is its only guaranteed entry point.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "cal:open-calendar-view",
         "calendaric:open-calendar-view"

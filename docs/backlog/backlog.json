@@ -4473,8 +4473,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/ui/calendarCommand.test.ts > creates a calendar leaf, reveals it and focuses it when none is open / > creates the command leaf active, because the user asked for it; src/adapters/obsidianCalendarLeafAdapter.test.ts > walks create, find, reveal and focus as one sequence / > asks for keyboard focus explicitly, because revealLeaf does not / > creates the leaf active when the caller asked for focus. Creation and the explicit focus request are proven headless against a fake that models dock and visibility state. The clause that focus actually LANDS is testable_by integration and unverified: it needs a live Obsidian host, which this environment has none of."
+          "status": "unverified",
+          "evidence": null
         },
         {
           "id": "AC-CMD-01.2",
@@ -4485,8 +4485,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/ui/calendarCommand.test.ts > is listed when no calendar leaf is open / > is not listed while a calendar leaf is visible / > is listed when the leaf exists but is not on screen / > opens nothing while the palette is only checking. Note the reading this settles, agreed with Anna in the implementing pane: \"already open\" means VISIBLE, not merely existing, because initLeaf parks a leaf in the sidebar at startup -- on the exists reading the command would be hidden forever. Obsidian own palette filtering of a checkCallback command is integration-level and unverified here.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -4499,8 +4499,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/ui/calendarCommand.test.ts > reveals the existing leaf instead of creating a second one / > creates one leaf when two callers race, because both see no leaf / > reveals once for a race, rather than once per caller / > makes one leaf when startup and the command race / > opens again after the first open has settled / > does not wedge after a failed open; plus src/adapters/obsidianCalendarLeafAdapter.test.ts > finds nothing when a right-sidebar leaf exists but carries no calendar view. Settled headless, including the concurrency the review rounds forced -- the first race test could not fail and was rewritten to defer creation until both callers had started.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -4513,8 +4513,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/adapters/obsidianCalendarLeafAdapter.test.ts > is false when the leaf sits in a collapsed right sidebar / > is false when the leaf sits in a collapsed left sidebar / > is false when an ancestor hides the leaf, such as an inactive dock tab / > is true when the leaf sits in an expanded sidebar; src/ui/calendarCommand.test.ts > reveals a leaf hidden in a collapsed sidebar. The decision to reveal is proven; the sidebar actually expanding is Obsidian own revealLeaf behaviour (documented in obsidian.d.ts as uncollapsing a sidebar) and is testable_by integration -- unverified without a live host.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -4527,8 +4527,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/ui/calendarCommand.test.ts > notices the failure and leaves no leaf behind when creation fails / > detaches the leaf it just created when revealing it fails / > keeps a pre-existing leaf when revealing it fails; src/adapters/obsidianCalendarLeafAdapter.test.ts > detaches only its own leaf, and the detached one stops being found / > throws when the workspace offers no right sidebar leaf / > detaches the half-built leaf when the view fails to initialize. Rollback ownership is proven headless -- it detaches only the leaf this invocation created, never a pre-existing one. The Notice reaching the user is integration-level and unverified.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         }
       ]
