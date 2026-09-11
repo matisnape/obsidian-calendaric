@@ -134,7 +134,8 @@ export function compareSemver(a, b) {
 	const [bCore, bPre] = splitVersion(b);
 
 	for (let i = 0; i < 3; i++) {
-		if (aCore[i] !== bCore[i]) return aCore[i] - bCore[i];
+		const core = compareNumericIdentifier(aCore[i], bCore[i]);
+		if (core !== 0) return core;
 	}
 
 	// A version with a prerelease has lower precedence than the same core version
@@ -151,7 +152,8 @@ export function compareSemver(a, b) {
 		const [x, y] = [aPre[i], bPre[i]];
 		const [xNum, yNum] = [/^\d+$/.test(x), /^\d+$/.test(y)];
 		if (xNum && yNum) {
-			if (Number(x) !== Number(y)) return Number(x) - Number(y);
+			const numeric = compareNumericIdentifier(x, y);
+			if (numeric !== 0) return numeric;
 		} else if (xNum !== yNum) {
 			// Numeric identifiers always have lower precedence than alphanumeric ones.
 			return xNum ? -1 : 1;
@@ -162,16 +164,57 @@ export function compareSemver(a, b) {
 	return 0;
 }
 
+/**
+ * Compares two numeric version identifiers without going through Number.
+ *
+ * Number() is exact only below 2^53, so it ranked 9007199254740992 and
+ * 9007199254740993 as the same version. Semver forbids a leading zero on a numeric
+ * identifier, so the longer digit string is always the larger number and equal
+ * lengths compare bytewise. Leading zeros are stripped anyway, because compareSemver
+ * is also reachable with input the regex has not validated.
+ */
+function compareNumericIdentifier(a, b) {
+	const [x, y] = [a.replace(/^0+(?=\d)/, ""), b.replace(/^0+(?=\d)/, "")];
+	if (x.length !== y.length) return x.length - y.length;
+	return x < y ? -1 : x > y ? 1 : 0;
+}
+
 function splitVersion(version) {
 	const withoutBuild = version.split("+")[0];
 	const dash = withoutBuild.indexOf("-");
-	const core = (dash === -1 ? withoutBuild : withoutBuild.slice(0, dash)).split(".").map(Number);
+	// Kept as strings: see compareNumericIdentifier.
+	const core = (dash === -1 ? withoutBuild : withoutBuild.slice(0, dash)).split(".");
 	const pre = dash === -1 ? [] : withoutBuild.slice(dash + 1).split(".");
 	return [core, pre];
 }
 
+/**
+ * A version that already carries a tag on a different commit has been released
+ * before, from different code. Anyone who downloaded it got that other build, so
+ * reusing the number silently replaces what they have.
+ *
+ * This is the reachable half of the re-release problem. The ledger half is not:
+ * previousReleaseVersion always excludes the version being released, so
+ * checkRelease can never see a previous entry equal to the current one.
+ */
+export function checkExistingRelease(version, existingTagCommit, headCommit) {
+	if (!existingTagCommit || existingTagCommit === headCommit) return null;
+	return (
+		`a tag ${JSON.stringify(version)} already exists at ${existingTagCommit.slice(0, 8)}, which is not ` +
+		"this commit. That version was already released from different code — bump the version instead."
+	);
+}
+
 function git(...args) {
 	return execFileSync("git", args, { encoding: "utf8" });
+}
+
+function commitOf(ref) {
+	try {
+		return git("rev-parse", `${ref}^{commit}`).trim();
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -237,6 +280,14 @@ function main(argv) {
 	console.log(`previous release: ${previousTag ?? "(none — this is the first release)"}`);
 
 	const problems = checkRelease({ manifest, versions, tag, previousVersion: previousTag, previousManifest });
+
+	const reReleased = checkExistingRelease(
+		manifest.version,
+		commitOf(manifest.version),
+		commitOf("HEAD"),
+	);
+	if (reReleased) problems.push(reReleased);
+
 	if (problems.length === 0) {
 		console.log("\nrelease checks passed.");
 		return 0;

@@ -29,13 +29,15 @@ Quick starting guide for new plugin devs:
 ## Releasing new releases
 
 1. Update `minAppVersion` in `manifest.json` by hand if this release uses newer Obsidian APIs.
+   See **Why `minAppVersion` is what it is** below before changing it.
 2. Run `npm version patch` (or `minor`, or `major`). That bumps `package.json`, copies the
    version into `manifest.json`, adds the `"version": "minAppVersion"` row to `versions.json`,
    and creates a git tag. `.npmrc` sets `tag-version-prefix=""`, so the tag has no leading `v`.
 3. Run `npm run release-check`. With no arguments it reads the tag pointing at `HEAD` — the
-   one step 2 just created — and checks it against `manifest.json` and `versions.json`. Pass
-   `--tag <version>` to check a different one. If no tag points at `HEAD` it says so and checks
-   only the manifest and `versions.json`.
+   one step 2 just created — and checks it against `manifest.json` and `versions.json`. If no
+   tag points at `HEAD` it says so and checks only the manifest and `versions.json`.
+   To check a different tag, the separator is required: `npm run release-check -- --tag 0.2.0`.
+   Without `--`, npm consumes `--tag` as its own flag and the script never sees it.
 4. Push the tag. `.github/workflows/release.yml` then runs the release checks, `npm run verify`
    and the build, and opens a **draft** GitHub release with `main.js`, `manifest.json` and
    `styles.css` attached.
@@ -44,6 +46,30 @@ Quick starting guide for new plugin devs:
 Every one of those workflow steps can stop the release. A tag that does not match
 `manifest.json`'s version, a `versions.json` row that disagrees with `minAppVersion`, a type
 error, a lint error or a failing test all fail the run before anything is published.
+
+### Why `minAppVersion` is what it is
+
+`manifest.json` declares `minAppVersion: "1.13.7"`. That number is not arbitrary, and it is not
+the default it looks like.
+
+The value before it, `0.15.0`, was inherited from an old copy of the upstream sample plugin. It
+was never chosen for this project, and it was false: the code already calls Obsidian APIs that
+did not exist in 0.15.0. Two of them set the real floor, both found during earlier reviews:
+
+| API | Needs | Verified against |
+|---|---|---|
+| `Workspace.revealLeaf` returning a promise you can await | **1.7.2** | `obsidian.d.ts` at `obsidianmd/obsidian-api` commit `6933c622` ("Update to v1.7.2") changes the signature to `revealLeaf(leaf: WorkspaceLeaf): Promise<void>`; at `9be65a7d` (v1.1.7) it still returns `void`. Found during the US-CMD-01 review. |
+| `Plugin.registerHoverLinkSource` | **1.1.0** | Present in `obsidian.d.ts` at commit `32fe4c3f` ("Update to v1.1.0"); absent at `6b2138aa` (v0.16.0). Found during the US-CAL-03 review. |
+| `Workspace.getLeaf("tab")` / `getLeaf("split")` | **0.16.0** | The `PaneType` overload arrives at commit `6b2138aa` ("Update for v0.16.0"); every release through `ff121cd4` (v0.15.9) declares only `getLeaf(newLeaf?: boolean, direction?: SplitDirection)`. |
+
+`1.13.7` is the Obsidian version the maintainer actually runs, verified on her machine, and it
+sits above all three requirements. The newest Obsidian at the time of writing is `1.14.1`; a
+bump is expected once she updates.
+
+One thing this does **not** buy you: `node_modules/obsidian` ships the `1.10.3` type
+definitions, which is below `1.13.7`. Type-checking therefore cannot catch a call that needs
+`1.11` or newer. Raising `minAppVersion` is a promise about the user's app, not a compiler
+setting.
 
 ## Adding your plugin to the community plugin list
 

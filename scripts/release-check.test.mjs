@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { checkRelease, compareSemver, previousReleaseVersion } from "./release-check.mjs";
+import {
+	checkExistingRelease,
+	checkRelease,
+	compareSemver,
+	previousReleaseVersion,
+} from "./release-check.mjs";
 
 // Mirrors the real manifest.json and versions.json.
 const manifest = {
@@ -90,9 +95,21 @@ describe("AC-ARCH-06.2 — static manifest and versions.json checks", () => {
 		expect(problems).toContainEqual(expect.stringContaining("must move the version forward"));
 	});
 
-	it("rejects re-releasing a version already in the ledger", () => {
-		const problems = checkRelease({ manifest, versions, previousVersion: "0.1.0" });
-		expect(problems).toContainEqual(expect.stringContaining("must move the version forward"));
+	it("rejects a version whose tag already exists on another commit", () => {
+		// The reachable form of a re-release: previousReleaseVersion always excludes
+		// the version being released, so checkRelease can never be handed a previous
+		// entry equal to the current one.
+		expect(checkExistingRelease("0.1.0", "aaaaaaaabbbbbbbb", "ccccccccdddddddd")).toContain(
+			"already exists at aaaaaaaa",
+		);
+	});
+
+	it("accepts a tag that points at the commit being released", () => {
+		expect(checkExistingRelease("0.1.0", "aaaaaaaabbbbbbbb", "aaaaaaaabbbbbbbb")).toBeNull();
+	});
+
+	it("accepts a version that has never been tagged", () => {
+		expect(checkExistingRelease("0.1.0", null, "ccccccccdddddddd")).toBeNull();
 	});
 
 	it("checks the id against a prerelease predecessor", () => {
@@ -130,7 +147,7 @@ describe("AC-ARCH-06.3 — the release tag matches manifest.json's version", () 
 	});
 });
 
-describe("compareSemver — Semantic Versioning precedence, spec rule 11", () => {
+describe("AC-ARCH-06.2 — compareSemver, Semantic Versioning precedence (spec rule 11)", () => {
 	it.each([
 		["1.0.0", "2.0.0"],
 		["2.0.0", "2.1.0"],
@@ -153,6 +170,19 @@ describe("compareSemver — Semantic Versioning precedence, spec rule 11", () =>
 		expect(compareSemver("1.0.0+build.1", "1.0.0")).toBe(0);
 		// The previous comparator turned this into NaN and silently ranked nothing.
 		expect(compareSemver("1.0.1+build.1", "1.0.0")).toBeGreaterThan(0);
+	});
+
+	it("does not collapse version numbers above 2^53", () => {
+		// Number() is exact only below 2^53, so these two parsed to the same value and
+		// the comparator ranked them equal.
+		expect(compareSemver("1.0.9007199254740992", "1.0.9007199254740993")).toBeLessThan(0);
+		expect(compareSemver("9007199254740993.0.0", "9007199254740992.0.0")).toBeGreaterThan(0);
+		expect(compareSemver("1.0.0-9007199254740992", "1.0.0-9007199254740993")).toBeLessThan(0);
+	});
+
+	it("compares numeric identifiers by value, not by digit string", () => {
+		expect(compareSemver("1.0.10", "1.0.9")).toBeGreaterThan(0);
+		expect(compareSemver("1.0.0-2", "1.0.0-11")).toBeLessThan(0);
 	});
 
 	it("sorts a ledger the way the release checks rely on", () => {
