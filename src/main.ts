@@ -9,7 +9,7 @@ import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
-import { calendarViewCommand } from "./ui/calendarCommand";
+import { calendarViewCommand, createCalendarOpener } from "./ui/calendarCommand";
 import type { NoteFile } from "./adapters/vaultPort";
 
 
@@ -36,11 +36,13 @@ export default class CalendaricPlugin extends Plugin {
 			void this.openStartupNote();
 		});
 
-		this.addCommand(
-			calendarViewCommand(new ObsidianCalendarLeafAdapter(this.app), (message) => {
-				new Notice(message);
-			})
-		);
+		const calendarLeaves = new ObsidianCalendarLeafAdapter(this.app);
+		// One opener for the whole plugin, so two callers racing to open the
+		// calendar share one leaf instead of making two.
+		const openCalendar = createCalendarOpener(calendarLeaves, (message) => {
+			new Notice(message);
+		});
+		this.addCommand(calendarViewCommand(calendarLeaves, openCalendar));
 	}
 
 	onunload() {

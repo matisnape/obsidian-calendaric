@@ -24,12 +24,23 @@ export class ObsidianCalendarLeaf implements CalendarLeafHandle {
 	}
 
 	async reveal(): Promise<void> {
+		// revealLeaf only began returning a promise in Obsidian 1.7.2. Awaiting
+		// its older void return resolves immediately rather than failing, so
+		// this stays safe down to the manifest's minAppVersion; all that is lost
+		// on an older host is the guarantee that the view finished loading.
 		await this.app.workspace.revealLeaf(this.leaf);
 	}
 
 	focus(): void {
 		// revealLeaf brings the leaf forward but leaves the keyboard where it
 		// was, so the focus half of the story needs this second call.
+		//
+		// This object form arrived in 0.16.3, above the manifest's declared
+		// minAppVersion of 0.15.0. The three-argument form that reaches 0.15.0
+		// is deprecated, and taking it would trade a break on ancient hosts for
+		// a break on current ones. The floor is fiction anyway: master already
+		// requires a newer Obsidian through getLeaf("tab") in
+		// obsidianWorkspaceAdapter. Correcting minAppVersion is its own story.
 		this.app.workspace.setActiveLeaf(this.leaf, { focus: true });
 	}
 

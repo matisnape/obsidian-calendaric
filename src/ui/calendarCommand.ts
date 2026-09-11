@@ -29,17 +29,40 @@ export async function openCalendarView(leaves: CalendarLeafPort, notify: Notify)
 }
 
 /**
+ * An open function that survives being called twice at once.
+ *
+ * openCalendarView reads the workspace and then awaits creation, so two callers
+ * arriving in that window would both see no leaf and each make one. They share
+ * the first open instead. One opener per plugin instance: the whole point is
+ * that every caller in the plugin goes through the same in-flight promise.
+ */
+export function createCalendarOpener(leaves: CalendarLeafPort, notify: Notify): () => Promise<void> {
+	let inFlight: Promise<void> | null = null;
+
+	return () => {
+		if (!inFlight) {
+			inFlight = openCalendarView(leaves, notify).finally(() => {
+				// Clear it even when the open failed, so one failure does not
+				// wedge the command for the rest of the session.
+				inFlight = null;
+			});
+		}
+		return inFlight;
+	};
+}
+
+/**
  * The palette command. It hides itself while the calendar is already on screen,
  * so the palette never offers a no-op, yet stays available whenever the leaf is
  * off screen — behind another tab, or inside a collapsed sidebar.
  */
-export function calendarViewCommand(leaves: CalendarLeafPort, notify: Notify): Command {
+export function calendarViewCommand(leaves: CalendarLeafPort, open: () => Promise<void>): Command {
 	return {
 		id: CALENDAR_COMMAND_ID,
 		name: "Open calendar",
 		checkCallback: (checking: boolean) => {
 			if (leaves.find()?.isVisible() === true) return false;
-			if (!checking) void openCalendarView(leaves, notify);
+			if (!checking) void open();
 			return true;
 		},
 	};

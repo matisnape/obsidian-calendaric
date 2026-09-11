@@ -3,6 +3,7 @@ import {
 	CALENDAR_COMMAND_ID,
 	CALENDAR_OPEN_FAILED,
 	calendarViewCommand,
+	createCalendarOpener,
 	openCalendarView,
 } from "./calendarCommand";
 import { FakeCalendarLeafPort } from "../adapters/fakeCalendarLeafPort";
@@ -94,7 +95,7 @@ describe("openCalendarView", () => {
 describe("calendarViewCommand", () => {
 	it("is named after the story and keeps the scaffold id so hotkeys survive", () => {
 		const { leaves, notices } = setup();
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		expect(command.name).toBe("Open calendar");
 		expect(command.id).toBe(CALENDAR_COMMAND_ID);
@@ -103,7 +104,7 @@ describe("calendarViewCommand", () => {
 
 	it("is listed when no calendar leaf is open", () => {
 		const { leaves, notices } = setup();
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		expect(command.checkCallback?.(true)).toBe(true);
 	});
@@ -111,7 +112,7 @@ describe("calendarViewCommand", () => {
 	it("is not listed while a calendar leaf is visible", () => {
 		const { leaves, notices } = setup();
 		leaves.withExistingLeaf({ visible: true });
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		expect(command.checkCallback?.(true)).toBe(false);
 	});
@@ -119,14 +120,14 @@ describe("calendarViewCommand", () => {
 	it("is listed when the leaf exists but is not on screen", () => {
 		const { leaves, notices } = setup();
 		leaves.withExistingLeaf({ visible: false });
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		expect(command.checkCallback?.(true)).toBe(true);
 	});
 
 	it("opens nothing while the palette is only checking", () => {
 		const { leaves, notices } = setup();
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		command.checkCallback?.(true);
 
@@ -136,7 +137,7 @@ describe("calendarViewCommand", () => {
 
 	it("opens the calendar view when invoked for real", async () => {
 		const { leaves, notices } = setup();
-		const command = calendarViewCommand(leaves, (m) => notices.push(m));
+		const command = calendarViewCommand(leaves, createCalendarOpener(leaves, (m) => notices.push(m)));
 
 		command.checkCallback?.(false);
 		// checkCallback is synchronous by Obsidian's contract, so it drops the
@@ -146,5 +147,53 @@ describe("calendarViewCommand", () => {
 		expect(leaves.created).toHaveLength(1);
 		expect(leaves.find()?.revealCount).toBe(1);
 		expect(leaves.find()?.focusCount).toBe(1);
+	});
+});
+
+describe("createCalendarOpener", () => {
+	it("creates one leaf when two callers race, because both see no leaf", async () => {
+		const { leaves, notices } = setup();
+		const open = createCalendarOpener(leaves, (m) => notices.push(m));
+
+		await Promise.all([open(), open()]);
+
+		expect(leaves.created).toHaveLength(1);
+		expect(notices).toEqual([]);
+	});
+
+	it("reveals once for a race, rather than once per caller", async () => {
+		const { leaves, notices } = setup();
+		const open = createCalendarOpener(leaves, (m) => notices.push(m));
+
+		await Promise.all([open(), open(), open()]);
+
+		expect(leaves.find()?.revealCount).toBe(1);
+		expect(leaves.find()?.focusCount).toBe(1);
+	});
+
+	it("opens again after the first open has settled", async () => {
+		const { leaves, notices } = setup();
+		const open = createCalendarOpener(leaves, (m) => notices.push(m));
+
+		await open();
+		await open();
+
+		// The second call finds the leaf the first made, so it reveals rather
+		// than creating: one leaf, two reveals.
+		expect(leaves.created).toHaveLength(1);
+		expect(leaves.find()?.revealCount).toBe(2);
+	});
+
+	it("does not wedge after a failed open", async () => {
+		const { leaves, notices } = setup();
+		leaves.createFails = true;
+		const open = createCalendarOpener(leaves, (m) => notices.push(m));
+
+		await open();
+		leaves.createFails = false;
+		await open();
+
+		expect(leaves.created).toHaveLength(1);
+		expect(notices).toEqual([CALENDAR_OPEN_FAILED]);
 	});
 });
