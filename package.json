@@ -10,7 +10,8 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint .",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"check:ac": "python3 docs/backlog/check_ac_coverage.py --self-check && python3 docs/backlog/check_ac_coverage.py"
 	},
 	"keywords": [],
 	"license": "0-BSD",

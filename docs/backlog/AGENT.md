@@ -39,6 +39,7 @@ legal, so a wrong status cannot land.
 | `build_backlog.py` | The gate. Merges the epic files and refuses to write when the data is wrong. |
 | `set_status.py` | The only supported way to change a story status. |
 | `report.py` | Read the board. `--next`, `--agent`, `--story <id>`. |
+| `check_ac_coverage.py` | Fails any `pass` that no test title names, unless its id is exempted in `NO_REGRESSION_IDS`. The evidence string is not read. `npm run check:ac`. |
 | `../test_gates.py` | 31 cases that each mutate one record and require the gate to reject it. |
 | `../calendaric.html` | A read-only browser view of `backlog.json`. |
 | `../mapping/` | Where the stories came from: the capability map of the four old plugins. |
@@ -114,6 +115,16 @@ cannot be reviewed against either story's criteria.
    test name or the observation that settles it. Then run
    `python3 build_backlog.py`. A judged criterion with no evidence fails the
    gate.
+
+   Name the criterion's id in the title of the test that settles it, so the
+   verdict has something holding it in place:
+   `it("AC-NOTE-03.5: creates every missing intermediate folder, top down")`.
+   `npm run check:ac` fails on any `pass` no test title names. The evidence
+   string is not read: the only exemption is the `NO_REGRESSION_IDS` list in
+   `check_ac_coverage.py`, which names the few criteria settled by observation
+   rather than by a test. Adding an id to it says that criterion has no
+   regression behind it and never will, so it is a deliberate change to argue
+   for in review, not a way to quiet the gate.
 7. **Review.** Open the pull request, then
    `python3 set_status.py US-CAL-14 in-review`.
 8. **Close.** After the merge, `python3 set_status.py US-CAL-14 done`.
