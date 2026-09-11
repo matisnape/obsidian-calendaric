@@ -6417,7 +6417,7 @@
       "story": "As someone maintaining Calendaric, I want the logic that decides what happens — not only pure date math — to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
       "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths — a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date — that this epic's testing seam must make reachable.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
