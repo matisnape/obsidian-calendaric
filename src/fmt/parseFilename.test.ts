@@ -93,10 +93,15 @@ describe("parseFilename — a nested weekday token's own year may cross the week
 	// ISO week 53 of 2020 is Mon 2020-12-28 .. Sun 2021-01-03 — the week's own
 	// year (2020) and the nested {{sunday:..}}'s year (2021) legitimately
 	// disagree. That must not be treated as an inconsistent capture.
-	it("resolves an ISO week whose nested Sunday fragment falls in the next calendar year", () => {
-		const format = "Weeks/GGGG-[W]WW, {{monday:YYYY-MM-DD}} - {{sunday:YYYY-MM-DD}}";
+	it("resolves an ISO week whose nested Sunday fragment falls in the next calendar year, via the full nested path", () => {
+		// "GGGG/[W]WW, ..." (folder "GGGG", filename "[W]WW, ...") — a bare
+		// "Weeks/" literal would be misread by the tokenizer itself (its "W"
+		// is a real moment token unless bracket-escaped as "[Weeks]"), which
+		// would make this test pass through the basename-only fallback
+		// instead of actually exercising a full nested-path match.
+		const format = "GGGG/[W]WW, {{monday:YYYY-MM-DD}} - {{sunday:YYYY-MM-DD}}";
 		const result = parseFilename(
-			"Weeks/2020-W53, 2020-12-28 - 2021-01-03.md",
+			"2020/W53, 2020-12-28 - 2021-01-03.md",
 			format,
 			false,
 		);
@@ -117,6 +122,26 @@ describe("parseFilename — a nested weekday token's own year may cross the week
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2020-12-28");
 		expect(result?.prefixMatch).toBe(false);
+	});
+});
+
+describe("parseFilename — a nested date fragment is still checked when no week number decides the date", () => {
+	// "YYYY/MM-DD, {{monday:YYYY-MM-DD}}" has no week-number token, so the
+	// AC-FMT-04.5 priority rule doesn't apply — the nested Monday fragment is
+	// the only descriptive text here and must actually describe the real
+	// Monday of the parsed date's week, not arbitrary digits.
+	const format = "YYYY/MM-DD, {{monday:YYYY-MM-DD}}";
+
+	it("rejects a nested fragment that could never format from any date", () => {
+		const result = parseFilename("2024/01-10, 1900-99-99.md", format, false);
+		expect(result).toBeNull();
+	});
+
+	it("accepts a nested fragment that correctly names the date's real Monday", () => {
+		// 2024-01-10 is a Wednesday; the Monday of its ISO week is 2024-01-08.
+		const result = parseFilename("2024/01-10, 2024-01-08.md", format, false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-10");
 	});
 });
 

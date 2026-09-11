@@ -194,16 +194,40 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 	const isWeekdayKind = (kind: FieldKind): boolean =>
 		kind === "weekdayFull" || kind === "weekdayShort" || kind === "weekdayMin" || kind === "weekdayNum";
 
+	// A non-weekday field nested inside {{weekday:fmt}} (e.g. the YYYY-MM-DD in
+	// {{sunday:YYYY-MM-DD}}) describes that one specific day, not the format's
+	// own date — across a Dec/Jan ISO-week boundary, {{sunday:..}}'s year
+	// legitimately differs from the week's year. It never feeds the top-level
+	// date/conflict tracking. But it is not meaningless either: when no week
+	// number decides the date (AC-FMT-04.5 doesn't apply), it must still
+	// describe the real day it names, or a filename like
+	// "{{monday:1900-99-99}}" would wrongly pass. Collected here, checked once
+	// the date is known.
+	const anchoredDateFields = new Map<number, { year?: number; month?: number; day?: number }>();
+	const setAnchored = (anchor: number, field: "year" | "month" | "day", value: number) => {
+		const entry = anchoredDateFields.get(anchor) ?? {};
+		entry[field] = value;
+		anchoredDateFields.set(anchor, entry);
+	};
+
 	groups.forEach((group, idx) => {
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
-		// A non-weekday field nested inside {{weekday:fmt}} (e.g. the YYYY-MM-DD
-		// in {{sunday:YYYY-MM-DD}}) describes that specific day, not the format's
-		// own date — e.g. across a Dec/Jan ISO-week boundary, {{sunday:..}}'s
-		// year legitimately differs from the week's year. It must never feed
-		// the top-level date/conflict tracking; only a nested weekday NAME is
-		// checked, and only against its own anchored day (see weekdayChecks).
-		if (group.anchorIsoWeekday !== undefined && !isWeekdayKind(group.kind)) return;
+		if (group.anchorIsoWeekday !== undefined && !isWeekdayKind(group.kind)) {
+			switch (group.kind) {
+				case "year": setAnchored(group.anchorIsoWeekday, "year", parseInt(raw, 10)); break;
+				case "monthNum": setAnchored(group.anchorIsoWeekday, "month", parseInt(raw, 10)); break;
+				case "monthName":
+					setAnchored(group.anchorIsoWeekday, "month", MONTHS.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1);
+					break;
+				case "monthNameShort":
+					setAnchored(group.anchorIsoWeekday, "month", MONTHS_SHORT.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1);
+					break;
+				case "day": setAnchored(group.anchorIsoWeekday, "day", parseInt(raw, 10)); break;
+				default: break; // a nested week-number token is out of scope
+			}
+			return;
+		}
 		switch (group.kind) {
 			case "year": {
 				const r = combine(year, parseInt(raw, 10));
@@ -289,6 +313,18 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 	}
 
 	if (!date) return null;
+
+	// Anchored date fragments (e.g. {{monday:YYYY-MM-DD}}) are only ignorable
+	// display when a week-number token already resolves the date (AC-FMT-04.5).
+	// Otherwise each nested year/month/day must describe its own anchored day.
+	if (isoWeek === undefined && localeWeek === undefined) {
+		for (const [anchor, fields] of anchoredDateFields) {
+			const expected = date.clone().isoWeekday(anchor);
+			if (fields.year !== undefined && fields.year !== expected.year()) return null;
+			if (fields.month !== undefined && fields.month !== expected.month() + 1) return null;
+			if (fields.day !== undefined && fields.day !== expected.date()) return null;
+		}
+	}
 
 	// A weekday name/number is redundant with Y/M/D or a week number — it must
 	// still describe the same date, or the string never formats to this value
