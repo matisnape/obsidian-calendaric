@@ -164,17 +164,46 @@ export function checkNoteFolder(
  */
 const NON_TOKEN_SPANS = new RegExp(`\\[[^\\]]*\\]|${WEEK_TOKEN_RE.source}`, "gi");
 
+/** Reads a week number off `date` using whichever week token `tokens` carries. */
+function weekNumberFor(date: Moment, tokens: string): number | null {
+	if (tokens.includes("W")) return date.isoWeek();
+	if (tokens.includes("w")) return date.week();
+	return null;
+}
+
 /**
  * The week number the plugin shows for a date.
  *
- * The weekly-note format decides the week system because the same number is
- * printed into the weekly note's filename by `formatWithWeekTokens`, and
- * moment's ISO week (`W`/`WW`) and locale week (`w`/`ww`) name a week
- * differently near a year boundary: 2026-12-28 is ISO 2026-W53 but locale
- * 2027-W01. Deriving both from one function keeps the calendar's week column
- * and the note name from naming the same week two ways.
+ * The weekly-note format decides, because the same number is printed into the
+ * weekly note's filename by `formatWithWeekTokens`, and moment's ISO week
+ * (`W`/`WW`) and locale week (`w`/`ww`) name a week differently near a year
+ * boundary: 2026-12-28 is ISO 2026-W53 but locale 2027-W01. Deriving both from
+ * one function keeps the calendar's week column and the note name from naming
+ * the same week two ways.
+ *
+ * A top-level token wins, because moment resolves it against this date. Failing
+ * that, the number comes from the first `{{weekday:fmt}}` span that names a
+ * week, resolved against its own weekday exactly as `formatWithWeekTokens`
+ * resolves it — `{{monday:GGGG-[W]WW}}` writes 2026-W52 for Sun 2026-12-27,
+ * whose own locale week is 1.
+ *
+ * When no token anywhere names a week the filename carries no week number to
+ * agree with, and the locale week is shown. The column still has to show
+ * something: AC-CAL-01.4 asks for a week-number cell on every row.
  */
 export function getWeekNumber(date: Moment, weekFormat: string): number {
-	const tokens = weekFormat.replace(NON_TOKEN_SPANS, "");
-	return tokens.includes("W") ? date.isoWeek() : date.week();
+	const topLevel = weekNumberFor(date, weekFormat.replace(NON_TOKEN_SPANS, ""));
+	if (topLevel !== null) return topLevel;
+
+	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
+		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
+		if (isoDay === undefined) continue;
+		const nested = weekNumberFor(
+			date.clone().isoWeekday(isoDay),
+			tokenFmt.replace(NON_TOKEN_SPANS, ""),
+		);
+		if (nested !== null) return nested;
+	}
+
+	return date.week();
 }

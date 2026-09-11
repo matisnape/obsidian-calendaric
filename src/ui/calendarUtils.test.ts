@@ -337,3 +337,28 @@ describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => 
 		expect(path).toContain(`W${String(row!.weekNumber).padStart(2, "0")}`);
 	});
 });
+
+describe("AC-CAL-01.4: nested-only weekly formats", () => {
+	const nestedFormat = "{{monday:GGGG-[W]WW}}";
+	const nestedConfig: PeriodicConfig = {
+		enabled: true,
+		format: nestedFormat,
+		folder: "Weekly",
+		templatePath: "",
+		openAtStartup: false,
+	};
+
+	it("numbers every row to match the note path a nested-only format writes", () => {
+		// Sunday start over the year boundary: the row anchor is a Sunday, whose
+		// own locale week and whose ISO Monday's week are different numbers.
+		const grid = getMonthGrid(moment("2026-12-15"), 0, nestedFormat);
+		grid.forEach((week) => {
+			const path = computeNotePath(
+				getWeekAnchor(week.days),
+				nestedConfig,
+				new FakeVaultConfigPort(),
+			);
+			expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
+		});
+	});
+});

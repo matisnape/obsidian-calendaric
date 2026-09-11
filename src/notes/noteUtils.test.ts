@@ -319,3 +319,42 @@ describe("getWeekNumber with awkward formats", () => {
 		expect(getWeekNumber(DIVERGENT_DATE, "GGGG-[W]WW, {{notaday:DD}}")).toBe(53);
 	});
 });
+
+describe("getWeekNumber for nested-only formats", () => {
+	// 2026-12-27 is a Sunday. The Monday its week token resolves to is 12-21, in
+	// ISO week 52, while the date's own locale week is 1 — the review's case.
+	const SUNDAY = moment("2026-12-27");
+
+	it("numbers a nested-only ISO format by the weekday the token resolves to", () => {
+		const fmt = "{{monday:GGGG-[W]WW}}";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-W52");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(52);
+	});
+
+	it("numbers a nested-only locale format by the same weekday", () => {
+		const fmt = "{{monday:gggg-[W]ww}}";
+		const expected = SUNDAY.clone().isoWeekday(1).week();
+		expect(expected).not.toBe(SUNDAY.week());
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toContain(`W${String(expected).padStart(2, "0")}`);
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(expected);
+	});
+
+	it("prefers a top-level week token over a nested one", () => {
+		expect(getWeekNumber(SUNDAY, "gggg-[W]ww, {{monday:GGGG-[W]WW}}")).toBe(SUNDAY.week());
+	});
+
+	it("skips a nested span that carries no week token", () => {
+		const fmt = "{{monday:DD.MM}}, {{sunday:GGGG-[W]WW}}";
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.clone().isoWeekday(7).isoWeek());
+	});
+
+	it("skips an unrecognised weekday span when looking for a nested token", () => {
+		// `notaday` is left for moment, which renders its WW against the date
+		// itself — so the top-level pass already claims this format.
+		expect(getWeekNumber(SUNDAY, "{{notaday:WW}}")).toBe(SUNDAY.isoWeek());
+	});
+
+	it("falls back to the locale week when no token anywhere names a week", () => {
+		expect(getWeekNumber(SUNDAY, "{{monday:DD.MM}} – {{sunday:DD.MM}}")).toBe(SUNDAY.week());
+	});
+});
