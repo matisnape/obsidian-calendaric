@@ -307,7 +307,7 @@
       "story": "As someone who has never manually created a folder for my notes, I want the plugin to create whatever folders a new note needs, so that turning on a granularity or pointing it at a new folder just works without a manual setup step.",
       "rationale": "A missing folder should never be the reason a note fails to be created.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "dni:resolve-note-path-and-ensure-folder",
         "pn:note-creation-path-and-folder-autocreate",
@@ -1778,7 +1778,7 @@
       "story": "As someone with a note open, I want the plugin to recognise it as a specific day's or week's note by its filename, preferring the most specific granularity, so that the calendar highlights the exact cell for the note I am looking at.",
       "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "cal:get-date-uid-from-file"
       ],
@@ -2490,7 +2490,7 @@
       "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "calui:render-calendar-grid",
         "calendaric:calendar-month-grid-render"
@@ -4451,7 +4451,7 @@
       "story": "As a vault user who does not want to click a ribbon icon, I want a command that opens the calendar view, so that I can reach it entirely from the keyboard.",
       "rationale": "The calendar view has no ribbon icon of its own in the merged design, so the palette command is its only guaranteed entry point.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "cal:open-calendar-view",
         "calendaric:open-calendar-view"

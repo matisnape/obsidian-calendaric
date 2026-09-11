@@ -206,8 +206,8 @@
       "id": "US-ARCH-03",
       "epic": "ARCH",
       "title": "Testable without a running Obsidian",
-      "story": "As someone maintaining Calendaric, I want the logic that decides what happens \u2014 not only pure date math \u2014 to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
-      "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths \u2014 a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date \u2014 that this epic's testing seam must make reachable.",
+      "story": "As someone maintaining Calendaric, I want the logic that decides what happens — not only pure date math — to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
+      "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths — a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date — that this epic's testing seam must make reachable.",
       "priority": "must",
       "status": "done",
       "covers": [],
@@ -229,7 +229,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "vitest: src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts \u2014 createNote/openNote/openNoteInNewTab now take VaultPort/WorkspacePort instead of the raw Obsidian App; all covered by FakeVaultPort/FakeWorkspacePort."
+          "evidence": "vitest: src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts — createNote/openNote/openNoteInNewTab now take VaultPort/WorkspacePort instead of the raw Obsidian App; all covered by FakeVaultPort/FakeWorkspacePort."
         },
         {
           "id": "AC-ARCH-03.2",
@@ -242,7 +242,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "FakeVaultPort/FakeWorkspacePort cover file read/write/create and workspace pane opening (src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts). Companion-plugin lookup is already exercised without a running Obsidian by the pre-existing src/settings/dailyNotesImport.test.ts (its own hand-rolled App substitute, predating this ticket) \u2014 the capability is not left uncovered, though it is not yet unified under this ticket's VaultPort/WorkspacePort shape; that unification is US-ARCH-01/02 territory, not this ticket's."
+          "evidence": "FakeVaultPort/FakeWorkspacePort cover file read/write/create and workspace pane opening (src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts). Companion-plugin lookup is already exercised without a running Obsidian by the pre-existing src/settings/dailyNotesImport.test.ts (its own hand-rolled App substitute, predating this ticket) — the capability is not left uncovered, though it is not yet unified under this ticket's VaultPort/WorkspacePort shape; that unification is US-ARCH-01/02 territory, not this ticket's."
         },
         {
           "id": "AC-ARCH-03.3",
@@ -255,7 +255,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "vitest: src/notes/noteCreate.test.ts \u2014 'creates the missing target folder', 'propagates the failure when a note already exists', 'creates an empty note when the configured template is absent', plus two seam-only proofs for 'invalid filename format' and 'unparseable date string' (FMT validation logic itself does not exist yet; these prove the port carries the rejection through).",
+          "evidence": "vitest: src/notes/noteCreate.test.ts — 'creates the missing target folder', 'propagates the failure when a note already exists', 'creates an empty note when the configured template is absent', plus two seam-only proofs for 'invalid filename format' and 'unparseable date string' (FMT validation logic itself does not exist yet; these prove the port carries the rejection through).",
           "failure_path": true
         },
         {
@@ -377,7 +377,7 @@
       "epic": "ARCH",
       "title": "Adding a granularity or a calendar indicator is a small, localised change",
       "story": "As the person adding a new period type or a new calendar indicator later, I want that addition to touch a small, predictable set of files, so that extending Calendaric never means relearning or rewriting the whole plugin.",
-      "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended \u2014 the new contract must not repeat that failure mode.",
+      "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended — the new contract must not repeat that failure mode.",
       "priority": "must",
       "status": "todo",
       "covers": [],
@@ -652,7 +652,7 @@
       "epic": "ARCH",
       "title": "User-facing documentation matches verified behaviour",
       "story": "As a Calendaric user reading the format-and-template guide, I want every behaviour it documents to match what the plugin actually does, so that I can trust the documentation instead of discovering the real behaviour by trial and error.",
-      "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting \u2014 the documented and the implemented behaviour disagree today.",
+      "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting — the documented and the implemented behaviour disagree today.",
       "priority": "should",
       "status": "todo",
       "covers": [],
@@ -750,7 +750,7 @@
       "epic": "ARCH",
       "title": "A budget-aware GitHub Actions workflow enforces the release build's gates on every pull request",
       "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
-      "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first \u2014 see DEC-26.",
+      "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first — see DEC-26.",
       "priority": "must",
       "status": "in-review",
       "covers": [],
@@ -772,7 +772,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "measured by the orchestrator: gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s \u2014 one combined job, one status check, exactly as specified."
+          "evidence": "measured by the orchestrator: gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s — one combined job, one status check, exactly as specified."
         },
         {
           "id": "AC-ARCH-09.2",
@@ -785,7 +785,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review: .github/workflows/ci.yml has on: {pull_request: {branches: [master]}} and no push key \u2014 inspected verbatim, only workflow file in .github/workflows/."
+          "evidence": "code review: .github/workflows/ci.yml has on: {pull_request: {branches: [master]}} and no push key — inspected verbatim, only workflow file in .github/workflows/."
         },
         {
           "id": "AC-ARCH-09.3",
@@ -812,7 +812,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "measured by the orchestrator: detect-ci-gates.sh re-run after the merge: source=github-checks (real check-run data, not the yaml-fallback path) \u2014 it picked up the most recent open pull request's check-runs rather than #6 specifically (default branch has no push-triggered checks by design), but this already confirms real pipeline data is reachable, matching gh pr checks 6 on #6 itself (\"install, test, build\" pass). ci.gates in .claude/stack.json can be moved from provisional to confirmed."
+          "evidence": "measured by the orchestrator: detect-ci-gates.sh re-run after the merge: source=github-checks (real check-run data, not the yaml-fallback path) — it picked up the most recent open pull request's check-runs rather than #6 specifically (default branch has no push-triggered checks by design), but this already confirms real pipeline data is reachable, matching gh pr checks 6 on #6 itself (\"install, test, build\" pass). ci.gates in .claude/stack.json can be moved from provisional to confirmed."
         },
         {
           "id": "AC-ARCH-09.5",
@@ -820,7 +820,7 @@
           "when": "the workflow is defined",
           "then": [
             "it does not run lint as part of the pull-request gate",
-            "excluding lint is a deliberate, temporary choice, not a silent omission \u2014 DEC-26 states the reason and the exit condition"
+            "excluding lint is a deliberate, temporary choice, not a silent omission — DEC-26 states the reason and the exit condition"
           ],
           "verifies": "architecture",
           "testable_by": "manual",
@@ -833,7 +833,7 @@
           "id": "DEC-26",
           "title": "The pull-request CI gate excludes lint until the pre-existing lint debt is paid down",
           "decision": "US-ARCH-09's workflow runs install, test and build, not lint. Every implementing agent must still run lint locally on its own worktree before reporting a ticket done. The 'zero new lint errors' requirement is judged by rule category, not raw count: a new instance of a rule already violated elsewhere in the codebase before this rewrite (chiefly no-restricted-imports on \"import type { Moment } from 'moment'\", and the existing no-misused-promises pattern on async event handlers) is accepted debt, same as the pre-existing 52; a genuinely new rule category never previously violated in this codebase is not excused by this decision and must be fixed before the ticket is done. That check stays a per-ticket discipline, not a CI gate, until a separate cleanup story pays down the existing debt. Once that debt is paid down, lint joins the CI gate in a follow-up change to this workflow.",
-          "rationale": "eslint already fails on master with 52 pre-existing errors (mostly a no-restricted-imports rule against `import type { Moment } from \"moment\"`, tripped by code that predates this rewrite pass). Enabling lint in the CI gate today would make the very first pull request red regardless of its content. Anna's call: exclude it from CI for now (2026-09-11), because the debt is legacy, not because lint does not matter \u2014 hence the standing per-agent local-lint requirement.",
+          "rationale": "eslint already fails on master with 52 pre-existing errors (mostly a no-restricted-imports rule against `import type { Moment } from \"moment\"`, tripped by code that predates this rewrite pass). Enabling lint in the CI gate today would make the very first pull request red regardless of its content. Anna's call: exclude it from CI for now (2026-09-11), because the debt is legacy, not because lint does not matter — hence the standing per-agent local-lint requirement.",
           "decided_on": "2026-09-11",
           "resolves": []
         }
