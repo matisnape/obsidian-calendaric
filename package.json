@@ -11,7 +11,7 @@
 		"lint": "eslint .",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"check:ac": "python3 docs/backlog/check_ac_coverage.py"
+		"check:ac": "python3 docs/backlog/check_ac_coverage.py --self-check && python3 docs/backlog/check_ac_coverage.py"
 	},
 	"keywords": [],
 	"license": "0-BSD",

@@ -64,16 +64,25 @@ AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b")
 #   "detect-ci-gates.sh re-run after the merge: source=github-checks"
 #
 # Both of the last two contain the bare word "test" — it is the CI job name,
-# "install, test, build" — so a bare `test` substring would misread them as
-# test claims. Match the runner name and the test-file suffix, nothing looser.
-TEST_CLAIM = re.compile(r"vitest|\.test\.ts", re.IGNORECASE)
+# "install, test, build" — and AC-MIG-01.1 says outright "no automated test
+# since AC is testable_by: manual". Measured against all 30 strings, a bare
+# `test` marker would drag AC-ARCH-09.1, AC-ARCH-09.4 and AC-MIG-01.1 into the
+# blocking list, where nothing could ever clear them. So `test` alone is not a
+# marker. `suite`, `spec`, `covered by`, `regression`, `coverage` and a literal
+# `describe(`/`it(` collide with none of the six, and they are how a test gets
+# named when the runner is not.
+TEST_CLAIM = re.compile(
+    r"vitest|\.test\.ts|\bsuites?\b|\bspecs?\b|covered by|\bregression\b"
+    r"|\bcoverage\b|\b(?:describe|it)\(",
+    re.IGNORECASE,
+)
 
 # A verdict is only excused from rule 1 when it says out loud what settled it
 # instead of a test. Recognising the phrasing, rather than treating "no test
 # marker" as proof of no test claim, is what keeps this fail-closed: a future
-# evidence string that cites a test in wording nobody anticipated ("covered by
-# the noteCreate suite") lands in rule 1 and gets noticed, not in rule 2 where
-# it would never fail. `.sh` covers a named script run, as in AC-ARCH-09.4.
+# evidence string that cites a test in wording nobody anticipated lands in rule
+# 1 and gets noticed, not in rule 2 where it would never fail. `.sh` covers a
+# named script run, as in AC-ARCH-09.4.
 NON_TEST_CLAIM = re.compile(
     r"code review|gh pr checks|grep confirms|measured by|observed|inspected"
     r"|descoped|\.sh\b",
@@ -82,12 +91,22 @@ NON_TEST_CLAIM = re.compile(
 
 
 def claims_a_test(evidence):
-    """Fail closed: a verdict too vague to read is treated as claiming a test.
+    """Fail closed: anything that might name a test is treated as naming one.
 
-    A false alarm costs one tagged title. A missed unbacked verdict is the
-    thing this gate exists to prevent. A test claim beats a non-test claim in
-    the same string, because "vitest: ... plus code review of the wiring"
-    (AC-MIG-01.2) does name a test that must still be findable.
+    A test marker ANYWHERE in the string wins, even when the string also cites
+    a review. "covered by the noteCreate suite; code review of the wiring"
+    mixes both, and reading it as review-only would let an unbacked test claim
+    settle into the non-failing list — the exact fail-open this must not have.
+    Mixed is rule 1. So is evidence naming no recognised source at all, and so
+    is empty evidence. A false alarm costs one tagged title; a missed unbacked
+    verdict is the thing this gate exists to prevent.
+
+    Sniffing prose is not the right long-term shape. The eventual one is a
+    validated `evidence_kind` field on the criterion itself, set when the
+    verdict is recorded, which removes the guessing entirely. Deferred because
+    it is a schema change across 60-plus criteria already recorded in the epic
+    files, and those files are held by eleven live branches; it folds into the
+    retro-tagging pass, when those evidence strings are being edited anyway.
     """
     if not evidence or not evidence.strip():
         return True
@@ -97,22 +116,47 @@ def claims_a_test(evidence):
 
 
 def load_criteria(epics_dir):
-    """Every criterion, as (epic, story_id, ac_id, status, evidence)."""
+    """Every criterion, as (epic, story_id, ac_id, status, evidence).
+
+    A catalogue that is missing or holds nothing is a hard error, never an
+    empty pass. "No failures" over zero criteria is the worst output this tool
+    could produce: it is indistinguishable from a clean run and would certify
+    anything.
+    """
+    if not epics_dir.is_dir():
+        sys.exit(f"no catalogue directory at {epics_dir}")
     out = []
     for path in sorted(epics_dir.glob("*.json")):
         data = json.loads(path.read_text())
+        if not isinstance(data, dict):
+            sys.exit(f"{path} is not an epic object")
         for story in data.get("stories", []):
             for ac in story.get("acceptance_criteria", []):
                 out.append((data["epic"], story["id"], ac["id"],
                             ac.get("status", "unverified"), ac.get("evidence")))
+    if not out:
+        sys.exit(f"catalogue at {epics_dir} holds no acceptance criteria — "
+                 "refusing to report success over an empty catalogue")
     return out
 
 
 def parse_report(data):
-    """Full test titles out of a vitest JSON report."""
-    return [a["fullName"]
-            for suite in data.get("testResults", [])
-            for a in suite.get("assertionResults", [])]
+    """Full test titles out of a vitest JSON report.
+
+    The shape is checked rather than `.get`-ed past, because any valid JSON
+    would otherwise yield zero titles and read as a clean run. A report with no
+    `testResults` key is not a vitest report; say so instead of certifying it.
+    """
+    if not isinstance(data, dict) or not isinstance(data.get("testResults"), list):
+        sys.exit("not a vitest JSON report: no `testResults` list")
+    titles = []
+    for suite in data["testResults"]:
+        for a in suite.get("assertionResults", []):
+            if "fullName" not in a:
+                sys.exit("vitest report has an assertion with no `fullName`; "
+                         "the reporter shape this script reads has changed")
+            titles.append(a["fullName"])
+    return titles
 
 
 def test_titles(root, report_path=None):
@@ -137,6 +181,10 @@ def test_titles(root, report_path=None):
              f"--outputFile={report}"],
             cwd=root, capture_output=True, text=True,
         )
+        if proc.returncode != 0:
+            sys.exit(f"vitest exited {proc.returncode}, so its titles are not a "
+                     "trustworthy picture of the suite:\n"
+                     + (proc.stderr or proc.stdout))
         if not report.exists() or not report.stat().st_size:
             sys.exit("vitest produced no JSON report:\n"
                      + (proc.stderr or proc.stdout))
@@ -258,8 +306,13 @@ def self_check():
     # unanticipated way of citing one must surface, not slip into rule 2.
     assert claims_a_test(None) and claims_a_test("   ")
     assert claims_a_test("covered by the noteCreate suite")
-    # A test claim wins over a non-test claim in the same string.
+    # A test claim wins over a non-test claim in the same string, whichever
+    # marker comes first and whether or not the runner is the one named. This
+    # exact string fell into rule 2 before: "code review" was recognised and
+    # "the noteCreate suite" was not, so an unbacked test claim never failed.
     assert claims_a_test("vitest: dailyNotesImport.test.ts plus code review")
+    assert claims_a_test("covered by the noteCreate suite; code review of the wiring")
+    assert claims_a_test("code review of the wiring, plus the noteCreate suite")
     # And the recognised non-test phrasings really are recognised.
     assert not claims_a_test("code review: settings.ts renders the banner")
     assert not claims_a_test("detect-ci-gates.sh re-run: source=github-checks")
@@ -304,13 +357,18 @@ def end_to_end_check():
     import io
 
     def run(report, *flags):
+        # The catalogue and the report go in separate directories: --epics-dir
+        # globs *.json, so a report sitting beside the epic files would be read
+        # as one of them.
         with tempfile.TemporaryDirectory() as tmp:
             tmp = pathlib.Path(tmp)
-            (tmp / "NOTE.json").write_text(json.dumps(SYNTHETIC_EPIC))
+            epics = tmp / "epics"
+            epics.mkdir()
+            (epics / "NOTE.json").write_text(json.dumps(SYNTHETIC_EPIC))
             (tmp / "report.json").write_text(json.dumps(report))
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = main(["--epics-dir", str(tmp),
+                code = main(["--epics-dir", str(epics),
                              "--vitest-json", str(tmp / "report.json"), *flags])
             return code, out.getvalue()
 
@@ -340,12 +398,36 @@ def end_to_end_check():
     assert code == 1, (code, out)
     assert "DANGLING REFERENCES (1)" in out and "AC-ZZZ-01.1" in out, out
 
-    # Title collection returning nothing must not read as "all clear". Both an
-    # empty run and a report whose shape this script cannot read go red.
-    for empty in ({"testResults": []}, {}, vitest_report()):
+    # Title collection returning nothing must not read as "all clear". An
+    # empty run is legitimate input and still goes red on the unbacked verdict.
+    for empty in ({"testResults": []}, vitest_report()):
         code, out = run(empty)
         assert code == 1, (empty, code, out)
         assert "0 criteria named by tests" in out, out
+
+    # Arbitrary valid JSON is not a vitest report, and must not read as a
+    # clean run just because it yields no titles.
+    for junk in ({}, {"testResults": "nope"}, [], {"testResults": [{"assertionResults": [{}]}]}):
+        try:
+            code, out = run(junk)
+        except SystemExit as e:
+            assert e.code and "vitest" in str(e.code).lower(), e.code
+        else:
+            raise AssertionError(f"junk report accepted: {junk} -> {code} {out}")
+
+    # A catalogue that is missing or empty is a hard error, never "No failures".
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        (tmp / "report.json").write_text(json.dumps(named))
+        for epics in (tmp / "does-not-exist", tmp / "empty"):
+            (tmp / "empty").mkdir(exist_ok=True)
+            try:
+                main(["--epics-dir", str(epics),
+                      "--vitest-json", str(tmp / "report.json")])
+            except SystemExit as e:
+                assert e.code and "catalogue" in str(e.code), e.code
+            else:
+                raise AssertionError(f"empty catalogue accepted: {epics}")
 
 
 def main(argv=None):

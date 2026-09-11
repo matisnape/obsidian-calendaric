@@ -59,6 +59,11 @@ jobs:
       # what a red build will show. This state is temporary, not the intended
       # one, and the step is named so the log says so too.
       #
+      # `npm run check:ac` rather than the script directly, because that script
+      # runs its own --self-check first. The checker's regression cases are
+      # then part of what CI executes instead of something only a human
+      # remembers to run.
+      #
       # `continue-on-error` rather than the script's own `--report-only`
       # because --report-only suppresses classified findings only: a vitest
       # crash, a malformed report or a temp-file failure would still exit
@@ -71,7 +76,7 @@ jobs:
       # there is nothing to tag; they are listed to stay countable.
       - name: ac coverage (not enforced yet)
         continue-on-error: true
-        run: python3 docs/backlog/check_ac_coverage.py
+        run: npm run check:ac
 
       # No lint step. eslint fails on master with pre-existing errors, so a lint
       # gate would make every pull request red regardless of its content. DEC-26
