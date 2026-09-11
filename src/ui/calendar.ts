@@ -133,7 +133,7 @@ export class CalendarWidget {
 		this.gridBodyEl.empty();
 
 		const weekStart = resolveWeekStart(this.settings.weekStart);
-		const grid = getMonthGrid(this.displayedMonth, weekStart);
+		const grid = getMonthGrid(this.displayedMonth, weekStart, this.settings.week.format);
 
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
 		const dayPaths = this.dots.getDayNotePaths(this.displayedMonth, this.settings.day);

@@ -150,3 +150,27 @@ export function checkNoteFolder(
 
 	return { path, valid: true, notYetCreated: chain.some((segment) => !vault.folderExists(segment)) };
 }
+
+/**
+ * Spans of a format string that are not moment tokens for the format's own
+ * date: `[literal]` escapes and `{{weekday:fmt}}` week tokens. The default
+ * weekly format `gggg-[W]ww` prints a literal "W", and a nested token such as
+ * `{{monday:GGGG-[W]WW}}` describes its own weekday — neither may decide which
+ * week system the format uses.
+ */
+const NON_TOKEN_SPANS = /\[[^\]]*\]|\{\{[^}]*\}\}/g;
+
+/**
+ * The week number the plugin shows for a date.
+ *
+ * The weekly-note format decides the week system because the same number is
+ * printed into the weekly note's filename by `formatWithWeekTokens`, and
+ * moment's ISO week (`W`/`WW`) and locale week (`w`/`ww`) name a week
+ * differently near a year boundary: 2026-12-28 is ISO 2026-W53 but locale
+ * 2027-W01. Deriving both from one function keeps the calendar's week column
+ * and the note name from naming the same week two ways.
+ */
+export function getWeekNumber(date: Moment, weekFormat: string): number {
+	const tokens = weekFormat.replace(NON_TOKEN_SPANS, "");
+	return tokens.includes("W") ? date.isoWeek() : date.week();
+}

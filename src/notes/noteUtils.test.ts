@@ -4,6 +4,7 @@ import {
 	applyWeekTokens,
 	formatWithWeekTokens,
 	computeNotePath,
+	getWeekNumber,
 	resolveNoteFolder,
 	checkNoteFolder,
 	folderChainSegments,
@@ -250,5 +251,38 @@ describe("folderChainSegments", () => {
 
 	it("lists nothing for the vault root", () => {
 		expect(folderChainSegments("")).toEqual([]);
+	});
+});
+
+describe("getWeekNumber", () => {
+	// 2026-12-28 is a Monday where the two week systems disagree: the ISO week
+	// calls it 2026-W53, the locale week calls it 2027-W01.
+	const DIVERGENT = moment("2026-12-28");
+
+	it("uses the ISO week when the format carries an ISO week token", () => {
+		expect(getWeekNumber(DIVERGENT, "GGGG-[W]WW")).toBe(53);
+	});
+
+	it("uses the locale week when the format carries a locale week token", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww")).toBe(1);
+	});
+
+	it("reads the [W] of the default format as a literal, not as an ISO token", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww")).not.toBe(DIVERGENT.isoWeek());
+	});
+
+	it("ignores a week token nested inside {{weekday:fmt}}", () => {
+		expect(getWeekNumber(DIVERGENT, "gggg-[W]ww, {{monday:GGGG-[W]WW}}")).toBe(1);
+	});
+
+	it("falls back to the locale week when the format names no week", () => {
+		expect(getWeekNumber(DIVERGENT, "YYYY-MM-DD")).toBe(DIVERGENT.week());
+	});
+
+	it("agrees with the number formatWithWeekTokens writes into the filename", () => {
+		for (const fmt of ["gggg-[W]ww", "GGGG-[W]WW"]) {
+			const padded = String(getWeekNumber(DIVERGENT, fmt)).padStart(2, "0");
+			expect(formatWithWeekTokens(fmt, DIVERGENT)).toContain(`W${padded}`);
+		}
 	});
 });
