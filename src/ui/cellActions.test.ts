@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
+import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
 import {
 	HOVER_LINK_SOURCE,
+	hoverPreviewRequest,
 	openOrCreateNote,
-	planHoverPreview,
+	splitModifierPressed,
+	type CellClick,
 	type CreateRequest,
 } from "./cellActions";
 import { getMonthGrid } from "./calendarUtils";
@@ -24,11 +27,20 @@ const dayConfig: PeriodicConfig = {
 
 const WEEK_FORMAT = "gggg-[W]ww";
 
+/** The day every click test uses, and the path its note lands on. */
+const DAY = "2026-04-13";
+
 function makeClick(overrides: Partial<MouseEvent> = {}): MouseEvent {
 	return { metaKey: false, ctrlKey: false, ...overrides } as MouseEvent;
 }
 
-function makePorts(existingPaths: string[] = []) {
+interface Ports {
+	vault: FakeVaultPort;
+	vaultConfig: FakeVaultConfigPort;
+	workspace: FakeWorkspacePort;
+}
+
+function makePorts(existingPaths: string[] = []): Ports {
 	const vault = new FakeVaultPort();
 	for (const path of existingPaths) vault.seedFile(path, "");
 	return { vault, vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() };
@@ -51,38 +63,54 @@ function pathFor(date: string): string {
 	return computeNotePath(moment(date), dayConfig, new FakeVaultConfigPort());
 }
 
+/** A plain click on `DAY`, on a Mac, with creation unconfirmed — override one field per test. */
+function clickDay(ports: Ports, overrides: Partial<CellClick> = {}): Promise<void> {
+	return openOrCreateNote({
+		date: moment(DAY),
+		granularity: "day",
+		config: dayConfig,
+		confirmBeforeCreate: false,
+		isMacOS: true,
+		event: makeClick(),
+		ports,
+		confirmCreate: stubConfirm(false).confirm,
+		...overrides,
+	});
+}
+
+describe("splitModifierPressed", () => {
+	it("AC-CAL-03.4: on macOS only Cmd splits, so Ctrl-click stays in the active pane", () => {
+		expect(splitModifierPressed(makeClick({ metaKey: true }), true)).toBe(true);
+		expect(splitModifierPressed(makeClick({ ctrlKey: true }), true)).toBe(false);
+	});
+
+	it("AC-CAL-03.4: off macOS only Ctrl splits", () => {
+		expect(splitModifierPressed(makeClick({ ctrlKey: true }), false)).toBe(true);
+		expect(splitModifierPressed(makeClick({ metaKey: true }), false)).toBe(false);
+	});
+
+	it("AC-CAL-03.1: a plain click never splits, on either platform", () => {
+		expect(splitModifierPressed(makeClick(), true)).toBe(false);
+		expect(splitModifierPressed(makeClick(), false)).toBe(false);
+	});
+});
+
 describe("openOrCreateNote", () => {
 	it("AC-CAL-03.1: opens the existing note in the active pane", async () => {
-		const path = pathFor("2026-04-13");
+		const path = pathFor(DAY);
 		const ports = makePorts([path]);
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick(),
-			ports,
-			confirmCreate: stubConfirm(false).confirm,
-		});
+		await clickDay(ports);
 
 		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
 	});
 
 	it("AC-CAL-03.1: does not ask to create a note that is already there", async () => {
-		const path = pathFor("2026-04-13");
+		const path = pathFor(DAY);
 		const ports = makePorts([path]);
 		const confirm = stubConfirm(true);
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick(),
-			ports,
-			confirmCreate: confirm.confirm,
-		});
+		await clickDay(ports, { confirmBeforeCreate: true, confirmCreate: confirm.confirm });
 
 		expect(confirm.asked).toEqual([]);
 		expect(ports.vault.contentAt(path)).toBe("");
@@ -92,94 +120,69 @@ describe("openOrCreateNote", () => {
 		const ports = makePorts();
 		const confirm = stubConfirm(false);
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: false,
-			event: makeClick(),
-			ports,
-			confirmCreate: confirm.confirm,
-		});
+		await clickDay(ports, { confirmCreate: confirm.confirm });
 
-		const path = pathFor("2026-04-13");
 		expect(confirm.asked).toEqual([]);
-		expect(ports.vault.contentAt(path)).toBe("");
-		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
 	});
 
 	it("AC-CAL-03.3: asks first, naming the day, while the file still does not exist", async () => {
 		const ports = makePorts();
-		const path = pathFor("2026-04-13");
 		let existedWhenAsked: string | undefined = "not asked";
 		const confirm = stubConfirm(false, () => {
-			existedWhenAsked = ports.vault.contentAt(path);
+			existedWhenAsked = ports.vault.contentAt(pathFor(DAY));
 		});
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick(),
-			ports,
-			confirmCreate: confirm.confirm,
-		});
+		await clickDay(ports, { confirmBeforeCreate: true, confirmCreate: confirm.confirm });
 
 		expect(existedWhenAsked).toBeUndefined();
 		expect(confirm.asked).toHaveLength(1);
-		expect(confirm.asked[0]!.body).toContain(moment("2026-04-13").format("LL"));
+		expect(confirm.asked[0]!.body).toContain(moment(DAY).format("LL"));
 	});
 
 	it("AC-CAL-03.3: accepting creates the note and opens it in the active pane", async () => {
 		const ports = makePorts();
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick(),
-			ports,
-			confirmCreate: stubConfirm(true).confirm,
-		});
+		await clickDay(ports, { confirmBeforeCreate: true, confirmCreate: stubConfirm(true).confirm });
 
-		const path = pathFor("2026-04-13");
-		expect(ports.vault.contentAt(path)).toBe("");
-		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
 	});
 
 	it("AC-CAL-03.3: dismissing creates nothing and opens nothing", async () => {
 		const ports = makePorts();
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick(),
-			ports,
-			confirmCreate: stubConfirm(false).confirm,
-		});
+		await clickDay(ports, { confirmBeforeCreate: true, confirmCreate: stubConfirm(false).confirm });
 
-		expect(ports.vault.contentAt(pathFor("2026-04-13"))).toBeUndefined();
+		expect(ports.vault.contentAt(pathFor(DAY))).toBeUndefined();
 		expect(ports.vault.createdFolders).toEqual([]);
 		expect(ports.workspace.opened).toEqual([]);
 	});
 
-	it("AC-CAL-03.4: a modifier click opens the existing note in a split", async () => {
-		const path = pathFor("2026-04-13");
+	it("AC-CAL-03.4: a Cmd-click on a Mac opens the existing note in a split", async () => {
+		const path = pathFor(DAY);
 		const ports = makePorts([path]);
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: true,
-			event: makeClick({ metaKey: true }),
-			ports,
-			confirmCreate: stubConfirm(false).confirm,
-		});
+		await clickDay(ports, { event: makeClick({ metaKey: true }) });
+
+		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "split" }]);
+	});
+
+	it("AC-CAL-03.4: a Ctrl-click on a Mac opens in the active pane, not a split", async () => {
+		const path = pathFor(DAY);
+		const ports = makePorts([path]);
+
+		await clickDay(ports, { event: makeClick({ ctrlKey: true }) });
+
+		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+	});
+
+	it("AC-CAL-03.4: a Ctrl-click off macOS opens the existing note in a split", async () => {
+		const path = pathFor(DAY);
+		const ports = makePorts([path]);
+
+		await clickDay(ports, { isMacOS: false, event: makeClick({ ctrlKey: true }) });
 
 		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "split" }]);
 	});
@@ -187,19 +190,14 @@ describe("openOrCreateNote", () => {
 	it("AC-CAL-03.4: a modifier click creates the missing note first, then splits", async () => {
 		const ports = makePorts();
 
-		await openOrCreateNote({
-			date: moment("2026-04-13"),
-			granularity: "day",
-			config: dayConfig,
+		await clickDay(ports, {
 			confirmBeforeCreate: true,
-			event: makeClick({ ctrlKey: true }),
-			ports,
 			confirmCreate: stubConfirm(true).confirm,
+			event: makeClick({ metaKey: true }),
 		});
 
-		const path = pathFor("2026-04-13");
-		expect(ports.vault.contentAt(path)).toBe("");
-		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "split" }]);
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "split" }]);
 	});
 
 	it("AC-CAL-03.6: a trailing adjacent-month day opens its own month's note", async () => {
@@ -207,48 +205,73 @@ describe("openOrCreateNote", () => {
 		const trailing = grid.at(-1)!.days.find((day) => day.isAdjacentMonth)!;
 		const ports = makePorts();
 
-		await openOrCreateNote({
-			date: trailing.date,
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: false,
-			event: makeClick(),
-			ports,
-			confirmCreate: stubConfirm(false).confirm,
-		});
+		await clickDay(ports, { date: trailing.date });
 
-		const path = `Daily/${trailing.date.format("YYYY-MM-DD")}.md`;
 		expect(trailing.date.month()).toBe(4);
-		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+		expect(ports.workspace.opened).toEqual([
+			{ file: { path: `Daily/${trailing.date.format("YYYY-MM-DD")}.md` }, mode: "reuse" },
+		]);
 	});
 
 	it("AC-CAL-03.6: leaves the clicked cell's own date untouched, so the grid keeps its month", async () => {
 		const grid = getMonthGrid(moment("2026-04-15"), 1, WEEK_FORMAT);
-		const leading = grid[0]!.days[0]!;
-		const before = leading.date.format();
+		const leading: Moment = grid[0]!.days[0]!.date;
+		const before = leading.format();
 
-		await openOrCreateNote({
-			date: leading.date,
-			granularity: "day",
-			config: dayConfig,
-			confirmBeforeCreate: false,
-			event: makeClick(),
-			ports: makePorts(),
-			confirmCreate: stubConfirm(false).confirm,
+		await clickDay(makePorts(), { date: leading });
+
+		expect(leading.format()).toBe(before);
+	});
+
+	it("AC-CAL-03.2: opens the winner's note when another activation creates it first", async () => {
+		const ports = makePorts();
+		// The confirmation is the await the second activation slips through: the note
+		// appears between this activation's own look and its write.
+		const confirm = stubConfirm(true, () => {
+			ports.vault.seedFile(pathFor(DAY), "written by the other click");
 		});
 
-		expect(leading.date.format()).toBe(before);
+		await clickDay(ports, { confirmBeforeCreate: true, confirmCreate: confirm.confirm });
+
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("written by the other click");
+		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
+	});
+
+	it("AC-CAL-03.2: two concurrent clicks on the same day both open the one note", async () => {
+		const ports = makePorts();
+
+		await Promise.all([clickDay(ports), clickDay(ports)]);
+
+		const expected = { file: { path: pathFor(DAY) }, mode: "reuse" };
+		expect(ports.workspace.opened).toEqual([expected, expected]);
+	});
+
+	it("AC-CAL-03.2: rethrows a create failure that left no note behind", async () => {
+		const ports = makePorts();
+		ports.vault.createFileError = new Error("vault is read-only");
+
+		await expect(clickDay(ports)).rejects.toThrow("vault is read-only");
+		expect(ports.workspace.opened).toEqual([]);
+	});
+
+	it("AC-CAL-03.2: refuses to create when a folder already occupies the note's path", async () => {
+		const ports = makePorts();
+		ports.vault.seedFolder(pathFor(DAY));
+
+		await expect(clickDay(ports)).rejects.toThrow(/folder already uses/);
+		expect(ports.vault.contentAt(pathFor(DAY))).toBeUndefined();
+		expect(ports.workspace.opened).toEqual([]);
 	});
 });
 
-describe("planHoverPreview", () => {
+describe("hoverPreviewRequest", () => {
 	const hoverParent = { hoverPopover: null } as HoverParent;
 	const targetEl = {} as HTMLElement;
 
 	it("AC-CAL-03.5: asks Obsidian to preview the note under the hovered cell", () => {
-		const notePath = pathFor("2026-04-13");
+		const notePath = pathFor(DAY);
 
-		const request = planHoverPreview({
+		const request = hoverPreviewRequest({
 			event: makeClick({ metaKey: true }),
 			hoverParent,
 			targetEl,
@@ -265,29 +288,30 @@ describe("planHoverPreview", () => {
 		});
 	});
 
-	it("AC-CAL-03.5: a hover without the preview modifier asks for nothing", () => {
-		const request = planHoverPreview({
+	it("AC-CAL-03.5: emits on a plain hover too, leaving the modifier gate to Page preview", () => {
+		const request = hoverPreviewRequest({
 			event: makeClick(),
 			hoverParent,
 			targetEl,
-			notePath: pathFor("2026-04-13"),
+			notePath: pathFor(DAY),
 		});
 
-		expect(request).toBeNull();
+		expect(request.source).toBe(HOVER_LINK_SOURCE);
+		expect(request.linktext).toBe(pathFor(DAY));
 	});
 
 	it("AC-CAL-03.7: previews the missing note's own path and writes nothing", () => {
 		const ports = makePorts();
-		const notePath = pathFor("2026-04-13");
+		const notePath = pathFor(DAY);
 
-		const request = planHoverPreview({
+		const request = hoverPreviewRequest({
 			event: makeClick({ metaKey: true }),
 			hoverParent,
 			targetEl,
 			notePath,
 		});
 
-		expect(request?.linktext).toBe(notePath);
+		expect(request.linktext).toBe(notePath);
 		expect(ports.vault.contentAt(notePath)).toBeUndefined();
 		expect(ports.vault.createdFolders).toEqual([]);
 	});

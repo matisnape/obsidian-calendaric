@@ -1,4 +1,5 @@
 import type { Moment } from "moment";
+import { Notice, Platform } from "obsidian";
 import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
@@ -8,7 +9,7 @@ import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
-import { openOrCreateNote, planHoverPreview, type CreateRequest } from "./cellActions";
+import { hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
@@ -222,15 +223,22 @@ export class CalendarWidget implements HoverParent {
 		granularity: "day" | "week",
 		event: MouseEvent,
 	): Promise<void> {
-		await openOrCreateNote({
-			date,
-			granularity,
-			config: this.settings[granularity],
-			confirmBeforeCreate: this.settings.confirmBeforeCreate,
-			event,
-			ports: { vault: this.vault, vaultConfig: this.vaultConfig, workspace: this.workspace },
-			confirmCreate: (request) => this.askToCreate(request),
-		});
+		try {
+			await openOrCreateNote({
+				date,
+				granularity,
+				config: this.settings[granularity],
+				confirmBeforeCreate: this.settings.confirmBeforeCreate,
+				isMacOS: Platform.isMacOS,
+				event,
+				ports: { vault: this.vault, vaultConfig: this.vaultConfig, workspace: this.workspace },
+				confirmCreate: (request) => this.askToCreate(request),
+			});
+		} catch (error) {
+			// The click is the last caller: an unhandled rejection here would be
+			// a cell that silently does nothing.
+			new Notice(error instanceof Error ? error.message : "Calendaric could not open that note.");
+		}
 	}
 
 	private askToCreate(request: CreateRequest): Promise<boolean> {
@@ -244,12 +252,12 @@ export class CalendarWidget implements HoverParent {
 		});
 	}
 
-	/** Hands the hover to Obsidian's Page preview plugin, which owns the popover. */
+	/** Hands the hover to Obsidian's Page preview plugin, which owns both the popover and its modifier gate. */
 	private handleNoteHover(event: MouseEvent, targetEl: HTMLElement, notePath: string): void {
-		const preview = planHoverPreview({ event, hoverParent: this, targetEl, notePath });
-		if (preview) {
-			this.app.workspace.trigger("hover-link", preview);
-		}
+		this.app.workspace.trigger(
+			"hover-link",
+			hoverPreviewRequest({ event, hoverParent: this, targetEl, notePath }),
+		);
 	}
 
 	destroy(): void {

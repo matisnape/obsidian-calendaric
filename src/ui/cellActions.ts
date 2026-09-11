@@ -1,12 +1,11 @@
 import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
 import type { PeriodicConfig } from "../types";
-import type { VaultPort } from "../adapters/vaultPort";
+import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
-import type { WorkspacePort } from "../adapters/workspacePort";
+import type { LeafMode, WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "../notes/noteUtils";
 import { createNote } from "../notes/noteCreate";
-import { isMetaPressed, openNote } from "../notes/noteOpen";
 
 /**
  * What a day or week cell does when the user clicks or hovers it.
@@ -15,7 +14,8 @@ import { isMetaPressed, openNote } from "../notes/noteOpen";
  * Obsidian is the only place a `<td>` exists: the handler in `calendar.ts`
  * reads the event and the cell, and everything that can go wrong — a note
  * created before the user agreed to it, a split that forgets to create first,
- * a hover that writes to the vault — is settled by a test against the ports.
+ * two clicks racing for the same new note — is settled by a test against the
+ * ports.
  */
 
 type Granularity = "day" | "week";
@@ -48,9 +48,26 @@ export interface CellClick {
 	granularity: Granularity;
 	config: PeriodicConfig;
 	confirmBeforeCreate: boolean;
+	/** `Platform.isMacOS` — which modifier means "open in a split". */
+	isMacOS: boolean;
 	event: MouseEvent;
 	ports: CellPorts;
 	confirmCreate: ConfirmCreate;
+}
+
+/**
+ * Whether a click asked for a split pane.
+ *
+ * The two modifiers are not interchangeable. On macOS a Ctrl-click is the
+ * secondary click — the platform turns it into a context menu — so reading it
+ * as Cmd would split a pane the user never asked for.
+ *
+ * Duplicates US-NOTE-06's `isMetaPressed`, which this stack cannot reach:
+ * note-06 branches off master. Reconcile the two into one helper once both
+ * have merged.
+ */
+export function splitModifierPressed(event: MouseEvent, isMacOS: boolean): boolean {
+	return isMacOS ? event.metaKey : event.ctrlKey;
 }
 
 /**
@@ -60,13 +77,20 @@ export interface CellClick {
  * the answer is the only thing this decision needs from the dialog.
  */
 export async function openOrCreateNote(click: CellClick): Promise<void> {
-	const { date, granularity, config, event, ports } = click;
+	const { date, granularity, config, ports } = click;
 	const path = computeNotePath(date, config, ports.vaultConfig);
+	const mode: LeafMode = splitModifierPressed(click.event, click.isMacOS) ? "split" : "reuse";
 
 	const existing = ports.vault.getFile(path);
 	if (existing) {
-		await openNote(existing, event, ports.workspace);
+		await ports.workspace.openInLeaf(existing, mode);
 		return;
+	}
+
+	// Something that is not a note — a folder of the same name — already holds
+	// the path. Creating would fail deep inside the vault, so say so instead.
+	if (ports.vault.pathExists(path)) {
+		throw new Error(`A folder already uses ${path}, so the note cannot be created there.`);
 	}
 
 	if (click.confirmBeforeCreate) {
@@ -74,8 +98,34 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 		if (!accepted) return;
 	}
 
-	const created = await createNote(path, date, granularity, config, ports.vault);
-	await openNote(created, event, ports.workspace);
+	const created = await createNoteOrJoinTheWinner(path, date, granularity, config, ports.vault);
+	await ports.workspace.openInLeaf(created, mode);
+}
+
+/**
+ * Create the note, or open the one that appeared while this click was working.
+ *
+ * Every route from the look to the write crosses an await — the confirmation
+ * dialog, the template read — so a second click, a command, or the startup
+ * note can write the file in between. Both activations asked for the same
+ * note, so the loser opens the winner's file rather than reporting a failure
+ * the user cannot act on. A failure that left nothing behind is a real one and
+ * is rethrown.
+ */
+async function createNoteOrJoinTheWinner(
+	path: string,
+	date: Moment,
+	granularity: Granularity,
+	config: PeriodicConfig,
+	vault: VaultPort,
+): Promise<NoteFile> {
+	try {
+		return await createNote(path, date, granularity, config, vault);
+	} catch (error) {
+		const winner = vault.getFile(path);
+		if (!winner) throw error;
+		return winner;
+	}
 }
 
 /**
@@ -105,21 +155,22 @@ export interface HoverPreviewRequest {
 }
 
 /**
- * The preview to ask Obsidian for when a cell is hovered, or `null` while the
- * preview modifier is not held.
+ * The preview to ask Obsidian for when a cell is hovered.
+ *
+ * Emitted on every hover, modifier or not: the Page preview plugin holds this
+ * grid's own setting, registered with `defaultMod: true`, and reading the
+ * modifier here would override whatever the user chose there.
  *
  * `linktext` is the note's path whether or not that file exists. An unresolved
  * link is exactly what makes Obsidian's own popover say the note is not there
  * yet, so the hover never reads the vault and can never write to it.
  */
-export function planHoverPreview(hover: {
+export function hoverPreviewRequest(hover: {
 	event: MouseEvent;
 	hoverParent: HoverParent;
 	targetEl: HTMLElement;
 	notePath: string;
-}): HoverPreviewRequest | null {
-	if (!isMetaPressed(hover.event)) return null;
-
+}): HoverPreviewRequest {
 	return {
 		event: hover.event,
 		source: HOVER_LINK_SOURCE,

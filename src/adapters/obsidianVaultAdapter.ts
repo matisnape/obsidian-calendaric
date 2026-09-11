@@ -16,7 +16,8 @@ export class ObsidianVaultAdapter implements VaultPort {
 
 	getFile(path: string): NoteFile | null {
 		const file = this.app.vault.getAbstractFileByPath(path);
-		// A TFolder can sit at a note's path; openInLeaf would reject it later anyway.
+		// Only a note counts. A TFolder at the same path still answers pathExists,
+		// which is how callers tell "occupied" from "free".
 		return file instanceof TFile ? file : null;
 	}
 
