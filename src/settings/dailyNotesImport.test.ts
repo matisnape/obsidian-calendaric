@@ -11,6 +11,11 @@ import type {
 	CompanionPluginRead,
 	DailyNotesPluginState,
 } from "../adapters/companionPluginPort";
+import { ObsidianCompanionPluginAdapter } from "../adapters/obsidianCompanionPluginAdapter";
+import type { App } from "obsidian";
+
+/** The enabled arm of the port's state union, which the helpers below build. */
+type EnabledState = Extract<DailyNotesPluginState, { enabled: true }>;
 
 describe("planDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
@@ -114,7 +119,7 @@ describe("decideDailyNotesCard", () => {
 		return { readDailyNotes: () => read };
 	}
 
-	function readable(over: Partial<DailyNotesPluginState> = {}): CompanionPluginPort {
+	function readable(over: Partial<Omit<EnabledState, "enabled">> = {}): CompanionPluginPort {
 		return port({
 			ok: true,
 			value: {
@@ -128,13 +133,29 @@ describe("decideDailyNotesCard", () => {
 		});
 	}
 
+	const disabled = port({ ok: true, value: { enabled: false } });
+
 	it("hides the card when the companion plugin is absent (AC-MIG-01.6)", () => {
 		const card = decideDailyNotesCard(port({ ok: false, reason: "absent", problem: "gone" }), makeTarget());
 		expect(card.kind).toBe("hidden");
 	});
 
 	it("hides the card when the companion plugin is installed but off (AC-MIG-01.6)", () => {
-		expect(decideDailyNotesCard(readable({ enabled: false }), makeTarget()).kind).toBe("hidden");
+		expect(decideDailyNotesCard(disabled, makeTarget()).kind).toBe("hidden");
+	});
+
+	// AC-MIG-01.6 through the real adapter: a disabled core plugin carries no
+	// settings instance, and that must read as "hide", never as "broken".
+	it("hides the card for a disabled plugin that exposes no settings instance", () => {
+		const app = {
+			internalPlugins: { getPluginById: () => ({ enabled: false }) },
+		} as unknown as App;
+		const card = decideDailyNotesCard(new ObsidianCompanionPluginAdapter(app), makeTarget());
+		expect(card.kind).toBe("hidden");
+	});
+
+	it("still hides the card for a disabled plugin once the import has run", () => {
+		expect(decideDailyNotesCard(disabled, makeTarget({}, true)).kind).toBe("hidden");
 	});
 
 	// AC-ARCH-04.4: a mismatch surfaces as an explicit problem, never as a silent

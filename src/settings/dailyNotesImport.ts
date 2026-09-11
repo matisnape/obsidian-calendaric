@@ -64,8 +64,10 @@ export function decideDailyNotesCard(
 		return read.reason === "absent" ? { kind: "hidden" } : { kind: "unreadable", problem: read.problem };
 	}
 
-	const { enabled, format, folder, template, disable } = read.value;
-	if (!enabled) return { kind: "hidden" };
+	const state = read.value;
+	if (!state.enabled) return { kind: "hidden" };
+
+	const { format, folder, template, disable } = state;
 	if (target.hasMigratedDailyNoteSettings) return { kind: "still-active", disable };
 	return { kind: "offer", legacy: { format, folder, template }, disable };
 }

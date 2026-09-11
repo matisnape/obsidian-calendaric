@@ -15,12 +15,16 @@ function validPlugin(options: unknown = { format: "DD-MM-YYYY", folder: "Journal
 	return { enabled: true, instance: { options }, disable: vi.fn() };
 }
 
+function read(plugin: unknown) {
+	return new ObsidianCompanionPluginAdapter(makeApp(plugin)).readDailyNotes();
+}
+
 describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 	it("narrows a well-shaped plugin to the depended-on fields", () => {
-		const read = new ObsidianCompanionPluginAdapter(makeApp(validPlugin())).readDailyNotes();
-		expect(read.ok).toBe(true);
-		if (!read.ok) return;
-		expect(read.value).toMatchObject({
+		const result = read(validPlugin());
+		expect(result.ok).toBe(true);
+		if (!result.ok || !result.value.enabled) return;
+		expect(result.value).toMatchObject({
 			enabled: true,
 			format: "DD-MM-YYYY",
 			folder: "Journal",
@@ -29,110 +33,60 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 	});
 
 	it("reports the plugin as absent when the host has no internalPlugins registry", () => {
-		const read = new ObsidianCompanionPluginAdapter({} as unknown as App).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("absent");
-		expect(read.problem).toMatch(/registry/i);
+		const result = new ObsidianCompanionPluginAdapter({} as unknown as App).readDailyNotes();
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("absent");
+		expect(result.problem).toMatch(/registry/i);
 	});
 
 	it("reports the plugin as absent when the registry returns nothing", () => {
-		const read = new ObsidianCompanionPluginAdapter(makeApp(null)).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("absent");
-		expect(read.problem).toMatch(/not installed/i);
+		const result = read(null);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("absent");
+		expect(result.problem).toMatch(/not installed/i);
 	});
 
-	// AC-ARCH-04.4: a missing method is a shape mismatch, not a no-op.
-	it("reports a mismatch when the disable method is missing", () => {
-		const plugin = validPlugin();
-		delete (plugin as { disable?: unknown }).disable;
-		const read = new ObsidianCompanionPluginAdapter(makeApp(plugin)).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/disable/);
+	// A registry that exists but is not shaped like one is a broken assumption,
+	// not the ordinary case of a user without the plugin.
+	it("reports a mismatch when the registry is present but not a record", () => {
+		const app = { internalPlugins: "nonsense" } as unknown as App;
+		const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("mismatch");
 	});
 
-	// AC-ARCH-04.4: the defect this story was written for — a state container that
-	// needs an accessor, read as if it were a plain record of values.
-	it("reports a mismatch when the options container requires a subscribe accessor", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp(validPlugin({ subscribe: () => () => undefined })),
-		).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/accessor/i);
+	it("reports a mismatch when the registry exposes no getPluginById", () => {
+		const app = { internalPlugins: { plugins: {} } } as unknown as App;
+		const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("mismatch");
+		expect(result.problem).toMatch(/getPluginById/);
 	});
 
-	it("reports a mismatch when the options container requires a get accessor", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp(validPlugin({ get: () => ({ format: "YYYY" }) })),
-		).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/accessor/i);
+	it("reports a mismatch when the lookup returns a non-object instead of a plugin", () => {
+		const result = read(42);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("mismatch");
 	});
 
-	it("reports a mismatch when the instance is absent", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp({ enabled: true, disable: vi.fn() }),
-		).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/instance|options/i);
-	});
-
-	it("reports a mismatch when the options record is absent", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp({ enabled: true, instance: {}, disable: vi.fn() }),
-		).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/options/i);
-	});
-
-	it("reports a mismatch when enabled is not a boolean", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp({ enabled: "yes", instance: { options: {} }, disable: vi.fn() }),
-		).readDailyNotes();
-		expect(read.ok).toBe(false);
-		if (read.ok) return;
-		expect(read.reason).toBe("mismatch");
-		expect(read.problem).toMatch(/enabled/);
-	});
-
-	// AC-MIG-01.3 stays intact: a configured plugin that stored no values is a
-	// valid read whose empty strings the import layer replaces with defaults.
-	it("accepts an empty options record and reports empty values", () => {
-		const read = new ObsidianCompanionPluginAdapter(makeApp(validPlugin({}))).readDailyNotes();
-		expect(read.ok).toBe(true);
-		if (!read.ok) return;
-		expect(read.value).toMatchObject({ format: "", folder: "", template: "" });
-	});
-
-	it("drops a non-string value instead of passing it through", () => {
-		const read = new ObsidianCompanionPluginAdapter(
-			makeApp(validPlugin({ format: 7, folder: "Journal" })),
-		).readDailyNotes();
-		expect(read.ok).toBe(true);
-		if (!read.ok) return;
-		expect(read.value.format).toBe("");
-		expect(read.value.folder).toBe("Journal");
-	});
-
-	it("exposes disable as a no-argument call that confirms on the host", () => {
-		const plugin = validPlugin();
-		const read = new ObsidianCompanionPluginAdapter(makeApp(plugin)).readDailyNotes();
-		expect(read.ok).toBe(true);
-		if (!read.ok) return;
-		read.value.disable();
-		expect(plugin.disable).toHaveBeenCalledWith(true);
+	// The registry's own method may rely on its receiver; a detached call would
+	// throw or read the wrong state.
+	it("calls getPluginById with the registry as its receiver", () => {
+		const registry = {
+			id: "internal-plugins",
+			getPluginById(this: { id: string }, _id: string) {
+				if (this?.id !== "internal-plugins") throw new Error("lost receiver");
+				return validPlugin();
+			},
+		};
+		const app = { internalPlugins: registry } as unknown as App;
+		const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
+		expect(result.ok).toBe(true);
 	});
 
 	it("reads the daily-notes plugin id", () => {
@@ -140,5 +94,147 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		const app = { internalPlugins: { getPluginById } } as unknown as App;
 		new ObsidianCompanionPluginAdapter(app).readDailyNotes();
 		expect(getPluginById).toHaveBeenCalledWith("daily-notes");
+	});
+
+	// AC-MIG-01.6: a disabled companion plugin has no settings instance to read,
+	// so the disabled answer must not depend on one.
+	describe("a disabled plugin", () => {
+		it("reads as a successful disabled state even with no instance at all", () => {
+			const result = read({ enabled: false });
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+			expect(result.value.enabled).toBe(false);
+		});
+
+		it("reads as disabled even when the options container is malformed", () => {
+			const result = read({ enabled: false, instance: { options: "nonsense" } });
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+			expect(result.value.enabled).toBe(false);
+		});
+
+		it("reads as disabled even when the disable method is missing", () => {
+			const result = read({ enabled: false, instance: {} });
+			expect(result.ok).toBe(true);
+			if (!result.ok) return;
+			expect(result.value.enabled).toBe(false);
+		});
+	});
+
+	describe("an enabled plugin whose shape does not match", () => {
+		it("reports a mismatch when enabled is not a boolean", () => {
+			const result = read({ enabled: "yes", instance: { options: {} }, disable: vi.fn() });
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/enabled/);
+		});
+
+		// AC-ARCH-04.4: a missing method is a shape mismatch, not a no-op.
+		it("reports a mismatch when the disable method is missing", () => {
+			const plugin = validPlugin();
+			delete (plugin as { disable?: unknown }).disable;
+			const result = read(plugin);
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/disable/);
+		});
+
+		it("reports a mismatch when the instance is absent", () => {
+			const result = read({ enabled: true, disable: vi.fn() });
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/instance|options/i);
+		});
+
+		it("reports a mismatch when the options record is absent", () => {
+			const result = read({ enabled: true, instance: {}, disable: vi.fn() });
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/options/i);
+		});
+
+		// AC-ARCH-04.4: the defect this story was written for — a state container
+		// that needs an accessor, read as if it were a plain record of values.
+		it("reports a mismatch when the options container requires a subscribe accessor", () => {
+			const result = read(validPlugin({ subscribe: () => () => undefined }));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/accessor/i);
+		});
+
+		it("reports a mismatch when the options container requires a get accessor", () => {
+			const result = read(validPlugin({ get: () => ({ format: "YYYY" }) }));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/accessor/i);
+		});
+
+		// A number where a format string belongs is a wrong assumption about the
+		// companion plugin, so it is refused rather than read through as "".
+		it.each(["format", "folder", "template"])("reports a mismatch when %s is not a string", (key) => {
+			const result = read(validPlugin({ format: "YYYY", folder: "f", template: "t", [key]: 7 }));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toContain(key);
+		});
+	});
+
+	// The old plugin's contract, recorded in docs/mapping/calendaric-map.json:
+	// every combination of present and missing format/folder/template is normal,
+	// and an unstored value falls back rather than failing (AC-MIG-01.3).
+	describe("values the companion plugin never stored", () => {
+		it("accepts an empty options record and reports empty values", () => {
+			const result = read(validPlugin({}));
+			expect(result.ok).toBe(true);
+			if (!result.ok || !result.value.enabled) return;
+			expect(result.value).toMatchObject({ format: "", folder: "", template: "" });
+		});
+
+		it("accepts an absent format and reports it empty for the default to replace", () => {
+			const result = read(validPlugin({ folder: "Journal", template: "t/daily" }));
+			expect(result.ok).toBe(true);
+			if (!result.ok || !result.value.enabled) return;
+			expect(result.value.format).toBe("");
+			expect(result.value.folder).toBe("Journal");
+		});
+
+		it("accepts an explicitly empty format string", () => {
+			const result = read(validPlugin({ format: "", folder: "Journal", template: "t/daily" }));
+			expect(result.ok).toBe(true);
+			if (!result.ok || !result.value.enabled) return;
+			expect(result.value.format).toBe("");
+		});
+	});
+
+	it("exposes disable as a no-argument call that confirms on the host", () => {
+		const plugin = validPlugin();
+		const result = read(plugin);
+		expect(result.ok).toBe(true);
+		if (!result.ok || !result.value.enabled) return;
+		result.value.disable();
+		expect(plugin.disable).toHaveBeenCalledWith(true);
+	});
+
+	it("calls disable with the plugin as its receiver", () => {
+		const plugin = {
+			id: "daily-notes",
+			enabled: true,
+			instance: { options: {} },
+			disable(this: { id: string }, _confirm: boolean) {
+				if (this?.id !== "daily-notes") throw new Error("lost receiver");
+			},
+		};
+		const result = read(plugin);
+		expect(result.ok).toBe(true);
+		if (!result.ok || !result.value.enabled) return;
+		const { disable } = result.value;
+		expect(() => disable()).not.toThrow();
 	});
 });

@@ -11,13 +11,12 @@ const DAILY_NOTES_ID = "daily-notes";
  */
 const ACCESSOR_KEYS = ["subscribe", "get"] as const;
 
+const SETTING_KEYS = ["format", "folder", "template"] as const;
+
+type SettingKey = (typeof SETTING_KEYS)[number];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
-}
-
-function readString(record: Record<string, unknown>, key: string): string {
-	const value = record[key];
-	return typeof value === "string" ? value : "";
 }
 
 function absent<T>(problem: string): CompanionPluginRead<T> {
@@ -40,25 +39,44 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 		// App's public type carries no internal plugin registry, so the hop goes
 		// through unknown rather than any: nothing below is trusted until narrowed.
 		const registry: unknown = (this.app as unknown as Record<string, unknown>)["internalPlugins"];
-		if (!isRecord(registry) || typeof registry["getPluginById"] !== "function") {
+
+		// Only a missing registry is ordinary absence. One that exists in another
+		// shape means this code is wrong about the host it runs in.
+		if (registry === undefined || registry === null) {
 			return absent("Obsidian exposed no internal plugin registry to read Daily Notes from.");
 		}
+		if (!isRecord(registry)) {
+			return mismatch("Obsidian's internal plugin registry is not an object.");
+		}
 
-		const lookup = registry["getPluginById"] as (id: string) => unknown;
-		const plugin: unknown = lookup(DAILY_NOTES_ID);
-		if (!isRecord(plugin)) {
+		const lookup = registry["getPluginById"];
+		if (typeof lookup !== "function") {
+			return mismatch("Obsidian's internal plugin registry exposes no 'getPluginById' method.");
+		}
+
+		// Called on the registry, because the host's own method may read state
+		// from its receiver.
+		const plugin: unknown = (lookup as (this: unknown, id: string) => unknown).call(registry, DAILY_NOTES_ID);
+		if (plugin === undefined || plugin === null) {
 			return absent("The core Daily Notes plugin is not installed.");
 		}
+		if (!isRecord(plugin)) {
+			return mismatch("The core Daily Notes plugin is not an object.");
+		}
 
-		if (typeof plugin["enabled"] !== "boolean") {
+		const enabled = plugin["enabled"];
+		if (typeof enabled !== "boolean") {
 			return mismatch("The core Daily Notes plugin reported no usable 'enabled' flag.");
 		}
-		const enabled = plugin["enabled"];
 
-		if (typeof plugin["disable"] !== "function") {
+		// AC-MIG-01.6: a disabled plugin holds no settings instance, so the answer
+		// stops here rather than failing on options that legitimately do not exist.
+		if (!enabled) return { ok: true, value: { enabled: false } };
+
+		const hostDisable = plugin["disable"];
+		if (typeof hostDisable !== "function") {
 			return mismatch("The core Daily Notes plugin exposes no 'disable' method.");
 		}
-		const hostDisable = plugin["disable"] as (confirm: boolean) => void;
 
 		const instance = plugin["instance"];
 		if (!isRecord(instance)) {
@@ -77,15 +95,22 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 			);
 		}
 
+		const settings: Record<SettingKey, string> = { format: "", folder: "", template: "" };
+		for (const key of SETTING_KEYS) {
+			const value = options[key];
+			// An unstored value is ordinary and falls back downstream (AC-MIG-01.3),
+			// but a value of the wrong type is a wrong assumption and is refused.
+			if (value === undefined || value === null) continue;
+			if (typeof value !== "string") {
+				return mismatch(`The core Daily Notes plugin stored a non-string '${key}'.`);
+			}
+			settings[key] = value;
+		}
+
+		const hostCall = hostDisable as (this: unknown, confirm: boolean) => void;
 		return {
 			ok: true,
-			value: {
-				enabled,
-				format: readString(options, "format"),
-				folder: readString(options, "folder"),
-				template: readString(options, "template"),
-				disable: () => hostDisable.call(plugin, true),
-			},
+			value: { enabled: true, ...settings, disable: () => hostCall.call(plugin, true) },
 		};
 	}
 }

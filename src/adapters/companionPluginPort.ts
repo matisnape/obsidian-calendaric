@@ -3,19 +3,26 @@
  * verify another plugin's runtime object, so nothing outside this boundary may
  * describe it: a read that goes around this type is a read that can be wrong
  * about a plugin the user upgraded independently.
+ *
+ * The disabled case carries no settings, because a disabled companion plugin
+ * has no settings instance to read. Keeping the two apart means a plugin the
+ * user turned off cannot be reported as broken (AC-MIG-01.6).
  */
-export interface DailyNotesPluginState {
-	enabled: boolean;
-	format: string;
-	folder: string;
-	template: string;
-	/**
-	 * Turns the companion plugin off, already carrying the host's confirm flag.
-	 * A bound closure rather than a method, so a caller can hold it on its own
-	 * without losing the plugin object it belongs to.
-	 */
-	disable: () => void;
-}
+export type DailyNotesPluginState =
+	| { enabled: false }
+	| {
+			enabled: true;
+			format: string;
+			folder: string;
+			template: string;
+			/**
+			 * Turns the companion plugin off, already carrying the host's confirm
+			 * flag. Declared as taking no receiver, so a caller may hold it on its
+			 * own: the implementation has to close over the object it belongs to
+			 * rather than depend on how it is called.
+			 */
+			disable: (this: void) => void;
+	  };
 
 /**
  * Separates a plugin the user simply does not have from one whose object no
