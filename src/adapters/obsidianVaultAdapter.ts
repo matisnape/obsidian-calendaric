@@ -1,6 +1,16 @@
 import { TFile, TFolder } from "obsidian";
 import type { App } from "obsidian";
-import type { NoteFile, VaultPort } from "./vaultPort";
+import type { FoldState, NoteFile, VaultPort } from "./vaultPort";
+
+/**
+ * Obsidian's fold store is not part of the published API, so it is described
+ * here by the two calls this plugin makes and reached through a cast. Older
+ * versions may not carry it at all, which is why every use is guarded.
+ */
+interface FoldManager {
+	load(file: TFile): FoldState | null;
+	save(file: TFile, foldState: FoldState): Promise<void>;
+}
 
 /** Wires VaultPort to the real Obsidian Vault/MetadataCache API. */
 export class ObsidianVaultAdapter implements VaultPort {
@@ -42,5 +52,21 @@ export class ObsidianVaultAdapter implements VaultPort {
 
 	getTemplateFile(templatePath: string): NoteFile | null {
 		return this.app.metadataCache.getFirstLinkpathDest(templatePath, "");
+	}
+
+	readFoldState(file: NoteFile): FoldState | null {
+		const foldManager = this.foldManager();
+		if (!foldManager || !(file instanceof TFile)) return null;
+		return foldManager.load(file);
+	}
+
+	async applyFoldState(file: NoteFile, foldState: FoldState): Promise<void> {
+		const foldManager = this.foldManager();
+		if (!foldManager || !(file instanceof TFile)) return;
+		await foldManager.save(file, foldState);
+	}
+
+	private foldManager(): FoldManager | undefined {
+		return (this.app as App & { foldManager?: FoldManager }).foldManager;
 	}
 }

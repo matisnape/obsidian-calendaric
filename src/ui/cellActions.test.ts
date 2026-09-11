@@ -13,7 +13,7 @@ import {
 import { getMonthGrid } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
-import type { NoteFile, VaultPort } from "../adapters/vaultPort";
+import type { FoldState, NoteFile, VaultPort } from "../adapters/vaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import type { PeriodicConfig } from "../types";
@@ -155,6 +155,14 @@ class PortOverSharedVault implements VaultPort {
 	getTemplateFile(templatePath: string): NoteFile | null {
 		return this.shared.getTemplateFile(templatePath);
 	}
+
+	readFoldState(file: NoteFile): FoldState | null {
+		return this.shared.readFoldState(file);
+	}
+
+	applyFoldState(file: NoteFile, foldState: FoldState): Promise<void> {
+		return this.shared.applyFoldState(file, foldState);
+	}
 }
 
 /**
@@ -216,6 +224,19 @@ describe("openOrCreateNote", () => {
 		expect(confirm.asked).toEqual([]);
 		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
 		expect(ports.workspace.opened).toEqual([{ file: { path: pathFor(DAY) }, mode: "reuse" }]);
+	});
+
+	// The warning used to stop at a create path this file replaced, so it is
+	// asserted on the path a user actually takes: a click.
+	it("AC-NOTE-05.3: reports an unreadable template through the workspace, and still creates the note", async () => {
+		const ports = makePorts();
+
+		await clickDay(ports, { config: { ...dayConfig, templatePath: "Templates/missing.md" } });
+
+		expect(ports.vault.contentAt(pathFor(DAY))).toBe("");
+		expect(ports.workspace.notices).toEqual([
+			"Calendaric could not read the template: Templates/missing.md",
+		]);
 	});
 
 	it("AC-CAL-03.3: asks first, naming the day, while the file still does not exist", async () => {

@@ -83,7 +83,11 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 		if (!accepted) return;
 	}
 
-	const created = await createNoteOrJoinTheWinner(path, date, granularity, config, ports.vault);
+	// A template that cannot be read still yields a note, so the only way the user
+	// learns about it is a notice, and notices ride the workspace port.
+	const created = await createNoteOrJoinTheWinner(path, date, granularity, config, ports.vault, (message) =>
+		ports.workspace.showNotice(message),
+	);
 	await openNote(created, click.event, ports.workspace, path);
 }
 
@@ -103,10 +107,11 @@ async function createNoteOrJoinTheWinner(
 	granularity: Granularity,
 	config: PeriodicConfig,
 	vault: VaultPort,
+	warn: (message: string) => void,
 ): Promise<NoteFile> {
 	try {
 		return await createNoteInTurn(vault, path, () =>
-			createNote(path, date, granularity, config, vault),
+			createNote(path, date, granularity, config, vault, warn),
 		);
 	} catch (error) {
 		const winner = vault.getFile(path);

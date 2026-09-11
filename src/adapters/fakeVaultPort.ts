@@ -1,4 +1,4 @@
-import type { NoteFile, VaultPort } from "./vaultPort";
+import type { FoldState, NoteFile, VaultPort } from "./vaultPort";
 
 /** In-memory VaultPort substitute for tests — no running Obsidian required. */
 export class FakeVaultPort implements VaultPort {
@@ -6,8 +6,13 @@ export class FakeVaultPort implements VaultPort {
 	private files = new Map<string, string>();
 	private lostFolderRaces = new Set<string>();
 	private folderErrors = new Map<string, Error>();
+	private readErrors = new Map<string, Error>();
+	private foldStates = new Map<string, FoldState>();
+	private foldReadErrors = new Map<string, Error>();
+	private foldApplyErrors = new Map<string, Error>();
 	createdFolders: string[] = [];
 	createFileError: Error | null = null;
+	appliedFoldStates: { path: string; foldState: FoldState }[] = [];
 
 	/**
 	 * Arrange for another actor to win the race for this folder: the next
@@ -16,6 +21,21 @@ export class FakeVaultPort implements VaultPort {
 	 */
 	loseCreateFolderRace(path: string): void {
 		this.lostFolderRaces.add(path);
+	}
+
+	/** Arrange for `readFile` to fail on a file that is otherwise there to be found. */
+	failReadFile(path: string, error: Error): void {
+		this.readErrors.set(path, error);
+	}
+
+	/** Arrange for `readFoldState` to fail on a template that reads fine otherwise. */
+	failReadFoldState(path: string, error: Error): void {
+		this.foldReadErrors.set(path, error);
+	}
+
+	/** Arrange for `applyFoldState` to fail on a note that was already created. */
+	failApplyFoldState(path: string, error: Error): void {
+		this.foldApplyErrors.set(path, error);
 	}
 
 	/** Arrange for `createFolder(path)` to fail with the folder still absent. */
@@ -38,6 +58,10 @@ export class FakeVaultPort implements VaultPort {
 
 	seedFile(path: string, content: string): void {
 		this.files.set(path, content);
+	}
+
+	seedFoldState(path: string, foldState: FoldState): void {
+		this.foldStates.set(path, foldState);
 	}
 
 	contentAt(path: string): string | undefined {
@@ -79,6 +103,9 @@ export class FakeVaultPort implements VaultPort {
 	}
 
 	async readFile(file: NoteFile): Promise<string> {
+		const failure = this.readErrors.get(file.path);
+		if (failure) throw failure;
+
 		const content = this.files.get(file.path);
 		if (content === undefined) throw new Error(`File not found: ${file.path}`);
 		return content;
@@ -86,5 +113,17 @@ export class FakeVaultPort implements VaultPort {
 
 	getTemplateFile(templatePath: string): NoteFile | null {
 		return this.files.has(templatePath) ? { path: templatePath } : null;
+	}
+
+	readFoldState(file: NoteFile): FoldState | null {
+		const failure = this.foldReadErrors.get(file.path);
+		if (failure) throw failure;
+		return this.foldStates.get(file.path) ?? null;
+	}
+
+	async applyFoldState(file: NoteFile, foldState: FoldState): Promise<void> {
+		const failure = this.foldApplyErrors.get(file.path);
+		if (failure) throw failure;
+		this.appliedFoldStates.push({ path: file.path, foldState });
 	}
 }
