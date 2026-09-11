@@ -143,6 +143,36 @@ describe("parseFilename — a nested date fragment is still checked when no week
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-10");
 	});
+
+	it("rejects two disagreeing captures of the same field inside one nested fragment", () => {
+		// {{monday:YYYY/YYYY-MM-DD}} can only ever format both YYYYs to the
+		// same real year — a filename with two different years there could
+		// never come from any date.
+		const withMismatch = "YYYY-MM-DD, {{monday:YYYY/YYYY-MM-DD}}";
+		const result = parseFilename("2024-01-10, 1900/2024-01-08.md", withMismatch, false);
+		expect(result).toBeNull();
+	});
+
+	it("rejects a nested week-number token whose value doesn't belong to the real day", () => {
+		// {{monday:GGGG-[W]WW}} is a bizarre construction, but the same
+		// invariant that catches every other wrong nested fragment catches
+		// this one too, with no dedicated week-number-nesting logic needed.
+		const withNestedWeek = "YYYY-MM-DD, {{monday:GGGG-[W]WW}}";
+		const result = parseFilename("2024-01-10, 9999-W99.md", withNestedWeek, false);
+		expect(result).toBeNull();
+	});
+});
+
+describe("parseFilename — the core invariant: a match must reproduce its own text", () => {
+	it("round-trips an arbitrary date through an arbitrary format and back", () => {
+		const format = "YYYY/MM/YYYY-MM-DD, dddd";
+		const date = moment("2025-06-17"); // a Tuesday
+		const filename = formatWithWeekTokens(format, date) + ".md";
+		const result = parseFilename(filename, format, false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2025-06-17");
+		expect(result?.prefixMatch).toBe(false);
+	});
 });
 
 describe("parseFilename — locale week Monday selection holds for every week-start day", () => {
