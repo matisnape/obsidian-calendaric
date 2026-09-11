@@ -10,7 +10,7 @@
       "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
       "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "pn:calendar-set-model",
         "pn:get-active-calendar-set",

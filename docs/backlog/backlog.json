@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-11",
+    "generated": "2026-09-12",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -540,7 +540,7 @@
       "story": "As someone with a note-taking routine, I want each newly created periodic note to start from my configured template, so that I do not have to add the same headings and frontmatter by hand every time.",
       "rationale": "A template is the difference between a useful note and a blank file; it must apply every time a note is created, not just sometimes.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "dni:get-template-info",
         "calendaric:apply-template-on-create"
@@ -564,8 +564,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > renders the configured template into the note content (AC-NOTE-05.1) / > expands every token the template carries, not only the title (AC-NOTE-05.1) / > keeps the template content when its fold state cannot be read (AC-NOTE-05.1, AC-NOTE-05.4). Token expansion runs through the existing substituter from US-TPL-02 rather than a second implementation."
         },
         {
           "id": "AC-NOTE-05.2",
@@ -576,8 +576,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > creates the file with empty content when no template is configured (AC-NOTE-05.2), plus three inherited cases that assert the same clause from the folder-chain side (> writes the note even though the whole folder chain was missing / > creates no folder for a note at the vault root / > accepts a folder another actor created between the check and the call).",
           "failure_path": true
         },
         {
@@ -590,8 +590,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > warns by name about a template that cannot be found (AC-NOTE-05.3) / > still creates an empty note when the template read fails (AC-NOTE-05.3) / > creates an empty note when the configured template is absent. The warn callback was made a REQUIRED parameter during review, after the reviewer found both calendar creation paths omitting it -- so the visible warning cannot be silently dropped at a call site any more, which is what the second clause needs. That the Notice itself reaches the screen stays unobserved: main.ts has no test harness and the mocked Notice renders nothing.",
           "failure_path": true
         },
         {
@@ -603,8 +603,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > applies the template saved fold state to the new note (AC-NOTE-05.4) / > applies no fold state when the template has none saved (AC-NOTE-05.4) / > returns the created note even when applying the fold state fails (AC-NOTE-05.4). The criterion is testable_by integration and the port-level behaviour is what is proven: the tests show the fold state is read from the template and handed to the port with the right file and value. Whether Obsidian app.foldManager actually honours it is unverified -- that API is undocumented and needs a live host."
         }
       ]
     },
@@ -615,7 +615,7 @@
       "story": "As someone jumping between notes quickly, I want opening a note to reuse my current view by default but let me force a new tab or a split when I ask for it, so that navigating never fights the layout I already have open.",
       "rationale": "Where a note opens is as much a part of the experience as whether it opens at all.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calendaric:open-note-in-active-leaf",
         "calendaric:open-note-in-new-tab"
@@ -1778,7 +1778,7 @@
       "story": "As someone with a note open, I want the plugin to recognise it as a specific day's or week's note by its filename, preferring the most specific granularity, so that the calendar highlights the exact cell for the note I am looking at.",
       "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:get-date-uid-from-file"
       ],
@@ -1802,8 +1802,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.1 a daily filename under the daily folder > recognises the file as that day note / > recognises a note nested in a subfolder under the configured folder / > resolves against the default new-file folder when no folder is configured; > AC-FMT-07.1 a daily filename written in the vault locale > recognises a note whose weekday name came from the configured locale; > AC-FMT-07.1/.2 a vault whose locale rewrites digits > recognises the daily and weekly notes the plugin writes under the ar locale. Independently re-verified by the orchestrator with a throwaway probe: for en, pl, ar, ar-dz, de and fr, computeNotePath writes the filename and resolveFileDate reads it back to the same granularity -- and the probe is not vacuous, since moment genuinely writes ٢٠٢٦-٠٤-١٥ under ar. DEFERRED EXCEPTION, deliberate: adversarial escape grammars the settings UI cannot produce (a terminal backslash, and \\DDD following a bracket span) are not handled; recorded as accepted debt after three review rounds on the escape scanner rather than judged a failure."
         },
         {
           "id": "AC-FMT-07.2",
@@ -1814,8 +1814,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.2 a weekly filename that is no valid daily name > recognises the file as that week note; > AC-FMT-07.2 a weekly format written only with a weekday wrapper > recognises the note the plugin writes under that format / > partitions by ISO week, because the wrapper pins the name to the ISO Monday; > AC-FMT-07.2 day is tried before week > returns the day identity when one filename satisfies both formats; plus the ar-locale case above. The multi-wrapper ordering defect (only the first buildable candidate was validated) was found in review and fixed: candidates are now returned top-level-first and re-rendered until one validates."
         },
         {
           "id": "AC-FMT-07.3",
@@ -1826,8 +1826,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.3 a filename matching neither format > returns no identity for a name carrying extra text, with prefix matching off / > returns no identity for a name carrying no date at all.",
           "failure_path": true
         },
         {
@@ -1839,8 +1839,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.4 the identity equals the one computed elsewhere > produces the day identity the calendar grid produces for the same date / > produces the week identity the calendar grid produces for any day of that week / > gives the Sunday that ends the week the same identity as that week note / > does not give the Sunday of the previous week that week identity / > never gives a day-note and a week-note of the same date one identity; > AC-FMT-07.4 the configured week format decides the week > puts the Sunday that opens a locale week inside that week note / > keeps the Sunday that opens the next locale week out of it / > gives the two Sundays opposite answers under the two formats; > AC-FMT-07.4 identity agrees with the filename across a year boundary. SCOPE NOTE established in review: identity is a per-day property, not a row-stable one -- see the project memory note, row stability needs a filename-writer change and belongs to AC-FMT-03.2."
         },
         {
           "id": "AC-FMT-07.5",
@@ -1851,8 +1851,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.5 a daily filename outside the daily folder (vault root, a different folder, and a folder sharing a name prefix with the configured one). Mutation-checked by the implementer: forcing stripFolder to return the path unchanged fails 10 of 12 tests in that file.",
           "failure_path": true
         }
       ],
@@ -2490,7 +2490,7 @@
       "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:render-calendar-grid",
         "calendaric:calendar-month-grid-render"
@@ -2511,8 +2511,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.1: the grid is a full 6x7 rectangle > returns 6 rows of 7 days for 24 consecutive months and every week start / > covers 42 consecutive days with no gap or repeat / > still returns 6 rows for a 28-day February that starts on the week start. Evidence is on the grid data model, not the rendered table -- renderGrid (calendar.ts:142-197) is two unconditional loops over that data, which is code review rather than measurement."
         },
         {
           "id": "AC-CAL-01.2",
@@ -2524,8 +2524,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle > fills the leading cells with the trailing days of the previous month / > marks exactly the displayed month own days as not adjacent, in order. The visual distinction itself is a CSS opacity rule on the isAdjacentMonth flag, confirmed by code review."
         },
         {
           "id": "AC-CAL-01.3",
@@ -2537,8 +2537,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle > fills the trailing cells with the leading days of the next month / > marks exactly the displayed month own days as not adjacent, in order."
         },
         {
           "id": "AC-CAL-01.4",
@@ -2550,8 +2550,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.4: one anchor for the number, the dot and the click > row anchor matches the displayed number for weekStart=0..6 (14 cases across 2026-12-15 and 2027-01-15) / > numbers a Sunday-start row by its own week, not the previous one; > AC-CAL-01.4: the week number agrees with the weekly note name > matches the weekly note path of every row across the year boundary / > follows the locale week when the weekly note format uses ww / > ... uses WW; > AC-CAL-01.4: nested-only weekly formats > numbers every row to match the note path a nested-only format writes; plus src/ui/calendarDots.test.ts > DotScanner.getWeekNotePaths > scans exactly the rows the grid draws, one anchor per row / > finds the note of a Sunday-start row under the row own week. This criterion drove the real defect this ticket fixed: the displayed number and the note actually opened disagreed for any non-Monday week start."
         },
         {
           "id": "AC-CAL-01.5",
@@ -2563,7 +2563,7 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: the disabled-week-number-column branch is DOM-only (calendar.ts:105 for the header cell, calendar.ts:145 for the row cells, both on settings.showWeekNumbers). Code review says it is correct, but reading is not measuring. The repo has no jsdom harness and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass) that jsdom does not provide, so a rendering test needs a new dependency plus mocks for those helpers -- a separate story. This criterion blocks US-CAL-01 from reaching done until that harness exists."
         },
         {
           "id": "AC-CAL-01.6",
@@ -2574,8 +2574,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarUtils.test.ts > AC-CAL-01.6: dates stay correct across leap years and year boundaries > keeps 29 February inside a leap-year grid / > produces no 29 February in a non-leap year / > carries the next year on December trailing days / > carries the previous year on January leading days.",
           "failure_path": true
         }
       ],
@@ -2689,7 +2689,7 @@
       "story": "As someone keeping a daily journal, I want clicking any day in the grid to take me to that day's note, offering to create it if it does not exist yet, so that the grid is a single place to reach any day.",
       "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:day-cell-interactions",
         "calendaric:calendar-click-to-open-or-create",
@@ -2713,8 +2713,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.1 cases -- an existing note is opened through the workspace port in the active-pane mode, and nothing is written to the vault. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.2",
@@ -2725,8 +2725,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.2 cases (nine of them) -- a missing note is created and then opened, with no confirmation step, and concurrent activations create exactly one note. That last part took three review rounds: the coordination first keyed on nothing, then on the adapter instance (which is per calendar pane), and now on the underlying vault. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.3",
@@ -2739,8 +2739,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.3 cases -- the confirmation is requested BEFORE anything is written (asserted by checking the file does not exist at the moment of asking), and dismissing it creates nothing. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port.",
           "failure_path": true
         },
         {
@@ -2752,8 +2752,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.4 cases (six) -- the split destination is chosen on the platform-correct modifier, asserted separately for macOS and non-macOS after a first implementation treated Ctrl and Meta as equivalent everywhere, and the note is created first when missing. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port."
         },
         {
           "id": "AC-CAL-03.5",
@@ -2766,7 +2766,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: the criterion asks that the correct NATIVE preview of the note content appears near the cell. This plugin only emits the hover-link event and registers the source; the preview itself is rendered by Obsidian Page Preview plugin, honouring its own per-source modifier setting. Tests cover the payload and the modifier gate (src/ui/cellActions.test.ts, AC-CAL-03.5 cases), which is our whole half -- but whether a correct preview appears cannot be claimed from here and needs a live host."
         },
         {
           "id": "AC-CAL-03.6",
@@ -2778,8 +2778,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/cellActions.test.ts, the AC-CAL-03.6 cases -- a day from an adjacent month resolves to its own date and gets the same open-or-create treatment, and the click does not mutate the cell Moment. The criterion is testable_by manual, so the on-screen result is not observed here; what is proven is the decision this plugin makes and the call it hands to the port. The clause that the grid keeps showing the same month is structural: no month state reaches openOrCreateNote at all."
         },
         {
           "id": "AC-CAL-03.7",
@@ -2792,7 +2792,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "UNSETTLED, reported rather than judged: same boundary as AC-CAL-03.5. The test asserts the linktext handed over for a missing note and that nothing is written to the vault, but the \"note does not exist yet\" text comes from Obsidian, not from this plugin, so its appearance is unverified without a live host.",
           "failure_path": true
         }
       ],
@@ -3791,7 +3791,7 @@
       "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
       "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:calendar-set-model",
         "pn:get-active-calendar-set",
@@ -3818,8 +3818,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.1 every granularity owns its own five values."
         },
         {
           "id": "AC-SET-01.2",
@@ -3831,8 +3831,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.2 an allow-prefix-matching change touches one granularity only."
         },
         {
           "id": "AC-SET-01.3",
@@ -3845,8 +3845,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.3 an extra named group survives a load and save, for the two preservation clauses. The third clause (no create/rename/switch control is shown) is settled by code review: settings.ts has no configuration-group control at all -- every \"group\" identifier there names a per-granularity visual section (periodic-group), not a configuration set.",
           "failure_path": true
         },
         {
@@ -3859,8 +3859,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.4 disabling a granularity keeps its configured values."
         },
         {
           "id": "AC-SET-01.5",
@@ -3872,8 +3872,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.5 a fresh install has exactly one implicit group, on loadStoredConfig(undefined); this now describes real plugin behaviour because main.ts:105-113 routes loadSettings/saveSettings through loadStoredConfig/toSettings/applySettings. The second clause (the user is not asked to name, choose or create a group) is settled by code review as an absence: no such prompt or control exists in settings.ts or the modal. The criterion is testable_by integration and no run against a live Obsidian host was performed."
         }
       ]
     },

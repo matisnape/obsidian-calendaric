@@ -414,7 +414,7 @@
       "story": "As someone with a note-taking routine, I want each newly created periodic note to start from my configured template, so that I do not have to add the same headings and frontmatter by hand every time.",
       "rationale": "A template is the difference between a useful note and a blank file; it must apply every time a note is created, not just sometimes.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:get-template-info",
         "calendaric:apply-template-on-create"
@@ -489,7 +489,7 @@
       "story": "As someone jumping between notes quickly, I want opening a note to reuse my current view by default but let me force a new tab or a split when I ask for it, so that navigating never fights the layout I already have open.",
       "rationale": "Where a note opens is as much a part of the experience as whether it opens at all.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calendaric:open-note-in-active-leaf",
         "calendaric:open-note-in-new-tab"

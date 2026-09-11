@@ -624,7 +624,7 @@
       "story": "As someone with a note open, I want the plugin to recognise it as a specific day's or week's note by its filename, preferring the most specific granularity, so that the calendar highlights the exact cell for the note I am looking at.",
       "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:get-date-uid-from-file"
       ],
