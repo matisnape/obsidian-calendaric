@@ -152,11 +152,8 @@ interface BuiltDate {
 }
 
 /**
- * Builds one candidate date from the format's own (non-nested) fields.
- * A nested field (from {{weekday:fmt}}) never contributes here — it
- * describes a different day, not the format's own date — and any
- * inconsistency, in a nested or a top-level field alike, is caught
- * afterwards by matchOne's re-render comparison, not here.
+ * A nested field (from {{weekday:fmt}}) describes a different day, not the
+ * format's own date, so it never contributes here.
  */
 function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | null {
 	let year: number | undefined;
