@@ -1,5 +1,10 @@
 import type { App } from "obsidian";
-import type { CompanionPluginPort, CompanionPluginRead, DailyNotesPluginState } from "./companionPluginPort";
+import type {
+	CompanionPluginAction,
+	CompanionPluginPort,
+	CompanionPluginRead,
+	DailyNotesPluginState,
+} from "./companionPluginPort";
 
 const DAILY_NOTES_ID = "daily-notes";
 
@@ -50,37 +55,32 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 		}
 	}
 
-	disableDailyNotes(): void {
+	disableDailyNotes(): CompanionPluginAction {
 		try {
-			const plugin = this.findDailyNotes();
-			if (!isRecord(plugin)) return;
+			const found = this.findDailyNotes();
+			if (!found.ok) return { ok: false, problem: found.problem };
+
+			const plugin = found.value;
 			const hostDisable = plugin["disable"];
-			if (typeof hostDisable !== "function") return;
+			if (typeof hostDisable !== "function") {
+				return { ok: false, problem: "The core Daily Notes plugin exposes no 'disable' method." };
+			}
+
 			(hostDisable as (this: unknown, confirm: boolean) => void).call(plugin, true);
+			return { ok: true };
 		} catch (error) {
-			// The button that calls this exists only because a read just succeeded,
-			// so a failure here means the plugin changed underneath. The settings
-			// tab re-renders straight after and drops the card, which reports it.
-			console.error("Calendaric: the core Daily Notes plugin could not be disabled", error);
+			return { ok: false, problem: `Disabling the core Daily Notes plugin failed: ${describe(error)}` };
 		}
 	}
 
-	/** Looks the companion plugin up, preserving the registry as the receiver. */
-	private findDailyNotes(): unknown {
+	/**
+	 * Resolves the companion plugin object. Each hop is read exactly once and
+	 * the read value is what gets used, so a getter-backed or changing property
+	 * cannot validate on one read and differ on the next.
+	 */
+	private findDailyNotes(): CompanionPluginRead<Record<string, unknown>> {
 		// App's public type carries no internal plugin registry, so the hop goes
 		// through unknown rather than any: nothing below is trusted until narrowed.
-		const registry: unknown = (this.app as unknown as Record<string, unknown>)["internalPlugins"];
-		if (!isRecord(registry)) return undefined;
-
-		const lookup = registry["getPluginById"];
-		if (typeof lookup !== "function") return undefined;
-
-		// Called on the registry, because the host's own method may read state
-		// from its receiver.
-		return (lookup as (this: unknown, id: string) => unknown).call(registry, DAILY_NOTES_ID);
-	}
-
-	private narrowDailyNotes(): CompanionPluginRead<DailyNotesPluginState> {
 		const registry: unknown = (this.app as unknown as Record<string, unknown>)["internalPlugins"];
 
 		// Only a missing registry is ordinary absence. One that exists in another
@@ -91,11 +91,15 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 		if (!isRecord(registry)) {
 			return mismatch("Obsidian's internal plugin registry is not an object.");
 		}
-		if (typeof registry["getPluginById"] !== "function") {
+
+		const lookup = registry["getPluginById"];
+		if (typeof lookup !== "function") {
 			return mismatch("Obsidian's internal plugin registry exposes no 'getPluginById' method.");
 		}
 
-		const plugin = this.findDailyNotes();
+		// Called on the registry, because the host's own method may read state
+		// from its receiver.
+		const plugin: unknown = (lookup as (this: unknown, id: string) => unknown).call(registry, DAILY_NOTES_ID);
 		if (plugin === undefined || plugin === null) {
 			return absent("The core Daily Notes plugin is not installed.");
 		}
@@ -103,6 +107,14 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 			return mismatch("The core Daily Notes plugin is not an object.");
 		}
 
+		return { ok: true, value: plugin };
+	}
+
+	private narrowDailyNotes(): CompanionPluginRead<DailyNotesPluginState> {
+		const found = this.findDailyNotes();
+		if (!found.ok) return found;
+
+		const plugin = found.value;
 		const enabled = plugin["enabled"];
 		if (typeof enabled !== "boolean") {
 			return mismatch("The core Daily Notes plugin reported no usable 'enabled' flag.");

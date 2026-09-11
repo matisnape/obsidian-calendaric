@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import {
 	decideDailyNotesCard,
+	recordCompanionDisabled,
 	planDailyNotesImport,
 	applyDailyNotesImport,
 	DEFAULT_DAY_FORMAT,
@@ -204,5 +205,69 @@ describe("decideDailyNotesCard", () => {
 		]) {
 			expect(decideDailyNotesCard(port(read), makeTarget()).kind).not.toBe("offer");
 		}
+	});
+});
+
+// AC-ARCH-04.4 applied to a write: a disable that did not happen must not be
+// recorded as one, because recording it removes the import offer for good.
+describe("recordCompanionDisabled", () => {
+	it("records the migration when the companion plugin was disabled", () => {
+		const target = makeTarget();
+		expect(recordCompanionDisabled(target, { ok: true })).toBe(true);
+		expect(target.hasMigratedDailyNoteSettings).toBe(true);
+	});
+
+	it("records nothing when disabling failed", () => {
+		const target = makeTarget();
+		expect(recordCompanionDisabled(target, { ok: false, problem: "host refused" })).toBe(false);
+		expect(target.hasMigratedDailyNoteSettings).toBe(false);
+	});
+
+	it("leaves an already recorded migration alone when disabling failed", () => {
+		const target = makeTarget({}, true);
+		expect(recordCompanionDisabled(target, { ok: false, problem: "host refused" })).toBe(false);
+		expect(target.hasMigratedDailyNoteSettings).toBe(true);
+	});
+});
+
+describe("ObsidianCompanionPluginAdapter.disableDailyNotes outcome", () => {
+	function appWith(plugin: unknown): App {
+		return { internalPlugins: { getPluginById: () => plugin } } as unknown as App;
+	}
+
+	it("reports success when the host disabled the plugin", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({ enabled: true, instance: { options: {} }, disable: vi.fn() }),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(true);
+	});
+
+	it("reports the problem when the host throws", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({
+				enabled: true,
+				instance: { options: {} },
+				disable: () => {
+					throw new Error("host refused");
+				},
+			}),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+		if (outcome.ok) return;
+		expect(outcome.problem).toMatch(/host refused/);
+	});
+
+	it("reports the problem when the plugin is gone", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(appWith(null)).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+	});
+
+	it("reports the problem when the plugin exposes no disable method", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({ enabled: true, instance: { options: {} } }),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+		if (outcome.ok) return;
+		expect(outcome.problem).toMatch(/disable/);
 	});
 });

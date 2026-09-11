@@ -1,4 +1,4 @@
-import type { CompanionPluginPort } from "../adapters/companionPluginPort";
+import type { CompanionPluginAction, CompanionPluginPort } from "../adapters/companionPluginPort";
 
 /** Documented default used when the core plugin stored no format (AC-MIG-01.3). */
 export const DEFAULT_DAY_FORMAT = "YYYY-MM-DD";
@@ -112,6 +112,20 @@ export function applyDailyNotesImport(
 		if (confirmed.includes(field.key)) target.day[field.key] = field.incoming;
 	}
 	target.day.enabled = true;
+	target.hasMigratedDailyNoteSettings = true;
+	return true;
+}
+
+/**
+ * Records that the companion plugin was turned off, and only then. Recording a
+ * disable that did not happen retires the import offer permanently, leaving the
+ * user no way back to the only path into that feature (AC-ARCH-04.4).
+ */
+export function recordCompanionDisabled(
+	target: Pick<DailyNotesImportTarget, "hasMigratedDailyNoteSettings">,
+	outcome: CompanionPluginAction,
+): boolean {
+	if (!outcome.ok) return false;
 	target.hasMigratedDailyNoteSettings = true;
 	return true;
 }

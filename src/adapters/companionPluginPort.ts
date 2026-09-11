@@ -28,6 +28,13 @@ export type CompanionPluginRead<T> =
 	| { ok: true; value: T }
 	| { ok: false; reason: CompanionPluginReadFailure; problem: string };
 
+/**
+ * The outcome of asking a companion plugin to do something. A void return would
+ * let a failed write look like a completed one, and a caller that then records
+ * the write as done cannot be corrected afterwards.
+ */
+export type CompanionPluginAction = { ok: true } | { ok: false; problem: string };
+
 export interface CompanionPluginPort {
 	readDailyNotes(): CompanionPluginRead<DailyNotesPluginState>;
 
@@ -37,5 +44,5 @@ export interface CompanionPluginPort {
 	 * let an implementation supply a method that silently depends on a receiver
 	 * the caller does not have, which no function type can rule out.
 	 */
-	disableDailyNotes(): void;
+	disableDailyNotes(): CompanionPluginAction;
 }

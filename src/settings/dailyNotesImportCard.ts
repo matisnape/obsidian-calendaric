@@ -3,6 +3,7 @@ import {
 	decideDailyNotesCard,
 	planDailyNotesImport,
 	applyDailyNotesImport,
+	recordCompanionDisabled,
 } from "./dailyNotesImport";
 import type { DailyNotesImportKey, LegacyDailyNoteSettings } from "./dailyNotesImport";
 import { DailyNotesImportConflictModal } from "./dailyNotesImportModal";
@@ -72,7 +73,11 @@ function renderStillActiveNotice(
 	const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
 	disableBtn.addEventListener("click", async () => {
-		companion.disableDailyNotes();
+		const outcome = companion.disableDailyNotes();
+		if (!outcome.ok) {
+			new Notice(`Could not disable the core Daily Notes plugin. ${outcome.problem}`);
+			return;
+		}
 		await actions.save();
 		actions.refresh();
 	});
@@ -128,8 +133,13 @@ function renderOffer(
 
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
 	disableBtn.addEventListener("click", async () => {
-		companion.disableDailyNotes();
-		settings.hasMigratedDailyNoteSettings = true;
+		const outcome = companion.disableDailyNotes();
+		if (!outcome.ok) {
+			// The offer stays on screen, because it is still the only way in.
+			new Notice(`Could not disable the core Daily Notes plugin, so nothing was changed. ${outcome.problem}`);
+			return;
+		}
+		recordCompanionDisabled(settings, outcome);
 		await actions.save();
 		actions.refresh();
 	});
