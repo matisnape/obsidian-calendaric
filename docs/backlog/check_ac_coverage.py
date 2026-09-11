@@ -108,13 +108,27 @@ def load_criteria(epics_dir):
     return out
 
 
-def test_titles(root):
-    """Full test titles from a real vitest run.
+def parse_report(data):
+    """Full test titles out of a vitest JSON report."""
+    return [a["fullName"]
+            for suite in data.get("testResults", [])
+            for a in suite.get("assertionResults", [])]
+
+
+def test_titles(root, report_path=None):
+    """Full test titles, from a real vitest run unless a report is supplied.
 
     A run rather than a grep of the sources, because a title assembled at
     runtime — a `describe.each` table, a template literal — still counts as
     naming its criterion, and static parsing would miss it.
+
+    `report_path` reads a report somebody else already produced. --self-check
+    uses it to drive main() over synthetic reports, and a caller that has just
+    run the suite can pass its report instead of paying for a second run.
     """
+    if report_path is not None:
+        return parse_report(json.loads(pathlib.Path(report_path).read_text()))
+
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
         report = pathlib.Path(tmp.name)
     try:
@@ -129,9 +143,7 @@ def test_titles(root):
         data = json.loads(report.read_text())
     finally:
         report.unlink(missing_ok=True)
-    return [a["fullName"]
-            for suite in data.get("testResults", [])
-            for a in suite.get("assertionResults", [])]
+    return parse_report(data)
 
 
 def tagged_ids(titles):
@@ -252,24 +264,108 @@ def self_check():
     assert not claims_a_test("code review: settings.ts renders the banner")
     assert not claims_a_test("detect-ci-gates.sh re-run: source=github-checks")
 
+    end_to_end_check()
+
     print("self-check passed: unbacked test claims and dangling refs fail, "
-          "review-backed passes are listed not failed, honest gaps stay quiet")
+          "review-backed passes are listed not failed, honest gaps stay quiet, "
+          "and main() returns the exit codes those verdicts call for")
 
 
-def main():
+SYNTHETIC_EPIC = {
+    "epic": "NOTE",
+    "stories": [{
+        "id": "US-NOTE-03",
+        "acceptance_criteria": [
+            {"id": "AC-NOTE-03.1", "status": "pass",
+             "evidence": "vitest: src/notes/noteCreate.test.ts > creates it"},
+            {"id": "AC-NOTE-03.2", "status": "pass",
+             "evidence": "code review: the folder walk is top down"},
+            {"id": "AC-NOTE-03.3", "status": "unverified", "evidence": None},
+        ],
+    }],
+}
+
+
+def vitest_report(*titles):
+    """A report in the shape vitest --reporter=json really emits."""
+    return {"testResults": [{"assertionResults":
+                             [{"fullName": x} for x in titles]}]}
+
+
+def end_to_end_check():
+    """Drive main() itself, not only the classifier it calls.
+
+    The classifier was well covered and the thing feeding it was not, so this
+    ran green while title collection returned nothing or while normal mode
+    always exited 0. Each case below asserts the process exit code, because
+    that is the only part of this script CI reads.
+    """
+    import contextlib
+    import io
+
+    def run(report, *flags):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = pathlib.Path(tmp)
+            (tmp / "NOTE.json").write_text(json.dumps(SYNTHETIC_EPIC))
+            (tmp / "report.json").write_text(json.dumps(report))
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                code = main(["--epics-dir", str(tmp),
+                             "--vitest-json", str(tmp / "report.json"), *flags])
+            return code, out.getvalue()
+
+    named = vitest_report("noteCreate > AC-NOTE-03.1: creates it")
+
+    # A tagged test claim and a review-backed verdict together exit 0: rule 2
+    # is listed, and listing must not fail the build.
+    code, out = run(named)
+    assert code == 0, (code, out)
+    assert "AC-NOTE-03.2" in out and "NO REGRESSION" in out, out
+
+    # The same catalogue with the id missing from the title exits 1. Without
+    # this, `return 1 if ...` could become `return 0` and nothing would notice.
+    code, out = run(vitest_report("noteCreate > creates it"))
+    assert code == 1, (code, out)
+    assert "UNBACKED TEST CLAIMS (1)" in out, out
+
+    # --report-only prints the same finding and still exits 0.
+    code, out = run(vitest_report("noteCreate > creates it"), "--report-only")
+    assert code == 0, (code, out)
+    assert "UNBACKED TEST CLAIMS (1)" in out, out
+    assert "report-only" in out, out
+
+    # A test naming an id no epic file defines exits 1 on its own.
+    code, out = run(vitest_report("noteCreate > AC-NOTE-03.1: creates it",
+                                  "stray > AC-ZZZ-01.1: renumbered away"))
+    assert code == 1, (code, out)
+    assert "DANGLING REFERENCES (1)" in out and "AC-ZZZ-01.1" in out, out
+
+    # Title collection returning nothing must not read as "all clear". Both an
+    # empty run and a report whose shape this script cannot read go red.
+    for empty in ({"testResults": []}, {}, vitest_report()):
+        code, out = run(empty)
+        assert code == 1, (empty, code, out)
+        assert "0 criteria named by tests" in out, out
+
+
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--report-only", action="store_true",
                     help="print the findings but always exit 0")
     ap.add_argument("--self-check", action="store_true",
                     help="run this script's own assertions and exit")
-    args = ap.parse_args()
+    ap.add_argument("--epics-dir", type=pathlib.Path, default=EPICS_DIR,
+                    help="catalogue to read (default: ./epics)")
+    ap.add_argument("--vitest-json", type=pathlib.Path, default=None,
+                    help="read this vitest JSON report instead of running vitest")
+    args = ap.parse_args(argv)
 
     if args.self_check:
         self_check()
         return 0
 
-    criteria = load_criteria(EPICS_DIR)
-    tagged = tagged_ids(test_titles(REPO_ROOT))
+    criteria = load_criteria(args.epics_dir)
+    tagged = tagged_ids(test_titles(REPO_ROOT, args.vitest_json))
     unbacked, no_regression, dangling = check(criteria, tagged)
     report(unbacked, no_regression, dangling, len(tagged))
 
