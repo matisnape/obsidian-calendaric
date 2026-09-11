@@ -6436,8 +6436,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts — createNote/openNote/openNoteInNewTab now take VaultPort/WorkspacePort instead of the raw Obsidian App; all covered by FakeVaultPort/FakeWorkspacePort."
         },
         {
           "id": "AC-ARCH-03.2",
@@ -6449,8 +6449,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "FakeVaultPort/FakeWorkspacePort cover file read/write/create and workspace pane opening (src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts). Companion-plugin lookup is already exercised without a running Obsidian by the pre-existing src/settings/dailyNotesImport.test.ts (its own hand-rolled App substitute, predating this ticket) — the capability is not left uncovered, though it is not yet unified under this ticket's VaultPort/WorkspacePort shape; that unification is US-ARCH-01/02 territory, not this ticket's."
         },
         {
           "id": "AC-ARCH-03.3",
@@ -6462,8 +6462,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts — 'creates the missing target folder', 'propagates the failure when a note already exists', 'creates an empty note when the configured template is absent', plus two seam-only proofs for 'invalid filename format' and 'unparseable date string' (FMT validation logic itself does not exist yet; these prove the port carries the rejection through).",
           "failure_path": true
         },
         {
@@ -6475,8 +6475,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "grep confirms src/notes/templateTokens.ts has no obsidian import; vitest: src/notes/templateTokens.test.ts (13 tests) runs with no obsidian module resolution."
         },
         {
           "id": "AC-ARCH-03.5",
@@ -6487,9 +6487,10 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
-          "failure_path": true
+          "status": "n-a",
+          "evidence": "Descoped by the orchestrator's own dispatch brief, section 5 (out of scope: building the automated CI coverage gate).",
+          "failure_path": true,
+          "not_applicable_because": "Building an enforced, automated CI coverage gate for this criterion was explicitly out of scope for this ticket (orchestrator's own dispatch brief, section 5): a hand-written test alongside new vault-touching code satisfies the ticket procedurally. The automated gate itself is real follow-up work, not yet a story."
         }
       ]
     },

@@ -206,8 +206,8 @@
       "id": "US-ARCH-03",
       "epic": "ARCH",
       "title": "Testable without a running Obsidian",
-      "story": "As someone maintaining Calendaric, I want the logic that decides what happens — not only pure date math — to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
-      "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths — a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date — that this epic's testing seam must make reachable.",
+      "story": "As someone maintaining Calendaric, I want the logic that decides what happens \u2014 not only pure date math \u2014 to be verifiable by an automated test, so that a change to note creation, settings resolution, or cross-plugin detection is checked by a test run instead of a manual reload-and-click pass.",
+      "rationale": "The target repository currently tests only pure functions; everything that touches the Obsidian API is untested, and its test double covers only three classes. Other epics list failure paths \u2014 a missing folder, an invalid format, a file that already exists, an absent template, an unparseable date \u2014 that this epic's testing seam must make reachable.",
       "priority": "must",
       "status": "in-progress",
       "covers": [],
@@ -228,8 +228,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts \u2014 createNote/openNote/openNoteInNewTab now take VaultPort/WorkspacePort instead of the raw Obsidian App; all covered by FakeVaultPort/FakeWorkspacePort."
         },
         {
           "id": "AC-ARCH-03.2",
@@ -241,8 +241,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "FakeVaultPort/FakeWorkspacePort cover file read/write/create and workspace pane opening (src/notes/noteCreate.test.ts, src/notes/noteOpen.test.ts). Companion-plugin lookup is already exercised without a running Obsidian by the pre-existing src/settings/dailyNotesImport.test.ts (its own hand-rolled App substitute, predating this ticket) \u2014 the capability is not left uncovered, though it is not yet unified under this ticket's VaultPort/WorkspacePort shape; that unification is US-ARCH-01/02 territory, not this ticket's."
         },
         {
           "id": "AC-ARCH-03.3",
@@ -254,8 +254,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts \u2014 'creates the missing target folder', 'propagates the failure when a note already exists', 'creates an empty note when the configured template is absent', plus two seam-only proofs for 'invalid filename format' and 'unparseable date string' (FMT validation logic itself does not exist yet; these prove the port carries the rejection through).",
           "failure_path": true
         },
         {
@@ -267,8 +267,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "grep confirms src/notes/templateTokens.ts has no obsidian import; vitest: src/notes/templateTokens.test.ts (13 tests) runs with no obsidian module resolution."
         },
         {
           "id": "AC-ARCH-03.5",
@@ -279,9 +279,10 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
-          "failure_path": true
+          "status": "n-a",
+          "evidence": "Descoped by the orchestrator's own dispatch brief, section 5 (out of scope: building the automated CI coverage gate).",
+          "failure_path": true,
+          "not_applicable_because": "Building an enforced, automated CI coverage gate for this criterion was explicitly out of scope for this ticket (orchestrator's own dispatch brief, section 5): a hand-written test alongside new vault-touching code satisfies the ticket procedurally. The automated gate itself is real follow-up work, not yet a story."
         }
       ]
     },
@@ -376,7 +377,7 @@
       "epic": "ARCH",
       "title": "Adding a granularity or a calendar indicator is a small, localised change",
       "story": "As the person adding a new period type or a new calendar indicator later, I want that addition to touch a small, predictable set of files, so that extending Calendaric never means relearning or rewriting the whole plugin.",
-      "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended — the new contract must not repeat that failure mode.",
+      "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended \u2014 the new contract must not repeat that failure mode.",
       "priority": "must",
       "status": "todo",
       "covers": [],
@@ -651,7 +652,7 @@
       "epic": "ARCH",
       "title": "User-facing documentation matches verified behaviour",
       "story": "As a Calendaric user reading the format-and-template guide, I want every behaviour it documents to match what the plugin actually does, so that I can trust the documentation instead of discovering the real behaviour by trial and error.",
-      "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting — the documented and the implemented behaviour disagree today.",
+      "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting \u2014 the documented and the implemented behaviour disagree today.",
       "priority": "should",
       "status": "todo",
       "covers": [],
