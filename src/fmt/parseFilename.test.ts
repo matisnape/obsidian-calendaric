@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
 import moment from "moment";
+// Importing a locale makes it active, so pin the default back for every
+// test that does not ask for another one.
+import "moment/locale/pl";
+moment.locale("en");
 import { parseFilename } from "./parseFilename";
 import { formatWithWeekTokens } from "../notes/noteUtils";
 
@@ -552,5 +556,48 @@ describe("parseFilename — a locale whose week starts mid-week", () => {
 				}
 			}
 		}
+	});
+});
+
+describe("parseFilename — month and weekday names follow the active locale", () => {
+	// The plugin lets the vault owner override moment's locale (main.ts wires
+	// the setting to moment.locale), and the writer formats names with it. A
+	// parser that only knows English cannot read a name its own writer wrote.
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	for (const [format, expected] of [
+		["YYYY-MM-DD[, ]dddd", "2026-04-15, środa"],
+		["YYYY-MMMM-DD", "2026-kwiecień-15"],
+		["YYYY-MMM-DD", "2026-kwi-15"],
+		["YYYY-MM-DD[ ]dd", "2026-04-15 Śr"],
+	] as const) {
+		it(`round-trips "${format}" under the pl locale`, () => {
+			moment.locale("pl");
+			const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+			expect(written).toBe(expected);
+			expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+		});
+	}
+
+	it("round-trips a format whose month takes the locale's inflected form", () => {
+		// pl writes "kwiecień" standalone but "kwietnia" after a day number, and
+		// the parser has to accept whichever one this format produces. moment
+		// picks the inflected form off the format string's own shape, so the
+		// separator here is a real space, not a [ ] escape.
+		moment.locale("pl");
+		const format = "D MMMM YYYY";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("15 kwietnia 2026");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+	});
+
+	it("still rejects an English month name once the locale is Polish", () => {
+		moment.locale("pl");
+
+		expect(parseFilename("2026-April-15", "YYYY-MMMM-DD", false)).toBeNull();
 	});
 });

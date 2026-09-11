@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import moment from "moment";
+// Importing a locale makes it active, so pin the default back for every
+// test that does not ask for another one.
+import "moment/locale/pl";
+moment.locale("en");
 import { resolveFileDate } from "./resolveFileDate";
 import { computeNoteDate } from "./noteDate";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
@@ -40,6 +44,22 @@ describe("resolveFileDate — AC-FMT-07.1 a daily filename under the daily folde
 
 		expect(resolveFileDate("Journal/2026-04-13.md", configs, vaultConfig)?.granularity).toBe("day");
 		expect(resolveFileDate("2026-04-13.md", configs, vaultConfig)).toBeNull();
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.1 a daily filename written in the vault's locale", () => {
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it("recognises a note whose weekday name came from the configured locale", () => {
+		moment.locale("pl");
+		const configs = { day: config("YYYY-MM-DD[, ]dddd", "Daily"), week: config("GGGG-[W]WW", "Weekly") };
+
+		const result = resolveFileDate("Daily/2026-04-15, środa.md", configs, NO_DEFAULT_FOLDER);
+
+		expect(result?.granularity).toBe("day");
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 });
 
