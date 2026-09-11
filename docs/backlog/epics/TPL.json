@@ -10,7 +10,7 @@
       "story": "As someone applying a template to a new periodic note, I want {{date}}, {{date:FORMAT}}, {{time}}, {{title}}, and date-arithmetic tokens like {{date+1d:FORMAT}} filled in automatically, so that the note already carries the right day, time, and name without me typing them by hand.",
       "rationale": "These tokens apply to every granularity, so their exact output is the baseline the rest of the token system builds on.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "dni:template-token-date-time-calc",
         "pn:template-token-expansion",
@@ -39,8 +39,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:21 uses the note's own date, and :26 proves the granularity's configured format is what renders it, not a fixed default (DD.MM.YYYY yields 13.04.2026). Production: formatWithWeekTokens(config.format, date) at src/notes/templateTokens.ts:76-77."
         },
         {
           "id": "AC-TPL-01.2",
@@ -52,8 +52,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Both directions asserted, which is what this criterion is about: a {{date}} that FOLLOWS a {{date:FORMAT}} and one that PRECEDES it are each substituted independently. The custom-format pass at src/notes/templateTokens.ts:73 runs before the plain pass at :76-77, so the ordering is deliberate rather than incidental."
         },
         {
           "id": "AC-TPL-01.3",
@@ -65,8 +65,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts, describe with a fake clock at 09:07 and a note date carrying 14:30. Three tests assert 09:07 and not 14:30, including one where the note date is midnight. Production: window.moment() at src/notes/templateTokens.ts:82, not the date parameter. Mutation-checked by the orchestrator: rewiring it to date.format(\"HH:mm\") fails 3 of 36 tests. This is a behaviour FIX -- the previous test asserted the note date's time, which was the bug."
         },
         {
           "id": "AC-TPL-01.4",
@@ -78,8 +78,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The substitution-level test is tautological on its own, so the evidence is the creation-level one: src/notes/noteCreate.test.ts asserts journal/daily/Monday review.md yields \"# Monday review\". Production: src/notes/noteCreate.ts:119, notePath.split(\"/\").pop()?.replace(/\\.md$/, \"\") -- the filename at the moment substitution runs, with the extension removed."
         },
         {
           "id": "AC-TPL-01.5",
@@ -91,8 +91,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: eight tests in the date-arithmetic describe of src/notes/templateTokens.test.ts -- forward and backward, an explicit FORMAT and none (falling back to the configured format), every supported unit, month and year boundaries, week-token parity with computeNotePath, weekly granularity, and a spy test proving the note's own date is not mutated. Production: the token regex at src/notes/templateTokens.ts:32 and the shift at :64-70. Units are d/w/M/y and deliberately not h/m/s, documented in a ponytail: comment at :12-14; every release granularity is a whole day or longer."
         },
         {
           "id": "AC-TPL-01.6",
@@ -104,8 +104,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: three tests in src/notes/templateTokens.test.ts -- a missing unit letter, a malformed token with no FORMAT, and a malformed token sitting beside valid ones, the last asserting the mixed output string verbatim so a deletion elsewhere in the body would be caught. Production: src/notes/templateTokens.ts:65-66 returns the match unchanged when the duration is undefined, so nothing throws and nothing is removed.",
           "failure_path": true
         }
       ]
