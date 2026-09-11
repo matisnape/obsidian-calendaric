@@ -8,7 +8,9 @@ judged against the acceptance criteria; an agent that validates the work reads
 them and records a verdict.
 
 Browse it at `docs/calendaric.html`. Work with `backlog.json`. Report on it with
-`report.py`.
+`report.py`. An agent that picks up a story, opens a branch and records a status
+reads `AGENT.md` instead of this file — that is the operating manual, this is
+the description.
 
 ```bash
 cd docs && python3 -m http.server 8973
@@ -55,8 +57,9 @@ release must not preclude.
 
 ## Statuses
 
-A story moves through `todo` → `in-progress` → `done`, or sits in `blocked`.
-Each criterion carries its own verdict: `unverified`, `pass`, `fail` or `n-a`,
+A story moves through `todo` → `in-progress` → `in-review` → `done`, or sits in
+`blocked`. `in-review` means the pull request is open and the work is waiting on
+a reviewer. Each criterion carries its own verdict: `unverified`, `pass`, `fail` or `n-a`,
 plus an `evidence` string naming the test or the observation behind it.
 
 Statuses live in the epic files under `epics/`, so they are plain data in git —
@@ -68,6 +71,7 @@ an agent records a verdict by editing the epic file and re-running
 ```bash
 python3 build_backlog.py         # merge epics/ into backlog.json, and validate
 python3 report.py                # progress per epic, failures, blocked, open questions
+python3 report.py --next         # stories that can start now, with the branch name for each
 python3 report.py --agent        # every criterion still outstanding, grouped by epic
 python3 report.py --story US-NOTE-03
 python3 set_status.py US-NOTE-03 in-progress   # the board is read-only; this is the write side

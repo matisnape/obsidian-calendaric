@@ -54,6 +54,7 @@
   .badge.ice { background:rgba(139,214,255,.13); color:#8bd6ff; }
   .badge.unverified,.badge.todo { background:#232838; color:var(--dim); }
   .badge.in-progress { background:rgba(189,140,255,.16); color:var(--purple); border-color:rgba(189,140,255,.34); }
+  .badge.in-review { background:rgba(139,214,255,.16); color:#8bd6ff; border-color:rgba(139,214,255,.34); }
   code,.mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
   .path { color:var(--dim); }
   .note { color:var(--dim); font-size:12.5px; margin-top:4px; }
@@ -391,7 +392,7 @@ function render(rebuild = true) {
 Promise.all([
   fetch(MAP_FILE).then(r => { if (!r.ok) throw new Error(`${MAP_FILE}: ${r.status}`); return r.json(); }),
   fetch(BACKLOG_FILE).then(r => r.ok ? r.json()
-    : { meta:{ story_statuses:["todo","in-progress","blocked","done"] }, epics:[], stories:[], icebox:[],
+    : { meta:{ story_statuses:["todo","in-progress","in-review","blocked","done"] }, epics:[], stories:[], icebox:[],
         coverage:{ excused:[] } }),
 ]).then(([m, b]) => {
   MAP = m; BL = b;

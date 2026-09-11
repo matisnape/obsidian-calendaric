@@ -4,6 +4,7 @@
 Two audiences:
 
   python3 report.py            progress by epic, and what is blocked or failing
+  python3 report.py --next     the stories that can start now, with their branch names
   python3 report.py --agent    the criteria a building agent still has to satisfy
   python3 report.py --story US-NOTE-03    one story in full
 
@@ -12,6 +13,7 @@ the epic file and re-running build_backlog.py.
 """
 import json
 import pathlib
+import re
 import sys
 from collections import Counter, defaultdict
 
@@ -109,6 +111,39 @@ def agent_view():
             print(f"  [{a.get('testable_by')}] [{a.get('verifies')}] status={a.get('status')}")
 
 
+def branch_name(story):
+    """The branch an agent opens for this story: cal-14-<slug of the title>."""
+    name = story["id"].removeprefix("US-").lower()
+    for word in re.sub(r"[^a-z0-9]+", " ", story["title"].lower()).split():
+        if len(name) + 1 + len(word) > 60:
+            break
+        name += f"-{word}"
+    return name
+
+
+def ready(story, by_id):
+    """A story can start when it is todo and every story it depends on is done."""
+    if story["status"] != "todo":
+        return False
+    return all(by_id.get(d, {}).get("status") == "done" for d in story.get("depends_on") or [])
+
+
+def next_view():
+    by_id = {s["id"]: s for s in BL["stories"]}
+    open_now = [s for s in BL["stories"] if ready(s, by_id)]
+    order = {"must": 0, "should": 1, "could": 2}
+    open_now.sort(key=lambda s: (order.get(s.get("priority"), 9), s["id"]))
+    if not open_now:
+        print("nothing is ready to start: every todo story waits on an unfinished one")
+        return
+    print(f"{len(open_now)} stories can start now\n")
+    print(f"{'story':<12} {'pri':<7} {'AC':>3}  title")
+    for s in open_now:
+        n = len(s.get("acceptance_criteria") or [])
+        print(f"{s['id']:<12} {s.get('priority', ''):<7} {n:>3}  {s['title']}")
+        print(f"{'':<12} branch: {branch_name(s)}")
+
+
 def one(story_id):
     s = next((x for x in BL["stories"] if x["id"] == story_id), None)
     if not s:
@@ -133,7 +168,9 @@ def one(story_id):
 
 
 if __name__ == "__main__":
-    if "--agent" in sys.argv:
+    if "--next" in sys.argv:
+        next_view()
+    elif "--agent" in sys.argv:
         agent_view()
     elif "--story" in sys.argv:
         sys.exit(one(sys.argv[sys.argv.index("--story") + 1]))

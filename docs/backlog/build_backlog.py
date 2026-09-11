@@ -22,7 +22,7 @@ EPICS_DIR = HERE / "epics"
 MAP_DIR = HERE.parent / "mapping"
 
 STORY_EPICS = ["NOTE", "FMT", "TPL", "CAL", "SET", "CMD", "MIG", "ARCH"]
-STORY_STATUSES = ["todo", "in-progress", "blocked", "done"]
+STORY_STATUSES = ["todo", "in-progress", "in-review", "blocked", "done"]
 ROLES = ["build", "icebox", "evidence"]
 AC_STATUSES = ["unverified", "pass", "fail", "n-a"]
 

@@ -17,7 +17,7 @@ import sys
 
 HERE = pathlib.Path(__file__).parent
 EPICS = HERE / "epics"
-STATUSES = ["todo", "in-progress", "blocked", "done"]
+STATUSES = ["todo", "in-progress", "in-review", "blocked", "done"]
 
 
 def main(sid: str, status: str) -> int:
