@@ -1,0 +1,107 @@
+import { describe, it, expect } from "vitest";
+import moment from "moment";
+import { resolveFileDate } from "./resolveFileDate";
+import { computeNoteDate } from "./noteDate";
+import { DEFAULT_PERIODIC_CONFIG } from "../types";
+import type { PeriodicConfig } from "../types";
+import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+
+function config(format: string, folder: string): PeriodicConfig {
+	return { ...DEFAULT_PERIODIC_CONFIG, enabled: true, format, folder };
+}
+
+const CONFIGS = {
+	day: config("YYYY-MM-DD", "Daily"),
+	week: config("GGGG-[W]WW", "Weekly"),
+};
+
+const NO_DEFAULT_FOLDER = new FakeVaultConfigPort("");
+
+describe("resolveFileDate — AC-FMT-07.1 a daily filename under the daily folder", () => {
+	it("recognises the file as that day's note", () => {
+		const result = resolveFileDate("Daily/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
+
+		expect(result?.granularity).toBe("day");
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("resolves against the default new-file folder when no folder is configured", () => {
+		const configs = { day: config("YYYY-MM-DD", ""), week: config("GGGG-[W]WW", "") };
+		const vaultConfig = new FakeVaultConfigPort("Journal");
+
+		expect(resolveFileDate("Journal/2026-04-13.md", configs, vaultConfig)?.granularity).toBe("day");
+		expect(resolveFileDate("2026-04-13.md", configs, vaultConfig)).toBeNull();
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.2 a weekly filename that is no valid daily name", () => {
+	it("recognises the file as that week's note", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+
+		expect(result?.granularity).toBe("week");
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.2 day is tried before week", () => {
+	it("returns the day identity when one filename satisfies both formats", () => {
+		const configs = { day: config("YYYY-MM-DD", "Notes"), week: config("YYYY-MM-DD", "Notes") };
+
+		expect(resolveFileDate("Notes/2026-04-13.md", configs, NO_DEFAULT_FOLDER)?.granularity).toBe("day");
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.3 a filename matching neither format", () => {
+	it("returns no identity for a name carrying extra text, with prefix matching off", () => {
+		expect(resolveFileDate("Daily/2026-04-13 meeting.md", CONFIGS, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+
+	it("returns no identity for a name carrying no date at all", () => {
+		expect(resolveFileDate("Daily/Inbox.md", CONFIGS, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.4 the identity equals the one computed elsewhere", () => {
+	it("produces the day identity the calendar grid produces for the same date", () => {
+		const result = resolveFileDate("Daily/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
+		const gridCell = moment("2026-04-13T17:30:00");
+
+		expect(result?.noteDate).toBe(computeNoteDate(gridCell, "day"));
+	});
+
+	it("produces the week identity the calendar grid produces for any day of that week", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+		// Wednesday of the same week — a week identity must not depend on which
+		// day of the week the caller happens to hold.
+		const gridCell = moment("2026-04-15T09:00:00");
+
+		expect(result?.noteDate).toBe(computeNoteDate(gridCell, "week"));
+	});
+
+	it("never gives a day-note and a week-note of the same date one identity", () => {
+		const day = resolveFileDate("Daily/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
+		const week = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+
+		expect(day?.noteDate).not.toBe(week?.noteDate);
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.5 a daily filename outside the daily folder", () => {
+	it("is not recognised as that day's note when the file sits at the vault root", () => {
+		expect(resolveFileDate("2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+
+	// A nested format makes the folder check load-bearing: parseFilename falls
+	// back to the filename alone (AC-FMT-04.2), so without folder scoping these
+	// two would resolve from any folder in the vault.
+	const NESTED = { day: config("YYYY/YYYY-MM-DD", "Daily"), week: config("GGGG-[W]WW", "Weekly") };
+
+	it("is not recognised as that day's note when the file sits in another folder", () => {
+		expect(resolveFileDate("Daily/2026/2026-04-13.md", NESTED, NO_DEFAULT_FOLDER)?.granularity).toBe("day");
+		expect(resolveFileDate("Archive/2026/2026-04-13.md", NESTED, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+
+	it("is not recognised when the folder name only shares a prefix with the configured one", () => {
+		expect(resolveFileDate("DailyArchive/2026/2026-04-13.md", NESTED, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+});
