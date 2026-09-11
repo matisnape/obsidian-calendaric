@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import { formatWithWeekTokens } from "../notes/noteUtils";
+import { formatWithWeekTokens, WEEKDAY_ISO } from "../notes/noteUtils";
 
 export interface ParseFilenameResult {
 	date: Moment;
@@ -30,6 +30,10 @@ interface TokenGroup {
 	// Which {{weekday:fmt}} wrapper a nested field came from. Two wrappers
 	// describe two different days, so their fields must never be pooled.
 	wrapper?: number;
+	// The ISO weekday that wrapper renders. The wrapped fields describe THAT
+	// day, so a week number among them numbers the week containing it, which
+	// is not always the week the format's own date sits in.
+	wrapperIsoDay?: number;
 }
 
 interface Tokenized {
@@ -107,15 +111,33 @@ function tokenize(format: string, nested = false): Tokenized {
 		if (format.startsWith("{{", i)) {
 			const end = format.indexOf("}}", i + 2);
 			const colon = end === -1 ? -1 : format.indexOf(":", i + 2);
-			if (end !== -1 && colon !== -1 && colon < end) {
+			// Only the seven real weekday names are wrappers; formatWithWeekTokens
+			// substitutes nothing else, so anything else is not one.
+			const wrapperIsoDay = colon === -1 ? undefined : WEEKDAY_ISO[format.slice(i + 2, colon).toLowerCase()];
+			if (end !== -1 && colon !== -1 && colon < end && wrapperIsoDay !== undefined) {
 				const tokenFmt = format.slice(colon + 1, end);
 				const inner = tokenize(tokenFmt, true);
 				const wrapper = wrappers++;
 				pattern += inner.pattern;
-				groups.push(...inner.groups.map((group) => ({ ...group, wrapper })));
+				groups.push(...inner.groups.map((group) => ({ ...group, wrapper, wrapperIsoDay })));
 				i = end + 2;
 				continue;
 			}
+		}
+
+		// moment reads a backslash as "render the next token literally", and it
+		// consumes exactly one token: "\WWW" is the literal "WW" followed by a
+		// real ISO week token, and "\YYYY" is the literal "YYYY". An escaped
+		// backslash renders as nothing at all.
+		if (ch === "\\" && i + 1 < format.length) {
+			const escaped = format[i + 1] as string;
+			let j = i + 1;
+			while (j < format.length && format[j] === escaped) j++;
+			let run = format.slice(i + 1, j);
+			while (run.length > 1 && !tokenForRun(run)) run = run.slice(0, -1);
+			pattern += escaped === "\\" ? "" : escapeRegex(run);
+			i += 1 + run.length;
+			continue;
 		}
 
 		if (TOKEN_CHARS.has(ch)) {
@@ -202,11 +224,11 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | nu
 	const topLevel = buildFrom(match, groups, (group) => !group.nested);
 	if (topLevel) return topLevel;
 
-	const wrappers = new Set(
-		groups.filter((group) => group.wrapper !== undefined).map((group) => group.wrapper),
+	const wrappers = new Map(
+		groups.filter((group) => group.wrapper !== undefined).map((group) => [group.wrapper, group]),
 	);
-	for (const wrapper of wrappers) {
-		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper);
+	for (const [wrapper, sample] of wrappers) {
+		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, sample.wrapperIsoDay);
 		if (built) return { date: built.date.clone().isoWeekday(1), usedWeekPath: built.usedWeekPath };
 	}
 	return null;
@@ -216,6 +238,7 @@ function buildFrom(
 	match: RegExpExecArray,
 	groups: TokenGroup[],
 	include: (group: TokenGroup) => boolean,
+	wrapperIsoDay?: number,
 ): BuiltDate | null {
 	let year: number | undefined;
 	let isoWeekYear: number | undefined;
@@ -251,11 +274,19 @@ function buildFrom(
 	// (AC-FMT-04.5) — construction alone doesn't need to detect a conflicting
 	// or out-of-range value here; matchOne's re-render comparison rejects
 	// anything this candidate cannot actually explain.
+	// The day a week number names: the wrapper's own weekday inside that week,
+	// or the week's Monday when the format names its date directly. Taking the
+	// week start for a wrapper loses the named day, which matters whenever that
+	// day's week number is not the week number of the format's own date.
+	const isoDay = wrapperIsoDay ?? 1;
+
 	if (isoWeek !== undefined) {
 		const wy = isoWeekYear ?? year;
 		if (wy === undefined) return null;
 		const candidate = window.moment().isoWeekYear(wy).isoWeek(isoWeek).startOf("isoWeek");
-		return candidate.isValid() ? { date: candidate, usedWeekPath: true } : null;
+		return candidate.isValid()
+			? { date: candidate.add(isoDay - 1, "days"), usedWeekPath: true }
+			: null;
 	}
 	if (localeWeek !== undefined) {
 		const wy = localeWeekYear ?? year;
@@ -264,11 +295,11 @@ function buildFrom(
 		if (!start.isValid()) return null;
 		// A periodic week's identity is its Monday (see noteUtils'
 		// {{monday:..}} convention) even when the format labels the week with
-		// locale numbering. .day(1) is only "Monday" when the locale week
+		// locale numbering. .day(n) is only the ISO weekday when the locale week
 		// starts Sun or Mon; for a Tue..Sat week start it lands on the wrong
 		// day (even the wrong week), so walk forward from the locale week's
-		// real start to the next Monday.
-		return { date: start.add((1 - start.isoWeekday() + 7) % 7, "days"), usedWeekPath: true };
+		// real start to the wanted weekday inside it.
+		return { date: start.add((isoDay - start.isoWeekday() + 7) % 7, "days"), usedWeekPath: true };
 	}
 	if (year !== undefined && month !== undefined) {
 		const candidate = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);

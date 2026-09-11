@@ -422,3 +422,77 @@ describe("parseFilename — a format that names its date only through {{weekday:
 		expect(parseFilename("Monday", "{{monday:dddd}}", false)).toBeNull();
 	});
 });
+
+describe("parseFilename — a wrapper names a weekday, and the inversion must recover it", () => {
+	const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+	const SOURCE = "2026-04-15";
+	const ISO_MONDAY = "2026-04-13";
+
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it("reads back a Sunday wrapper numbering its own locale week", () => {
+		// Under en the locale week starts on Sunday, so the wrapped Sunday
+		// 2026-04-19 opens locale week 17 while belonging to ISO week 16. Taking
+		// the numbered week's start would land on Monday 04-20, a week late.
+		const format = "{{sunday:gggg-[W]ww}}";
+		const written = formatWithWeekTokens(format, moment(SOURCE));
+
+		expect(written).toBe("2026-W17");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
+	});
+
+	for (const locale of ["en", "en-gb"]) {
+		it(`recovers every weekday wrapper under the ${locale} locale, both week systems`, () => {
+			moment.locale(locale);
+
+			for (const weekday of WEEKDAYS) {
+				for (const inner of ["GGGG-[W]WW", "gggg-[W]ww", "YYYY-MM-DD"]) {
+					const format = `{{${weekday}:${inner}}}`;
+					const written = formatWithWeekTokens(format, moment(SOURCE));
+					const parsed = parseFilename(written, format, false);
+
+					expect(`${format} ${written} -> ${parsed?.date.format("YYYY-MM-DD") ?? "null"}`)
+						.toBe(`${format} ${written} -> ${ISO_MONDAY}`);
+				}
+			}
+		});
+	}
+
+	it("reads back two wrappers that number their weeks in different systems", () => {
+		const format = "{{sunday:gggg-[W]ww}}[-]{{monday:GGGG-[W]WW}}";
+		const written = formatWithWeekTokens(format, moment(SOURCE));
+
+		expect(written).toBe("2026-W17-2026-W16");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
+	});
+});
+
+describe("parseFilename — backslash escapes, as moment renders them", () => {
+	it("reads back a literal W written with a backslash escape", () => {
+		const format = "GGGG-\\WWW";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		// The escape consumes exactly one token: "\WW" is the literal "WW" and
+		// the third W is a real ISO week token.
+		expect(written).toBe("2026-WW16");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("reads back a single escaped token character", () => {
+		const format = "YYYY-MM-DD\\D";
+		const written = formatWithWeekTokens(format, moment("2026-01-05"));
+
+		expect(written).toBe("2026-01-05D");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
+	});
+
+	it("reads back an escaped run that moment takes as one whole token", () => {
+		const format = "\\YYYY[ ]YYYY-MM-DD";
+		const written = formatWithWeekTokens(format, moment("2026-01-05"));
+
+		expect(written).toBe("YYYY 2026-01-05");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
+	});
+});

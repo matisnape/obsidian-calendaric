@@ -4,7 +4,8 @@ import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^}]+)\}\}/gi;
 
-const WEEKDAY_ISO: Record<string, number> = {
+/** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
+export const WEEKDAY_ISO: Record<string, number> = {
 	monday: 1,
 	tuesday: 2,
 	wednesday: 3,
