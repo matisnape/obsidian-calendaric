@@ -28,14 +28,19 @@ Quick starting guide for new plugin devs:
 
 ## Releasing new releases
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+1. Update `minAppVersion` in `manifest.json` by hand if this release uses newer Obsidian APIs.
+2. Run `npm version patch` (or `minor`, or `major`). That bumps `package.json`, copies the
+   version into `manifest.json`, adds the `"version": "minAppVersion"` row to `versions.json`,
+   and creates a git tag. `.npmrc` sets `tag-version-prefix=""`, so the tag has no leading `v`.
+3. Run `npm run release-check` to confirm the manifest, `versions.json` and the tag agree.
+4. Push the tag. `.github/workflows/release.yml` then runs the release checks, `npm run verify`
+   and the build, and opens a **draft** GitHub release with `main.js`, `manifest.json` and
+   `styles.css` attached.
+5. Publish the draft yourself once you are happy with it.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+Every one of those workflow steps can stop the release. A tag that does not match
+`manifest.json`'s version, a `versions.json` row that disagrees with `minAppVersion`, a type
+error, a lint error or a failing test all fail the run before anything is published.
 
 ## Adding your plugin to the community plugin list
 
@@ -46,10 +51,24 @@ Quick starting guide for new plugin devs:
 
 ## How to use
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+Node is pinned to the version in `mise.toml`. With only that installed, a clean checkout needs
+exactly two commands:
+
+```bash
+npm ci          # also runs `prepare`, which builds — so main.js exists after this alone
+npm run build   # tsc --noEmit, then esbuild
+```
+
+Both produce `main.js` at the repository root, next to the `manifest.json` and `styles.css`
+that are checked in. Those three files are the release artefacts; nothing else is needed and
+no manual step follows.
+
+For day-to-day work:
+
+- `npm run dev` — esbuild in watch mode.
+- `npm run verify` — the three release gates: `typecheck`, `lint`, `test`. Reports every gate's
+  verdict and fails if any one of them fails or cannot run.
+- `npm run release-check` — the static manifest, `versions.json` and tag checks.
 
 ## Manually installing the plugin
 
@@ -61,6 +80,7 @@ Quick starting guide for new plugin devs:
 - Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
 - A GitHub action runs install, test and build on every pull request against `master`.
 - That action does **not** run lint. eslint currently reports errors that already exist on `master`, so a lint gate would fail every pull request whatever it changed. Run `npm run lint` yourself and check that your own change adds no new errors.
+- The **release** workflow does run lint, through `npm run verify`. Until the existing errors on `master` are cleaned up, a tagged release will fail at the lint gate. That is deliberate: `master`'s lint debt is allowed to block a release, it is not allowed to be hidden.
 
 ## Funding URL
 

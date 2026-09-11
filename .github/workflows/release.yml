@@ -1,50 +1,97 @@
-name: Release Obsidian plugin
+name: Release
 
+# A pushed tag is the only event that publishes, and tags are rare, so this costs
+# almost nothing against this account's limited Actions run-minutes. ci.yml is the
+# pull-request gate; this is the release gate, and the two are deliberately
+# different: a release additionally runs lint and the manifest checks, and it is
+# allowed to fail in ways a pull request is not. See US-ARCH-06 and DEC-26.
+#
+# The pattern stays '*' rather than a semver glob on purpose. A tag named "v0.1.0"
+# must reach the tag check and be rejected by name (AC-ARCH-06.3), not be silently
+# ignored by the trigger — a release that never starts looks the same as a release
+# nobody asked for.
 on:
-    push:
-        tags:
-            - '*'
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write # gh release create
+  id-token: write # actions/attest signs with a short-lived OIDC token
+  attestations: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            id-token: write
-            attestations: write
-        steps:
-            - uses: actions/checkout@v6
+  release:
+    name: verify, build, draft release
+    runs-on: ubuntu-latest
 
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24
-                  cache: 'npm'
+    # Same reasoning as ci.yml: the work takes a couple of minutes, and the default
+    # of six hours would burn the run-minute budget on one hung job. A release runs
+    # lint and the full test suite on top of what ci.yml does, hence 15 not 10.
+    timeout-minutes: 15
 
-            - name: Build plugin
-              run: |
-                  npm ci
-                  npm run build
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The manifest id stability check reads manifest.json out of the previous
+          # release's tag, which a depth-1 checkout does not have. release-check.mjs
+          # fails rather than skipping the check when the history is missing.
+          fetch-depth: 0
 
-            - name: Check for optional styles
-              id: styles
-              run: |
-                  [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+      # Keep this version equal to the node pin in mise.toml and to ci.yml. The
+      # upstream template said "24", which drifts to whatever 24.x the runner ships
+      # and defeats the point of pinning at all.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.12.0
+          cache: npm
 
-            - name: Attest build provenance
-              uses: actions/attest@v4
-              with:
-                  subject-path: |
-                      main.js
-                      ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+      # First, before anything expensive. A tag that disagrees with manifest.json
+      # can never produce a valid release, so there is no reason to install and
+      # build before finding out. Uses only Node's standard library and git.
+      - name: release checks
+        run: npm run release-check --silent
 
-            - name: Create release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  tag="${GITHUB_REF#refs/tags/}"
+      # npm ci runs the prepare script, which builds (AC-ARCH-06.7): a consumer
+      # installing this repository from source gets main.js without a second
+      # command.
+      - name: install
+        run: npm ci
 
-                  gh release create "$tag" \
-                    --title="$tag" \
-                    --draft \
-                    main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+      # type-check, lint and test. Any one failing fails this step, and the step
+      # names which gate it was. Nothing downstream runs, so a failing gate cannot
+      # publish a release.
+      - name: verify
+        run: npm run verify
+
+      # npm ci already produced main.js through prepare. Building again here is
+      # cheap and keeps the release from silently depending on a lifecycle hook
+      # staying in package.json.
+      - name: build
+        run: npm run build
+
+      - name: check for optional styles
+        id: styles
+        run: |
+          [ -f styles.css ] && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+
+      - name: attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
+
+      # Draft, not published. Publishing is the one step a human should take: it is
+      # what makes the release visible to Obsidian's community catalogue, and it is
+      # not undoable from a workflow's point of view.
+      - name: create draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
