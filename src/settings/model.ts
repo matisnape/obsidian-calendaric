@@ -5,15 +5,18 @@ export const GRANULARITIES = ["day", "week", "month", "quarter", "year"] as cons
 
 export type Granularity = (typeof GRANULARITIES)[number];
 
-export type WeekStartOption =
-	| "locale"
-	| "monday"
-	| "tuesday"
-	| "wednesday"
-	| "thursday"
-	| "friday"
-	| "saturday"
-	| "sunday";
+export const WEEK_START_OPTIONS = [
+	"locale",
+	"monday",
+	"tuesday",
+	"wednesday",
+	"thursday",
+	"friday",
+	"saturday",
+	"sunday",
+] as const;
+
+export type WeekStartOption = (typeof WEEK_START_OPTIONS)[number];
 
 /** Settings that belong to the plugin as a whole, not to any one granularity. */
 export interface GlobalSettings {
@@ -29,12 +32,13 @@ export type GranularityConfigs = Record<Granularity, PeriodicConfig>;
 /**
  * One named configuration group: an id plus one `PeriodicConfig` per granularity.
  *
- * Granularity configs are optional because stored data may predate a granularity,
- * and because a group the user has never opened may carry only the parts it needs.
- * `loadStoredConfig` fills the gaps for the group in use; other groups stay verbatim.
+ * Every part is optional because a stored group is kept exactly as it was
+ * written: it may predate a granularity, carry only the parts it needs, or —
+ * hand-edited — have lost its id. `toSettings` fills the gaps for the group in
+ * use, and that projection is a view, not what gets saved.
  */
 export interface CalendarSet extends Partial<GranularityConfigs> {
-	id: string;
+	id?: string;
 }
 
 /** The shape Calendaric persists: globals plus the named configuration groups. */
@@ -114,20 +118,27 @@ function normalizeConfig(raw: unknown): PeriodicConfig {
 	};
 }
 
-/** Give the group in use all five granularity configs, without touching its other keys. */
-function normalizeSet(set: CalendarSet): CalendarSet {
-	const normalized: CalendarSet = { ...set };
-	for (const granularity of GRANULARITIES) {
-		normalized[granularity] = normalizeConfig(set[granularity]);
-	}
-	return normalized;
+const CONFIG_FIELDS = [
+	"enabled",
+	"format",
+	"folder",
+	"templatePath",
+	"allowPrefixMatching",
+	"openAtStartup",
+] as const;
+
+function sameConfig(stored: PeriodicConfig, edited: PeriodicConfig): boolean {
+	return CONFIG_FIELDS.every((field) => stored[field] === edited[field]);
+}
+
+function asWeekStart(value: unknown, fallback: WeekStartOption): WeekStartOption {
+	return WEEK_START_OPTIONS.find((option) => option === value) ?? fallback;
 }
 
 function pickGlobals(source: unknown): GlobalSettings {
 	const raw: Record<string, unknown> = isRecord(source) ? source : {};
-	const weekStart = raw.weekStart;
 	return {
-		weekStart: typeof weekStart === "string" ? (weekStart as WeekStartOption) : DEFAULT_GLOBALS.weekStart,
+		weekStart: asWeekStart(raw.weekStart, DEFAULT_GLOBALS.weekStart),
 		showWeekNumbers: asBoolean(raw.showWeekNumbers, DEFAULT_GLOBALS.showWeekNumbers),
 		confirmBeforeCreate: asBoolean(raw.confirmBeforeCreate, DEFAULT_GLOBALS.confirmBeforeCreate),
 		overrideLocale: asString(raw.overrideLocale, DEFAULT_GLOBALS.overrideLocale),
@@ -142,35 +153,32 @@ function pickGlobals(source: unknown): GlobalSettings {
  * Read whatever `loadData()` returned into a usable configuration.
  *
  * A fresh install gets exactly one implicit group, named here rather than by the
- * user. Groups beyond the one in use are carried through untouched, so a second
- * group survives even though no UI can reach it yet.
+ * user. Every stored group, the one in use included, is carried through exactly
+ * as it was written: defaults are filled in by `toSettings`, which is a view and
+ * not what gets saved. That is what lets a group nobody can reach yet survive a
+ * load and a save untouched.
  *
- * ponytail: an older flat shape (day/week/... at the top level) is not adopted
- * into the group here — that upgrade is US-MIG-07's. Its keys are preserved, so
- * nothing is lost in the meantime.
+ * Not handled here: an older stored shape that keeps day/week/... at the top
+ * level instead of inside a group. Adopting those keys into the group is
+ * US-MIG-07's; until then they are preserved but not read.
  */
 export function loadStoredConfig(raw: unknown): StoredConfig {
 	if (!isRecord(raw)) return defaultStoredConfig();
 
 	const storedSets = Array.isArray(raw.calendarSets)
-		? raw.calendarSets
-				.filter(isRecord)
-				.map((set): CalendarSet => ({ ...set, id: asString(set.id, DEFAULT_CALENDAR_SET_ID) }))
+		? (raw.calendarSets.filter(isRecord) as CalendarSet[])
 		: [];
 	const calendarSets = storedSets.length > 0 ? storedSets : [defaultCalendarSet()];
 
 	const requested = asString(raw.activeCalendarSet, "");
-	const index = Math.max(
-		calendarSets.findIndex((set) => set.id === requested),
-		0,
-	);
-	const activeSet = calendarSets[index] as CalendarSet;
-	calendarSets[index] = normalizeSet(activeSet);
+	const activeCalendarSet = calendarSets.some((set) => set.id === requested)
+		? requested
+		: asString(calendarSets[0]?.id, DEFAULT_CALENDAR_SET_ID);
 
 	return {
 		...raw,
 		...pickGlobals(raw),
-		activeCalendarSet: activeSet.id,
+		activeCalendarSet,
 		calendarSets,
 	};
 }
@@ -203,14 +211,20 @@ export function toSettings(stored: StoredConfig): CalendaricSettings {
 }
 
 /**
- * Write edited settings back into the group in use. Every other group is passed
- * through by reference, so nothing outside the active group can be rewritten.
+ * Write edited settings back into the group in use.
+ *
+ * A granularity whose values match what was stored is left alone, so a
+ * granularity the stored group never mentioned stays unmentioned and an
+ * unchanged save writes the file back as it was. Every other group is passed
+ * through by reference, so nothing outside the group in use can be rewritten.
  */
 export function applySettings(stored: StoredConfig, settings: CalendaricSettings): StoredConfig {
 	const active = getActiveSet(stored);
 	const updated: CalendarSet = { ...active };
 	for (const granularity of GRANULARITIES) {
-		updated[granularity] = { ...active[granularity], ...settings[granularity] };
+		const edited = settings[granularity];
+		if (sameConfig(normalizeConfig(active[granularity]), edited)) continue;
+		updated[granularity] = { ...active[granularity], ...edited };
 	}
 
 	const index = activeSetIndex(stored);

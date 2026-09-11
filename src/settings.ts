@@ -12,7 +12,7 @@ import type CalendaricPlugin from "./main";
 export { DEFAULT_SETTINGS, clearStartupNote } from "./settings/model";
 export type { CalendaricSettings, WeekStartOption } from "./settings/model";
 
-const WEEK_START_OPTIONS: Record<WeekStartOption, string> = {
+const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 	locale: "Locale default",
 	monday: "Monday",
 	tuesday: "Tuesday",
@@ -45,6 +45,12 @@ const GRANULARITY_PERIODICITY: Record<Granularity, string> = {
 const DEFAULT_FORMAT: Record<ActiveGranularity, string> = {
 	day: DEFAULT_DAY_FORMAT,
 	week: "gggg-[W]ww",
+};
+
+/** A filename that starts with this granularity's date and then carries extra text. */
+const PREFIX_MATCH_EXAMPLE: Record<ActiveGranularity, string> = {
+	day: "2026-02-09, travel day",
+	week: "2026-W07, 09.02 - 15.02",
 };
 
 function getMoment() {
@@ -87,7 +93,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Start week on")
 			.addDropdown((dd) => {
-				for (const [value, label] of Object.entries(WEEK_START_OPTIONS)) {
+				for (const [value, label] of Object.entries(WEEK_START_LABELS)) {
 					dd.addOption(value, label);
 				}
 				dd.setValue(this.plugin.settings.weekStart);
@@ -266,7 +272,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		new Setting(content)
 			.setName("Allow prefix matching")
 			.setDesc(
-				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "2026-W07, 09.02 - 15.02".`,
+				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "${PREFIX_MATCH_EXAMPLE[granularity]}".`,
 			)
 			.addToggle((toggle) => {
 				toggle.setValue(config.allowPrefixMatching);

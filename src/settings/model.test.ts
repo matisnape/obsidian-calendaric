@@ -146,14 +146,14 @@ describe("AC-SET-01.1 every granularity owns its own five values", () => {
 		expect(settings.quarter.folder).toBe("");
 	});
 
-	it("gives the loaded group its own config objects rather than the shared defaults", () => {
+	it("gives the flattened settings their own config objects rather than the shared defaults", () => {
 		const stored = loadStoredConfig({ calendarSets: [{ id: "Default", day: { enabled: true } }] });
-		const active = getActiveSet(stored);
+		const settings = toSettings(stored);
 
 		for (const granularity of GRANULARITIES) {
-			expect(active[granularity], granularity).not.toBe(DEFAULT_PERIODIC_CONFIG);
+			expect(settings[granularity], granularity).not.toBe(DEFAULT_PERIODIC_CONFIG);
 		}
-		expect(new Set(GRANULARITIES.map((granularity) => active[granularity])).size).toBe(GRANULARITIES.length);
+		expect(new Set(GRANULARITIES.map((granularity) => settings[granularity])).size).toBe(GRANULARITIES.length);
 	});
 
 	it("fills the missing granularities of the group in use with defaults", () => {
@@ -195,6 +195,20 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 		expect(after.month).toEqual(untouched.month);
 		expect(after.quarter).toEqual(untouched.quarter);
 		expect(after.year).toEqual(untouched.year);
+	});
+
+	it("writes no entry for a granularity the stored group never mentioned", () => {
+		const partial = { id: "Default", day: { enabled: true, format: "YYYY-MM-DD", allowPrefixMatching: false } };
+		const stored = loadStoredConfig({ activeCalendarSet: "Default", calendarSets: [partial] });
+
+		const settings = toSettings(stored);
+		settings.day.allowPrefixMatching = true;
+		const saved = applySettings(stored, settings);
+
+		expect(saved.calendarSets[0]?.day?.allowPrefixMatching).toBe(true);
+		for (const granularity of ["week", "month", "quarter", "year"] as const) {
+			expect(saved.calendarSets[0], granularity).not.toHaveProperty(granularity);
+		}
 	});
 
 	it("leaves the other granularities alone for every granularity that can be toggled", () => {
@@ -256,6 +270,17 @@ describe("AC-SET-01.3 an extra named group survives a load and save", () => {
 
 		expect(saved.calendarSets[0]?.day?.folder).toBe("somewhere/else");
 		expect(saved.calendarSets[1]).toEqual(twin);
+	});
+
+	it("preserves a group in use that names only some granularities", () => {
+		const partial = { id: "Default", day: { enabled: true, format: "YYYY-MM-DD", folder: "journal" } };
+		const raw = { activeCalendarSet: "Default", calendarSets: [partial, EXTRA_SET] };
+		const stored = loadStoredConfig(raw);
+
+		const saved = applySettings(stored, toSettings(stored));
+
+		expect(saved.calendarSets[0]).toEqual(partial);
+		expect(saved.calendarSets[1]).toEqual(EXTRA_SET);
 	});
 
 	it("keeps the extra group when the in-use group is edited", () => {
@@ -330,6 +355,12 @@ describe("AC-SET-01.5 a fresh install has exactly one implicit group", () => {
 		expect(stored.calendarSets).toHaveLength(1);
 		expect(stored.activeCalendarSet).toBe(DEFAULT_CALENDAR_SET_ID);
 		expect(stored.weekStart).toBe("sunday");
+	});
+
+	it("falls back to the default week start when the stored value is not one of the eight", () => {
+		expect(loadStoredConfig({ weekStart: "caturday" }).weekStart).toBe("monday");
+		expect(loadStoredConfig({ weekStart: 3 }).weekStart).toBe("monday");
+		expect(loadStoredConfig({ weekStart: "sunday" }).weekStart).toBe("sunday");
 	});
 
 	it("creates one group when the stored group list is empty", () => {
