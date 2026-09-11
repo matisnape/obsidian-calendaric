@@ -224,6 +224,7 @@ describe("AC-CAL-01.4: the week number agrees with the weekly note name", () => 
 		format: WEEK_FORMAT,
 		folder: "Weekly",
 		templatePath: "",
+		allowPrefixMatch: false,
 		openAtStartup: false,
 	};
 	const vaultConfig = new FakeVaultConfigPort();
@@ -309,6 +310,7 @@ describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => 
 		format: WEEK_FORMAT,
 		folder: "Weekly",
 		templatePath: "",
+		allowPrefixMatch: false,
 		openAtStartup: false,
 	};
 	const vaultConfig = new FakeVaultConfigPort();
@@ -345,6 +347,7 @@ describe("AC-CAL-01.4: nested-only weekly formats", () => {
 		format: nestedFormat,
 		folder: "Weekly",
 		templatePath: "",
+		allowPrefixMatch: false,
 		openAtStartup: false,
 	};
 

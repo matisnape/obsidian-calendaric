@@ -14,6 +14,7 @@ const weekConfig: PeriodicConfig = {
 	format: WEEK_FORMAT,
 	folder: "Weekly",
 	templatePath: "",
+	allowPrefixMatch: false,
 	openAtStartup: false,
 };
 
