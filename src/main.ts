@@ -1,6 +1,7 @@
 import { Notice, Plugin, TFile } from "obsidian";
 import { CalendaricSettings, CalendaricSettingsTab, DEFAULT_SETTINGS } from "./settings";
-import { CalendarView, VIEW_TYPE_CALENDAR } from "./ui/CalendarView";
+import { CalendarView } from "./ui/CalendarView";
+import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
 import { computeNotePath } from "./notes/noteUtils";
 import { createNote } from "./notes/noteCreate";
 import { openNoteInNewTab } from "./notes/noteOpen";

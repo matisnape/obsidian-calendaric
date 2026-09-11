@@ -1,8 +1,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type CalendaricPlugin from "../main";
 import { CalendarWidget } from "./calendar";
-
-export const VIEW_TYPE_CALENDAR = "calendaric-calendar";
+import { VIEW_TYPE_CALENDAR } from "./viewType";
 
 export class CalendarView extends ItemView {
 	private calendar: CalendarWidget | null = null;
