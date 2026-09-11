@@ -438,8 +438,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > renders the configured template into the note content (AC-NOTE-05.1) / > expands every token the template carries, not only the title (AC-NOTE-05.1) / > keeps the template content when its fold state cannot be read (AC-NOTE-05.1, AC-NOTE-05.4). Token expansion runs through the existing substituter from US-TPL-02 rather than a second implementation."
         },
         {
           "id": "AC-NOTE-05.2",
@@ -450,8 +450,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > creates the file with empty content when no template is configured (AC-NOTE-05.2), plus three inherited cases that assert the same clause from the folder-chain side (> writes the note even though the whole folder chain was missing / > creates no folder for a note at the vault root / > accepts a folder another actor created between the check and the call).",
           "failure_path": true
         },
         {
@@ -464,8 +464,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > warns by name about a template that cannot be found (AC-NOTE-05.3) / > still creates an empty note when the template read fails (AC-NOTE-05.3) / > creates an empty note when the configured template is absent. The warn callback was made a REQUIRED parameter during review, after the reviewer found both calendar creation paths omitting it -- so the visible warning cannot be silently dropped at a call site any more, which is what the second clause needs. That the Notice itself reaches the screen stays unobserved: main.ts has no test harness and the mocked Notice renders nothing.",
           "failure_path": true
         },
         {
@@ -477,8 +477,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts > applies the template saved fold state to the new note (AC-NOTE-05.4) / > applies no fold state when the template has none saved (AC-NOTE-05.4) / > returns the created note even when applying the fold state fails (AC-NOTE-05.4). The criterion is testable_by integration and the port-level behaviour is what is proven: the tests show the fold state is read from the template and handed to the port with the right file and value. Whether Obsidian app.foldManager actually honours it is unverified -- that API is undocumented and needs a live host."
         }
       ]
     },
