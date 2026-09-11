@@ -32,11 +32,47 @@ describe("createNote", () => {
 
 		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
 
-		expect(vault.createdFolders).toEqual(["journal/daily"]);
+		expect(vault.createdFolders).toEqual(["journal", "journal/daily"]);
+	});
+
+	it("creates every missing intermediate folder, top down (AC-NOTE-03.5)", async () => {
+		const vault = new FakeVaultPort();
+
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual(["journal", "journal/daily", "journal/daily/2026"]);
+	});
+
+	it("creates only the intermediate folders that are still missing (AC-NOTE-03.5)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
+
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual(["journal/daily", "journal/daily/2026"]);
+	});
+
+	it("writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4)", async () => {
+		const vault = new FakeVaultPort();
+
+		const file = await createNote("a/b/c/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(file.path).toBe("a/b/c/2026-04-13.md");
+		expect(vault.contentAt("a/b/c/2026-04-13.md")).toBe("");
+	});
+
+	it("creates no folder for a note at the vault root (AC-NOTE-03.3)", async () => {
+		const vault = new FakeVaultPort();
+
+		await createNote("2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual([]);
+		expect(vault.contentAt("2026-04-13.md")).toBe("");
 	});
 
 	it("does not recreate a folder that already exists", async () => {
 		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
 		vault.seedFolder("journal/daily");
 
 		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);

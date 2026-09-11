@@ -23,12 +23,29 @@ export async function createNote(
 	vault: VaultPort,
 ): Promise<NoteFile> {
 	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : null;
-	if (folder && !vault.pathExists(folder)) {
-		await vault.createFolder(folder);
-	}
+	if (folder) await ensureFolderChain(folder, vault);
 
 	const content = await buildNoteContent(date, granularity, config, path, vault);
 	return await vault.createFile(path, content);
+}
+
+/**
+ * Create every missing folder from the top of the chain down.
+ *
+ * Obsidian's `vault.createFolder` throws when the folder already exists, so
+ * every segment is tested before it is created. Walking the chain explicitly
+ * keeps the guarantee ours rather than resting on how one call treats missing
+ * parents.
+ */
+async function ensureFolderChain(folder: string, vault: VaultPort): Promise<void> {
+	const segments = folder.split("/");
+
+	for (let depth = 1; depth <= segments.length; depth++) {
+		const partial = segments.slice(0, depth).join("/");
+		if (!vault.pathExists(partial)) {
+			await vault.createFolder(partial);
+		}
+	}
 }
 
 async function buildNoteContent(

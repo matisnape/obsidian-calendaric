@@ -1,6 +1,7 @@
 import type { Moment } from "moment";
 import type { PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
+import type { VaultPort } from "../adapters/vaultPort";
 
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^}]+)\}\}/gi;
 
@@ -65,7 +66,51 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
  * location setting.
  */
 export function resolveNoteFolder(folder: string, vaultConfig: VaultConfigPort): string {
-	if (folder.trim() !== "") return folder.trim();
+	const configured = normaliseFolder(folder);
+	if (configured !== "") return configured;
 
-	return vaultConfig.getDefaultNewFileFolder();
+	return normaliseFolder(vaultConfig.getDefaultNewFileFolder());
+}
+
+/**
+ * Leading and trailing slashes carry no meaning in a vault path, so a folder
+ * written as `/` is the vault root — the same thing as an unconfigured folder.
+ */
+function normaliseFolder(folder: string): string {
+	return folder.trim().replace(/^\/+|\/+$/g, "");
+}
+
+export interface NoteFolderCheck {
+	/** The folder after the default-location fallback. `""` is the vault root. */
+	path: string;
+	valid: boolean;
+	/**
+	 * The folder is missing and will be created when the note is written, so
+	 * this flag reports a pending action rather than an error.
+	 */
+	notYetCreated: boolean;
+}
+
+/**
+ * Check a configured folder path ahead of note creation.
+ *
+ * A missing folder is never a rejection: `createNote` builds the whole chain
+ * on demand, so a caller showing this to the user reports it, not blocks on it.
+ */
+export function checkNoteFolder(
+	folder: string,
+	vaultConfig: VaultConfigPort,
+	vault: VaultPort,
+): NoteFolderCheck {
+	const path = resolveNoteFolder(folder, vaultConfig);
+
+	// The vault root is always there, so it is never pending creation.
+	if (path === "") return { path, valid: true, notYetCreated: false };
+
+	const hasUnusableSegment = path
+		.split("/")
+		.some((segment) => segment === "" || segment === "." || segment === "..");
+	if (hasUnusableSegment) return { path, valid: false, notYetCreated: false };
+
+	return { path, valid: true, notYetCreated: !vault.pathExists(path) };
 }

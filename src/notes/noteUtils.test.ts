@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
-import { applyWeekTokens, formatWithWeekTokens, computeNotePath } from "./noteUtils";
+import { applyWeekTokens, formatWithWeekTokens, computeNotePath, resolveNoteFolder, checkNoteFolder } from "./noteUtils";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { FakeVaultPort } from "../adapters/fakeVaultPort";
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {
@@ -91,5 +92,61 @@ describe("computeNotePath", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
 		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("Inbox/2026-04-13.md");
+	});
+});
+
+describe("resolveNoteFolder", () => {
+	it("keeps a configured folder as-is", () => {
+		expect(resolveNoteFolder("journal/daily", new FakeVaultConfigPort("Inbox"))).toBe("journal/daily");
+	});
+
+	it("falls back to Obsidian's default new-file folder when none is configured (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("", new FakeVaultConfigPort("Inbox"))).toBe("Inbox");
+	});
+
+	it("resolves to the vault root when neither the config nor Obsidian names a folder (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("", new FakeVaultConfigPort())).toBe("");
+	});
+});
+
+describe("checkNoteFolder", () => {
+	it("accepts an empty configured folder as valid and already present (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("accepts the vault root written as a slash as valid and already present (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("/", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("reports an existing folder as valid and not pending creation", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal/daily");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: true, notYetCreated: false });
+	});
+
+	it("flags a folder that does not exist yet as valid but not-yet-created (AC-NOTE-03.4)", () => {
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "journal/daily", valid: true, notYetCreated: true });
+	});
+
+	it("checks the fallback folder, not the empty config value, when no folder is configured (AC-NOTE-03.2)", () => {
+		const check = checkNoteFolder("", new FakeVaultConfigPort("Inbox"), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "Inbox", valid: true, notYetCreated: true });
+	});
+
+	it("rejects a path with an empty or dot segment", () => {
+		const vault = new FakeVaultPort();
+
+		expect(checkNoteFolder("journal//daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
+		expect(checkNoteFolder("journal/../daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
 	});
 });
