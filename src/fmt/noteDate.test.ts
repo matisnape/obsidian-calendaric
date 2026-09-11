@@ -94,6 +94,24 @@ describe("computeNoteDate", () => {
 		expect(computeNoteDate(sunday, "week", "GGGG-[Www]WW")).toBe(computeNoteDate(sunday, "week"));
 	});
 
+	it("splits a grid row that spans two weeks across the two notes it is written into", () => {
+		// A row drawn with weekStart = Wednesday runs Wed 2026-04-15 .. Tue
+		// 2026-04-21 and spans two ISO weeks: the plugin writes its Mon/Tue
+		// cells into 2026-W17 and the rest into 2026-W16. Identity follows the
+		// file, so such a row carries two identities. Forcing one identity per
+		// row would give a cell the identity of a note the plugin would never
+		// open for that cell — and the same note's days already fall in two
+		// different rows, so no single anchor can make a row the unit.
+		const WEEK_FORMAT = "GGGG-[W]WW";
+		const row = [...Array(7)].map((_, i) => moment("2026-04-15T12:00:00").add(i, "days"));
+
+		const filenames = new Set(row.map((day) => day.format(WEEK_FORMAT)));
+		const identities = new Set(row.map((day) => computeNoteDate(day, "week", WEEK_FORMAT)));
+
+		expect(filenames.size).toBe(2);
+		expect(identities.size).toBe(filenames.size);
+	});
+
 	it("keeps two instants a few milliseconds apart on opposite sides of midnight on different note dates", () => {
 		const beforeMidnight = moment("2026-04-13T23:59:59.999");
 		const afterMidnight = moment("2026-04-14T00:00:00.000");

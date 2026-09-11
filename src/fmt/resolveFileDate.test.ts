@@ -156,6 +156,30 @@ describe("resolveFileDate — AC-FMT-07.4 the configured week format decides the
 	});
 });
 
+describe("resolveFileDate — AC-FMT-07.4 identity agrees with the filename across a year boundary", () => {
+	// The two systems disagree about the whole week-year here: Mon 2026-12-28
+	// is "2026-W53" under GGGG/WW and "2027-W01" under gggg/ww. Whichever
+	// weekStart the grid is drawn with, a grid cell is a day, so the property
+	// that has to hold is per-day: a date shares the note's identity exactly
+	// when the configured format would write that date into the note's name.
+	for (const weekFormat of ["GGGG-[W]WW", "gggg-[W]ww"]) {
+		it(`matches every day to the note "${weekFormat}" writes it into`, () => {
+			const configs = { day: config("YYYY-MM-DD", "Daily"), week: config(weekFormat, "Weekly") };
+			const noteName = moment("2026-12-28T12:00:00").format(weekFormat);
+			const note = resolveFileDate(`Weekly/${noteName}.md`, configs, NO_DEFAULT_FOLDER);
+
+			expect(note?.noteDate).toBeTypeOf("string");
+
+			for (let offset = -14; offset <= 14; offset++) {
+				const day = moment("2026-12-28T12:00:00").add(offset, "days");
+				const belongsToNote = day.format(weekFormat) === noteName;
+
+				expect(computeNoteDate(day, "week", weekFormat) === note?.noteDate).toBe(belongsToNote);
+			}
+		});
+	}
+});
+
 describe("resolveFileDate — AC-FMT-07.5 a daily filename outside the daily folder", () => {
 	it("is not recognised as that day's note when the file sits at the vault root", () => {
 		expect(resolveFileDate("2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER)).toBeNull();
