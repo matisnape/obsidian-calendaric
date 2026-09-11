@@ -1,5 +1,17 @@
+import { describe, it, expect } from "vitest";
 import moment from "moment";
 import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
+
+/**
+ * Indexes a grid whose length the compiler cannot know. A missing cell fails the
+ * test naming the index, instead of throwing on a property of undefined.
+ */
+function at<T>(items: readonly T[], index: number): T {
+	const item = items[index];
+	if (item === undefined) throw new Error(`no grid element at index ${index}`);
+	return item;
+}
+
 
 describe("resolveWeekStart", () => {
 	it("returns 1 (Monday) for 'monday'", () => {
@@ -60,7 +72,7 @@ describe("getMonthGrid", () => {
 		// March 2026 starts on Sunday. With Monday start,
 		// first row should have Feb 23-28 (adjacent) + Mar 1
 		const grid = getMonthGrid(moment("2026-03-15"), 1);
-		const firstWeek = grid[0];
+		const firstWeek = at(grid, 0);
 		// Feb dates should be adjacent
 		const febDays = firstWeek.days.filter(
 			(d) => d.date.month() === 1 // February = month 1
@@ -82,15 +94,15 @@ describe("getMonthGrid", () => {
 		const grid = getMonthGrid(moment("2026-03-15"), 1);
 		grid.forEach((week) => {
 			// Saturday (index 5) and Sunday (index 6) for Monday start
-			expect(week.days[5].isWeekend).toBe(true);
-			expect(week.days[6].isWeekend).toBe(true);
-			expect(week.days[0].isWeekend).toBe(false); // Monday
+			expect(at(week.days, 5).isWeekend).toBe(true);
+			expect(at(week.days, 6).isWeekend).toBe(true);
+			expect(at(week.days, 0).isWeekend).toBe(false); // Monday
 		});
 	});
 
 	it("first day of grid matches weekStart", () => {
 		const grid = getMonthGrid(moment("2026-03-15"), 1);
-		expect(grid[0].days[0].date.isoWeekday()).toBe(1); // Monday
+		expect(at(at(grid, 0).days, 0).date.isoWeekday()).toBe(1); // Monday
 	});
 });
 
@@ -113,18 +125,18 @@ describe("edge cases", () => {
 	it("handles month starting on weekStart day", () => {
 		// June 2026 starts on Monday
 		const grid = getMonthGrid(moment("2026-06-01"), 1);
-		expect(grid[0].days[0].date.date()).toBe(1);
-		expect(grid[0].days[0].isAdjacentMonth).toBe(false);
+		expect(at(at(grid, 0).days, 0).date.date()).toBe(1);
+		expect(at(at(grid, 0).days, 0).isAdjacentMonth).toBe(false);
 	});
 
 	it("handles Sunday weekStart", () => {
 		const grid = getMonthGrid(moment("2026-03-15"), 0);
-		expect(grid[0].days[0].date.day()).toBe(0); // Sunday
+		expect(at(at(grid, 0).days, 0).date.day()).toBe(0); // Sunday
 	});
 
 	it("handles December → January year boundary", () => {
 		const grid = getMonthGrid(moment("2026-12-15"), 1);
-		const lastWeek = grid[grid.length - 1];
+		const lastWeek = at(grid, grid.length - 1);
 		const janDays = lastWeek.days.filter((d) => d.date.month() === 0);
 		janDays.forEach((d) => {
 			expect(d.isAdjacentMonth).toBe(true);

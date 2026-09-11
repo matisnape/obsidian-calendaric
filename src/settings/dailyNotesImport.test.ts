@@ -1,142 +1,22 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-	isDailyNotesPluginEnabled,
-	getLegacyDailyNoteSettings,
-	disableDailyNotesPlugin,
-	shouldOfferDailyNotesImport,
+	decideDailyNotesCard,
+	recordCompanionDisabled,
 	planDailyNotesImport,
 	applyDailyNotesImport,
 	DEFAULT_DAY_FORMAT,
 } from "./dailyNotesImport";
 import type { DailyNotesImportTarget } from "./dailyNotesImport";
+import type {
+	CompanionPluginPort,
+	CompanionPluginRead,
+	DailyNotesPluginState,
+} from "../adapters/companionPluginPort";
+import { ObsidianCompanionPluginAdapter } from "../adapters/obsidianCompanionPluginAdapter";
 import type { App } from "obsidian";
 
-function makeApp(pluginOverride?: object): App {
-	return {
-		internalPlugins: {
-			getPluginById: (_id: string) => pluginOverride ?? null,
-		},
-	} as unknown as App;
-}
-
-// ── isDailyNotesPluginEnabled ────────────────────────────────────────────────
-
-describe("isDailyNotesPluginEnabled", () => {
-	it("returns true when the plugin is enabled", () => {
-		const app = makeApp({ enabled: true });
-		expect(isDailyNotesPluginEnabled(app)).toBe(true);
-	});
-
-	it("returns false when the plugin is disabled", () => {
-		const app = makeApp({ enabled: false });
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-
-	it("returns false when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-
-	it("returns false when internalPlugins is absent", () => {
-		const app = { internalPlugins: null } as unknown as App;
-		expect(isDailyNotesPluginEnabled(app)).toBe(false);
-	});
-});
-
-// ── getLegacyDailyNoteSettings ───────────────────────────────────────────────
-
-describe("getLegacyDailyNoteSettings", () => {
-	it("returns stored format, folder, and template when all are set", () => {
-		const app = makeApp({
-			enabled: true,
-			instance: {
-				options: {
-					format: "DD-MM-YYYY",
-					folder: "Journal",
-					template: "templates/daily",
-				},
-			},
-		});
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "DD-MM-YYYY",
-			folder: "Journal",
-			template: "templates/daily",
-		});
-	});
-
-	it("returns empty strings when options object is missing", () => {
-		const app = makeApp({ enabled: true, instance: {} });
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty strings when instance is missing", () => {
-		const app = makeApp({ enabled: true });
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty strings when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(getLegacyDailyNoteSettings(app)).toEqual({
-			format: "",
-			folder: "",
-			template: "",
-		});
-	});
-
-	it("returns empty string for format when only folder and template are set", () => {
-		const app = makeApp({
-			enabled: true,
-			instance: { options: { folder: "Notes", template: "tmpl" } },
-		});
-		const result = getLegacyDailyNoteSettings(app);
-		expect(result.format).toBe("");
-		expect(result.folder).toBe("Notes");
-		expect(result.template).toBe("tmpl");
-	});
-});
-
-// ── disableDailyNotesPlugin ──────────────────────────────────────────────────
-
-describe("disableDailyNotesPlugin", () => {
-	it("calls disable(true) on the plugin", () => {
-		const disable = vi.fn();
-		const app = makeApp({ enabled: true, disable });
-		disableDailyNotesPlugin(app);
-		expect(disable).toHaveBeenCalledOnce();
-		expect(disable).toHaveBeenCalledWith(true);
-	});
-
-	it("does not throw when the plugin is not found", () => {
-		const app = makeApp(undefined);
-		expect(() => disableDailyNotesPlugin(app)).not.toThrow();
-	});
-});
-
-describe("shouldOfferDailyNotesImport", () => {
-	it("offers the import when the plugin is enabled and nothing was imported yet", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget())).toBe(true);
-	});
-
-	it("does not offer the import when the plugin is disabled", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: false }), makeTarget())).toBe(false);
-	});
-
-	it("does not offer the import when the plugin is absent", () => {
-		expect(shouldOfferDailyNotesImport(makeApp(undefined), makeTarget())).toBe(false);
-	});
-
-	it("does not offer the import again once it has completed", () => {
-		expect(shouldOfferDailyNotesImport(makeApp({ enabled: true }), makeTarget({}, true))).toBe(false);
-	});
-});
+/** The enabled arm of the port's state union, which the helpers below build. */
+type EnabledState = Extract<DailyNotesPluginState, { enabled: true }>;
 
 describe("planDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
@@ -234,3 +114,160 @@ function makeTarget(day: Partial<DailyNotesImportTarget["day"]> = {}, imported =
 		day: { enabled: false, format: "", folder: "", templatePath: "", ...day },
 	};
 }
+
+describe("decideDailyNotesCard", () => {
+	function port(read: CompanionPluginRead<DailyNotesPluginState>): CompanionPluginPort {
+		return { readDailyNotes: () => read, disableDailyNotes: vi.fn() };
+	}
+
+	function readable(over: Partial<Omit<EnabledState, "enabled">> = {}): CompanionPluginPort {
+		return port({
+			ok: true,
+			value: {
+				enabled: true,
+				format: "DD-MM-YYYY",
+				folder: "Journal",
+				template: "templates/daily",
+				...over,
+			},
+		});
+	}
+
+	const disabled = port({ ok: true, value: { enabled: false } });
+
+	it("AC-MIG-01.6: hides the card when the companion plugin is absent", () => {
+		const card = decideDailyNotesCard(port({ ok: false, reason: "absent", problem: "gone" }), makeTarget());
+		expect(card.kind).toBe("hidden");
+	});
+
+	it("AC-MIG-01.6: hides the card when the companion plugin is installed but off", () => {
+		expect(decideDailyNotesCard(disabled, makeTarget()).kind).toBe("hidden");
+	});
+
+	// AC-MIG-01.6 through the real adapter: a disabled core plugin carries no
+	// settings instance, and that must read as "hide", never as "broken".
+	it("AC-MIG-01.6: hides the card for a disabled plugin that exposes no settings instance", () => {
+		const app = {
+			internalPlugins: { getPluginById: () => ({ enabled: false }) },
+		} as unknown as App;
+		const card = decideDailyNotesCard(new ObsidianCompanionPluginAdapter(app), makeTarget());
+		expect(card.kind).toBe("hidden");
+	});
+
+	it("AC-MIG-01.6: still hides the card for a disabled plugin once the import has run", () => {
+		expect(decideDailyNotesCard(disabled, makeTarget({}, true)).kind).toBe("hidden");
+	});
+
+	// AC-ARCH-04.4: a mismatch surfaces as an explicit problem, never as a silent
+	// empty import that looks like it worked.
+	it("AC-ARCH-04.4: reports the problem when the companion plugin does not match the expected shape", () => {
+		const card = decideDailyNotesCard(
+			port({ ok: false, reason: "mismatch", problem: "options sit behind a 'subscribe' accessor" }),
+			makeTarget(),
+		);
+		expect(card.kind).toBe("unreadable");
+		if (card.kind !== "unreadable") return;
+		expect(card.problem).toBe("options sit behind a 'subscribe' accessor");
+	});
+
+	it("AC-MIG-01.1: offers the import with the narrowed values when nothing was imported yet", () => {
+		const card = decideDailyNotesCard(readable(), makeTarget());
+		expect(card.kind).toBe("offer");
+		if (card.kind !== "offer") return;
+		expect(card.legacy).toEqual({ format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" });
+	});
+
+	it("AC-MIG-01.4: shows the still-active notice once the import has run", () => {
+		const card = decideDailyNotesCard(readable(), makeTarget({}, true));
+		expect(card.kind).toBe("still-active");
+	});
+
+	// AC-ARCH-04.4: a companion plugin that throws is reported, and the card
+	// carries the problem instead of the settings tab failing to render.
+	it("AC-ARCH-04.4: reports the problem when the companion plugin throws on read", () => {
+		const throwing = {
+			internalPlugins: {
+				getPluginById: () => {
+					throw new Error("registry exploded");
+				},
+			},
+		} as unknown as App;
+		const card = decideDailyNotesCard(new ObsidianCompanionPluginAdapter(throwing), makeTarget());
+		expect(card.kind).toBe("unreadable");
+		if (card.kind !== "unreadable") return;
+		expect(card.problem).toMatch(/exploded/);
+	});
+
+	it("AC-ARCH-04.4: never reports an importable offer without a readable companion plugin", () => {
+		for (const read of [
+			{ ok: false, reason: "absent", problem: "p" } as const,
+			{ ok: false, reason: "mismatch", problem: "p" } as const,
+		]) {
+			expect(decideDailyNotesCard(port(read), makeTarget()).kind).not.toBe("offer");
+		}
+	});
+});
+
+// AC-ARCH-04.4 applied to a write: a disable that did not happen must not be
+// recorded as one, because recording it removes the import offer for good.
+describe("AC-ARCH-04.4: recordCompanionDisabled", () => {
+	it("records the migration when the companion plugin was disabled", () => {
+		const target = makeTarget();
+		expect(recordCompanionDisabled(target, { ok: true })).toBe(true);
+		expect(target.hasMigratedDailyNoteSettings).toBe(true);
+	});
+
+	it("records nothing when disabling failed", () => {
+		const target = makeTarget();
+		expect(recordCompanionDisabled(target, { ok: false, problem: "host refused" })).toBe(false);
+		expect(target.hasMigratedDailyNoteSettings).toBe(false);
+	});
+
+	it("leaves an already recorded migration alone when disabling failed", () => {
+		const target = makeTarget({}, true);
+		expect(recordCompanionDisabled(target, { ok: false, problem: "host refused" })).toBe(false);
+		expect(target.hasMigratedDailyNoteSettings).toBe(true);
+	});
+});
+
+describe("AC-ARCH-04.4: ObsidianCompanionPluginAdapter.disableDailyNotes outcome", () => {
+	function appWith(plugin: unknown): App {
+		return { internalPlugins: { getPluginById: () => plugin } } as unknown as App;
+	}
+
+	it("reports success when the host disabled the plugin", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({ enabled: true, instance: { options: {} }, disable: vi.fn() }),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(true);
+	});
+
+	it("reports the problem when the host throws", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({
+				enabled: true,
+				instance: { options: {} },
+				disable: () => {
+					throw new Error("host refused");
+				},
+			}),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+		if (outcome.ok) return;
+		expect(outcome.problem).toMatch(/host refused/);
+	});
+
+	it("reports the problem when the plugin is gone", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(appWith(null)).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+	});
+
+	it("reports the problem when the plugin exposes no disable method", () => {
+		const outcome = new ObsidianCompanionPluginAdapter(
+			appWith({ enabled: true, instance: { options: {} } }),
+		).disableDailyNotes();
+		expect(outcome.ok).toBe(false);
+		if (outcome.ok) return;
+		expect(outcome.problem).toMatch(/disable/);
+	});
+});

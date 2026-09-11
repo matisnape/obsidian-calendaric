@@ -1,16 +1,8 @@
-import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "./types";
-import {
-	isDailyNotesPluginEnabled,
-	getLegacyDailyNoteSettings,
-	disableDailyNotesPlugin,
-	shouldOfferDailyNotesImport,
-	planDailyNotesImport,
-	applyDailyNotesImport,
-	DEFAULT_DAY_FORMAT,
-} from "./settings/dailyNotesImport";
-import type { DailyNotesImportKey } from "./settings/dailyNotesImport";
-import { DailyNotesImportConflictModal } from "./settings/dailyNotesImportModal";
+import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
+import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
+import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import type CalendaricPlugin from "./main";
 
 export type WeekStartOption =
@@ -107,7 +99,10 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		this.renderImportCard(containerEl);
+		renderDailyNotesImportCard(containerEl, this.plugin, new ObsidianCompanionPluginAdapter(this.plugin.app), {
+			save: () => this.save(),
+			refresh: () => this.display(),
+		});
 		this.renderGeneralSection(containerEl);
 		this.renderPeriodicNotesSection(containerEl);
 		this.renderAdvancedSection(containerEl);
@@ -116,89 +111,6 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private async save(): Promise<void> {
 		await this.plugin.saveSettings();
 		this.plugin.onSettingsChange();
-	}
-
-	// -------------------------------------------------------------------------
-	// Daily Notes import card
-	// -------------------------------------------------------------------------
-	private renderImportCard(containerEl: HTMLElement): void {
-		const { app, settings } = this.plugin;
-
-		// AC-MIG-01.6: no banner at all while the core plugin is off.
-		if (!isDailyNotesPluginEnabled(app)) return;
-
-		// AC-MIG-01.4: the import banner is replaced by the "still active" notice once it ran.
-		if (!shouldOfferDailyNotesImport(app, settings)) {
-			const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
-			notice.createEl("strong", { text: "Daily Notes plugin is still active" });
-			notice.createEl("p", {
-				text: "Both plugins may create daily notes. Consider disabling the core Daily Notes plugin.",
-			});
-			const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
-			const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
-			disableBtn.addEventListener("click", async () => {
-				disableDailyNotesPlugin(app);
-				await this.save();
-				this.display();
-			});
-			const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
-			dismissBtn.addEventListener("click", () => {
-				notice.remove();
-			});
-			return;
-		}
-
-		const card = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
-		card.createEl("strong", { text: "Daily Notes plugin detected" });
-		card.createEl("p", {
-			text: "Calendaric can import your existing Daily Notes settings (format, folder, template). After import, you can disable the core Daily Notes plugin.",
-		});
-
-		const buttons = card.createDiv({ cls: "calendaric-callout__buttons" });
-
-		const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
-		importBtn.addEventListener("click", async () => {
-			const legacy = getLegacyDailyNoteSettings(app);
-			const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
-				const previousDay = { ...settings.day };
-				const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
-				applyDailyNotesImport(settings, legacy, confirmed);
-				try {
-					// Only the write to disk is rolled back; a failed refresh must not undo a stored import.
-					await this.plugin.saveSettings();
-				} catch (error) {
-					Object.assign(settings.day, previousDay);
-					settings.hasMigratedDailyNoteSettings = previouslyMigrated;
-					console.error("Calendaric: the Daily Notes import could not be saved", error);
-					new Notice("Could not save the Daily Notes import.");
-					return;
-				}
-				this.plugin.onSettingsChange();
-				this.display();
-			};
-
-			const plan = planDailyNotesImport(legacy, settings.day);
-			if (plan.conflicts.length === 0) {
-				await applyAndSaveImport([]);
-				return;
-			}
-			new DailyNotesImportConflictModal(app, plan.conflicts, applyAndSaveImport).open();
-		});
-
-		const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
-		disableBtn.addEventListener("click", async () => {
-			disableDailyNotesPlugin(app);
-			settings.hasMigratedDailyNoteSettings = true;
-			await this.save();
-			this.display();
-		});
-
-		const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
-		dismissBtn.addEventListener("click", async () => {
-			settings.hasMigratedDailyNoteSettings = true;
-			await this.save();
-			this.display();
-		});
 	}
 
 	// -------------------------------------------------------------------------

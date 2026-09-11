@@ -1,40 +1,4 @@
-import { App } from "obsidian";
-
-interface InternalDailyNotesPlugin {
-	enabled: boolean;
-	instance?: {
-		options?: {
-			format?: string;
-			folder?: string;
-			template?: string;
-		};
-	};
-	disable(confirm: boolean): void;
-}
-
-function getDailyNotesPlugin(app: App): InternalDailyNotesPlugin | null {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const plugin = (app as any).internalPlugins?.getPluginById("daily-notes") as InternalDailyNotesPlugin | undefined;
-	return plugin ?? null;
-}
-
-export function isDailyNotesPluginEnabled(app: App): boolean {
-	return getDailyNotesPlugin(app)?.enabled ?? false;
-}
-
-export function getLegacyDailyNoteSettings(app: App): { format: string; folder: string; template: string } {
-	const plugin = getDailyNotesPlugin(app);
-	const options = plugin?.instance?.options;
-	return {
-		format: options?.format ?? "",
-		folder: options?.folder ?? "",
-		template: options?.template ?? "",
-	};
-}
-
-export function disableDailyNotesPlugin(app: App): void {
-	getDailyNotesPlugin(app)?.disable(true);
-}
+import type { CompanionPluginAction, CompanionPluginPort } from "../adapters/companionPluginPort";
 
 /** Documented default used when the core plugin stored no format (AC-MIG-01.3). */
 export const DEFAULT_DAY_FORMAT = "YYYY-MM-DD";
@@ -78,9 +42,34 @@ const FIELD_LABELS: Record<DailyNotesImportKey, string> = {
 	templatePath: "Template",
 };
 
-/** True when the settings tab should offer the import banner (AC-MIG-01.1, .4, .6). */
-export function shouldOfferDailyNotesImport(app: App, target: DailyNotesImportTarget): boolean {
-	return isDailyNotesPluginEnabled(app) && !target.hasMigratedDailyNoteSettings;
+/**
+ * What the settings tab shows for the companion plugin. Every case the tab can
+ * face is a variant here, so a companion plugin whose shape no longer matches
+ * cannot fall through to the import path (AC-ARCH-04.4).
+ */
+export type DailyNotesCard =
+	| { kind: "hidden" }
+	| { kind: "unreadable"; problem: string }
+	| { kind: "offer"; legacy: LegacyDailyNoteSettings }
+	| { kind: "still-active" };
+
+/** The single decision behind the import card (AC-MIG-01.1, .4, .6). */
+export function decideDailyNotesCard(
+	companion: CompanionPluginPort,
+	target: DailyNotesImportTarget,
+): DailyNotesCard {
+	const read = companion.readDailyNotes();
+	if (!read.ok) {
+		// A plugin the user never installed is not a problem worth reporting.
+		return read.reason === "absent" ? { kind: "hidden" } : { kind: "unreadable", problem: read.problem };
+	}
+
+	const state = read.value;
+	if (!state.enabled) return { kind: "hidden" };
+
+	const { format, folder, template } = state;
+	if (target.hasMigratedDailyNoteSettings) return { kind: "still-active" };
+	return { kind: "offer", legacy: { format, folder, template } };
 }
 
 export function planDailyNotesImport(
@@ -123,6 +112,20 @@ export function applyDailyNotesImport(
 		if (confirmed.includes(field.key)) target.day[field.key] = field.incoming;
 	}
 	target.day.enabled = true;
+	target.hasMigratedDailyNoteSettings = true;
+	return true;
+}
+
+/**
+ * Records that the companion plugin was turned off, and only then. Recording a
+ * disable that did not happen retires the import offer permanently, leaving the
+ * user no way back to the only path into that feature (AC-ARCH-04.4).
+ */
+export function recordCompanionDisabled(
+	target: Pick<DailyNotesImportTarget, "hasMigratedDailyNoteSettings">,
+	outcome: CompanionPluginAction,
+): boolean {
+	if (!outcome.ok) return false;
 	target.hasMigratedDailyNoteSettings = true;
 	return true;
 }
