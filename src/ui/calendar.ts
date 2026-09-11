@@ -6,6 +6,9 @@ import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUti
 import { computeNotePath } from "../notes/noteUtils";
 import { createNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
+import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
+import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
+import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 
@@ -32,6 +35,9 @@ export class CalendarWidget {
 	private app: App;
 	private settings: CalendaricSettings;
 	private displayedMonth: Moment;
+	private vaultConfig: ObsidianVaultConfigAdapter;
+	private vault: ObsidianVaultAdapter;
+	private workspace: ObsidianWorkspaceAdapter;
 
 	// DOM references for partial updates
 	private titleEl!: HTMLElement;
@@ -45,6 +51,9 @@ export class CalendarWidget {
 		this.app = app;
 		this.settings = settings;
 		this.displayedMonth = window.moment();
+		this.vaultConfig = new ObsidianVaultConfigAdapter(app);
+		this.vault = new ObsidianVaultAdapter(app);
+		this.workspace = new ObsidianWorkspaceAdapter(app);
 		this.dots = new DotScanner(app, () => this.renderGrid());
 
 		this.fileOpenRef = app.workspace.on("file-open", (file) => {
@@ -142,7 +151,7 @@ export class CalendarWidget {
 				const firstDay = week.days[0];
 				if (firstDay) {
 					const monday = firstDay.date.clone().isoWeekday(1);
-					const weekPath = computeNotePath(monday, this.settings.week, this.app);
+					const weekPath = computeNotePath(monday, this.settings.week, this.vaultConfig);
 					if (weekPaths.has(weekPath)) {
 						wDotContainer.appendChild(makeDotSvg());
 					}
@@ -170,7 +179,7 @@ export class CalendarWidget {
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				// Dot: daily note exists for this date
-				const dayPath = computeNotePath(day.date, this.settings.day, this.app);
+				const dayPath = computeNotePath(day.date, this.settings.day, this.vaultConfig);
 				if (dayPaths.has(dayPath)) {
 					dayDotContainer.appendChild(makeDotSvg());
 				}
@@ -220,12 +229,12 @@ export class CalendarWidget {
 		event: MouseEvent,
 	): Promise<void> {
 		const config = this.settings[granularity];
-		const path = computeNotePath(date, config, this.app);
+		const path = computeNotePath(date, config, this.vaultConfig);
 		const existing = this.app.vault.getAbstractFileByPath(path);
 
 		if (existing) {
 			if (existing instanceof TFile) {
-				await openNote(existing, event, this.app);
+				await openNote(existing, event, this.workspace);
 			}
 			return;
 		}
@@ -238,13 +247,13 @@ export class CalendarWidget {
 				title: `New ${label} Note`,
 				body: `File ${filename} does not exist. Would you like to create it?`,
 				onAccept: async () => {
-					const file = await createNote(date, granularity, config, this.app);
-					await openNote(file, event, this.app);
+					const file = await createNote(path, date, granularity, config, this.vault);
+					await openNote(file, event, this.workspace);
 				},
 			}).open();
 		} else {
-			const file = await createNote(date, granularity, config, this.app);
-			await openNote(file, event, this.app);
+			const file = await createNote(path, date, granularity, config, this.vault);
+			await openNote(file, event, this.workspace);
 		}
 	}
 

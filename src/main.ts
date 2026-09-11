@@ -4,6 +4,10 @@ import { CalendarView, VIEW_TYPE_CALENDAR } from "./ui/CalendarView";
 import { computeNotePath } from "./notes/noteUtils";
 import { createNote } from "./notes/noteCreate";
 import { openNoteInNewTab } from "./notes/noteOpen";
+import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
+import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
+import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
+import type { NoteFile } from "./adapters/vaultPort";
 
 
 export default class CalendaricPlugin extends Plugin {
@@ -73,20 +77,20 @@ export default class CalendaricPlugin extends Plugin {
 			if (!config.openAtStartup || !config.enabled) continue;
 
 			const date = window.moment();
-			const path = computeNotePath(date, config, this.app);
+			const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
 			const existing = this.app.vault.getAbstractFileByPath(path);
 
-			let file: TFile;
+			let file: NoteFile;
 			if (existing instanceof TFile) {
 				file = existing;
 			} else {
 				// Create silently — bypass confirmBeforeCreate on startup
 				// Only day/week notes are supported for creation; month/quarter/year are not yet implemented
 				if (key !== "day" && key !== "week") break;
-				file = await createNote(date, key, config, this.app);
+				file = await createNote(path, date, key, config, new ObsidianVaultAdapter(this.app));
 			}
 
-			await openNoteInNewTab(file, this.app);
+			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app));
 			break; // Only one granularity can have openAtStartup (enforced by clearStartupNote)
 		}
 	}

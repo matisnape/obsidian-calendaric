@@ -1,6 +1,6 @@
 import type { Moment } from "moment";
-import type { App } from "obsidian";
 import type { PeriodicConfig } from "../types";
+import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^}]+)\}\}/gi;
 
@@ -34,8 +34,8 @@ export function applyWeekTokens(fmt: string, date: Moment): string {
  * extracting them first, replacing with safe placeholders, running moment.format(),
  * then substituting the resolved weekday dates back in.
  */
-export function computeNotePath(date: Moment, config: PeriodicConfig, app: App): string {
-	const folder = resolveNoteFolder(config.folder, app);
+export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfig: VaultConfigPort): string {
+	const folder = resolveNoteFolder(config.folder, vaultConfig);
 	const filename = formatWithWeekTokens(config.format, date);
 	return folder ? `${folder}/${filename}.md` : `${filename}.md`;
 }
@@ -64,18 +64,8 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
  * Resolve the note folder: if empty, fall back to Obsidian's default new-file
  * location setting.
  */
-export function resolveNoteFolder(folder: string, app: App): string {
+export function resolveNoteFolder(folder: string, vaultConfig: VaultConfigPort): string {
 	if (folder.trim() !== "") return folder.trim();
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const config = (app.vault as any).config as Record<string, unknown> | undefined;
-	if (!config) return "";
-
-	const location = config["newFileLocation"];
-	if (location === "folder") {
-		const path = config["newFileFolderPath"];
-		return typeof path === "string" ? path : "";
-	}
-	// "root" or "current" — use vault root
-	return "";
+	return vaultConfig.getDefaultNewFileFolder();
 }
