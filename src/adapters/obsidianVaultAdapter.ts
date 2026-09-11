@@ -14,6 +14,12 @@ export class ObsidianVaultAdapter implements VaultPort {
 		return this.app.vault.getAbstractFileByPath(path) !== null;
 	}
 
+	getFile(path: string): NoteFile | null {
+		const file = this.app.vault.getAbstractFileByPath(path);
+		// A TFolder can sit at a note's path; openInLeaf would reject it later anyway.
+		return file instanceof TFile ? file : null;
+	}
+
 	async createFolder(path: string): Promise<void> {
 		await this.app.vault.createFolder(path);
 	}

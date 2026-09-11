@@ -47,6 +47,10 @@ export class FakeVaultPort implements VaultPort {
 		return this.folders.has(path) || this.files.has(path);
 	}
 
+	getFile(path: string): NoteFile | null {
+		return this.files.has(path) ? { path } : null;
+	}
+
 	async createFolder(path: string): Promise<void> {
 		if (this.lostFolderRaces.delete(path)) {
 			this.folders.add(path);

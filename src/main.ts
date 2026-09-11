@@ -11,6 +11,7 @@ import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapte
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import type { NoteFile } from "./adapters/vaultPort";
+import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 
 
 export default class CalendaricPlugin extends Plugin {
@@ -24,6 +25,12 @@ export default class CalendaricPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
 
 		this.addSettingTab(new CalendaricSettingsTab(this.app, this));
+
+		// Lets the 'Page preview' plugin list the grid as a hover source and gate it on Mod.
+		this.registerHoverLinkSource(HOVER_LINK_SOURCE, {
+			display: "Calendaric",
+			defaultMod: true,
+		});
 
 		// Apply saved locale override
 		if (this.settings.overrideLocale) {

@@ -1,21 +1,14 @@
 import type { Moment } from "moment";
-import { TFile } from "obsidian";
-import type { App, EventRef } from "obsidian";
+import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
-import { createNote } from "../notes/noteCreate";
-import { openNote } from "../notes/noteOpen";
 import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
-
-const GRANULARITY_LABEL: Record<"day" | "week", string> = {
-	day: "Daily",
-	week: "Weekly",
-};
+import { openOrCreateNote, planHoverPreview, type CreateRequest } from "./cellActions";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
@@ -30,7 +23,10 @@ function makeDotSvg(): SVGElement {
 	return svg;
 }
 
-export class CalendarWidget {
+export class CalendarWidget implements HoverParent {
+	/** Page preview writes the popover it opens for a cell here. */
+	hoverPopover: HoverPopover | null = null;
+
 	private containerEl: HTMLElement;
 	private app: App;
 	private settings: CalendaricSettings;
@@ -187,6 +183,9 @@ export class CalendarWidget {
 					dayDiv.addEventListener("click", (e) => {
 						void this.handleNoteClick(day.date, "day", e);
 					});
+					dayDiv.addEventListener("mouseover", (e) => {
+						this.handleNoteHover(e, dayDiv, dayPath);
+					});
 				}
 			}
 		}
@@ -223,32 +222,33 @@ export class CalendarWidget {
 		granularity: "day" | "week",
 		event: MouseEvent,
 	): Promise<void> {
-		const config = this.settings[granularity];
-		const path = computeNotePath(date, config, this.vaultConfig);
-		const existing = this.app.vault.getAbstractFileByPath(path);
+		await openOrCreateNote({
+			date,
+			granularity,
+			config: this.settings[granularity],
+			confirmBeforeCreate: this.settings.confirmBeforeCreate,
+			event,
+			ports: { vault: this.vault, vaultConfig: this.vaultConfig, workspace: this.workspace },
+			confirmCreate: (request) => this.askToCreate(request),
+		});
+	}
 
-		if (existing) {
-			if (existing instanceof TFile) {
-				await openNote(existing, event, this.workspace, path);
-			}
-			return;
-		}
-
-		const filename = path.split("/").pop() ?? path;
-		const label = GRANULARITY_LABEL[granularity];
-
-		if (this.settings.confirmBeforeCreate) {
+	private askToCreate(request: CreateRequest): Promise<boolean> {
+		return new Promise((resolve) => {
 			new ConfirmationModal(this.app, {
-				title: `New ${label} Note`,
-				body: `File ${filename} does not exist. Would you like to create it?`,
-				onAccept: async () => {
-					const file = await createNote(path, date, granularity, config, this.vault);
-					await openNote(file, event, this.workspace, path);
-				},
+				title: request.title,
+				body: request.body,
+				onAccept: async () => resolve(true),
+				onDismiss: () => resolve(false),
 			}).open();
-		} else {
-			const file = await createNote(path, date, granularity, config, this.vault);
-			await openNote(file, event, this.workspace, path);
+		});
+	}
+
+	/** Hands the hover to Obsidian's Page preview plugin, which owns the popover. */
+	private handleNoteHover(event: MouseEvent, targetEl: HTMLElement, notePath: string): void {
+		const preview = planHoverPreview({ event, hoverParent: this, targetEl, notePath });
+		if (preview) {
+			this.app.workspace.trigger("hover-link", preview);
 		}
 	}
 
