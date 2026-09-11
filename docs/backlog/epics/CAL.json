@@ -10,7 +10,7 @@
       "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calui:render-calendar-grid",
         "calendaric:calendar-month-grid-render"
