@@ -1,12 +1,15 @@
-import { Plugin, TFile } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 import { CalendaricSettings, CalendaricSettingsTab, DEFAULT_SETTINGS } from "./settings";
-import { CalendarView, VIEW_TYPE_CALENDAR } from "./ui/CalendarView";
+import { CalendarView } from "./ui/CalendarView";
+import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
 import { computeNotePath } from "./notes/noteUtils";
 import { createNote } from "./notes/noteCreate";
 import { openNoteInNewTab } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
+import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
+import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import type { NoteFile } from "./adapters/vaultPort";
 
 
@@ -28,41 +31,25 @@ export default class CalendaricPlugin extends Plugin {
 			(window as any).moment?.locale(this.settings.overrideLocale);
 		}
 
+		const calendarLeaves = new ObsidianCalendarLeafAdapter(this.app);
+		// One coordinator for the whole plugin. Startup and the palette command
+		// both reach for the calendar leaf, and they share this creation lock,
+		// so neither can make a second one while the other is still creating.
+		const calendar = createCalendarCoordinator(calendarLeaves, (message) => {
+			new Notice(message);
+		});
+
 		this.app.workspace.onLayoutReady(() => {
-			this.initLeaf();
+			// Startup parks the leaf without revealing or focusing it.
+			void calendar.ensure();
 			void this.openStartupNote();
 		});
 
-		this.addCommand({
-			id: "show-calendar-view",
-			name: "Show calendar",
-			callback: () => this.activateView(),
-		});
+		this.addCommand(calendarViewCommand(calendarLeaves, calendar.open));
 	}
 
 	onunload() {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
-	}
-
-	initLeaf(): void {
-		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) return;
-		const rightLeaf = this.app.workspace.getRightLeaf(false);
-		if (!rightLeaf) return;
-		void rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
-	}
-
-	async activateView(): Promise<void> {
-		const { workspace } = this.app;
-
-		let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
-		if (!leaf) {
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (!rightLeaf) return;
-			await rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR });
-			leaf = rightLeaf;
-		}
-
-		workspace.revealLeaf(leaf);
 	}
 
 	onSettingsChange(): void {
