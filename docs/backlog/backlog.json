@@ -1715,8 +1715,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/noteDate.test.ts > computeNoteDate > collapses two times on the same calendar day to the same day-note date"
         },
         {
           "id": "AC-FMT-06.2",
@@ -1727,8 +1727,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/noteDate.test.ts > computeNoteDate > does not mutate the input date"
         },
         {
           "id": "AC-FMT-06.3",
@@ -1740,8 +1740,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/noteDate.test.ts > computeNoteDate > produces different note dates for different granularities of the same instant"
         },
         {
           "id": "AC-FMT-06.4",
@@ -1752,8 +1752,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/noteDate.test.ts > computeNoteDate > defaults to day granularity when none is given",
           "failure_path": true
         },
         {
@@ -1765,8 +1765,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/noteDate.test.ts > computeNoteDate > keeps two instants a few milliseconds apart on opposite sides of midnight on different note dates",
           "failure_path": true
         }
       ]
