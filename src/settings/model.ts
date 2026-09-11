@@ -244,6 +244,43 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 	return { ...stored, ...pickGlobals(settings), calendarSets };
 }
 
+/**
+ * The documented built-in format each granularity falls back to when its own
+ * format is left empty (AC-SET-03.1). One table, so the settings screen's
+ * placeholder, the Daily Notes import and the resolver cannot drift apart.
+ */
+export const DEFAULT_FORMATS: Record<Granularity, string> = {
+	day: "YYYY-MM-DD",
+	week: "gggg-[W]ww",
+	month: "YYYY-MM",
+	quarter: "YYYY-[Q]Q",
+	year: "YYYY",
+};
+
+/** Anything carrying stored per-granularity entries: flattened settings, or a stored group. */
+type ConfigSource = Partial<Record<Granularity, unknown>>;
+
+/**
+ * The one read path to a granularity's effective format, folder, template and
+ * prefix-match setting (US-SET-03).
+ *
+ * Calendaric's own stored configuration is the only source consulted: no
+ * companion plugin's file is read here, so a vault whose core Daily Notes
+ * settings disagree cannot change what Calendaric resolves (AC-SET-03.4).
+ * An empty folder and an empty template path are answers, not gaps -- the vault
+ * root, and no template (AC-SET-03.2). A hand-edited value of the wrong type is
+ * replaced by the built-in default for that one field, leaving the rest of the
+ * granularity intact (AC-SET-03.5).
+ *
+ * The result is a fresh object every call, so one caller cannot alter what the
+ * next one resolves (AC-SET-03.3).
+ */
+export function resolveEffectiveConfig(source: ConfigSource, granularity: Granularity): PeriodicConfig {
+	const config = normalizeConfig(source[granularity]);
+	if (config.format === "") config.format = DEFAULT_FORMATS[granularity];
+	return config;
+}
+
 /** Anything that can answer whether a granularity is on: flattened settings, or a stored group. */
 type EnabledSource = Partial<Record<Granularity, { enabled?: boolean }>>;
 

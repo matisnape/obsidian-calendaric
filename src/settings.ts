@@ -1,8 +1,7 @@
 import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
 import type { Granularity, PeriodicConfig } from "./types";
-import { clearStartupNote } from "./settings/model";
+import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
-import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import type CalendaricPlugin from "./main";
@@ -40,11 +39,6 @@ const GRANULARITY_PERIODICITY: Record<Granularity, string> = {
 	month: "monthly",
 	quarter: "quarterly",
 	year: "yearly",
-};
-
-const DEFAULT_FORMAT: Record<ActiveGranularity, string> = {
-	day: DEFAULT_DAY_FORMAT,
-	week: "gggg-[W]ww",
 };
 
 /** A filename that starts with this granularity's date and then carries extra text. */
@@ -224,7 +218,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {
 			const m = getMoment();
-			const formatted = m ? m().format(fmt || DEFAULT_FORMAT[granularity]) : "";
+			const formatted = m ? m().format(fmt || DEFAULT_FORMATS[granularity]) : "";
 			formatExample.empty();
 			formatExample.appendText("Your current syntax looks like this: ");
 			formatExample.createEl("b", { text: formatted, cls: "u-pop" });
@@ -234,7 +228,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
 		const formatInput = formatControl.createEl("input", {
 			type: "text",
-			attr: { placeholder: DEFAULT_FORMAT[granularity], spellcheck: "false" },
+			attr: { placeholder: DEFAULT_FORMATS[granularity], spellcheck: "false" },
 		});
 		formatInput.value = config.format;
 		formatInput.addEventListener("input", () => updateFormatExample(formatInput.value));
