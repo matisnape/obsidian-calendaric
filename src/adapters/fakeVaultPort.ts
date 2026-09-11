@@ -23,8 +23,12 @@ export class FakeVaultPort implements VaultPort {
 		this.folderErrors.set(path, error);
 	}
 
+	/** Seeds the folder and every ancestor, because a vault cannot hold one without the others. */
 	seedFolder(path: string): void {
-		this.folders.add(path);
+		const segments = path.split("/");
+		for (let depth = 1; depth <= segments.length; depth++) {
+			this.folders.add(segments.slice(0, depth).join("/"));
+		}
 	}
 
 	seedFile(path: string, content: string): void {

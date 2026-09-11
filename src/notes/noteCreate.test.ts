@@ -123,6 +123,15 @@ describe("createNote", () => {
 		).rejects.toThrow("EACCES: permission denied");
 	});
 
+	it("refuses a path with an unusable segment before making any folder", async () => {
+		const vault = new FakeVaultPort();
+
+		await expect(
+			createNote("journal/../daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("Cannot create a folder for the path: journal/../daily");
+		expect(vault.createdFolders).toEqual([]);
+	});
+
 	it("renders the configured template into the note content", async () => {
 		const vault = new FakeVaultPort();
 		vault.seedFile("Templates/daily.md", "# {{title}}");

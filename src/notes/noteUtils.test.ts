@@ -1,6 +1,14 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
-import { applyWeekTokens, formatWithWeekTokens, computeNotePath, resolveNoteFolder, checkNoteFolder } from "./noteUtils";
+import {
+	applyWeekTokens,
+	formatWithWeekTokens,
+	computeNotePath,
+	resolveNoteFolder,
+	checkNoteFolder,
+	folderChainSegments,
+	hasUnusableSegment,
+} from "./noteUtils";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
@@ -176,10 +184,71 @@ describe("checkNoteFolder", () => {
 		expect(check).toEqual({ path: "journal/daily", valid: false, notYetCreated: false });
 	});
 
+	it("rejects a file sitting on an intermediate segment of the chain", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note where a parent folder belongs");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: false, notYetCreated: false });
+	});
+
+	it("reports a chain as pending when only its top folder exists", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
+
+		const check = checkNoteFolder("journal/daily/2026", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily/2026", valid: true, notYetCreated: true });
+	});
+
+	it("reports a fully present chain as not pending", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal/daily/2026");
+
+		const check = checkNoteFolder("journal/daily/2026", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily/2026", valid: true, notYetCreated: false });
+	});
+
 	it("rejects a path with an empty or dot segment", () => {
 		const vault = new FakeVaultPort();
 
 		expect(checkNoteFolder("journal//daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
 		expect(checkNoteFolder("journal/../daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
+	});
+});
+
+describe("hasUnusableSegment", () => {
+	it("accepts the vault root, which has no segments", () => {
+		expect(hasUnusableSegment("")).toBe(false);
+	});
+
+	it("accepts an ordinary chain", () => {
+		expect(hasUnusableSegment("journal/daily/2026")).toBe(false);
+	});
+
+	it("rejects an empty, dot or double-dot segment", () => {
+		expect(hasUnusableSegment("journal//daily")).toBe(true);
+		expect(hasUnusableSegment("journal/./daily")).toBe(true);
+		expect(hasUnusableSegment("journal/../daily")).toBe(true);
+	});
+});
+
+describe("folderChainSegments", () => {
+	it("lists every folder in the chain, shallowest first", () => {
+		expect(folderChainSegments("journal/daily/2026")).toEqual([
+			"journal",
+			"journal/daily",
+			"journal/daily/2026",
+		]);
+	});
+
+	it("lists a single folder as the whole chain", () => {
+		expect(folderChainSegments("journal")).toEqual(["journal"]);
+	});
+
+	it("lists nothing for the vault root", () => {
+		expect(folderChainSegments("")).toEqual([]);
 	});
 });

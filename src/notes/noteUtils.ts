@@ -92,10 +92,40 @@ export interface NoteFolderCheck {
 }
 
 /**
+ * A segment no vault can hold: empty, or one that walks the path instead of
+ * naming a folder.
+ *
+ * Shared like `folderChainSegments`, so the check and the creation apply the
+ * same rule instead of one of them knowing it alone.
+ */
+export function hasUnusableSegment(path: string): boolean {
+	// The vault root is a destination rather than a segment, so it has none.
+	if (path === "") return false;
+
+	return path.split("/").some((segment) => segment === "" || segment === "." || segment === "..");
+}
+
+/**
+ * Every folder the chain down to `path` is made of, shallowest first.
+ *
+ * Both the check below and the creation in `noteCreate` walk this list, so the
+ * two cannot disagree about which folders the chain contains.
+ */
+export function folderChainSegments(path: string): string[] {
+	if (path === "") return [];
+
+	const segments = path.split("/");
+	return segments.map((_segment, index) => segments.slice(0, index + 1).join("/"));
+}
+
+/**
  * Check a configured folder path ahead of note creation.
  *
- * A missing folder is never a rejection: `createNote` builds the whole chain
- * on demand, so a caller showing this to the user reports it, not blocks on it.
+ * Every folder in the chain is judged, not only the last one, because creation
+ * walks the whole chain and fails at the first segment it cannot make.
+ *
+ * A missing folder is never a rejection: `createNote` builds the chain on
+ * demand, so a caller showing this to the user reports it, not blocks on it.
  */
 export function checkNoteFolder(
 	folder: string,
@@ -107,16 +137,15 @@ export function checkNoteFolder(
 	// The vault root is always there, so it is never pending creation.
 	if (path === "") return { path, valid: true, notYetCreated: false };
 
-	const hasUnusableSegment = path
-		.split("/")
-		.some((segment) => segment === "" || segment === "." || segment === "..");
-	if (hasUnusableSegment) return { path, valid: false, notYetCreated: false };
+	if (hasUnusableSegment(path)) return { path, valid: false, notYetCreated: false };
 
-	if (vault.folderExists(path)) return { path, valid: true, notYetCreated: false };
+	const chain = folderChainSegments(path);
 
-	// Something that is not a folder already owns the path, so creating the
-	// folder there cannot succeed and the path is not merely pending.
-	if (vault.pathExists(path)) return { path, valid: false, notYetCreated: false };
+	// Anything that is not a folder already owning a segment stops creation
+	// there, so the whole chain is unusable however deep the clash sits.
+	if (chain.some((segment) => !vault.folderExists(segment) && vault.pathExists(segment))) {
+		return { path, valid: false, notYetCreated: false };
+	}
 
-	return { path, valid: true, notYetCreated: true };
+	return { path, valid: true, notYetCreated: chain.some((segment) => !vault.folderExists(segment)) };
 }
