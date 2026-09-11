@@ -30,14 +30,15 @@ export interface GlobalSettings {
 export type GranularityConfigs = Record<Granularity, PeriodicConfig>;
 
 /**
- * One named configuration group: an id plus one `PeriodicConfig` per granularity.
+ * One named configuration group: an id plus one stored entry per granularity.
  *
- * Every part is optional because a stored group is kept exactly as it was
- * written: it may predate a granularity, carry only the parts it needs, or —
- * hand-edited — have lost its id. `toSettings` fills the gaps for the group in
- * use, and that projection is a view, not what gets saved.
+ * Every part is optional, down to the individual fields of an entry, because a
+ * stored group is kept exactly as it was written: it may predate a granularity,
+ * carry only the fields it needs, or — hand-edited — have lost its id.
+ * `toSettings` fills the gaps for the group in use, and that projection is a
+ * view rather than what gets saved.
  */
-export interface CalendarSet extends Partial<GranularityConfigs> {
+export interface CalendarSet extends Partial<Record<Granularity, Partial<PeriodicConfig>>> {
 	id?: string;
 }
 
@@ -60,7 +61,7 @@ const DEFAULT_GLOBALS: GlobalSettings = {
 	hasMigratedDailyNoteSettings: false,
 };
 
-/** Fresh-install granularity configs. Day and week are the two a new vault starts with. */
+/** Day and week are the two granularities a new vault starts with. */
 export function defaultGranularityConfigs(): GranularityConfigs {
 	return {
 		day: { ...DEFAULT_PERIODIC_CONFIG, enabled: true },
@@ -127,10 +128,6 @@ const CONFIG_FIELDS = [
 	"openAtStartup",
 ] as const;
 
-function sameConfig(stored: PeriodicConfig, edited: PeriodicConfig): boolean {
-	return CONFIG_FIELDS.every((field) => stored[field] === edited[field]);
-}
-
 function asWeekStart(value: unknown, fallback: WeekStartOption): WeekStartOption {
 	return WEEK_START_OPTIONS.find((option) => option === value) ?? fallback;
 }
@@ -170,10 +167,13 @@ export function loadStoredConfig(raw: unknown): StoredConfig {
 		: [];
 	const calendarSets = storedSets.length > 0 ? storedSets : [defaultCalendarSet()];
 
+	// The fallback is the first group, so name it by its own id. Falling back to a
+	// literal "Default" would hand the group in use to a *later* group that happens
+	// to carry that id, and edits would land in the wrong group.
 	const requested = asString(raw.activeCalendarSet, "");
 	const activeCalendarSet = calendarSets.some((set) => set.id === requested)
 		? requested
-		: asString(calendarSets[0]?.id, DEFAULT_CALENDAR_SET_ID);
+		: asString(calendarSets[0]?.id, "");
 
 	return {
 		...raw,
@@ -195,12 +195,11 @@ function activeSetIndex(stored: StoredConfig): number {
 	);
 }
 
-/** The group currently in effect. */
 export function getActiveSet(stored: StoredConfig): CalendarSet {
 	return stored.calendarSets[activeSetIndex(stored)] ?? defaultCalendarSet(stored.activeCalendarSet);
 }
 
-/** Flatten the group in use into the settings object the rest of the plugin reads. */
+/** Flattens the group in use, defaults filled in — a view, not the saved shape. */
 export function toSettings(stored: StoredConfig): CalendaricSettings {
 	const active = getActiveSet(stored);
 	const configs = {} as GranularityConfigs;
@@ -213,18 +212,28 @@ export function toSettings(stored: StoredConfig): CalendaricSettings {
 /**
  * Write edited settings back into the group in use.
  *
- * A granularity whose values match what was stored is left alone, so a
- * granularity the stored group never mentioned stays unmentioned and an
- * unchanged save writes the file back as it was. Every other group is passed
- * through by reference, so nothing outside the group in use can be rewritten.
+ * Only the fields whose value actually changed are written, and only for the
+ * granularities that have one. A granularity the stored group never mentioned
+ * stays unmentioned, a field it never carried stays absent, and an unchanged
+ * save writes the file back as it was. Every other group is passed through by
+ * reference, so nothing outside the group in use can be rewritten.
  */
 export function applySettings(stored: StoredConfig, settings: CalendaricSettings): StoredConfig {
 	const active = getActiveSet(stored);
 	const updated: CalendarSet = { ...active };
 	for (const granularity of GRANULARITIES) {
+		const storedConfig = active[granularity];
+		const projected = normalizeConfig(storedConfig);
 		const edited = settings[granularity];
-		if (sameConfig(normalizeConfig(active[granularity]), edited)) continue;
-		updated[granularity] = { ...active[granularity], ...edited };
+
+		const patched: Record<string, unknown> = { ...storedConfig };
+		let touched = false;
+		for (const field of CONFIG_FIELDS) {
+			if (projected[field] === edited[field]) continue;
+			patched[field] = edited[field];
+			touched = true;
+		}
+		if (touched) updated[granularity] = patched as Partial<PeriodicConfig>;
 	}
 
 	const index = activeSetIndex(stored);
@@ -236,12 +245,10 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 	return { ...stored, ...pickGlobals(settings), calendarSets };
 }
 
-/** Granularities whose notes are switched on, in day-to-year order. */
 export function getActiveGranularities(configs: Partial<GranularityConfigs>): Granularity[] {
 	return GRANULARITIES.filter((granularity) => configs[granularity]?.enabled === true);
 }
 
-/** Granularities whose notes are switched off, in day-to-year order. */
 export function getInactiveGranularities(configs: Partial<GranularityConfigs>): Granularity[] {
 	return GRANULARITIES.filter((granularity) => configs[granularity]?.enabled !== true);
 }

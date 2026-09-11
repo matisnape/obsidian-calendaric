@@ -211,6 +211,21 @@ describe("AC-SET-01.2 an allow-prefix-matching change touches one granularity on
 		}
 	});
 
+	it("writes no field the changed granularity never stored", () => {
+		const partial = { id: "Default", day: { enabled: true, format: "YYYY-MM-DD" } };
+		const stored = loadStoredConfig({ activeCalendarSet: "Default", calendarSets: [partial] });
+
+		const settings = toSettings(stored);
+		settings.day.allowPrefixMatching = true;
+		const saved = applySettings(stored, settings);
+
+		expect(saved.calendarSets[0]?.day).toEqual({
+			enabled: true,
+			format: "YYYY-MM-DD",
+			allowPrefixMatching: true,
+		});
+	});
+
 	it("leaves the other granularities alone for every granularity that can be toggled", () => {
 		for (const changed of GRANULARITIES) {
 			const stored = loadStoredConfig(storedFixture());
@@ -281,6 +296,19 @@ describe("AC-SET-01.3 an extra named group survives a load and save", () => {
 
 		expect(saved.calendarSets[0]).toEqual(partial);
 		expect(saved.calendarSets[1]).toEqual(EXTRA_SET);
+	});
+
+	it("edits the first group, not a later group named Default, when the first has no id", () => {
+		const unnamed = { day: { enabled: true, format: "YYYY-MM-DD", folder: "journal" } };
+		const named = { ...EXTRA_SET, id: "Default" };
+		const stored = loadStoredConfig({ activeCalendarSet: "Gone", calendarSets: [unnamed, named] });
+
+		const settings = toSettings(stored);
+		settings.day.folder = "somewhere/else";
+		const saved = applySettings(stored, settings);
+
+		expect(saved.calendarSets[0]?.day?.folder).toBe("somewhere/else");
+		expect(saved.calendarSets[1]).toEqual(named);
 	});
 
 	it("keeps the extra group when the in-use group is edited", () => {
