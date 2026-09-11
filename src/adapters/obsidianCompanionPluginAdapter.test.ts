@@ -20,7 +20,7 @@ function read(plugin: unknown) {
 }
 
 describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
-	it("narrows a well-shaped plugin to the depended-on fields", () => {
+	it("AC-ARCH-04.3: narrows a well-shaped plugin to the depended-on fields", () => {
 		const result = read(validPlugin());
 		expect(result.ok).toBe(true);
 		if (!result.ok || !result.value.enabled) return;
@@ -32,7 +32,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		});
 	});
 
-	it("reports the plugin as absent when the host has no internalPlugins registry", () => {
+	it("AC-ARCH-04.3: reports the plugin as absent when the host has no internalPlugins registry", () => {
 		const result = new ObsidianCompanionPluginAdapter({} as unknown as App).readDailyNotes();
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
@@ -40,7 +40,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		expect(result.problem).toMatch(/registry/i);
 	});
 
-	it("reports the plugin as absent when the registry returns nothing", () => {
+	it("AC-ARCH-04.3: reports the plugin as absent when the registry returns nothing", () => {
 		const result = read(null);
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
@@ -50,7 +50,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 
 	// A registry that exists but is not shaped like one is a broken assumption,
 	// not the ordinary case of a user without the plugin.
-	it("reports a mismatch when the registry is present but not a record", () => {
+	it("AC-ARCH-04.4: reports a mismatch when the registry is present but not a record", () => {
 		const app = { internalPlugins: "nonsense" } as unknown as App;
 		const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
 		expect(result.ok).toBe(false);
@@ -58,7 +58,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		expect(result.reason).toBe("mismatch");
 	});
 
-	it("reports a mismatch when the registry exposes no getPluginById", () => {
+	it("AC-ARCH-04.4: reports a mismatch when the registry exposes no getPluginById", () => {
 		const app = { internalPlugins: { plugins: {} } } as unknown as App;
 		const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
 		expect(result.ok).toBe(false);
@@ -67,7 +67,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		expect(result.problem).toMatch(/getPluginById/);
 	});
 
-	it("reports a mismatch when the lookup returns a non-object instead of a plugin", () => {
+	it("AC-ARCH-04.4: reports a mismatch when the lookup returns a non-object instead of a plugin", () => {
 		const result = read(42);
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
@@ -76,7 +76,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 
 	// The registry's own method may rely on its receiver; a detached call would
 	// throw or read the wrong state.
-	it("calls getPluginById with the registry as its receiver", () => {
+	it("AC-ARCH-04.3: calls getPluginById with the registry as its receiver", () => {
 		const registry = {
 			id: "internal-plugins",
 			getPluginById(this: { id: string }, _id: string) {
@@ -89,7 +89,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		expect(result.ok).toBe(true);
 	});
 
-	it("reads the daily-notes plugin id", () => {
+	it("AC-ARCH-04.3: reads the daily-notes plugin id", () => {
 		const getPluginById = vi.fn(() => validPlugin());
 		const app = { internalPlugins: { getPluginById } } as unknown as App;
 		new ObsidianCompanionPluginAdapter(app).readDailyNotes();
@@ -98,7 +98,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 
 	// AC-ARCH-04.4: a companion plugin that throws must degrade visibly rather
 	// than take the settings screen down with it.
-	describe("a host that throws", () => {
+	describe("AC-ARCH-04.4: a host that throws", () => {
 		it("reports a mismatch when getPluginById throws", () => {
 			const app = {
 				internalPlugins: {
@@ -143,7 +143,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 
 	// AC-MIG-01.6: a disabled companion plugin has no settings instance to read,
 	// so the disabled answer must not depend on one.
-	describe("a disabled plugin", () => {
+	describe("AC-MIG-01.6: a disabled plugin", () => {
 		it("reads as a successful disabled state even with no instance at all", () => {
 			const result = read({ enabled: false });
 			expect(result.ok).toBe(true);
@@ -166,7 +166,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		});
 	});
 
-	describe("an enabled plugin whose shape does not match", () => {
+	describe("AC-ARCH-04.4: an enabled plugin whose shape does not match", () => {
 		it("reports a mismatch when enabled is not a boolean", () => {
 			const result = read({ enabled: "yes", instance: { options: {} }, disable: vi.fn() });
 			expect(result.ok).toBe(false);
@@ -234,7 +234,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 	// The old plugin's contract, recorded in docs/mapping/calendaric-map.json:
 	// every combination of present and missing format/folder/template is normal,
 	// and an unstored value falls back rather than failing (AC-MIG-01.3).
-	describe("values the companion plugin never stored", () => {
+	describe("AC-MIG-01.3: values the companion plugin never stored", () => {
 		it("accepts an empty options record and reports empty values", () => {
 			const result = read(validPlugin({}));
 			expect(result.ok).toBe(true);
@@ -258,7 +258,7 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		});
 	});
 
-	describe("disableDailyNotes", () => {
+	describe("AC-ARCH-04.4: disableDailyNotes", () => {
 		it("confirms the disable on the host", () => {
 			const plugin = validPlugin();
 			new ObsidianCompanionPluginAdapter(makeApp(plugin)).disableDailyNotes();

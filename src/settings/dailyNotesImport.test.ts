@@ -135,18 +135,18 @@ describe("decideDailyNotesCard", () => {
 
 	const disabled = port({ ok: true, value: { enabled: false } });
 
-	it("hides the card when the companion plugin is absent (AC-MIG-01.6)", () => {
+	it("AC-MIG-01.6: hides the card when the companion plugin is absent", () => {
 		const card = decideDailyNotesCard(port({ ok: false, reason: "absent", problem: "gone" }), makeTarget());
 		expect(card.kind).toBe("hidden");
 	});
 
-	it("hides the card when the companion plugin is installed but off (AC-MIG-01.6)", () => {
+	it("AC-MIG-01.6: hides the card when the companion plugin is installed but off", () => {
 		expect(decideDailyNotesCard(disabled, makeTarget()).kind).toBe("hidden");
 	});
 
 	// AC-MIG-01.6 through the real adapter: a disabled core plugin carries no
 	// settings instance, and that must read as "hide", never as "broken".
-	it("hides the card for a disabled plugin that exposes no settings instance", () => {
+	it("AC-MIG-01.6: hides the card for a disabled plugin that exposes no settings instance", () => {
 		const app = {
 			internalPlugins: { getPluginById: () => ({ enabled: false }) },
 		} as unknown as App;
@@ -154,13 +154,13 @@ describe("decideDailyNotesCard", () => {
 		expect(card.kind).toBe("hidden");
 	});
 
-	it("still hides the card for a disabled plugin once the import has run", () => {
+	it("AC-MIG-01.6: still hides the card for a disabled plugin once the import has run", () => {
 		expect(decideDailyNotesCard(disabled, makeTarget({}, true)).kind).toBe("hidden");
 	});
 
 	// AC-ARCH-04.4: a mismatch surfaces as an explicit problem, never as a silent
 	// empty import that looks like it worked.
-	it("reports the problem when the companion plugin does not match the expected shape", () => {
+	it("AC-ARCH-04.4: reports the problem when the companion plugin does not match the expected shape", () => {
 		const card = decideDailyNotesCard(
 			port({ ok: false, reason: "mismatch", problem: "options sit behind a 'subscribe' accessor" }),
 			makeTarget(),
@@ -170,21 +170,21 @@ describe("decideDailyNotesCard", () => {
 		expect(card.problem).toBe("options sit behind a 'subscribe' accessor");
 	});
 
-	it("offers the import with the narrowed values when nothing was imported yet", () => {
+	it("AC-MIG-01.1: offers the import with the narrowed values when nothing was imported yet", () => {
 		const card = decideDailyNotesCard(readable(), makeTarget());
 		expect(card.kind).toBe("offer");
 		if (card.kind !== "offer") return;
 		expect(card.legacy).toEqual({ format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" });
 	});
 
-	it("shows the still-active notice once the import has run (AC-MIG-01.4)", () => {
+	it("AC-MIG-01.4: shows the still-active notice once the import has run", () => {
 		const card = decideDailyNotesCard(readable(), makeTarget({}, true));
 		expect(card.kind).toBe("still-active");
 	});
 
 	// AC-ARCH-04.4: a companion plugin that throws is reported, and the card
 	// carries the problem instead of the settings tab failing to render.
-	it("reports the problem when the companion plugin throws on read", () => {
+	it("AC-ARCH-04.4: reports the problem when the companion plugin throws on read", () => {
 		const throwing = {
 			internalPlugins: {
 				getPluginById: () => {
@@ -198,7 +198,7 @@ describe("decideDailyNotesCard", () => {
 		expect(card.problem).toMatch(/exploded/);
 	});
 
-	it("never reports an importable offer without a readable companion plugin", () => {
+	it("AC-ARCH-04.4: never reports an importable offer without a readable companion plugin", () => {
 		for (const read of [
 			{ ok: false, reason: "absent", problem: "p" } as const,
 			{ ok: false, reason: "mismatch", problem: "p" } as const,
@@ -210,7 +210,7 @@ describe("decideDailyNotesCard", () => {
 
 // AC-ARCH-04.4 applied to a write: a disable that did not happen must not be
 // recorded as one, because recording it removes the import offer for good.
-describe("recordCompanionDisabled", () => {
+describe("AC-ARCH-04.4: recordCompanionDisabled", () => {
 	it("records the migration when the companion plugin was disabled", () => {
 		const target = makeTarget();
 		expect(recordCompanionDisabled(target, { ok: true })).toBe(true);
@@ -230,7 +230,7 @@ describe("recordCompanionDisabled", () => {
 	});
 });
 
-describe("ObsidianCompanionPluginAdapter.disableDailyNotes outcome", () => {
+describe("AC-ARCH-04.4: ObsidianCompanionPluginAdapter.disableDailyNotes outcome", () => {
 	function appWith(plugin: unknown): App {
 		return { internalPlugins: { getPluginById: () => plugin } } as unknown as App;
 	}
