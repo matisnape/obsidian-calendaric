@@ -57,7 +57,7 @@ describe("createNote", () => {
 		expect(vault.createdFolders).toEqual(["journal/daily", "journal/daily/2026"]);
 	});
 
-	it("writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4)", async () => {
+	it("writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4, AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
 
 		const file = await createNote("a/b/c/2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
@@ -66,7 +66,7 @@ describe("createNote", () => {
 		expect(vault.contentAt("a/b/c/2026-04-13.md")).toBe("");
 	});
 
-	it("creates no folder for a note at the vault root (AC-NOTE-03.3)", async () => {
+	it("creates no folder for a note at the vault root (AC-NOTE-03.3, AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
 
 		await createNote("2026-04-13.md", DATE, "day", makeConfig(), vault, noWarn);
@@ -85,7 +85,7 @@ describe("createNote", () => {
 		expect(vault.createdFolders).toEqual([]);
 	});
 
-	it("accepts a folder another actor created between the check and the call (AC-NOTE-03.1)", async () => {
+	it("accepts a folder another actor created between the check and the call (AC-NOTE-03.1, AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
 		vault.loseCreateFolderRace("journal");
 
@@ -180,7 +180,7 @@ describe("createNote", () => {
 	// FMT-side filename-format validation does not exist yet (FMT epic, not built).
 	// This proves the VaultPort seam already carries such a failure end-to-end
 	// without inventing that validation logic here (AC-ARCH-03.3: filename format invalid).
-	it("propagates a typed rejection surfaced through the port for an invalid filename format", async () => {
+	it("propagates a typed rejection surfaced through the port for an invalid filename format (AC-ARCH-03.3: filename format invalid)", async () => {
 		const vault = new FakeVaultPort();
 		vault.createFileError = new Error("Invalid filename format");
 
@@ -191,7 +191,7 @@ describe("createNote", () => {
 
 	// FMT-side date-string parsing does not exist yet either (FMT epic, not built).
 	// Same seam, same proof (AC-ARCH-03.3: date string unparseable).
-	it("propagates a typed rejection surfaced through the port for an unparseable date string", async () => {
+	it("propagates a typed rejection surfaced through the port for an unparseable date string (AC-ARCH-03.3: date string unparseable)", async () => {
 		const vault = new FakeVaultPort();
 		vault.createFileError = new Error("Unparseable date string");
 
