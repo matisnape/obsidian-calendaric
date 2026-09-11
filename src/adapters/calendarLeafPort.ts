@@ -32,6 +32,10 @@ export interface CalendarLeafPort {
 	/**
 	 * Create the calendar leaf. Throws when the workspace refuses, and leaves
 	 * nothing behind when it does.
+	 *
+	 * `active` is the caller's intent, not a detail: a leaf created active
+	 * takes focus the moment it appears. The palette command wants that, and
+	 * plugin startup must not have it, so the intent cannot be hardcoded here.
 	 */
-	create(): Promise<CalendarLeafHandle>;
+	create(options: { active: boolean }): Promise<CalendarLeafHandle>;
 }

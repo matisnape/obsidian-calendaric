@@ -64,8 +64,8 @@ describe("CalendarCoordinator.open", () => {
 		// Arm the failure on whatever create() hands back.
 		const port = leaves;
 		const create = port.create.bind(port);
-		port.create = async () => {
-			const leaf = await create();
+		port.create = async (options: { active: boolean }) => {
+			const leaf = await create(options);
 			leaf.revealFails = true;
 			return leaf;
 		};
@@ -193,6 +193,24 @@ describe("CalendarCoordinator creation locking", () => {
 		await Promise.all([startup, command]);
 
 		expect(leaves.created).toHaveLength(1);
+	});
+
+	it("creates the startup leaf inactive, so launching Obsidian never steals focus", async () => {
+		const { leaves, notices } = setup();
+		const coordinator = createCalendarCoordinator(leaves, (m) => notices.push(m));
+
+		await coordinator.ensure();
+
+		expect(leaves.createdActive).toEqual([false]);
+	});
+
+	it("creates the command's leaf active, because the user asked for it", async () => {
+		const { leaves, notices } = setup();
+		const coordinator = createCalendarCoordinator(leaves, (m) => notices.push(m));
+
+		await coordinator.open();
+
+		expect(leaves.createdActive).toEqual([true]);
 	});
 
 	it("does not reveal or focus the leaf that startup created", async () => {

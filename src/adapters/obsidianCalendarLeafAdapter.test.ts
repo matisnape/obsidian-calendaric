@@ -236,7 +236,7 @@ describe("ObsidianCalendarLeafAdapter", () => {
 
 		expect(adapter.find()).toBeNull();
 
-		const created = await adapter.create();
+		const created = await adapter.create({ active: true });
 
 		// Created inside a collapsed dock, so not yet on screen.
 		expect(created.isVisible()).toBe(false);
@@ -254,13 +254,13 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		expect(workspace.activated).toEqual([{ leaf: workspace.leaves[0], focus: true }]);
 	});
 
-	it("creates the leaf in the right sidebar and activates it", async () => {
+	it("creates the leaf active when the caller asked for focus", async () => {
 		const workspace = makeWorkspace({
 			rightLeafFactory: () => makeLeaf({ viewState: null }),
 		});
 		const app = makeApp(workspace);
 
-		await new ObsidianCalendarLeafAdapter(app).create();
+		await new ObsidianCalendarLeafAdapter(app).create({ active: true });
 
 		expect(workspace.leaves[0]?.viewState).toEqual({
 			type: VIEW_TYPE_CALENDAR,
@@ -269,10 +269,24 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		expect(workspace.leaves[0]?.attached).toBe(true);
 	});
 
+	it("creates the leaf inactive on the startup path, so Obsidian keeps focus", async () => {
+		const workspace = makeWorkspace({
+			rightLeafFactory: () => makeLeaf({ viewState: null }),
+		});
+		const app = makeApp(workspace);
+
+		await new ObsidianCalendarLeafAdapter(app).create({ active: false });
+
+		expect(workspace.leaves[0]?.viewState).toEqual({
+			type: VIEW_TYPE_CALENDAR,
+			active: false,
+		});
+	});
+
 	it("throws when the workspace offers no right sidebar leaf", async () => {
 		const app = makeApp(makeWorkspace({ rightLeafFactory: null }));
 
-		await expect(new ObsidianCalendarLeafAdapter(app).create()).rejects.toThrow(
+		await expect(new ObsidianCalendarLeafAdapter(app).create({ active: true })).rejects.toThrow(
 			/no leaf for the right sidebar/,
 		);
 	});
@@ -284,7 +298,7 @@ describe("ObsidianCalendarLeafAdapter", () => {
 		const app = makeApp(workspace);
 		const adapter = new ObsidianCalendarLeafAdapter(app);
 
-		await expect(adapter.create()).rejects.toThrow(/failed to initialize/);
+		await expect(adapter.create({ active: true })).rejects.toThrow(/failed to initialize/);
 
 		expect(workspace.leaves[0]?.attached).toBe(false);
 		// The leaked pane is what AC-CMD-01.5 forbids: nothing is findable after.

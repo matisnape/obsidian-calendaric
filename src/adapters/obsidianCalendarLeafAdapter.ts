@@ -61,12 +61,15 @@ export class ObsidianCalendarLeafAdapter implements CalendarLeafPort {
 		return leaf ? new ObsidianCalendarLeaf(this.app, leaf) : null;
 	}
 
-	async create(): Promise<CalendarLeafHandle> {
+	async create(options: { active: boolean }): Promise<CalendarLeafHandle> {
 		const leaf = this.app.workspace.getRightLeaf(false);
 		if (!leaf) throw new Error("Obsidian returned no leaf for the right sidebar");
 
 		try {
-			await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
+			// active comes from the caller: an active leaf takes focus as soon
+			// as it appears, which the palette command wants and startup must
+			// not do.
+			await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: options.active });
 		} catch (error) {
 			// getRightLeaf has already attached the leaf, and the caller never
 			// received a handle for it, so this is the only place that can

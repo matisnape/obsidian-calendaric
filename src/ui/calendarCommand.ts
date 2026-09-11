@@ -39,11 +39,17 @@ export function createCalendarCoordinator(leaves: CalendarLeafPort, notify: Noti
 	 * The shared creation, plus whether this caller is the one that started it.
 	 * Only the starter may roll the leaf back, so a failed reveal in one caller
 	 * never removes a leaf another caller is already using.
+	 *
+	 * A caller that joins an in-flight creation inherits the starter's `active`
+	 * intent. Both interleavings still end correctly: open() joining startup's
+	 * inactive leaf focuses it itself, and startup joining open()'s active leaf
+	 * only happens when the user pressed the command during launch, which is
+	 * the one case where taking focus is what they asked for.
 	 */
-	function share(): { creation: Promise<CalendarLeafHandle>; started: boolean } {
+	function share(options: { active: boolean }): { creation: Promise<CalendarLeafHandle>; started: boolean } {
 		if (creating) return { creation: creating, started: false };
 
-		const creation = leaves.create();
+		const creation = leaves.create(options);
 		creating = creation;
 		const clear = () => {
 			creating = null;
@@ -61,7 +67,7 @@ export function createCalendarCoordinator(leaves: CalendarLeafPort, notify: Noti
 		try {
 			let leaf = existing;
 			if (!leaf) {
-				const { creation, started } = share();
+				const { creation, started } = share({ active: true });
 				leaf = await creation;
 				if (started) mine = leaf;
 			}
@@ -77,7 +83,9 @@ export function createCalendarCoordinator(leaves: CalendarLeafPort, notify: Noti
 		ensure: async () => {
 			if (leaves.find()) return;
 			try {
-				await share().creation;
+				// Inactive: the plugin is starting, not the user asking. A leaf
+				// created active would take focus the moment Obsidian launches.
+				await share({ active: false }).creation;
 			} catch {
 				// Startup is not a user action, so it reports nothing; the
 				// adapter has already removed whatever it half-built.

@@ -31,6 +31,8 @@ export class FakeCalendarLeaf implements CalendarLeafHandle {
 export class FakeCalendarLeafPort implements CalendarLeafPort {
 	leaf: FakeCalendarLeaf | null = null;
 	created: FakeCalendarLeaf[] = [];
+	/** The `active` intent of each create() call, in order. */
+	createdActive: boolean[] = [];
 	createFails = false;
 	private createGate: Promise<void> | null = null;
 
@@ -62,12 +64,14 @@ export class FakeCalendarLeafPort implements CalendarLeafPort {
 		return this.leaf;
 	}
 
-	async create(): Promise<FakeCalendarLeaf> {
+	async create(options: { active: boolean }): Promise<FakeCalendarLeaf> {
 		if (this.createGate) await this.createGate;
 		if (this.createFails) throw new Error("workspace refused the calendar leaf");
 		const leaf = new FakeCalendarLeaf();
+		leaf.visible = options.active;
 		this.leaf = leaf;
 		this.created.push(leaf);
+		this.createdActive.push(options.active);
 		return leaf;
 	}
 }
