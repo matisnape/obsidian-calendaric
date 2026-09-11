@@ -209,7 +209,7 @@
       "story": "As someone keeping a daily journal, I want clicking any day in the grid to take me to that day's note, offering to create it if it does not exist yet, so that the grid is a single place to reach any day.",
       "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calui:day-cell-interactions",
         "calendaric:calendar-click-to-open-or-create",
