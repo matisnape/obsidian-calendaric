@@ -23,6 +23,7 @@ const dayConfig: PeriodicConfig = {
 	format: "YYYY-MM-DD",
 	folder: "Daily",
 	templatePath: "",
+	allowPrefixMatch: false,
 	openAtStartup: false,
 };
 

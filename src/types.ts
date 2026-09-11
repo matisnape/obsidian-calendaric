@@ -8,6 +8,8 @@ export interface PeriodicConfig {
 	format: string;
 	folder: string;
 	templatePath: string;
+	/** Match a filename that starts with the formatted date but carries extra text after it. */
+	allowPrefixMatch: boolean;
 	openAtStartup: boolean;
 }
 
@@ -16,6 +18,7 @@ export const DEFAULT_PERIODIC_CONFIG: PeriodicConfig = {
 	format: "",
 	folder: "",
 	templatePath: "",
+	allowPrefixMatch: false,
 	openAtStartup: false,
 };
 

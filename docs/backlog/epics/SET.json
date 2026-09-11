@@ -10,7 +10,7 @@
       "story": "As someone managing several kinds of periodic notes, I want every granularity's own settings kept separate from every other granularity's, so that changing one period's folder or format never disturbs another period's configuration.",
       "rationale": "Per-granularity isolation is what lets day, week, month and year notes live in different folders with different formats and templates without interfering with each other.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:calendar-set-model",
         "pn:get-active-calendar-set",
@@ -37,8 +37,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.1 every granularity owns its own five values."
         },
         {
           "id": "AC-SET-01.2",
@@ -50,8 +50,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.2 an allow-prefix-matching change touches one granularity only."
         },
         {
           "id": "AC-SET-01.3",
@@ -64,8 +64,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.3 an extra named group survives a load and save, for the two preservation clauses. The third clause (no create/rename/switch control is shown) is settled by code review: settings.ts has no configuration-group control at all -- every \"group\" identifier there names a per-granularity visual section (periodic-group), not a configuration set.",
           "failure_path": true
         },
         {
@@ -78,8 +78,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.4 disabling a granularity keeps its configured values."
         },
         {
           "id": "AC-SET-01.5",
@@ -91,8 +91,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > AC-SET-01.5 a fresh install has exactly one implicit group, on loadStoredConfig(undefined); this now describes real plugin behaviour because main.ts:105-113 routes loadSettings/saveSettings through loadStoredConfig/toSettings/applySettings. The second clause (the user is not asked to name, choose or create a group) is settled by code review as an absence: no such prompt or control exists in settings.ts or the modal. The criterion is testable_by integration and no run against a live Obsidian host was performed."
         }
       ]
     },
