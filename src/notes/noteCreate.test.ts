@@ -21,7 +21,7 @@ const DATE = moment("2026-04-13T14:30:00");
 /** For the cases that are not about warnings: `warn` is required, so every call names one. */
 const noWarn = () => undefined;
 
-describe("createNote", () => {
+describe("createNote (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 	it("creates the file with empty content when no template is configured (AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
 		const warn = vi.fn();

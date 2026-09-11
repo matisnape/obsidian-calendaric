@@ -268,7 +268,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "grep confirms src/notes/templateTokens.ts has no obsidian import; vitest: src/notes/templateTokens.test.ts (13 tests) runs with no obsidian module resolution."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-03.4: pure logic does not reach for the Obsidian API\" — asserts that the import lines of templateTokens.ts, noteUtils.ts and noteDate.ts name no \"obsidian\" module. Mutation-checked: prepending an obsidian import to templateTokens.ts fails it. Supersedes the one-off grep this criterion rested on before."
         },
         {
           "id": "AC-ARCH-03.5",
@@ -313,7 +313,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "code review plus npx tsc --showConfig: tsconfig.json:9 sets \"strict\": true as the single strict-family setting, and no individually-enabled strict sub-flag remains. noImplicitReturns (line 10) and the other retained flags are outside the strict family, so they are not a hand-picked subset of it."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.1: enables strict mode whole, never flag by flag\" — reads tsconfig.json, requires strict:true, and requires that none of the nine strict-family sub-flags appears on its own. Mutation-checked: pinning strictNullChecks fails it."
         },
         {
           "id": "AC-ARCH-04.2",
@@ -325,7 +325,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "code review: no \"any\" (explicit or asserted) remains in the companion-plugin boundary -- grep for \": any\" and \"as any\" across src/adapters/companionPluginPort.ts and src/adapters/obsidianCompanionPluginAdapter.ts returns nothing; the untyped registry is reached through unknown and narrowed. The any usages left in src/ are Obsidian-host internals (window.moment, vault.config, vault.adapter.basePath, require(\"electron\")), which this criterion does not cover -- it names a companion plugin runtime object."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.2: the companion-plugin boundary is typed, not `any`\" — asserts companionPluginPort.ts and obsidianCompanionPluginAdapter.ts contain no \": any\", \"as any\" or \"<any>\". Mutation-checked: adding a field typed any to the port fails it. Supersedes the one-off grep."
         },
         {
           "id": "AC-ARCH-04.3",
@@ -367,7 +367,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "measured by the orchestrator, not reported: injecting `const __probe: number = \"not a number\"` into src/settings.test.ts made npm run build exit 2, and removing it returned exit 0. tsconfig.json include is src/**/*.ts, so the compiler now covers test files too -- which also closes the project-memory note that tsc skipped *.test.ts. The build fails rather than warning.",
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.5: the type checker reads the tests too\" — asserts tsconfig include covers src/**/*.ts, that no exclude entry names a test file, and that noUncheckedIndexedAccess stays on. Supersedes the orchestrator probe (injecting a type error into src/settings.test.ts and watching npm run build exit 2), which proved the same thing once and left nothing behind.",
           "failure_path": true
         }
       ]
@@ -484,7 +484,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "measured by the orchestrator: deleted main.js, ran npm run build, and main.js (22040 bytes) plus manifest.json were produced at the plugin root with no manual step. build is npm run typecheck followed by esbuild production, so a type error stops the bundle rather than shipping a stale one. styles.css is absent in this repo, which the criterion allows."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-06.1: one command produces a loadable plugin\" — asserts npm run build is typecheck followed by the production esbuild run, that esbuild writes main.js at the plugin root, and that manifest.json carries an id and a version. Supersedes the orchestrator observation (deleted main.js, ran the build, 22040 bytes reappeared), which is not repeatable in CI."
         },
         {
           "id": "AC-ARCH-06.2",
@@ -772,7 +772,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "measured by the orchestrator: gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s — one combined job, one status check, exactly as specified."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.1: the pull request gets one job and one status check\" — asserts ci.yml declares exactly one job and that install, test and build are steps inside it. One job is what makes one status check. The observed run stands behind it: gh pr checks 6 reported a single check named \"install, test, build\", passing in 19s."
         },
         {
           "id": "AC-ARCH-09.2",
@@ -785,7 +785,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review: .github/workflows/ci.yml has on: {pull_request: {branches: [master]}} and no push key — inspected verbatim, only workflow file in .github/workflows/."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.2: runs on pull requests, not on every push\" — asserts the on: block opens with pull_request and that no push trigger exists. Mutation-checked. Previously code review only, and listed in NO_REGRESSION_IDS; it has a regression behind it now and has left that list."
         },
         {
           "id": "AC-ARCH-09.3",
@@ -825,7 +825,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review: ci.yml has no lint step; the comment above jobs.gates names DEC-26 as the reason and the exit condition (lint joins the workflow once the pre-existing debt is paid down)."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.5: runs no lint step, per DEC-26\" — asserts no workflow step runs npm run lint or eslint. Mutation-checked: adding a lint step fails it. Previously code review only, and listed in NO_REGRESSION_IDS; it has a regression behind it now and has left that list."
         }
       ],
       "decisions": [

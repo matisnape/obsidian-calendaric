@@ -37,7 +37,7 @@ describe("isSplitModifierPressed (AC-NOTE-06.2)", () => {
 	});
 });
 
-describe("openNote", () => {
+describe("openNote (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 	it("AC-NOTE-06.1: reuses the current unpinned tab on a plain click", async () => {
 		const workspace = new FakeWorkspacePort();
 
@@ -71,7 +71,7 @@ describe("openNote", () => {
 	});
 });
 
-describe("openNoteInNewTab", () => {
+describe("openNoteInNewTab (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 	it("AC-NOTE-06.3: opens a new tab instead of reusing the active one", async () => {
 		const workspace = new FakeWorkspacePort();
 

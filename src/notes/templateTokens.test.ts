@@ -46,17 +46,17 @@ describe("substituteTemplateTokens — universal", () => {
 });
 
 describe("substituteTemplateTokens — daily", () => {
-	it("substitutes {{yesterday}}", () => {
+	it("AC-TPL-02.1: substitutes {{yesterday}}", () => {
 		const result = substituteTemplateTokens("{{yesterday}}", DAILY_DATE, "day", makeConfig(), "t");
 		expect(result).toBe("2026-04-12");
 	});
 
-	it("substitutes {{tomorrow}}", () => {
+	it("AC-TPL-02.2: substitutes {{tomorrow}}", () => {
 		const result = substituteTemplateTokens("{{tomorrow}}", DAILY_DATE, "day", makeConfig(), "t");
 		expect(result).toBe("2026-04-14");
 	});
 
-	it("formats {{yesterday}} and {{tomorrow}} with the configured daily format", () => {
+	it("AC-TPL-02.1, AC-TPL-02.2: formats {{yesterday}} and {{tomorrow}} with the configured daily format", () => {
 		const config = makeConfig({ format: "DD.MM.YYYY" });
 		const result = substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", DAILY_DATE, "day", config, "t");
 		expect(result).toBe("12.04.2026|14.04.2026");
@@ -91,17 +91,17 @@ describe("substituteTemplateTokens — daily", () => {
 		expect(date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
-	it("does not substitute {{yesterday}} for weekly granularity", () => {
+	it("AC-TPL-02.3: does not substitute {{yesterday}} for weekly granularity", () => {
 		const result = substituteTemplateTokens("{{yesterday}}", DAILY_DATE, "week", makeConfig(), "t");
 		expect(result).toBe("{{yesterday}}");
 	});
 
-	it("does not substitute {{tomorrow}} for weekly granularity", () => {
+	it("AC-TPL-02.3: does not substitute {{tomorrow}} for weekly granularity", () => {
 		const result = substituteTemplateTokens("{{tomorrow}}", DAILY_DATE, "week", makeConfig(), "t");
 		expect(result).toBe("{{tomorrow}}");
 	});
 
-	it("leaves both adjacent-day tokens intact in a weekly template", () => {
+	it("AC-TPL-02.3: leaves both adjacent-day tokens intact in a weekly template", () => {
 		const template = "# Week {{monday:DD.MM}}\n{{yesterday}} / {{tomorrow}}";
 		const config = makeConfig({ format: "gggg-[W]ww" });
 		const result = substituteTemplateTokens(template, moment("2026-04-13"), "week", config, "t");
