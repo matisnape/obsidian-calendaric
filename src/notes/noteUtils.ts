@@ -152,17 +152,45 @@ export function checkNoteFolder(
 }
 
 /**
- * Spans of a format string that never describe the format's own date: a
- * `[literal]` escape, which moment prints verbatim, and a week token, which
- * `formatWithWeekTokens` resolves against its named weekday. The default weekly
- * format `gggg-[W]ww` prints a literal "W" and `{{monday:GGGG-[W]WW}}` numbers
- * the Monday, so neither may decide which week system the format uses.
+ * The characters of `format` that moment reads as tokens, with both of its
+ * escapes removed.
  *
- * Built from `WEEK_TOKEN_RE` so the two cannot drift: a brace span that
- * `formatWithWeekTokens` leaves alone reaches moment as tokens, and a `WW`
- * inside it does land in the filename.
+ * Moment escapes two ways and each one hides a week token. A `[...]` span
+ * prints verbatim, so the default `gggg-[W]ww` writes a literal "W". A
+ * backslash makes the token run after it literal, so `\WW` writes "WW" rather
+ * than an ISO week. The two are not interchangeable: an unterminated `[` is not
+ * an escape at all — moment prints the bracket and keeps reading tokens, which
+ * is why `gggg-[Www` renders "2027-[5201".
+ *
+ * Known ceiling: a run longer than moment's own token, `\WWW`, is skipped
+ * whole where moment escapes only the first two characters. No real format
+ * writes one, and reading moment's token table here would cost more than it
+ * buys.
  */
-const NON_TOKEN_SPANS = new RegExp(`\\[[^\\]]*\\]|${WEEK_TOKEN_RE.source}`, "gi");
+function tokenChars(format: string): string {
+	let chars = "";
+
+	for (let i = 0; i < format.length; i++) {
+		const ch = format[i];
+
+		if (ch === "[") {
+			const end = format.indexOf("]", i + 1);
+			if (end !== -1) {
+				i = end;
+				continue;
+			}
+		} else if (ch === "\\") {
+			const escaped = format[i + 1];
+			i++;
+			while (escaped !== undefined && format[i + 1] === escaped) i++;
+			continue;
+		}
+
+		chars += ch;
+	}
+
+	return chars;
+}
 
 /** Reads a week number off `date` using whichever week token `tokens` carries. */
 function weekNumberFor(date: Moment, tokens: string): number | null {
@@ -192,16 +220,13 @@ function weekNumberFor(date: Moment, tokens: string): number | null {
  * something: AC-CAL-01.4 asks for a week-number cell on every row.
  */
 export function getWeekNumber(date: Moment, weekFormat: string): number {
-	const topLevel = weekNumberFor(date, weekFormat.replace(NON_TOKEN_SPANS, ""));
+	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(WEEK_TOKEN_RE, "")));
 	if (topLevel !== null) return topLevel;
 
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) continue;
-		const nested = weekNumberFor(
-			date.clone().isoWeekday(isoDay),
-			tokenFmt.replace(NON_TOKEN_SPANS, ""),
-		);
+		const nested = weekNumberFor(date.clone().isoWeekday(isoDay), tokenChars(tokenFmt));
 		if (nested !== null) return nested;
 	}
 

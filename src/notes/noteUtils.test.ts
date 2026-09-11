@@ -358,3 +358,52 @@ describe("getWeekNumber for nested-only formats", () => {
 		expect(getWeekNumber(SUNDAY, "{{monday:DD.MM}} – {{sunday:DD.MM}}")).toBe(SUNDAY.week());
 	});
 });
+
+describe("getWeekNumber with moment escapes", () => {
+	// 2026-12-27 is a Sunday in ISO week 52 whose own locale week is 1, so the
+	// two systems cannot be confused for one another.
+	const SUNDAY = moment("2026-12-27");
+
+	it("ignores a backslash-escaped ISO token and uses the real locale one", () => {
+		// moment renders this as "2026-WWW 01": the escaped WW is literal text and
+		// the only week number in the name is the locale 01.
+		const fmt = "GGGG-[W]\\WW ww";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-WWW 01");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("falls back when every week token in the format is escaped", () => {
+		const fmt = "YYYY-MM-DD \\WW";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-12-27 WW");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("ignores a week token inside a bracket span", () => {
+		const fmt = "[WW]ww";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("WW01");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
+	});
+
+	it("keeps reading tokens after an unterminated bracket", () => {
+		// moment does not swallow the rest of the format; it prints the "[" and
+		// carries on, rendering "2027-[5201" — so the ISO 52 is really in the name.
+		const fmt = "gggg-[Www";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2027-[5201");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
+	});
+
+	it("treats a doubled backslash as escaping the backslash, not the token", () => {
+		const fmt = "\\\\W";
+		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("52");
+		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
+	});
+
+	it("applies the same escape rules inside a weekday span", () => {
+		// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53
+		// and whose locale week is 1 — the escaped WW must not win.
+		const date = moment("2027-01-03");
+		const fmt = "{{monday:\\WW ww}}";
+		expect(formatWithWeekTokens(fmt, date)).toBe("WW 01");
+		expect(getWeekNumber(date, fmt)).toBe(date.clone().isoWeekday(1).week());
+	});
+});
