@@ -334,8 +334,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/notes/noteCreate.test.ts > writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4) / > creates the missing target folder before creating the file / > accepts a folder another actor created between the check and the call (AC-NOTE-03.1) -- the last one covers the create-race the review round found.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -347,8 +347,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "pass",
-          "evidence": "vitest: src/notes/noteUtils.test.ts > falls back to Obsidian default new-file folder when none is configured (AC-NOTE-03.2) / > resolves to the vault root when neither the config nor Obsidian names a folder (AC-NOTE-03.2) / > takes the default folder only when the config names no folder at all (AC-NOTE-03.2).",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -360,8 +360,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "pass",
-          "evidence": "vitest: src/notes/noteUtils.test.ts > accepts an empty configured folder as valid and already present (AC-NOTE-03.3) / > accepts the vault root written as a slash as valid and already present (AC-NOTE-03.3) / > keeps an explicit \"/\" as the vault root instead of taking the default folder (AC-NOTE-03.3); plus src/notes/noteCreate.test.ts > creates no folder for a note at the vault root (AC-NOTE-03.3).",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -374,8 +374,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "pass",
-          "evidence": "vitest: src/notes/noteUtils.test.ts > flags a folder that does not exist yet as valid but not-yet-created (AC-NOTE-03.4) for the flag itself, and src/notes/noteCreate.test.ts > writes the note even though the whole folder chain was missing for the clause that the flag must not block creation. No settings-UI surface consumes the flag yet: US-SET-04 owns that wiring, which the review round confirmed as the correct scope split.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -387,8 +387,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "vitest: src/notes/noteCreate.test.ts > creates every missing intermediate folder, top down (AC-NOTE-03.5) / > creates only the intermediate folders that are still missing (AC-NOTE-03.5) / > does not mistake a file for an existing folder in the chain / > refuses a path with an unusable segment before making any folder.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         }
       ]
