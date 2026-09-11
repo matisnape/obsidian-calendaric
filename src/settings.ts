@@ -159,12 +159,13 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
 		importBtn.addEventListener("click", async () => {
 			const legacy = getLegacyDailyNoteSettings(app);
-			const run = async (confirmed: DailyNotesImportKey[]) => {
+			const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
 				const previousDay = { ...settings.day };
 				const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
 				applyDailyNotesImport(settings, legacy, confirmed);
 				try {
-					await this.save();
+					// Only the write to disk is rolled back; a failed refresh must not undo a stored import.
+					await this.plugin.saveSettings();
 				} catch (error) {
 					Object.assign(settings.day, previousDay);
 					settings.hasMigratedDailyNoteSettings = previouslyMigrated;
@@ -172,15 +173,16 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 					new Notice("Could not save the Daily Notes import.");
 					return;
 				}
+				this.plugin.onSettingsChange();
 				this.display();
 			};
 
 			const plan = planDailyNotesImport(legacy, settings.day);
 			if (plan.conflicts.length === 0) {
-				await run([]);
+				await applyAndSaveImport([]);
 				return;
 			}
-			new DailyNotesImportConflictModal(app, plan.conflicts, run).open();
+			new DailyNotesImportConflictModal(app, plan.conflicts, applyAndSaveImport).open();
 		});
 
 		const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
