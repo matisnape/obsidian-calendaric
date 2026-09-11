@@ -1,0 +1,53 @@
+name: CI
+
+# Pull requests only. This account has a limited Actions run-minute budget, so a
+# push to a branch with no open pull request must not start a run. See US-ARCH-09.
+on:
+  pull_request:
+    branches: [master]
+
+# The job only needs to read the code. Without this, a pull request from a branch
+# in this repository runs npm scripts with a writable token.
+permissions:
+  contents: read
+
+jobs:
+  # One job, so the pull request gets exactly one status check. The steps run in
+  # order and the job stops at the first non-zero exit, which names the failed
+  # step in the log.
+  gates:
+    name: install, test, build
+    runs-on: ubuntu-latest
+
+    # Install, test and build take about 11 seconds locally from an empty
+    # node_modules, so a minute or two on a runner. Ten minutes is generous
+    # headroom for a slow registry and still caps a hung job: the default is six
+    # hours, and this account's run-minutes are limited.
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Keep this version equal to the node pin in mise.toml. setup-node cannot
+      # read mise.toml on any released version, so the number is repeated here
+      # rather than derived. node-version-file is the better answer once a release
+      # supports mise.toml: actions/setup-node#1421.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.12.0
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      - name: test
+        run: npm test
+
+      - name: build
+        run: npm run build
+
+      # No lint step. eslint fails on master with pre-existing errors, so a lint
+      # gate would make every pull request red regardless of its content. DEC-26
+      # records the reason and the exit condition: lint joins this workflow once a
+      # separate cleanup story pays the debt down. Until then every agent runs
+      # lint locally and confirms its own diff adds no new errors.
