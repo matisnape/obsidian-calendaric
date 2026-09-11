@@ -111,7 +111,7 @@
       "story": "As someone planning ahead or looking back, I want to step the grid forward and backward one month at a time and jump straight back to the current month, so that I can browse freely without losing track of where 'now' is.",
       "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calui:navigate-month",
         "calui:reset-to-current-month",
