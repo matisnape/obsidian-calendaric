@@ -349,8 +349,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.1 nested folder, exact full-path match > recognises a file whose full relative path matches a nested format"
         },
         {
           "id": "AC-FMT-04.2",
@@ -361,8 +361,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.2 moved out of its nested folder > still recognises the file by its filename alone"
         },
         {
           "id": "AC-FMT-04.3",
@@ -373,8 +373,8 @@
           ],
           "verifies": "compat",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.3 prefix matching disabled (default) > does not recognise a filename that only starts with the formatted date",
           "failure_path": true
         },
         {
@@ -386,8 +386,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.4 prefix matching enabled > recognises the same filename as an inexact prefix match"
         },
         {
           "id": "AC-FMT-04.5",
@@ -399,8 +399,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.5 week number beats a conflicting month/day fragment > uses the week number when the weekday-token fragment disagrees (exact match) and (prefix match)"
         },
         {
           "id": "AC-FMT-04.6",
@@ -411,8 +411,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.6 real-vault regression > all 4 sub-tests (211 daily, 60 weekly, 21 monthly, 25 monthly-work)"
         },
         {
           "id": "AC-FMT-04.7",
@@ -424,8 +424,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/parseFilename.test.ts > AC-FMT-04.7 real-vault regression > does not recognise the older bare shape / the en-dash filename",
           "failure_path": true
         }
       ],
