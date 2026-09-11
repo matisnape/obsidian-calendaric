@@ -62,9 +62,13 @@ did not exist in 0.15.0. Two of them set the real floor, both found during earli
 | `Plugin.registerHoverLinkSource` | **1.1.0** | Present in `obsidian.d.ts` at commit `32fe4c3f` ("Update to v1.1.0"); absent at `6b2138aa` (v0.16.0). Found during the US-CAL-03 review. |
 | `Workspace.getLeaf("tab")` / `getLeaf("split")` | **0.16.0** | The `PaneType` overload arrives at commit `6b2138aa` ("Update for v0.16.0"); every release through `ff121cd4` (v0.15.9) declares only `getLeaf(newLeaf?: boolean, direction?: SplitDirection)`. |
 
-`1.13.7` is the Obsidian version the maintainer actually runs, verified on her machine, and it
-sits above all three requirements. The newest Obsidian at the time of writing is `1.14.1`; a
-bump is expected once she updates.
+`1.13.7` is the newest **public** Obsidian release, and it sits above all three requirements.
+Checked against `obsidianmd/obsidian-releases`, `desktop-releases.json`, which is the release
+channel the app itself reads: `latestVersion` is `1.13.7`, `beta.latestVersion` is `1.14.1`,
+`minimumVersion` is `1.1.9`. The 1.14.x line is Catalyst early access, not a public release, so
+it is deliberately not a target — naming it here would lock the plugin out of every
+non-Catalyst install. No bump is pending. Read that JSON before raising this floor; the
+changelog page and third-party summaries both lag it.
 
 One thing this does **not** buy you: `node_modules/obsidian` ships the `1.10.3` type
 definitions, which is below `1.13.7`. Type-checking therefore cannot catch a call that needs
