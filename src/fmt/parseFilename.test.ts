@@ -163,6 +163,35 @@ describe("parseFilename — a nested date fragment is still checked when no week
 	});
 });
 
+describe("parseFilename — AC-FMT-04.5's tolerance is scoped to month/day fragments only, even on a week path", () => {
+	// A week-number token grants tolerance for a conflicting month/day
+	// fragment (AC-FMT-04.5) — it does not make the whole rendered string a
+	// no-op. The decisive week text itself, and any nested year/week field,
+	// must still reproduce exactly.
+	it("rejects a non-padded week number written with a leading zero (exact match)", () => {
+		// Real week 2 formats as "W2" under a bare "W" token — never "W02".
+		const result = parseFilename("2024-W02", "GGGG-[W]W", false);
+		expect(result).toBeNull();
+	});
+
+	it("rejects a non-padded week number written with a leading zero (prefix match)", () => {
+		const result = parseFilename("2024-W02 extra", "GGGG-[W]W", true);
+		expect(result).toBeNull();
+	});
+
+	it("rejects a conflicting nested week/year field even though a top-level week number decides the date (exact match)", () => {
+		const format = "GGGG-[W]WW, {{monday:GGGG-[W]WW}}";
+		const result = parseFilename("2024-W02, 9999-W99.md", format, false);
+		expect(result).toBeNull();
+	});
+
+	it("rejects a conflicting nested week/year field even though a top-level week number decides the date (prefix match)", () => {
+		const format = "GGGG-[W]WW, {{monday:GGGG-[W]WW}}";
+		const result = parseFilename("2024-W02, 9999-W99 extra.md", format, true);
+		expect(result).toBeNull();
+	});
+});
+
 describe("parseFilename — the core invariant: a match must reproduce its own text", () => {
 	it("round-trips an arbitrary date through an arbitrary format and back", () => {
 		const format = "YYYY/MM/YYYY-MM-DD, dddd";
