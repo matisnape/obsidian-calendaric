@@ -172,7 +172,7 @@ describe("AC-CAL-01.1: the grid is a full 6x7 rectangle", () => {
 		const days = flatten(getMonthGrid(moment("2026-03-15"), 1, WEEK_FORMAT));
 		expect(days).toHaveLength(42);
 		days.forEach((day, i) => {
-			const expected = days[0].date.clone().add(i, "day");
+			const expected = at(days, 0).date.clone().add(i, "day");
 			expect(day.date.format("YYYY-MM-DD")).toBe(expected.format("YYYY-MM-DD"));
 		});
 	});
@@ -182,7 +182,7 @@ describe("AC-CAL-01.1: the grid is a full 6x7 rectangle", () => {
 		// month a Monday-start grid can hold — 4 weeks of content, 6 rows drawn.
 		const grid = getMonthGrid(moment("2021-02-15"), 1, WEEK_FORMAT);
 		expect(grid).toHaveLength(6);
-		expect(grid[0].days[0].date.format("YYYY-MM-DD")).toBe("2021-02-01");
+		expect(at(at(grid, 0).days, 0).date.format("YYYY-MM-DD")).toBe("2021-02-01");
 	});
 });
 
@@ -192,8 +192,8 @@ describe("AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle", ()
 		const days = flatten(getMonthGrid(moment("2026-03-15"), 1, WEEK_FORMAT));
 		const leading = days.slice(0, days.findIndex((d) => !d.isAdjacentMonth));
 		expect(leading).toHaveLength(6);
-		expect(leading[0].date.format("YYYY-MM-DD")).toBe("2026-02-23");
-		expect(leading[leading.length - 1].date.format("YYYY-MM-DD")).toBe("2026-02-28");
+		expect(at(leading, 0).date.format("YYYY-MM-DD")).toBe("2026-02-23");
+		expect(at(leading, leading.length - 1).date.format("YYYY-MM-DD")).toBe("2026-02-28");
 		leading.forEach((d) => expect(d.isAdjacentMonth).toBe(true));
 	});
 
@@ -203,8 +203,8 @@ describe("AC-CAL-01.2 / AC-CAL-01.3: adjacent-month days fill the rectangle", ()
 		const lastOwnIndex = days.map((d) => d.isAdjacentMonth).lastIndexOf(false);
 		const trailing = days.slice(lastOwnIndex + 1);
 		expect(trailing).toHaveLength(5);
-		expect(trailing[0].date.format("YYYY-MM-DD")).toBe("2026-04-01");
-		expect(trailing[trailing.length - 1].date.format("YYYY-MM-DD")).toBe("2026-04-05");
+		expect(at(trailing, 0).date.format("YYYY-MM-DD")).toBe("2026-04-01");
+		expect(at(trailing, trailing.length - 1).date.format("YYYY-MM-DD")).toBe("2026-04-05");
 		trailing.forEach((d) => expect(d.isAdjacentMonth).toBe(true));
 	});
 
@@ -233,20 +233,20 @@ describe("AC-CAL-01.4: the week number agrees with the weekly note name", () => 
 		// which the ISO week calls W53 and the locale week calls W01.
 		const grid = getMonthGrid(moment("2026-12-15"), 1, WEEK_FORMAT);
 		grid.forEach((week) => {
-			const path = computeNotePath(week.days[0].date, weekConfig, vaultConfig);
+			const path = computeNotePath(at(week.days, 0).date, weekConfig, vaultConfig);
 			expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
 		});
 	});
 
 	it("follows the locale week when the weekly note format uses ww", () => {
 		const grid = getMonthGrid(moment("2026-12-15"), 1, "gggg-[W]ww");
-		const row = grid.find((w) => w.days[0].date.format("YYYY-MM-DD") === "2026-12-28");
+		const row = grid.find((w) => at(w.days, 0).date.format("YYYY-MM-DD") === "2026-12-28");
 		expect(row?.weekNumber).toBe(1);
 	});
 
 	it("follows the ISO week when the weekly note format uses WW", () => {
 		const grid = getMonthGrid(moment("2026-12-15"), 1, "GGGG-[W]WW");
-		const row = grid.find((w) => w.days[0].date.format("YYYY-MM-DD") === "2026-12-28");
+		const row = grid.find((w) => at(w.days, 0).date.format("YYYY-MM-DD") === "2026-12-28");
 		expect(row?.weekNumber).toBe(53);
 	});
 });
@@ -257,8 +257,8 @@ describe("AC-CAL-01.6: dates stay correct across leap years and year boundaries"
 		expect(days.find((d) => d.date.format("YYYY-MM-DD") === "2028-02-29")?.isAdjacentMonth)
 			.toBe(false);
 		expect(days.filter((d) => !d.isAdjacentMonth)).toHaveLength(29);
-		expect(days[0].date.format("YYYY-MM-DD")).toBe("2028-01-31");
-		expect(days[41].date.format("YYYY-MM-DD")).toBe("2028-03-12");
+		expect(at(days, 0).date.format("YYYY-MM-DD")).toBe("2028-01-31");
+		expect(at(days, 41).date.format("YYYY-MM-DD")).toBe("2028-03-12");
 	});
 
 	it("produces no 29 February in a non-leap year", () => {
@@ -269,8 +269,8 @@ describe("AC-CAL-01.6: dates stay correct across leap years and year boundaries"
 
 	it("carries the next year on December's trailing days", () => {
 		const days = flatten(getMonthGrid(moment("2026-12-15"), 1, WEEK_FORMAT));
-		expect(days[0].date.format("YYYY-MM-DD")).toBe("2026-11-30");
-		expect(days[41].date.format("YYYY-MM-DD")).toBe("2027-01-10");
+		expect(at(days, 0).date.format("YYYY-MM-DD")).toBe("2026-11-30");
+		expect(at(days, 41).date.format("YYYY-MM-DD")).toBe("2027-01-10");
 		days.filter((d) => d.date.year() === 2027).forEach((d) => {
 			expect(d.isAdjacentMonth).toBe(true);
 		});
@@ -278,8 +278,8 @@ describe("AC-CAL-01.6: dates stay correct across leap years and year boundaries"
 
 	it("carries the previous year on January's leading days", () => {
 		const days = flatten(getMonthGrid(moment("2027-01-15"), 1, WEEK_FORMAT));
-		expect(days[0].date.format("YYYY-MM-DD")).toBe("2026-12-28");
-		expect(days[41].date.format("YYYY-MM-DD")).toBe("2027-02-07");
+		expect(at(days, 0).date.format("YYYY-MM-DD")).toBe("2026-12-28");
+		expect(at(days, 41).date.format("YYYY-MM-DD")).toBe("2027-02-07");
 		days.filter((d) => d.date.year() === 2026).forEach((d) => {
 			expect(d.isAdjacentMonth).toBe(true);
 		});
@@ -291,15 +291,15 @@ describe("getWeekAnchor", () => {
 		// Sunday-start March 2026: the row runs Sun 03-01 to Sat 03-07, while the
 		// ISO Monday of Sun 03-01 is 02-23 — a different week.
 		const grid = getMonthGrid(moment("2026-03-15"), 0, WEEK_FORMAT);
-		const anchor = getWeekAnchor(grid[0].days);
+		const anchor = getWeekAnchor(at(grid, 0).days);
 		expect(anchor.format("YYYY-MM-DD")).toBe("2026-03-01");
 		expect(anchor.clone().isoWeekday(1).format("YYYY-MM-DD")).toBe("2026-02-23");
 	});
 
 	it("hands back a copy, so a caller cannot mutate the grid", () => {
 		const grid = getMonthGrid(moment("2026-03-15"), 1, WEEK_FORMAT);
-		getWeekAnchor(grid[0].days).add(10, "day");
-		expect(grid[0].days[0].date.format("YYYY-MM-DD")).toBe("2026-02-23");
+		getWeekAnchor(at(grid, 0).days).add(10, "day");
+		expect(at(at(grid, 0).days, 0).date.format("YYYY-MM-DD")).toBe("2026-02-23");
 	});
 });
 
@@ -331,7 +331,7 @@ describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => 
 		// The regression the review caught: the ISO Monday of Sun 2026-03-01 is
 		// 02-23, so an isoWeekday(1) anchor named the week before the row.
 		const grid = getMonthGrid(moment("2026-03-15"), 0, WEEK_FORMAT);
-		const row = grid.find((w) => w.days[0].date.format("YYYY-MM-DD") === "2026-03-01");
+		const row = grid.find((w) => at(w.days, 0).date.format("YYYY-MM-DD") === "2026-03-01");
 		const path = computeNotePath(getWeekAnchor(row!.days), weekConfig, vaultConfig);
 		expect(row?.weekNumber).toBe(moment("2026-03-01").week());
 		expect(path).toContain(`W${String(row!.weekNumber).padStart(2, "0")}`);
