@@ -208,8 +208,15 @@ interface BuiltDate {
 }
 
 /**
- * A nested field (from {{weekday:fmt}}) describes a different day, not the
- * format's own date, so top-level fields are tried first and alone.
+ * Every date the captured fields could describe, best first: the top-level
+ * fields, then each {{weekday:fmt}} wrapper on its own. matchOne re-renders
+ * them in order and keeps the first that reproduces the name, because building
+ * a date and explaining a name are different things — "{{monday:YYYY-MM}}"
+ * builds the 1st of the month and explains nothing, while a second wrapper in
+ * the same format may carry the whole date.
+ *
+ * A nested field describes a different day than the format's own date, so
+ * top-level fields are tried first and alone.
  *
  * When a format names its date ONLY through wrappers — `{{monday:GGGG-[W]WW}}`
  * is a whole weekly format on its own — there is no top-level date to build,
@@ -220,18 +227,23 @@ interface BuiltDate {
  * module gives every weekly match. matchOne's re-render check then rejects the
  * candidate if it does not reproduce the name.
  */
-function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | null {
+function buildCandidates(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate[] {
+	const candidates: BuiltDate[] = [];
+
 	const topLevel = buildFrom(match, groups, (group) => !group.nested);
-	if (topLevel) return topLevel;
+	if (topLevel) candidates.push(topLevel);
 
 	const wrappers = new Map(
 		groups.filter((group) => group.wrapper !== undefined).map((group) => [group.wrapper, group]),
 	);
 	for (const [wrapper, sample] of wrappers) {
 		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, sample.wrapperIsoDay);
-		if (built) return { date: built.date.clone().isoWeekday(1), usedWeekPath: built.usedWeekPath };
+		// Every wrapper renders through isoWeekday(), so the day it names lies
+		// in the format's own ISO week; that week's Monday is the date every
+		// weekly match returns.
+		if (built) candidates.push({ date: built.date.clone().isoWeekday(1), usedWeekPath: built.usedWeekPath });
 	}
-	return null;
+	return candidates;
 }
 
 function buildFrom(
@@ -324,9 +336,6 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	const isExact = match[0].length === input.length;
 	if (!isExact && !allowPrefixMatch) return null;
 
-	const built = buildDate(match, groups);
-	if (!built) return null;
-
 	// The candidate date must reproduce the exact text it was matched
 	// against, or it never describes it at all. Comparing captured group
 	// values suffices — any literal portion of the pattern is already
@@ -335,15 +344,18 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	// fragment (nested in {{weekday:fmt}} or not — the AC names no such
 	// restriction) once a week number decides the date; every other field,
 	// year/week/weekday alike, must still match exactly.
-	const rendered = formatWithWeekTokens(format, built.date);
-	const renderedMatch = regex.exec(rendered);
-	if (!renderedMatch) return null;
-	for (const [i, group] of groups.entries()) {
-		if (built.usedWeekPath && isMonthOrDayKind(group.kind)) continue;
-		if (match[i + 1] !== renderedMatch[i + 1]) return null;
+	for (const built of buildCandidates(match, groups)) {
+		const rendered = formatWithWeekTokens(format, built.date);
+		const renderedMatch = regex.exec(rendered);
+		if (!renderedMatch) continue;
+
+		const explains = groups.every((group, i) =>
+			(built.usedWeekPath && isMonthOrDayKind(group.kind)) || match[i + 1] === renderedMatch[i + 1],
+		);
+		if (explains) return { date: built.date, prefixMatch: !isExact };
 	}
 
-	return { date: built.date, prefixMatch: !isExact };
+	return null;
 }
 
 /**

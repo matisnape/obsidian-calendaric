@@ -496,3 +496,61 @@ describe("parseFilename — backslash escapes, as moment renders them", () => {
 		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
 	});
 });
+
+describe("parseFilename — every candidate is tried, not only the first that builds", () => {
+	it("falls through a wrapper too vague to explain the name to one that can", () => {
+		// {{monday:YYYY-MM}} builds a date — the 1st of the month — but cannot
+		// reproduce the name; the Sunday wrapper carries the full date.
+		const format = "{{monday:YYYY-MM}}[-]{{sunday:YYYY-MM-DD}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-04-2026-04-19");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("falls through a top-level fragment too vague to explain the name", () => {
+		const format = "YYYY-MM[-]{{sunday:GGGG-[W]WW}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-04-2026-W16");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("still prefers the top-level date when it does explain the name", () => {
+		const format = "YYYY-MM-DD[ ]{{sunday:dddd}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-04-15 Sunday");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+	});
+});
+
+describe("parseFilename — a locale whose week starts mid-week", () => {
+	// en-gb cannot discriminate: its weeks are ISO weeks. A Tuesday-start
+	// locale is what exercises the walk-forward branch in the locale path.
+	const TUESDAY_START = "calendaric-test-tue";
+	moment.defineLocale(TUESDAY_START, { parentLocale: "en", week: { dow: 2, doy: 6 } });
+	moment.locale("en");
+
+	afterEach(() => {
+		moment.locale("en");
+	});
+
+	it("recovers every weekday wrapper across the year boundary", () => {
+		moment.locale(TUESDAY_START);
+
+		for (const weekday of ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]) {
+			for (const inner of ["GGGG-[W]WW", "gggg-[W]ww", "YYYY-MM-DD"]) {
+				for (const source of ["2026-04-15", "2026-12-31", "2027-01-01"]) {
+					const format = `{{${weekday}:${inner}}}`;
+					const written = formatWithWeekTokens(format, moment(source));
+					const parsed = parseFilename(written, format, false);
+					const expected = moment(source).isoWeekday(1).format("YYYY-MM-DD");
+
+					expect(`${source} ${format} ${written} -> ${parsed?.date.format("YYYY-MM-DD") ?? "null"}`)
+						.toBe(`${source} ${format} ${written} -> ${expected}`);
+				}
+			}
+		}
+	});
+});
