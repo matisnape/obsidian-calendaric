@@ -748,8 +748,8 @@
       "id": "US-ARCH-09",
       "epic": "ARCH",
       "title": "A budget-aware GitHub Actions workflow enforces the release build's gates on every pull request",
-      "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, lint, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
-      "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited.",
+      "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
+      "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first — see DEC-26.",
       "priority": "must",
       "status": "todo",
       "covers": [],
@@ -765,7 +765,7 @@
           "given": "a pull request is opened or updated against the default branch",
           "when": "the workflow runs",
           "then": [
-            "it runs install, lint, test and build as one combined job",
+            "it runs install, test and build as one combined job",
             "it reports one status check on the pull request for that job"
           ],
           "verifies": "architecture",
@@ -788,7 +788,7 @@
         },
         {
           "id": "AC-ARCH-09.3",
-          "given": "any one of install, lint, test or build fails during the workflow run",
+          "given": "any one of install, test or build fails during the workflow run",
           "when": "the workflow completes",
           "then": [
             "the status check reported on the pull request is failing",
@@ -812,6 +812,29 @@
           "testable_by": "manual",
           "status": "unverified",
           "evidence": null
+        },
+        {
+          "id": "AC-ARCH-09.5",
+          "given": "eslint currently fails on the default branch itself, independent of any pull request's own changes (pre-existing debt, not introduced by this ticket)",
+          "when": "the workflow is defined",
+          "then": [
+            "it does not run lint as part of the pull-request gate",
+            "excluding lint is a deliberate, temporary choice, not a silent omission — DEC-26 states the reason and the exit condition"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ],
+      "decisions": [
+        {
+          "id": "DEC-26",
+          "title": "The pull-request CI gate excludes lint until the pre-existing lint debt is paid down",
+          "decision": "US-ARCH-09's workflow runs install, test and build, not lint. Every implementing agent must still run lint locally on its own worktree before reporting a ticket done, and confirm its diff adds zero new lint errors beyond whatever the branch's base already carries — that check stays a per-ticket discipline, not a CI gate, until a separate cleanup story pays down the existing debt. Once that debt is paid down, lint joins the CI gate in a follow-up change to this workflow.",
+          "rationale": "eslint already fails on master with 52 pre-existing errors (mostly a no-restricted-imports rule against `import type { Moment } from \"moment\"`, tripped by code that predates this rewrite pass). Enabling lint in the CI gate today would make the very first pull request red regardless of its content. Anna's call: exclude it from CI for now (2026-09-11), because the debt is legacy, not because lint does not matter — hence the standing per-agent local-lint requirement.",
+          "decided_on": "2026-09-11",
+          "resolves": []
         }
       ]
     }
