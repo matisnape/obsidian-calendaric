@@ -6691,8 +6691,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "measured by the orchestrator: deleted main.js, ran npm run build, and main.js (22040 bytes) plus manifest.json were produced at the plugin root with no manual step. build is npm run typecheck followed by esbuild production, so a type error stops the bundle rather than shipping a stale one. styles.css is absent in this repo, which the criterion allows."
         },
         {
           "id": "AC-ARCH-06.2",
@@ -6705,8 +6705,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: scripts/release-check.test.mjs, the AC-ARCH-06.2 cases -- including > the re-release check reads a tag, not a same-named branch > passes when only a branch carries the version name / > still fails when a real tag for the version sits on another commit. That pair exists because the first implementation resolved an unqualified 0.1.0^{commit}, which a same-named branch can satisfy; it now resolves refs/tags explicitly. SemVer ordering and the versions.json-to-manifest mapping are covered in the same suite."
         },
         {
           "id": "AC-ARCH-06.3",
@@ -6718,7 +6718,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: the criterion is about a pushed tag matching manifest.json version with no leading v. The comparison logic is covered (scripts/release-check.test.mjs, the AC-ARCH-06.3 case), but no tag has ever been pushed on this repository -- the only tag present, 1.0.0, is inherited from the upstream template history dating to 2020. Settling this needs a real tagged release, deliberately not created here."
         },
         {
           "id": "AC-ARCH-06.4",
@@ -6730,8 +6730,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review plus an independent check by the second-model reviewer, which verified the cited API references and version boundaries rather than taking them on trust. The floor is 1.13.7: the previous 0.15.0 was inherited from an old copy of the upstream sample plugin and never chosen for this project, while the code calls APIs requiring up to 1.7.2 (an awaitable revealLeaf, found reviewing US-CMD-01) and 1.1.0 (registerHoverLinkSource, found reviewing US-CAL-03) -- so the old value was actively false. 1.13.7 is the version the maintainer runs, verified on her machine; the newest release is 1.14.1 and a bump is expected when she updates."
         },
         {
           "id": "AC-ARCH-06.5",
@@ -6743,8 +6743,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "measured by the orchestrator: ran npm run verify and watched it report each gate individually -- gate typecheck: ok, gate lint: FAILED, gate test: ok -- and then exit 1 with \"verify FAILED — 1 of 3 gates did not pass\". No gate is skipped, disabled or allowed to fail while the run still reports success. The lint gate is red on a clean tree because of the pre-existing debt DEC-26 records, so a release stays blocked until that debt is paid; the failure output now says so explicitly, naming DEC-26 and telling the reader to compare counts on master before assuming they caused it. That blockage is the criterion working, not a defect -- whether lint should leave the release gate is a decision left to the repository owner.",
           "failure_path": true
         },
         {
@@ -6757,8 +6757,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: scripts/verify.test.mjs, the AC-ARCH-06.6 case -- a gate that cannot run makes the build fail loudly and the message names which gate it was. Confirmed in the live run above, where the summary line names lint specifically rather than reporting a generic failure.",
           "failure_path": true
         },
         {
@@ -6772,7 +6772,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": "UNSETTLED, reported rather than judged: package.json declares prepare as npm run build, so an install does produce the built artefact, and the reviewer traced the npm lifecycle to confirm the ordering. But the criterion is about what a CONSUMER receives, and that can only be observed from a real install of a real published release -- nothing has been published from this repository yet."
         }
       ]
     },
