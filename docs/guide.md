@@ -14,6 +14,10 @@ Standard [moment.js format tokens](https://momentjs.com/docs/#/displaying/format
 | `gggg-[W]ww` | `2026-W16` |
 | `YYYY-MM` | `2026-04` |
 
+When the Format field is left empty, Daily Notes fall back to `YYYY-MM-DD`. The
+Daily Notes import writes that same default when the core plugin stored no
+format of its own.
+
 ### Week tokens (Weekly Notes only)
 
 Calendaric extends the Format field with week tokens that insert the date of a specific weekday within the target week. These are only evaluated for Weekly Notes.

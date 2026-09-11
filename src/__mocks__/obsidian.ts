@@ -22,3 +22,14 @@ export class Setting {
 	addText(_cb: (text: unknown) => void): this { return this; }
 	addButton(_cb: (btn: unknown) => void): this { return this; }
 }
+
+export class Modal {
+	app: unknown;
+	contentEl: HTMLElement;
+	constructor(app: unknown) {
+		this.app = app;
+		this.contentEl = document.createElement("div");
+	}
+	open(): void {}
+	close(): void {}
+}
