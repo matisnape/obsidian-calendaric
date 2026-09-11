@@ -10,7 +10,7 @@
       "story": "As someone who already uses Obsidian's built-in Daily Notes plugin, I want Calendaric to offer to copy its folder, format and template into my day configuration, so that I do not have to retype settings I already have working.",
       "rationale": "This vault currently has the core Daily Notes plugin configured and enabled, so this is a real, present-day migration path, not a hypothetical one.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "calendaric:read-legacy-daily-notes-config",
         "calendaric:import-daily-notes-settings",
