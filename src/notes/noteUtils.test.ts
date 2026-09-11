@@ -2,14 +2,7 @@ import { describe, it, expect } from "vitest";
 import moment from "moment";
 import { applyWeekTokens, formatWithWeekTokens, computeNotePath } from "./noteUtils";
 import type { PeriodicConfig } from "../types";
-import type { App } from "obsidian";
-
-// Minimal App mock — resolveNoteFolder tests use the vault.config path
-function makeApp(config: Record<string, unknown> = {}): App {
-	return {
-		vault: { config },
-	} as unknown as App;
-}
+import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {
@@ -73,17 +66,17 @@ describe("formatWithWeekTokens", () => {
 });
 
 describe("computeNotePath", () => {
-	const app = makeApp();
+	const vaultConfig = new FakeVaultConfigPort();
 	const dailyDate = moment("2026-04-13");
 
 	it("builds path with folder", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" });
-		expect(computeNotePath(dailyDate, config, app)).toBe("journal/daily/2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, vaultConfig)).toBe("journal/daily/2026-04-13.md");
 	});
 
 	it("builds path without folder (vault root)", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, config, app)).toBe("2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, vaultConfig)).toBe("2026-04-13.md");
 	});
 
 	it("applies week tokens for weekly format", () => {
@@ -91,12 +84,12 @@ describe("computeNotePath", () => {
 			format: "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}",
 			folder: "journal/weekly",
 		});
-		expect(computeNotePath(MONDAY, config, app)).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
+		expect(computeNotePath(MONDAY, config, vaultConfig)).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
 	});
 
 	it("uses Obsidian default folder when config folder is empty and newFileLocation=folder", () => {
-		const appWithConfig = makeApp({ newFileLocation: "folder", newFileFolderPath: "Inbox" });
+		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, config, appWithConfig)).toBe("Inbox/2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("Inbox/2026-04-13.md");
 	});
 });

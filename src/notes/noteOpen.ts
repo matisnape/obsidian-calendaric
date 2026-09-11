@@ -1,4 +1,5 @@
-import type { App, TFile } from "obsidian";
+import type { NoteFile } from "../adapters/vaultPort";
+import type { WorkspacePort } from "../adapters/workspacePort";
 
 /**
  * Returns true if the platform meta key is pressed.
@@ -10,21 +11,17 @@ export function isMetaPressed(event: MouseEvent): boolean {
 
 /**
  * Open a periodic note in the appropriate leaf.
- * - Normal click: workspace.getLeaf(false) — reuses an existing unpinned tab
- * - Meta/Ctrl click: workspace.getLeaf("split") — opens in a new split pane
+ * - Normal click: reuse — reuses an existing unpinned tab
+ * - Meta/Ctrl click: split — opens in a new split pane
  */
-export async function openNote(file: TFile, event: MouseEvent, app: App): Promise<void> {
-	const { workspace } = app;
-	const leaf = isMetaPressed(event)
-		? workspace.getLeaf("split")
-		: workspace.getLeaf(false);
-	await leaf.openFile(file);
+export async function openNote(file: NoteFile, event: MouseEvent, workspace: WorkspacePort): Promise<void> {
+	const mode = isMetaPressed(event) ? "split" : "reuse";
+	await workspace.openInLeaf(file, mode);
 }
 
 /**
  * Open a periodic note in a new tab (used for "Open on startup").
  */
-export async function openNoteInNewTab(file: TFile, app: App): Promise<void> {
-	const leaf = app.workspace.getLeaf("tab");
-	await leaf.openFile(file);
+export async function openNoteInNewTab(file: NoteFile, workspace: WorkspacePort): Promise<void> {
+	await workspace.openInLeaf(file, "tab");
 }
