@@ -32,15 +32,103 @@ describe("createNote", () => {
 
 		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
 
-		expect(vault.createdFolders).toEqual(["journal/daily"]);
+		expect(vault.createdFolders).toEqual(["journal", "journal/daily"]);
+	});
+
+	it("creates every missing intermediate folder, top down (AC-NOTE-03.5)", async () => {
+		const vault = new FakeVaultPort();
+
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual(["journal", "journal/daily", "journal/daily/2026"]);
+	});
+
+	it("creates only the intermediate folders that are still missing (AC-NOTE-03.5)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
+
+		await createNote("journal/daily/2026/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual(["journal/daily", "journal/daily/2026"]);
+	});
+
+	it("writes the note even though the whole folder chain was missing (AC-NOTE-03.1, AC-NOTE-03.4)", async () => {
+		const vault = new FakeVaultPort();
+
+		const file = await createNote("a/b/c/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(file.path).toBe("a/b/c/2026-04-13.md");
+		expect(vault.contentAt("a/b/c/2026-04-13.md")).toBe("");
+	});
+
+	it("creates no folder for a note at the vault root (AC-NOTE-03.3)", async () => {
+		const vault = new FakeVaultPort();
+
+		await createNote("2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(vault.createdFolders).toEqual([]);
+		expect(vault.contentAt("2026-04-13.md")).toBe("");
 	});
 
 	it("does not recreate a folder that already exists", async () => {
 		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
 		vault.seedFolder("journal/daily");
 
 		await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
 
+		expect(vault.createdFolders).toEqual([]);
+	});
+
+	it("accepts a folder another actor created between the check and the call (AC-NOTE-03.1)", async () => {
+		const vault = new FakeVaultPort();
+		vault.loseCreateFolderRace("journal");
+
+		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+
+		expect(file.path).toBe("journal/daily/2026-04-13.md");
+		expect(vault.contentAt("journal/daily/2026-04-13.md")).toBe("");
+		expect(vault.createdFolders).toEqual(["journal/daily"]);
+	});
+
+	// Guards the fix for the race above against swallowing every failure: the
+	// folder is still absent afterwards, so the error has to come back out.
+	it("rethrows a folder failure that left the folder absent", async () => {
+		const vault = new FakeVaultPort();
+		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("EACCES: permission denied");
+	});
+
+	it("does not mistake a file for an existing folder in the chain", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note sitting where a folder belongs");
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("File already exists at: journal");
+	});
+
+	// The race recovery asks "is the folder there now?". A file at that path is
+	// not the folder we wanted, so it must not count as the race being won.
+	it("rethrows a folder failure when only a file appeared at the path", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note sitting where a folder belongs");
+		vault.failCreateFolder("journal", new Error("EACCES: permission denied"));
+
+		await expect(
+			createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("EACCES: permission denied");
+	});
+
+	it("refuses a path with an unusable segment before making any folder", async () => {
+		const vault = new FakeVaultPort();
+
+		await expect(
+			createNote("journal/../daily/2026-04-13.md", DATE, "day", makeConfig(), vault),
+		).rejects.toThrow("Cannot create a folder for the path: journal/../daily");
 		expect(vault.createdFolders).toEqual([]);
 	});
 

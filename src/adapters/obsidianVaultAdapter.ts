@@ -1,10 +1,14 @@
-import { TFile } from "obsidian";
+import { TFile, TFolder } from "obsidian";
 import type { App } from "obsidian";
 import type { NoteFile, VaultPort } from "./vaultPort";
 
 /** Wires VaultPort to the real Obsidian Vault/MetadataCache API. */
 export class ObsidianVaultAdapter implements VaultPort {
 	constructor(private app: App) {}
+
+	folderExists(path: string): boolean {
+		return this.app.vault.getAbstractFileByPath(path) instanceof TFolder;
+	}
 
 	pathExists(path: string): boolean {
 		return this.app.vault.getAbstractFileByPath(path) !== null;

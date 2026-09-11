@@ -1,6 +1,7 @@
 import type { Moment } from "moment";
 import type { PeriodicConfig } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
+import { folderChainSegments, hasUnusableSegment } from "./noteUtils";
 import { substituteTemplateTokens } from "./templateTokens";
 
 type Granularity = "day" | "week";
@@ -22,13 +23,44 @@ export async function createNote(
 	config: PeriodicConfig,
 	vault: VaultPort,
 ): Promise<NoteFile> {
-	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : null;
-	if (folder && !vault.pathExists(folder)) {
-		await vault.createFolder(folder);
-	}
+	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+	await ensureFolderChain(folder, vault);
 
 	const content = await buildNoteContent(date, granularity, config, path, vault);
 	return await vault.createFile(path, content);
+}
+
+/**
+ * Create every missing folder from the top of the chain down.
+ *
+ * Obsidian's `vault.createFolder` throws when the folder already exists, so
+ * every segment is tested before it is created. Walking the chain explicitly
+ * keeps the guarantee ours rather than resting on how one call treats missing
+ * parents.
+ *
+ * Each await hands the event loop back, and two notes can be created at once —
+ * both startup notes share a folder chain, and Sync writes folders of its own.
+ * So the existence test can go stale before the call it guards, which makes a
+ * failure on an existing folder the result we wanted rather than an error.
+ */
+async function ensureFolderChain(folder: string, vault: VaultPort): Promise<void> {
+	// Refused before the first folder is made, so a rejected path never leaves
+	// half a chain behind.
+	if (hasUnusableSegment(folder)) {
+		throw new Error(`Cannot create a folder for the path: ${folder}`);
+	}
+
+	for (const segment of folderChainSegments(folder)) {
+		if (vault.folderExists(segment)) continue;
+
+		try {
+			await vault.createFolder(segment);
+		} catch (error) {
+			// Only a folder at this path means the race was won. Anything else
+			// there — a file, say — leaves the chain broken, so the error stands.
+			if (!vault.folderExists(segment)) throw error;
+		}
+	}
 }
 
 async function buildNoteContent(

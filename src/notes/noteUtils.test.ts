@@ -1,8 +1,17 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
-import { applyWeekTokens, formatWithWeekTokens, computeNotePath } from "./noteUtils";
+import {
+	applyWeekTokens,
+	formatWithWeekTokens,
+	computeNotePath,
+	resolveNoteFolder,
+	checkNoteFolder,
+	folderChainSegments,
+	hasUnusableSegment,
+} from "./noteUtils";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { FakeVaultPort } from "../adapters/fakeVaultPort";
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {
@@ -91,5 +100,155 @@ describe("computeNotePath", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
 		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("Inbox/2026-04-13.md");
+	});
+
+	it("builds a vault-root path for an explicit \"/\" folder, ignoring the default folder", () => {
+		const configWithDefault = new FakeVaultConfigPort("Inbox");
+		const config = makeConfig({ format: "YYYY-MM-DD", folder: "/" });
+		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("2026-04-13.md");
+	});
+});
+
+describe("resolveNoteFolder", () => {
+	it("keeps a configured folder as-is", () => {
+		expect(resolveNoteFolder("journal/daily", new FakeVaultConfigPort("Inbox"))).toBe("journal/daily");
+	});
+
+	it("falls back to Obsidian's default new-file folder when none is configured (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("", new FakeVaultConfigPort("Inbox"))).toBe("Inbox");
+	});
+
+	it("resolves to the vault root when neither the config nor Obsidian names a folder (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("", new FakeVaultConfigPort())).toBe("");
+	});
+
+	it("keeps an explicit \"/\" as the vault root instead of taking the default folder (AC-NOTE-03.3)", () => {
+		expect(resolveNoteFolder("/", new FakeVaultConfigPort("Inbox"))).toBe("");
+	});
+
+	it("takes the default folder only when the config names no folder at all (AC-NOTE-03.2)", () => {
+		expect(resolveNoteFolder("   ", new FakeVaultConfigPort("Inbox"))).toBe("Inbox");
+	});
+
+	it("strips surrounding slashes from a configured folder", () => {
+		expect(resolveNoteFolder("/journal/daily/", new FakeVaultConfigPort("Inbox"))).toBe("journal/daily");
+	});
+});
+
+describe("checkNoteFolder", () => {
+	it("accepts an empty configured folder as valid and already present (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("accepts the vault root written as a slash as valid and already present (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("/", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("reads an explicit \"/\" as the vault root even when Obsidian names a default folder (AC-NOTE-03.3)", () => {
+		const check = checkNoteFolder("/", new FakeVaultConfigPort("Inbox"), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "", valid: true, notYetCreated: false });
+	});
+
+	it("reports an existing folder as valid and not pending creation", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal/daily");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: true, notYetCreated: false });
+	});
+
+	it("flags a folder that does not exist yet as valid but not-yet-created (AC-NOTE-03.4)", () => {
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "journal/daily", valid: true, notYetCreated: true });
+	});
+
+	it("checks the fallback folder, not the empty config value, when no folder is configured (AC-NOTE-03.2)", () => {
+		const check = checkNoteFolder("", new FakeVaultConfigPort("Inbox"), new FakeVaultPort());
+
+		expect(check).toEqual({ path: "Inbox", valid: true, notYetCreated: true });
+	});
+
+	it("rejects a folder path already occupied by a file", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal/daily", "a note, not a folder");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: false, notYetCreated: false });
+	});
+
+	it("rejects a file sitting on an intermediate segment of the chain", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("journal", "a note where a parent folder belongs");
+
+		const check = checkNoteFolder("journal/daily", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily", valid: false, notYetCreated: false });
+	});
+
+	it("reports a chain as pending when only its top folder exists", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal");
+
+		const check = checkNoteFolder("journal/daily/2026", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily/2026", valid: true, notYetCreated: true });
+	});
+
+	it("reports a fully present chain as not pending", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("journal/daily/2026");
+
+		const check = checkNoteFolder("journal/daily/2026", new FakeVaultConfigPort(), vault);
+
+		expect(check).toEqual({ path: "journal/daily/2026", valid: true, notYetCreated: false });
+	});
+
+	it("rejects a path with an empty or dot segment", () => {
+		const vault = new FakeVaultPort();
+
+		expect(checkNoteFolder("journal//daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
+		expect(checkNoteFolder("journal/../daily", new FakeVaultConfigPort(), vault).valid).toBe(false);
+	});
+});
+
+describe("hasUnusableSegment", () => {
+	it("accepts the vault root, which has no segments", () => {
+		expect(hasUnusableSegment("")).toBe(false);
+	});
+
+	it("accepts an ordinary chain", () => {
+		expect(hasUnusableSegment("journal/daily/2026")).toBe(false);
+	});
+
+	it("rejects an empty, dot or double-dot segment", () => {
+		expect(hasUnusableSegment("journal//daily")).toBe(true);
+		expect(hasUnusableSegment("journal/./daily")).toBe(true);
+		expect(hasUnusableSegment("journal/../daily")).toBe(true);
+	});
+});
+
+describe("folderChainSegments", () => {
+	it("lists every folder in the chain, shallowest first", () => {
+		expect(folderChainSegments("journal/daily/2026")).toEqual([
+			"journal",
+			"journal/daily",
+			"journal/daily/2026",
+		]);
+	});
+
+	it("lists a single folder as the whole chain", () => {
+		expect(folderChainSegments("journal")).toEqual(["journal"]);
+	});
+
+	it("lists nothing for the vault root", () => {
+		expect(folderChainSegments("")).toEqual([]);
 	});
 });

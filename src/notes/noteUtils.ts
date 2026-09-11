@@ -1,6 +1,7 @@
 import type { Moment } from "moment";
 import type { PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
+import type { VaultPort } from "../adapters/vaultPort";
 
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^}]+)\}\}/gi;
 
@@ -61,11 +62,90 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
 }
 
 /**
- * Resolve the note folder: if empty, fall back to Obsidian's default new-file
- * location setting.
+ * Resolve the note folder: if none is configured, fall back to Obsidian's
+ * default new-file location setting.
+ *
+ * Emptiness is judged before the slashes come off, because `/` is the user
+ * naming the vault root. That is a configured answer and it must win over the
+ * Obsidian default, unlike a folder left unset.
  */
 export function resolveNoteFolder(folder: string, vaultConfig: VaultConfigPort): string {
-	if (folder.trim() !== "") return folder.trim();
+	if (folder.trim() !== "") return normaliseFolder(folder);
 
-	return vaultConfig.getDefaultNewFileFolder();
+	return normaliseFolder(vaultConfig.getDefaultNewFileFolder());
+}
+
+/** Leading and trailing slashes carry no meaning in a vault path. */
+function normaliseFolder(folder: string): string {
+	return folder.trim().replace(/^\/+|\/+$/g, "");
+}
+
+export interface NoteFolderCheck {
+	/** The folder after the default-location fallback. `""` is the vault root. */
+	path: string;
+	valid: boolean;
+	/**
+	 * The folder is missing and will be created when the note is written, so
+	 * this flag reports a pending action rather than an error.
+	 */
+	notYetCreated: boolean;
+}
+
+/**
+ * A segment no vault can hold: empty, or one that walks the path instead of
+ * naming a folder.
+ *
+ * Shared like `folderChainSegments`, so the check and the creation apply the
+ * same rule instead of one of them knowing it alone.
+ */
+export function hasUnusableSegment(path: string): boolean {
+	// The vault root is a destination rather than a segment, so it has none.
+	if (path === "") return false;
+
+	return path.split("/").some((segment) => segment === "" || segment === "." || segment === "..");
+}
+
+/**
+ * Every folder the chain down to `path` is made of, shallowest first.
+ *
+ * Both the check below and the creation in `noteCreate` walk this list, so the
+ * two cannot disagree about which folders the chain contains.
+ */
+export function folderChainSegments(path: string): string[] {
+	if (path === "") return [];
+
+	const segments = path.split("/");
+	return segments.map((_segment, index) => segments.slice(0, index + 1).join("/"));
+}
+
+/**
+ * Check a configured folder path ahead of note creation.
+ *
+ * Every folder in the chain is judged, not only the last one, because creation
+ * walks the whole chain and fails at the first segment it cannot make.
+ *
+ * A missing folder is never a rejection: `createNote` builds the chain on
+ * demand, so a caller showing this to the user reports it, not blocks on it.
+ */
+export function checkNoteFolder(
+	folder: string,
+	vaultConfig: VaultConfigPort,
+	vault: VaultPort,
+): NoteFolderCheck {
+	const path = resolveNoteFolder(folder, vaultConfig);
+
+	// The vault root is always there, so it is never pending creation.
+	if (path === "") return { path, valid: true, notYetCreated: false };
+
+	if (hasUnusableSegment(path)) return { path, valid: false, notYetCreated: false };
+
+	const chain = folderChainSegments(path);
+
+	// Anything that is not a folder already owning a segment stops creation
+	// there, so the whole chain is unusable however deep the clash sits.
+	if (chain.some((segment) => !vault.folderExists(segment) && vault.pathExists(segment))) {
+		return { path, valid: false, notYetCreated: false };
+	}
+
+	return { path, valid: true, notYetCreated: chain.some((segment) => !vault.folderExists(segment)) };
 }
