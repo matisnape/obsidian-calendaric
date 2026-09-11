@@ -293,7 +293,7 @@
       "story": "As a maintainer, I want the whole codebase held to one strict type-checking standard, with every place it touches an API the compiler cannot verify walled off behind a single typed boundary, so that a wrong assumption about another plugin's shape is caught while compiling, not when a user hits a crash.",
       "rationale": "The target repository's tsconfig.json enables several of the strict-family flags individually but never sets the single \"strict\" option, and is missing others from that family. The old code reached into a companion plugin's internal state with a plain property read: one P1 defect read a Svelte store as if it were a plain object, and a feature it powered silently returned nothing for every user from the day it shipped.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -836,6 +836,77 @@
           "rationale": "eslint already fails on master with 52 pre-existing errors (mostly a no-restricted-imports rule against `import type { Moment } from \"moment\"`, tripped by code that predates this rewrite pass). Enabling lint in the CI gate today would make the very first pull request red regardless of its content. Anna's call: exclude it from CI for now (2026-09-11), because the debt is legacy, not because lint does not matter \u2014 hence the standing per-agent local-lint requirement.",
           "decided_on": "2026-09-11",
           "resolves": []
+        }
+      ]
+    },
+    {
+      "id": "US-ARCH-10",
+      "epic": "ARCH",
+      "title": "Take the upstream template's tooling improvements without losing the rewrite",
+      "story": "As a maintainer of a fork that has diverged deliberately from its template, I want the template's tooling improvements evaluated and taken one by one, so that the build and lint setup stays current without an upstream merge overwriting the plugin this project actually rewrote.",
+      "rationale": "This repository is a fork of obsidianmd/obsidian-sample-plugin and is three commits behind its fork point, touching 16 files. A plain merge is the wrong instrument: upstream's src/main.ts and src/settings.ts still hold the boilerplate sample, which a merge would drag back over the rewrite, and six of the sixteen files are ones this project has already diverged on on purpose (tsconfig.json via US-ARCH-04's strict mode, the deleted lint.yml replaced by US-ARCH-09's ci.yml, manifest.json and versions.json set to a real minAppVersion, and both source files). Only release.yml has been taken so far, verbatim, as a reference. What is left worth having is the tooling: the eslint plugin bump, which can move the pre-existing lint debt in either direction, and the esbuild and editorconfig modernisation.",
+      "priority": "should",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-10.1",
+          "given": "the fork's divergence from the upstream template",
+          "when": "each file the template changed since the fork point is examined",
+          "then": [
+            "every one is classified as taken, superseded by this project's own work, or deliberately declined",
+            "each declined or superseded file carries the reason, so a later reader does not re-litigate it"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-10.2",
+          "given": "the upstream eslint plugin version is newer than the one this project pins",
+          "when": "the newer plugin is installed and lint is run",
+          "then": [
+            "the resulting error count and the per-rule category breakdown are both recorded against the previous baseline",
+            "any rule category that appears or disappears is named, rather than only the total being compared"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-10.3",
+          "given": "the tooling changes chosen from the template",
+          "when": "they are applied to this repository",
+          "then": [
+            "the test, build and lint gates all still pass",
+            "no file under src/ is reverted toward the template's sample-plugin content"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-10.4",
+          "given": "an upstream change that would overwrite work this project did deliberately",
+          "when": "it is applied by mistake",
+          "then": [
+            "the build or the test suite fails rather than the overwrite landing silently",
+            "the failure names the file, so the cause is visible without bisecting"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
         }
       ]
     }
