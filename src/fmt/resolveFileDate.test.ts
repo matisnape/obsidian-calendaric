@@ -52,6 +52,29 @@ describe("resolveFileDate — AC-FMT-07.2 a weekly filename that is no valid dai
 	});
 });
 
+describe("resolveFileDate — AC-FMT-07.2 a weekly format written only with a {{weekday:fmt}} wrapper", () => {
+	const WRAPPED = {
+		day: config("YYYY-MM-DD", "Daily"),
+		week: config("{{monday:GGGG-[W]WW}}", "Weekly"),
+	};
+
+	it("recognises the note the plugin writes under that format", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", WRAPPED, NO_DEFAULT_FOLDER);
+
+		expect(result?.granularity).toBe("week");
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("partitions by ISO week, because the wrapper pins the name to the ISO Monday", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", WRAPPED, NO_DEFAULT_FOLDER);
+		const closingSunday = moment("2026-04-19T09:00:00");
+		const previousSunday = moment("2026-04-12T09:00:00");
+
+		expect(result?.noteDate).toBe(computeNoteDate(closingSunday, "week", WRAPPED.week.format));
+		expect(result?.noteDate).not.toBe(computeNoteDate(previousSunday, "week", WRAPPED.week.format));
+	});
+});
+
 describe("resolveFileDate — AC-FMT-07.2 day is tried before week", () => {
 	it("returns the day identity when one filename satisfies both formats", () => {
 		const configs = { day: config("YYYY-MM-DD", "Notes"), week: config("YYYY-MM-DD", "Notes") };

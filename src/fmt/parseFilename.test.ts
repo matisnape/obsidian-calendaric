@@ -365,3 +365,60 @@ describe("parseFilename — AC-FMT-04.7 real-vault regression: old shapes stay u
 		expect(result).toBeNull();
 	});
 });
+
+describe("parseFilename — a format that names its date only through {{weekday:fmt}}", () => {
+	// formatWithWeekTokens turns the whole format into the wrapper's rendering,
+	// so these are complete weekly formats on their own. A name the plugin
+	// writes must parse back, or the note it just created is unrecognisable.
+	it("reads back an ISO nested-only weekly format", () => {
+		const format = "{{monday:GGGG-[W]WW}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-W16");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("reads back a locale nested-only weekly format", () => {
+		const format = "{{monday:gggg-[W]ww}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("maps a wrapper naming another weekday back to that week's Monday", () => {
+		// The wrapper renders the Friday, but the note is the week's, so the
+		// date this returns must be the Monday every other weekly match returns.
+		const format = "[Week ending ]{{friday:YYYY-MM-DD}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("Week ending 2026-04-17");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("round-trips every day of a week to the one name that week is written under", () => {
+		const format = "{{monday:GGGG-[W]WW}}";
+		const names = new Set<string>();
+		for (let offset = 0; offset < 7; offset++) {
+			const day = moment("2026-04-13").add(offset, "days");
+			const written = formatWithWeekTokens(format, day);
+			names.add(written);
+			expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		}
+		expect(names.size).toBe(1);
+	});
+
+	it("still round-trips the vault's own two-wrapper weekly format", () => {
+		// AC-FMT-04.6's shipped shape: a top-level week number plus two
+		// wrappers naming different days. Top-level construction owns this one,
+		// and the wrapper fallback must not disturb it.
+		const format = "GGGG-[W]WW[, ]{{monday:DD.MM}}[ - ]{{sunday:DD.MM}}";
+		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+
+		expect(written).toBe("2026-W16, 13.04 - 19.04");
+		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
+	it("returns nothing when no wrapper carries enough to build a date", () => {
+		expect(parseFilename("Monday", "{{monday:dddd}}", false)).toBeNull();
+	});
+});

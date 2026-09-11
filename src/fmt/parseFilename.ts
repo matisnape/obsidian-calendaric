@@ -27,6 +27,9 @@ interface TokenGroup {
 	// wrapper's own day, not the format's own date, so it never feeds
 	// top-level date construction (see matchOne for validation rules).
 	nested?: boolean;
+	// Which {{weekday:fmt}} wrapper a nested field came from. Two wrappers
+	// describe two different days, so their fields must never be pooled.
+	wrapper?: number;
 }
 
 interface Tokenized {
@@ -87,6 +90,7 @@ function tokenForRun(run: string): { regex: string; kind: FieldKind } | null {
 function tokenize(format: string, nested = false): Tokenized {
 	let pattern = "";
 	const groups: TokenGroup[] = [];
+	let wrappers = 0;
 	let i = 0;
 
 	while (i < format.length) {
@@ -106,8 +110,9 @@ function tokenize(format: string, nested = false): Tokenized {
 			if (end !== -1 && colon !== -1 && colon < end) {
 				const tokenFmt = format.slice(colon + 1, end);
 				const inner = tokenize(tokenFmt, true);
+				const wrapper = wrappers++;
 				pattern += inner.pattern;
-				groups.push(...inner.groups);
+				groups.push(...inner.groups.map((group) => ({ ...group, wrapper })));
 				i = end + 2;
 				continue;
 			}
@@ -148,9 +153,14 @@ export type WeekSemantics = "iso" | "locale";
  * format carrying both, and a field nested in {{weekday:fmt}} describes that
  * wrapper's own day, never the format's week.
  *
- * Duplicates US-CAL-01's getWeekNumber(date, weekFormat) in noteUtils, which
- * is not on master yet; the two must be reconciled into one helper once the
- * second of the two branches is rebased.
+ * Only top-level tokens count. A week token inside {{weekday:fmt}} is rendered
+ * off a day that isoWeekday() already pinned to the source date's ISO week, so
+ * such a format partitions dates by ISO week whatever numbering it prints.
+ *
+ * US-CAL-01's getWeekNumber(date, weekFormat) reads the same format strings but
+ * answers a different question — which number to display, not how to partition
+ * dates — so the two stay separate helpers; only this tokenizer should be
+ * shared once both branches are on master.
  */
 export function weekSemantics(format: string): WeekSemantics | null {
 	const topLevel = tokenize(format).groups.filter((group) => !group.nested);
@@ -177,9 +187,36 @@ interface BuiltDate {
 
 /**
  * A nested field (from {{weekday:fmt}}) describes a different day, not the
- * format's own date, so it never contributes here.
+ * format's own date, so top-level fields are tried first and alone.
+ *
+ * When a format names its date ONLY through wrappers — `{{monday:GGGG-[W]WW}}`
+ * is a whole weekly format on its own — there is no top-level date to build,
+ * and discarding the nested fields would make a name the plugin itself writes
+ * unreadable. Every wrapper resolves through isoWeekday(), so whichever day it
+ * names lies in the source date's own ISO week: mapping the wrapped date back
+ * with isoWeekday(1) recovers that week's Monday, which is the date this
+ * module gives every weekly match. matchOne's re-render check then rejects the
+ * candidate if it does not reproduce the name.
  */
 function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | null {
+	const topLevel = buildFrom(match, groups, (group) => !group.nested);
+	if (topLevel) return topLevel;
+
+	const wrappers = new Set(
+		groups.filter((group) => group.wrapper !== undefined).map((group) => group.wrapper),
+	);
+	for (const wrapper of wrappers) {
+		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper);
+		if (built) return { date: built.date.clone().isoWeekday(1), usedWeekPath: built.usedWeekPath };
+	}
+	return null;
+}
+
+function buildFrom(
+	match: RegExpExecArray,
+	groups: TokenGroup[],
+	include: (group: TokenGroup) => boolean,
+): BuiltDate | null {
 	let year: number | undefined;
 	let isoWeekYear: number | undefined;
 	let localeWeekYear: number | undefined;
@@ -189,7 +226,7 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | nu
 	let localeWeek: number | undefined;
 
 	groups.forEach((group, idx) => {
-		if (group.nested) return;
+		if (!include(group)) return;
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
 		switch (group.kind) {
@@ -206,7 +243,7 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): BuiltDate | nu
 			case "day": day ??= parseInt(raw, 10); break;
 			case "isoWeek": isoWeek ??= parseInt(raw, 10); break;
 			case "localeWeek": localeWeek ??= parseInt(raw, 10); break;
-			default: break; // a top-level weekday name/number never constructs either
+			default: break; // a weekday name/number never constructs either
 		}
 	});
 
