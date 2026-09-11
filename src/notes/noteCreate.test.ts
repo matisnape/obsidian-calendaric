@@ -234,7 +234,7 @@ describe("createNote", () => {
 		);
 
 		expect(warn).toHaveBeenCalledTimes(1);
-		expect(warn.mock.calls[0][0]).toContain("Templates/missing.md");
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining("Templates/missing.md"));
 	});
 
 	// The metadata cache can still name a template that the read then fails on —
@@ -259,7 +259,7 @@ describe("createNote", () => {
 
 		expect(vault.contentAt(file.path)).toBe("");
 		expect(warn).toHaveBeenCalledTimes(1);
-		expect(warn.mock.calls[0][0]).toContain("Templates/daily.md");
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining("Templates/daily.md"));
 		expect(logged).toHaveBeenCalledTimes(1);
 		logged.mockRestore();
 	});
