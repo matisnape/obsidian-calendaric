@@ -624,7 +624,7 @@
       "story": "As someone with a note open, I want the plugin to recognise it as a specific day's or week's note by its filename, preferring the most specific granularity, so that the calendar highlights the exact cell for the note I am looking at.",
       "rationale": "Highlighting the active note on the calendar depends on resolving its date correctly and consistently, without a day-note ever being mistaken for a week-note or vice versa.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "cal:get-date-uid-from-file"
       ],
@@ -649,7 +649,7 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.1 a daily filename under the daily folder > recognises the file as that day note / > recognises a note nested in a subfolder under the configured folder / > resolves against the default new-file folder when no folder is configured; > AC-FMT-07.1 a daily filename written in the vault locale > recognises a note whose weekday name came from the configured locale; > AC-FMT-07.1/.2 a vault whose locale rewrites digits > recognises the daily and weekly notes the plugin writes under the ar locale. Independently re-verified by the orchestrator with a throwaway probe: for en, pl, ar, ar-dz, de and fr, computeNotePath writes the filename and resolveFileDate reads it back to the same granularity -- and the probe is not vacuous, since moment genuinely writes \u0662\u0660\u0662\u0666-\u0660\u0664-\u0661\u0665 under ar. DEFERRED EXCEPTION, deliberate: adversarial escape grammars the settings UI cannot produce (a terminal backslash, and \\DDD following a bracket span) are not handled; recorded as accepted debt after three review rounds on the escape scanner rather than judged a failure."
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts > AC-FMT-07.1 a daily filename under the daily folder > recognises the file as that day note / > recognises a note nested in a subfolder under the configured folder / > resolves against the default new-file folder when no folder is configured; > AC-FMT-07.1 a daily filename written in the vault locale > recognises a note whose weekday name came from the configured locale; > AC-FMT-07.1/.2 a vault whose locale rewrites digits > recognises the daily and weekly notes the plugin writes under the ar locale. Independently re-verified by the orchestrator with a throwaway probe: for en, pl, ar, ar-dz, de and fr, computeNotePath writes the filename and resolveFileDate reads it back to the same granularity -- and the probe is not vacuous, since moment genuinely writes ٢٠٢٦-٠٤-١٥ under ar. DEFERRED EXCEPTION, deliberate: adversarial escape grammars the settings UI cannot produce (a terminal backslash, and \\DDD following a bracket span) are not handled; recorded as accepted debt after three review rounds on the escape scanner rather than judged a failure."
         },
         {
           "id": "AC-FMT-07.2",
