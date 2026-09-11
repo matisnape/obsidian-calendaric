@@ -414,7 +414,7 @@
       "story": "As someone with a note-taking routine, I want each newly created periodic note to start from my configured template, so that I do not have to add the same headings and frontmatter by hand every time.",
       "rationale": "A template is the difference between a useful note and a blank file; it must apply every time a note is created, not just sometimes.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:get-template-info",
         "calendaric:apply-template-on-create"
