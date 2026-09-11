@@ -1,4 +1,4 @@
-import { Plugin, TFile } from "obsidian";
+import { Notice, Plugin, TFile } from "obsidian";
 import { CalendaricSettings, CalendaricSettingsTab, DEFAULT_SETTINGS } from "./settings";
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./ui/CalendarView";
 import { computeNotePath } from "./notes/noteUtils";
@@ -7,6 +7,8 @@ import { openNoteInNewTab } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
+import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
+import { calendarViewCommand } from "./ui/calendarCommand";
 import type { NoteFile } from "./adapters/vaultPort";
 
 
@@ -33,11 +35,11 @@ export default class CalendaricPlugin extends Plugin {
 			void this.openStartupNote();
 		});
 
-		this.addCommand({
-			id: "show-calendar-view",
-			name: "Show calendar",
-			callback: () => this.activateView(),
-		});
+		this.addCommand(
+			calendarViewCommand(new ObsidianCalendarLeafAdapter(this.app), (message) => {
+				new Notice(message);
+			})
+		);
 	}
 
 	onunload() {
@@ -49,20 +51,6 @@ export default class CalendaricPlugin extends Plugin {
 		const rightLeaf = this.app.workspace.getRightLeaf(false);
 		if (!rightLeaf) return;
 		void rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
-	}
-
-	async activateView(): Promise<void> {
-		const { workspace } = this.app;
-
-		let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
-		if (!leaf) {
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (!rightLeaf) return;
-			await rightLeaf.setViewState({ type: VIEW_TYPE_CALENDAR });
-			leaf = rightLeaf;
-		}
-
-		workspace.revealLeaf(leaf);
 	}
 
 	onSettingsChange(): void {
