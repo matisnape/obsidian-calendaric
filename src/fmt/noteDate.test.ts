@@ -56,6 +56,44 @@ describe("computeNoteDate", () => {
 		expect(computeNoteDate(endOfWeek15, "week")).not.toBe(computeNoteDate(startOfWeek16, "week"));
 	});
 
+	it("follows a locale-week format's own week boundary instead of the ISO one", () => {
+		// "gggg-[W]ww" numbers weeks the way the active locale does, and the en
+		// locale starts a week on Sunday — so this note's week runs
+		// Sun 2026-04-12 .. Sat 2026-04-18, one day off the ISO week of the same
+		// number. The format is what gets written into the filename, so the
+		// format decides which week a date belongs to.
+		const LOCALE_WEEK = "gggg-[W]ww";
+		const openingSunday = moment("2026-04-12T09:00:00");
+		const expected = computeNoteDate(openingSunday, "week", LOCALE_WEEK);
+
+		expect(expected).toBe(`week:${moment("2026-04-12T00:00:00").valueOf()}`);
+		expect(computeNoteDate(moment("2026-04-18T23:00:00"), "week", LOCALE_WEEK)).toBe(expected);
+		expect(computeNoteDate(moment("2026-04-19T09:00:00"), "week", LOCALE_WEEK)).not.toBe(expected);
+	});
+
+	it("gives one Sunday two different weeks under an ISO and a locale format", () => {
+		const sunday = moment("2026-04-12T09:00:00");
+
+		expect(computeNoteDate(sunday, "week", "GGGG-[W]WW"))
+			.not.toBe(computeNoteDate(sunday, "week", "gggg-[W]ww"));
+	});
+
+	it("keeps the ISO anchor for a weekly format carrying no week token", () => {
+		// Nothing in the filename numbers a week, so there is no locale claim to
+		// honour; noteUtils' {{monday:..}} convention is the remaining rule.
+		const sunday = moment("2026-04-19T09:00:00");
+
+		expect(computeNoteDate(sunday, "week", "[Week of ]YYYY-MM-DD")).toBe(computeNoteDate(sunday, "week"));
+	});
+
+	it("reads week tokens only where they are real, not inside an escaped literal", () => {
+		// "[ww]" is literal text in a moment format, not a locale-week token, so
+		// it must not flip the anchor away from ISO.
+		const sunday = moment("2026-04-19T09:00:00");
+
+		expect(computeNoteDate(sunday, "week", "GGGG-[Www]WW")).toBe(computeNoteDate(sunday, "week"));
+	});
+
 	it("keeps two instants a few milliseconds apart on opposite sides of midnight on different note dates", () => {
 		const beforeMidnight = moment("2026-04-13T23:59:59.999");
 		const afterMidnight = moment("2026-04-14T00:00:00.000");

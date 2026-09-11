@@ -25,6 +25,15 @@ describe("resolveFileDate — AC-FMT-07.1 a daily filename under the daily folde
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
+	it("recognises a note nested in a subfolder under the configured folder", () => {
+		// AC-FMT-07.1 scopes by folder, not by depth: the file is under Daily
+		// and its filename is a valid daily name, so it is that day's note.
+		const result = resolveFileDate("Daily/Sub/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
+
+		expect(result?.granularity).toBe("day");
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+	});
+
 	it("resolves against the default new-file folder when no folder is configured", () => {
 		const configs = { day: config("YYYY-MM-DD", ""), week: config("GGGG-[W]WW", "") };
 		const vaultConfig = new FakeVaultConfigPort("Journal");
@@ -94,14 +103,56 @@ describe("resolveFileDate — AC-FMT-07.4 the identity equals the one computed e
 		// written as "2026-W15" — it must never collide with week 16's note.
 		const gridCell = moment("2026-04-12T09:00:00");
 
-		expect(result?.noteDate).not.toBe(computeNoteDate(gridCell, "week"));
+		// Asserted before the comparison: a null identity would satisfy
+		// .not.toBe on its own and hide a resolution that stopped working.
+		expect(result?.noteDate).toBeTypeOf("string");
+		expect(result?.noteDate).not.toBe(computeNoteDate(gridCell, "week", CONFIGS.week.format));
 	});
 
 	it("never gives a day-note and a week-note of the same date one identity", () => {
 		const day = resolveFileDate("Daily/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
 		const week = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
 
+		expect(day?.noteDate).toBeTypeOf("string");
+		expect(week?.noteDate).toBeTypeOf("string");
 		expect(day?.noteDate).not.toBe(week?.noteDate);
+	});
+});
+
+describe("resolveFileDate — AC-FMT-07.4 the configured week format decides the week", () => {
+	// A locale-week format numbers the week Sun 2026-04-12 .. Sat 2026-04-18 as
+	// week 16, while an ISO format numbers Mon 2026-04-13 .. Sun 2026-04-19 as
+	// week 16. Both filenames parse back to the same Monday, so only the
+	// configured format can say which Sunday belongs to the note.
+	const LOCALE_CONFIGS = {
+		day: config("YYYY-MM-DD", "Daily"),
+		week: config("gggg-[W]ww", "Weekly"),
+	};
+
+	it("puts the Sunday that opens a locale week inside that week's note", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", LOCALE_CONFIGS, NO_DEFAULT_FOLDER);
+		const gridCell = moment("2026-04-12T09:00:00");
+
+		expect(result?.noteDate).toBe(computeNoteDate(gridCell, "week", LOCALE_CONFIGS.week.format));
+	});
+
+	it("keeps the Sunday that opens the next locale week out of it", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", LOCALE_CONFIGS, NO_DEFAULT_FOLDER);
+		const gridCell = moment("2026-04-19T09:00:00");
+
+		expect(result?.noteDate).toBeTypeOf("string");
+		expect(result?.noteDate).not.toBe(computeNoteDate(gridCell, "week", LOCALE_CONFIGS.week.format));
+	});
+
+	it("gives the two Sundays opposite answers under the two formats", () => {
+		const isoNote = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+		const localeNote = resolveFileDate("Weekly/2026-W16.md", LOCALE_CONFIGS, NO_DEFAULT_FOLDER);
+		const openingSunday = moment("2026-04-12T09:00:00");
+		const closingSunday = moment("2026-04-19T09:00:00");
+
+		expect(isoNote?.noteDate).toBe(computeNoteDate(closingSunday, "week", CONFIGS.week.format));
+		expect(localeNote?.noteDate).toBe(computeNoteDate(openingSunday, "week", LOCALE_CONFIGS.week.format));
+		expect(isoNote?.noteDate).not.toBe(localeNote?.noteDate);
 	});
 });
 

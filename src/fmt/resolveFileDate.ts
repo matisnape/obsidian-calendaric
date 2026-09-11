@@ -27,7 +27,7 @@ export function resolveFileDate(
 	vaultConfig: VaultConfigPort,
 ): FileDateIdentity | null {
 	for (const granularity of ["day", "week"] as const) {
-		const identity = matchGranularity(path, granularity, configs[granularity], vaultConfig);
+		const identity = matchGranularity(path, granularity, configs, vaultConfig);
 		if (identity) return identity;
 	}
 	return null;
@@ -36,22 +36,38 @@ export function resolveFileDate(
 function matchGranularity(
 	path: string,
 	granularity: FileGranularity,
-	config: PeriodicConfig,
+	configs: Record<FileGranularity, PeriodicConfig>,
 	vaultConfig: VaultConfigPort,
 ): FileDateIdentity | null {
+	const config = configs[granularity];
 	const relative = stripFolder(path, resolveNoteFolder(config.folder, vaultConfig));
 	if (relative === null) return null;
 
 	// ponytail: prefix matching stays off until a setting exposes it — that is
 	// the documented default (AC-FMT-04.3), and no config field carries it yet.
-	const parsed = parseFilename(relative, config.format, false);
+	let parsed = parseFilename(relative, config.format, false);
+	// A note may sit in a subfolder under the configured folder: the folder
+	// scopes the search, it does not fix the depth (AC-FMT-07.1). parseFilename
+	// already falls back to the filename when the FORMAT is nested; a
+	// slash-free format needs that same fallback applied to the path.
+	if (!parsed && !config.format.includes("/")) {
+		parsed = parseFilename(basename(relative), config.format, false);
+	}
 	if (!parsed) return null;
 
 	return {
 		granularity,
 		date: parsed.date,
-		noteDate: computeNoteDate(parsed.date, granularity),
+		// The weekly format decides where a week starts, so it is passed even
+		// for a day: it is what every other caller must pass to agree with this
+		// identity (AC-FMT-07.4).
+		noteDate: computeNoteDate(parsed.date, granularity, configs.week.format),
 	};
+}
+
+function basename(path: string): string {
+	const lastSlash = path.lastIndexOf("/");
+	return lastSlash === -1 ? path : path.slice(lastSlash + 1);
 }
 
 /**

@@ -135,6 +135,30 @@ function tokenize(format: string, nested = false): Tokenized {
 	return { pattern, groups };
 }
 
+export type WeekSemantics = "iso" | "locale";
+
+/**
+ * Which week numbering a format string encodes, or null when it numbers no
+ * week at all. GGGG/WW are ISO tokens, gggg/ww are locale tokens, and the two
+ * disagree about which week a Sunday belongs to — so an identity anchored on
+ * the wrong one contradicts the date this module parses out of the same name.
+ *
+ * Reuses the tokenizer rather than scanning the raw string, so an escaped
+ * `[ww]` literal stays literal, and mirrors buildDate's precedence: ISO wins a
+ * format carrying both, and a field nested in {{weekday:fmt}} describes that
+ * wrapper's own day, never the format's week.
+ *
+ * Duplicates US-CAL-01's getWeekNumber(date, weekFormat) in noteUtils, which
+ * is not on master yet; the two must be reconciled into one helper once the
+ * second of the two branches is rebased.
+ */
+export function weekSemantics(format: string): WeekSemantics | null {
+	const topLevel = tokenize(format).groups.filter((group) => !group.nested);
+	if (topLevel.some((group) => group.kind === "isoWeek")) return "iso";
+	if (topLevel.some((group) => group.kind === "localeWeek")) return "locale";
+	return null;
+}
+
 function pad2(n: number): string {
 	return String(n).padStart(2, "0");
 }

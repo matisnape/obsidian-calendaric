@@ -1,13 +1,25 @@
 import type { Moment } from "moment";
 import type { Granularity } from "../types";
+import { weekSemantics } from "./parseFilename";
 
-export function computeNoteDate(date: Moment, granularity: Granularity = "day"): string {
-	// A weekly note's week is its ISO week, because that is the week noteUtils
-	// writes onto disk: it formats GGGG/WW and resolves {{monday:..}} through
-	// isoWeekday(1). moment's startOf("week") follows the active locale
-	// instead, which under a Sunday-start locale gives the Sunday that ends an
-	// ISO week its own anchor — that Sunday would then miss its own week's note
-	// and take the identity of the previous week's note.
-	const periodStart = date.clone().startOf(granularity === "week" ? "isoWeek" : granularity);
+/**
+ * The week a date belongs to is decided by the configured weekly format,
+ * because the format is what gets written into the weekly note's filename: a
+ * gggg/ww pair numbers locale weeks, a GGGG/WW pair numbers ISO weeks, and the
+ * two put the same Sunday in different weeks. A format numbering no week keeps
+ * the ISO anchor, which is the convention noteUtils already writes with
+ * ({{monday:..}} resolves through isoWeekday(1)).
+ */
+function startUnit(granularity: Granularity, weekFormat: string): Granularity | "isoWeek" {
+	if (granularity !== "week") return granularity;
+	return weekSemantics(weekFormat) === "locale" ? "week" : "isoWeek";
+}
+
+export function computeNoteDate(
+	date: Moment,
+	granularity: Granularity = "day",
+	weekFormat = "",
+): string {
+	const periodStart = date.clone().startOf(startUnit(granularity, weekFormat));
 	return `${granularity}:${periodStart.valueOf()}`;
 }
