@@ -18,6 +18,13 @@ jobs:
   gates:
     name: install, test, build
     runs-on: ubuntu-latest
+
+    # Install, test and build take about 11 seconds locally from an empty
+    # node_modules, so a minute or two on a runner. Ten minutes is generous
+    # headroom for a slow registry and still caps a hung job: the default is six
+    # hours, and this account's run-minutes are limited.
+    timeout-minutes: 10
+
     steps:
       - uses: actions/checkout@v7
 
