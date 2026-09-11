@@ -37,3 +37,11 @@ export class Modal {
 export class Notice {
 	constructor(_message: string) {}
 }
+
+export class TFile {
+	path = "";
+}
+
+// The real Platform is read off the running host; tests that care inject their
+// own flag through WorkspacePort.isMacOS instead of leaning on this default.
+export const Platform = { isMacOS: false };
