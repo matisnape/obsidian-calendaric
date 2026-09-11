@@ -315,7 +315,7 @@
       "story": "As someone who already has years of periodic notes on disk, I want the plugin to recognise which date and granularity each filename represents, even when the note lives in a dated subfolder or carries an extra descriptive suffix, so that my existing notes keep working after I switch to this plugin.",
       "rationale": "Two independent old implementations of this exact behaviour exist and disagree; this story is the single specification the rewrite must follow so an existing vault keeps recognising its own notes.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "dni:parse-date-from-filename",
         "pn:strict-then-prefix-date-parsing",
