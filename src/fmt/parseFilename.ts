@@ -174,24 +174,63 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 	let isoWeek: number | undefined;
 	let localeWeek: number | undefined;
 	const weekdayChecks: { expected: number; anchorIsoWeekday: number | undefined }[] = [];
+	// A format can capture the same field twice (e.g. a nested year folder:
+	// "YYYY/YYYY-MM-DD"). Two disagreeing captures mean the string could never
+	// have come from a single real date. Tracked per field so a month/day
+	// conflict inside a redundant weekday-token fragment (AC-FMT-04.5) doesn't
+	// block a match that a week number already resolves unambiguously.
+	let yearConflict = false;
+	let isoWeekYearConflict = false;
+	let localeWeekYearConflict = false;
+	let monthConflict = false;
+	let dayConflict = false;
+	let isoWeekConflict = false;
+	let localeWeekConflict = false;
+	const combine = (current: number | undefined, next: number): { value: number; conflict: boolean } => ({
+		value: current ?? next,
+		conflict: current !== undefined && current !== next,
+	});
 
 	groups.forEach((group, idx) => {
 		const raw = match[idx + 1];
 		if (raw === undefined) return;
 		switch (group.kind) {
-			case "year": year ??= parseInt(raw, 10); break;
-			case "isoWeekYear": isoWeekYear ??= parseInt(raw, 10); break;
-			case "localeWeekYear": localeWeekYear ??= parseInt(raw, 10); break;
-			case "monthNum": month ??= parseInt(raw, 10); break;
-			case "monthName":
-				month ??= MONTHS.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1;
-				break;
-			case "monthNameShort":
-				month ??= MONTHS_SHORT.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1;
-				break;
-			case "day": day ??= parseInt(raw, 10); break;
-			case "isoWeek": isoWeek ??= parseInt(raw, 10); break;
-			case "localeWeek": localeWeek ??= parseInt(raw, 10); break;
+			case "year": {
+				const r = combine(year, parseInt(raw, 10));
+				year = r.value; yearConflict ||= r.conflict; break;
+			}
+			case "isoWeekYear": {
+				const r = combine(isoWeekYear, parseInt(raw, 10));
+				isoWeekYear = r.value; isoWeekYearConflict ||= r.conflict; break;
+			}
+			case "localeWeekYear": {
+				const r = combine(localeWeekYear, parseInt(raw, 10));
+				localeWeekYear = r.value; localeWeekYearConflict ||= r.conflict; break;
+			}
+			case "monthNum": {
+				const r = combine(month, parseInt(raw, 10));
+				month = r.value; monthConflict ||= r.conflict; break;
+			}
+			case "monthName": {
+				const r = combine(month, MONTHS.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1);
+				month = r.value; monthConflict ||= r.conflict; break;
+			}
+			case "monthNameShort": {
+				const r = combine(month, MONTHS_SHORT.findIndex((m) => m.toLowerCase() === raw.toLowerCase()) + 1);
+				month = r.value; monthConflict ||= r.conflict; break;
+			}
+			case "day": {
+				const r = combine(day, parseInt(raw, 10));
+				day = r.value; dayConflict ||= r.conflict; break;
+			}
+			case "isoWeek": {
+				const r = combine(isoWeek, parseInt(raw, 10));
+				isoWeek = r.value; isoWeekConflict ||= r.conflict; break;
+			}
+			case "localeWeek": {
+				const r = combine(localeWeek, parseInt(raw, 10));
+				localeWeek = r.value; localeWeekConflict ||= r.conflict; break;
+			}
 			case "weekdayFull":
 			case "weekdayShort":
 			case "weekdayMin":
@@ -205,25 +244,36 @@ function buildDate(match: RegExpExecArray, groups: TokenGroup[]): Moment | null 
 
 	// Week-number tokens win over any month/day fragment in the same format
 	// (AC-FMT-04.5) — a weekday-token's DD.MM display fragment is redundant
-	// with the week number and must never override it.
+	// with the week number and must never override it, including a conflict
+	// among the ignored month/day fields themselves.
 	let date: Moment | null = null;
 	if (isoWeek !== undefined) {
+		if (yearConflict || isoWeekYearConflict || isoWeekConflict) return null;
 		const wy = isoWeekYear ?? year;
 		if (wy === undefined) return null;
 		const candidate = window.moment().isoWeekYear(wy).isoWeek(isoWeek).startOf("isoWeek");
-		date = candidate.isValid() ? candidate : null;
+		// moment normalises an out-of-range week (e.g. week 99) into some other
+		// real week instead of failing — round-trip the captured pair through
+		// the constructed date to catch what isValid() cannot.
+		if (candidate.isValid() && candidate.isoWeekYear() === wy && candidate.isoWeek() === isoWeek) {
+			date = candidate;
+		}
 	} else if (localeWeek !== undefined) {
+		if (yearConflict || localeWeekYearConflict || localeWeekConflict) return null;
 		const wy = localeWeekYear ?? year;
 		if (wy === undefined) return null;
-		// A periodic week's identity is its Monday (see noteUtils' {{monday:..}}
-		// convention) even when the format labels the week with locale numbering.
-		// .day(1) is only "Monday" when the locale week starts Sun or Mon; for a
-		// Tue..Sat week start it lands on the wrong day (even the wrong week), so
-		// walk forward from the locale week's real start to the next Monday.
 		const start = window.moment().weekYear(wy).week(localeWeek).startOf("week");
-		const candidate = start.isValid() ? start.add((1 - start.isoWeekday() + 7) % 7, "days") : start;
-		date = candidate.isValid() ? candidate : null;
+		if (start.isValid() && start.weekYear() === wy && start.week() === localeWeek) {
+			// A periodic week's identity is its Monday (see noteUtils'
+			// {{monday:..}} convention) even when the format labels the week
+			// with locale numbering. .day(1) is only "Monday" when the locale
+			// week starts Sun or Mon; for a Tue..Sat week start it lands on the
+			// wrong day (even the wrong week), so walk forward from the
+			// locale week's real start to the next Monday.
+			date = start.add((1 - start.isoWeekday() + 7) % 7, "days");
+		}
 	} else if (year !== undefined && month !== undefined) {
+		if (yearConflict || monthConflict || dayConflict) return null;
 		const candidate = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
 		date = candidate.isValid() ? candidate : null;
 	}
@@ -250,7 +300,10 @@ function stripMdExtension(path: string): string {
 
 function matchOne(input: string, format: string, allowPrefixMatch: boolean): ParseFilenameResult | null {
 	const { pattern, groups } = tokenize(format);
-	const regex = new RegExp(`^${pattern}`, "i");
+	// Case-sensitive: a filename's characters must match the format exactly
+	// (AC-FMT-04.1, AC-FMT-04.7) — moment's own output (month/weekday names,
+	// [literal] text) is already the correctly-cased string to match against.
+	const regex = new RegExp(`^${pattern}`);
 	const match = regex.exec(input);
 	if (!match) return null;
 

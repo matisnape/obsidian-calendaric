@@ -20,6 +20,33 @@ describe("parseFilename — AC-FMT-04.1 a weekday token must match the date it n
 	});
 });
 
+describe("parseFilename — AC-FMT-04.1 out-of-range week values are rejected", () => {
+	it("does not accept a week number no real date could produce", () => {
+		// moment normalises isoWeek(99) into some other real week instead of
+		// failing outright — the round-trip check must catch that.
+		const result = parseFilename("2027-W99", "GGGG-[W]WW", false);
+		expect(result).toBeNull();
+	});
+});
+
+describe("parseFilename — AC-FMT-04.1/.7 matching is case-sensitive", () => {
+	it("rejects a lowercase literal that differs only in case from the format", () => {
+		const result = parseFilename("2024-01 January - work.md", "YYYY-MM MMMM - [Work]", false);
+		expect(result).toBeNull();
+	});
+});
+
+describe("parseFilename — AC-FMT-04.2 an inconsistent full path falls back to the filename", () => {
+	it("rejects a folder/filename year mismatch instead of silently keeping the folder's year", () => {
+		// No real date produces "2024/2025-01-01" — the folder says 2024, the
+		// filename says 2025. The full-path candidate must be rejected so the
+		// basename-only fallback (matching "2025-01-01" alone) can still work.
+		const result = parseFilename("2024/2025-01-01.md", "YYYY/YYYY-MM-DD", false);
+		expect(result).not.toBeNull();
+		expect(result?.date.format("YYYY-MM-DD")).toBe("2025-01-01");
+	});
+});
+
 describe("parseFilename — locale week tokens use locale week semantics, not ISO", () => {
 	it("resolves gggg/ww against the locale week year boundary, not the ISO one", () => {
 		// ISO week 1 of 2027 starts Mon 2027-01-04; the "en"-locale week 1 of
