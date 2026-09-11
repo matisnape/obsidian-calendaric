@@ -722,7 +722,7 @@
       "story": "As someone whose vault holds notes written under more than one naming habit, I want one predictable winner when a filename could be read in more than one way, so that the same file never resolves to a different date after an unrelated change.",
       "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently between runs.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
