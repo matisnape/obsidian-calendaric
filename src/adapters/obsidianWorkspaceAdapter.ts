@@ -9,10 +9,14 @@ export class ObsidianWorkspaceAdapter implements WorkspacePort {
 
 	constructor(private app: App) {}
 
-	async openInLeaf(file: NoteFile, mode: LeafMode): Promise<OpenResult> {
-		// The handle can outlive the file it points at, so the path is resolved
-		// again here. A stale handle would otherwise open a file that moved away.
-		const resolved = this.app.vault.getAbstractFileByPath(file.path);
+	async openInLeaf(file: NoteFile, foundAtPath: string, mode: LeafMode): Promise<OpenResult> {
+		const resolved = this.app.vault.getAbstractFileByPath(foundAtPath);
+
+		// Identity, not the path. Obsidian keeps one object per file and rewrites
+		// its path in place on a move, so the path alone answers "is something
+		// here?" when the question is "is this still the note that was found?".
+		// A delete-then-create at the same path would otherwise open the impostor.
+		if (resolved !== file) return "missing";
 		if (!(resolved instanceof TFile)) return "missing";
 
 		await this.leafFor(mode).openFile(resolved);

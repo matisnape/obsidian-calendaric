@@ -131,3 +131,47 @@ describe("opening a file that vanished (AC-NOTE-06.4)", () => {
 		expect(workspace.notices).toEqual([]);
 	});
 });
+
+describe("the path a note was found at (AC-NOTE-06.4)", () => {
+	it("defaults to the file's own path", async () => {
+		const workspace = new FakeWorkspacePort();
+
+		await openNoteIn(FILE, "reuse", workspace);
+
+		expect(workspace.foundPaths).toEqual([FILE.path]);
+	});
+
+	it("is carried by the click and the startup routes alike", async () => {
+		const workspace = new FakeWorkspacePort();
+
+		await openNote(FILE, makeClick(), workspace);
+		await openNoteInNewTab(FILE, workspace);
+
+		expect(workspace.foundPaths).toEqual([FILE.path, FILE.path]);
+	});
+
+	it("can be given explicitly, so a caller that knows where it looked keeps that path", async () => {
+		const workspace = new FakeWorkspacePort();
+		const moved = { path: "archive/2026-04-13.md" };
+
+		await openNoteIn(moved, "reuse", workspace, FILE.path);
+
+		expect(workspace.foundPaths).toEqual([FILE.path]);
+	});
+
+	it("AC-NOTE-06.4: names the path that was tried, not the one a move rewrote on the handle", async () => {
+		const workspace = new FakeWorkspacePort();
+		const handle = { path: FILE.path };
+		workspace.markMissing(FILE.path);
+		// A move rewrites path on the same object, so the notice must not read it back.
+		workspace.onOpen = () => {
+			handle.path = "archive/2026-04-13.md";
+		};
+
+		await openNoteIn(handle, "reuse", workspace);
+
+		expect(workspace.notices).toEqual([
+			`Could not open "${FILE.path}" — the file no longer exists at that path.`,
+		]);
+	});
+});

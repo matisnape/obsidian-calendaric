@@ -12,12 +12,22 @@ export function isSplitModifierPressed(event: MouseEvent, isMacOS: boolean): boo
 
 /**
  * Open a periodic note in one of the three destinations, and say so when the
- * file stopped existing after it was resolved.
+ * note stopped being what sits at its path.
+ *
+ * `foundAtPath` is where the caller found the note. It defaults to the path the
+ * file carries now, which is right whenever the caller resolved it moments ago.
+ * A caller holding a note across a longer gap should pass the path it looked at,
+ * because a move rewrites `file.path` on the object itself.
  */
-export async function openNoteIn(file: NoteFile, mode: LeafMode, workspace: WorkspacePort): Promise<void> {
-	const result = await workspace.openInLeaf(file, mode);
+export async function openNoteIn(
+	file: NoteFile,
+	mode: LeafMode,
+	workspace: WorkspacePort,
+	foundAtPath: string = file.path,
+): Promise<void> {
+	const result = await workspace.openInLeaf(file, foundAtPath, mode);
 	if (result === "missing") {
-		workspace.showNotice(`Could not open "${file.path}" — the file no longer exists at that path.`);
+		workspace.showNotice(`Could not open "${foundAtPath}" — the file no longer exists at that path.`);
 	}
 }
 
