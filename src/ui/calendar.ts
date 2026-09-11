@@ -6,6 +6,8 @@ import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUti
 import { computeNotePath } from "../notes/noteUtils";
 import { createNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
+import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
+import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 
@@ -225,7 +227,7 @@ export class CalendarWidget {
 
 		if (existing) {
 			if (existing instanceof TFile) {
-				await openNote(existing, event, this.app);
+				await openNote(existing, event, new ObsidianWorkspaceAdapter(this.app));
 			}
 			return;
 		}
@@ -238,13 +240,13 @@ export class CalendarWidget {
 				title: `New ${label} Note`,
 				body: `File ${filename} does not exist. Would you like to create it?`,
 				onAccept: async () => {
-					const file = await createNote(date, granularity, config, this.app);
-					await openNote(file, event, this.app);
+					const file = await createNote(path, date, granularity, config, new ObsidianVaultAdapter(this.app));
+					await openNote(file, event, new ObsidianWorkspaceAdapter(this.app));
 				},
 			}).open();
 		} else {
-			const file = await createNote(date, granularity, config, this.app);
-			await openNote(file, event, this.app);
+			const file = await createNote(path, date, granularity, config, new ObsidianVaultAdapter(this.app));
+			await openNote(file, event, new ObsidianWorkspaceAdapter(this.app));
 		}
 	}
 

@@ -1,37 +1,33 @@
 import type { Moment } from "moment";
-import type { App, TFile } from "obsidian";
 import type { PeriodicConfig } from "../types";
-import { computeNotePath } from "./noteUtils";
+import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import { substituteTemplateTokens } from "./templateTokens";
 
 type Granularity = "day" | "week";
 
 /**
- * Create a periodic note at the computed path for the given date.
+ * Create a periodic note at the given path for the given date.
  * If a template is configured, its content is read and tokens substituted
  * before the file is created.
  *
  * Does NOT open the file — that's the caller's responsibility.
+ * Does NOT compute the path — that's the caller's responsibility too, via
+ * `computeNotePath`, since path computation is not vault decision logic.
  */
 export async function createNote(
+	path: string,
 	date: Moment,
 	granularity: Granularity,
 	config: PeriodicConfig,
-	app: App,
-): Promise<TFile> {
-	const path = computeNotePath(date, config, app);
-
-	// Ensure parent folder exists
+	vault: VaultPort,
+): Promise<NoteFile> {
 	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : null;
-	if (folder) {
-		const folderExists = app.vault.getAbstractFileByPath(folder);
-		if (!folderExists) {
-			await app.vault.createFolder(folder);
-		}
+	if (folder && !vault.fileExists(folder)) {
+		await vault.createFolder(folder);
 	}
 
-	const content = await buildNoteContent(date, granularity, config, path, app);
-	return await app.vault.create(path, content);
+	const content = await buildNoteContent(date, granularity, config, path, vault);
+	return await vault.createFile(path, content);
 }
 
 async function buildNoteContent(
@@ -39,15 +35,15 @@ async function buildNoteContent(
 	granularity: Granularity,
 	config: PeriodicConfig,
 	notePath: string,
-	app: App,
+	vault: VaultPort,
 ): Promise<string> {
 	const title = notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
 
 	if (!config.templatePath) return "";
 
-	const templateFile = app.metadataCache.getFirstLinkpathDest(config.templatePath, "");
+	const templateFile = vault.getTemplateFile(config.templatePath);
 	if (!templateFile) return "";
 
-	const raw = await app.vault.read(templateFile);
+	const raw = await vault.readFile(templateFile);
 	return substituteTemplateTokens(raw, date, granularity, config, title);
 }
