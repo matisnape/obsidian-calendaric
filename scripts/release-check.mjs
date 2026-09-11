@@ -281,9 +281,13 @@ function main(argv) {
 
 	const problems = checkRelease({ manifest, versions, tag, previousVersion: previousTag, previousManifest });
 
+	// refs/tags/ and not the bare version: git resolves an unqualified name against
+	// refs/heads/ too, so a branch named after the version — which is what a release
+	// branch looks like — resolved to a commit that is not HEAD and made an
+	// unreleased version look already released.
 	const reReleased = checkExistingRelease(
 		manifest.version,
-		commitOf(manifest.version),
+		commitOf(`refs/tags/${manifest.version}`),
 		commitOf("HEAD"),
 	);
 	if (reReleased) problems.push(reReleased);

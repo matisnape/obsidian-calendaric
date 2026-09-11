@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, describe, expect, it } from "vitest";
 import {
 	checkExistingRelease,
 	checkRelease,
@@ -190,3 +195,59 @@ describe("AC-ARCH-06.2 — compareSemver, Semantic Versioning precedence (spec r
 		expect(sorted).toEqual(["0.2.0", "0.10.0", "1.0.0-rc.1", "1.0.0"]);
 	});
 });
+
+// Drives the real CLI in a throwaway repository. The unit tests above cannot see
+// this defect: it lives in which git ref the CLI asks for, not in any pure function.
+describe("AC-ARCH-06.2 — the re-release check reads a tag, not a same-named branch", () => {
+	const script = fileURLToPath(new URL("release-check.mjs", import.meta.url));
+	const repos = [];
+
+	afterAll(() => repos.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+
+	function git(dir, ...args) {
+		execFileSync("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", ...args], {
+			stdio: "pipe",
+		});
+	}
+
+	/** A repository whose HEAD is one commit past a ref named "0.1.0". */
+	function repoWithRefNamedAfterTheVersion(makeRef) {
+		const dir = mkdtempSync(join(tmpdir(), "release-check-"));
+		repos.push(dir);
+		copyFileSync(script, join(dir, "release-check.mjs"));
+		writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest));
+		writeFileSync(join(dir, "versions.json"), JSON.stringify(versions));
+		git(dir, "init", "-q", "-b", "main");
+		git(dir, "add", "-A");
+		git(dir, "commit", "-qm", "release 0.1.0");
+		makeRef(dir);
+		writeFileSync(join(dir, "note.txt"), "later work");
+		git(dir, "add", "-A");
+		git(dir, "commit", "-qm", "work after the ref");
+		return dir;
+	}
+
+	function runCheck(dir) {
+		try {
+			return { status: 0, out: execFileSync("node", ["release-check.mjs"], { cwd: dir, encoding: "utf8" }) };
+		} catch (error) {
+			return { status: error.status, out: `${error.stdout}${error.stderr}` };
+		}
+	}
+
+	it("passes when only a branch carries the version's name", () => {
+		// git resolves an unqualified "0.1.0" against refs/heads/ as well, so this
+		// branch used to look like an existing release and failed the check.
+		const dir = repoWithRefNamedAfterTheVersion((d) => git(d, "branch", "0.1.0"));
+		const { status, out } = runCheck(dir);
+		expect(out).toContain("release checks passed");
+		expect(status).toBe(0);
+	});
+
+	it("still fails when a real tag for the version sits on another commit", () => {
+		const dir = repoWithRefNamedAfterTheVersion((d) => git(d, "tag", "0.1.0"));
+		const { status, out } = runCheck(dir);
+		expect(out).toContain("already exists at");
+		expect(status).toBe(1);
+	});
+}, 20000);
