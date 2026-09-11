@@ -181,7 +181,7 @@
       "story": "As someone who has never manually created a folder for my notes, I want the plugin to create whatever folders a new note needs, so that turning on a granularity or pointing it at a new folder just works without a manual setup step.",
       "rationale": "A missing folder should never be the reason a note fails to be created.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:resolve-note-path-and-ensure-folder",
         "pn:note-creation-path-and-folder-autocreate",
