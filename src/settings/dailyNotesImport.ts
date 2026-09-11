@@ -50,8 +50,8 @@ const FIELD_LABELS: Record<DailyNotesImportKey, string> = {
 export type DailyNotesCard =
 	| { kind: "hidden" }
 	| { kind: "unreadable"; problem: string }
-	| { kind: "offer"; legacy: LegacyDailyNoteSettings; disable: () => void }
-	| { kind: "still-active"; disable: () => void };
+	| { kind: "offer"; legacy: LegacyDailyNoteSettings }
+	| { kind: "still-active" };
 
 /** The single decision behind the import card (AC-MIG-01.1, .4, .6). */
 export function decideDailyNotesCard(
@@ -67,9 +67,9 @@ export function decideDailyNotesCard(
 	const state = read.value;
 	if (!state.enabled) return { kind: "hidden" };
 
-	const { format, folder, template, disable } = state;
-	if (target.hasMigratedDailyNoteSettings) return { kind: "still-active", disable };
-	return { kind: "offer", legacy: { format, folder, template }, disable };
+	const { format, folder, template } = state;
+	if (target.hasMigratedDailyNoteSettings) return { kind: "still-active" };
+	return { kind: "offer", legacy: { format, folder, template } };
 }
 
 export function planDailyNotesImport(

@@ -38,11 +38,11 @@ export function renderDailyNotesImportCard(
 	}
 
 	if (card.kind === "still-active") {
-		renderStillActiveNotice(containerEl, card.disable, actions);
+		renderStillActiveNotice(containerEl, companion, actions);
 		return;
 	}
 
-	renderOffer(containerEl, plugin, card.legacy, card.disable, actions);
+	renderOffer(containerEl, plugin, companion, card.legacy, actions);
 }
 
 /**
@@ -61,7 +61,7 @@ function renderUnreadableNotice(containerEl: HTMLElement, problem: string): void
 // AC-MIG-01.4: the import banner is replaced by this notice once it ran.
 function renderStillActiveNotice(
 	containerEl: HTMLElement,
-	disableCompanion: () => void,
+	companion: CompanionPluginPort,
 	actions: DailyNotesImportCardActions,
 ): void {
 	const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
@@ -72,7 +72,7 @@ function renderStillActiveNotice(
 	const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
 	disableBtn.addEventListener("click", async () => {
-		disableCompanion();
+		companion.disableDailyNotes();
 		await actions.save();
 		actions.refresh();
 	});
@@ -85,8 +85,8 @@ function renderStillActiveNotice(
 function renderOffer(
 	containerEl: HTMLElement,
 	plugin: CalendaricPlugin,
+	companion: CompanionPluginPort,
 	legacy: LegacyDailyNoteSettings,
-	disableCompanion: () => void,
 	actions: DailyNotesImportCardActions,
 ): void {
 	const { app, settings } = plugin;
@@ -128,7 +128,7 @@ function renderOffer(
 
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
 	disableBtn.addEventListener("click", async () => {
-		disableCompanion();
+		companion.disableDailyNotes();
 		settings.hasMigratedDailyNoteSettings = true;
 		await actions.save();
 		actions.refresh();

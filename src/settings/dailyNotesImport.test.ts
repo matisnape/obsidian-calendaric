@@ -116,7 +116,7 @@ function makeTarget(day: Partial<DailyNotesImportTarget["day"]> = {}, imported =
 
 describe("decideDailyNotesCard", () => {
 	function port(read: CompanionPluginRead<DailyNotesPluginState>): CompanionPluginPort {
-		return { readDailyNotes: () => read };
+		return { readDailyNotes: () => read, disableDailyNotes: vi.fn() };
 	}
 
 	function readable(over: Partial<Omit<EnabledState, "enabled">> = {}): CompanionPluginPort {
@@ -127,7 +127,6 @@ describe("decideDailyNotesCard", () => {
 				format: "DD-MM-YYYY",
 				folder: "Journal",
 				template: "templates/daily",
-				disable: vi.fn(),
 				...over,
 			},
 		});
@@ -182,13 +181,20 @@ describe("decideDailyNotesCard", () => {
 		expect(card.kind).toBe("still-active");
 	});
 
-	it("carries the companion plugin's own disable through to the card", () => {
-		const disable = vi.fn();
-		const card = decideDailyNotesCard(readable({ disable }), makeTarget());
-		expect(card.kind).toBe("offer");
-		if (card.kind !== "offer") return;
-		card.disable();
-		expect(disable).toHaveBeenCalledOnce();
+	// AC-ARCH-04.4: a companion plugin that throws is reported, and the card
+	// carries the problem instead of the settings tab failing to render.
+	it("reports the problem when the companion plugin throws on read", () => {
+		const throwing = {
+			internalPlugins: {
+				getPluginById: () => {
+					throw new Error("registry exploded");
+				},
+			},
+		} as unknown as App;
+		const card = decideDailyNotesCard(new ObsidianCompanionPluginAdapter(throwing), makeTarget());
+		expect(card.kind).toBe("unreadable");
+		if (card.kind !== "unreadable") return;
+		expect(card.problem).toMatch(/exploded/);
 	});
 
 	it("never reports an importable offer without a readable companion plugin", () => {

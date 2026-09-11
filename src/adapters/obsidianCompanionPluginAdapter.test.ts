@@ -96,6 +96,51 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		expect(getPluginById).toHaveBeenCalledWith("daily-notes");
 	});
 
+	// AC-ARCH-04.4: a companion plugin that throws must degrade visibly rather
+	// than take the settings screen down with it.
+	describe("a host that throws", () => {
+		it("reports a mismatch when getPluginById throws", () => {
+			const app = {
+				internalPlugins: {
+					getPluginById: () => {
+						throw new Error("internal plugin registry exploded");
+					},
+				},
+			} as unknown as App;
+			const result = new ObsidianCompanionPluginAdapter(app).readDailyNotes();
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/exploded/);
+		});
+
+		it("reports a mismatch when a property getter throws", () => {
+			const plugin = {
+				enabled: true,
+				disable: vi.fn(),
+				get instance(): unknown {
+					throw new Error("instance getter exploded");
+				},
+			};
+			const result = read(plugin);
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/exploded/);
+		});
+
+		it("does not let the exception escape the adapter", () => {
+			const app = {
+				internalPlugins: {
+					getPluginById: () => {
+						throw new Error("boom");
+					},
+				},
+			} as unknown as App;
+			expect(() => new ObsidianCompanionPluginAdapter(app).readDailyNotes()).not.toThrow();
+		});
+	});
+
 	// AC-MIG-01.6: a disabled companion plugin has no settings instance to read,
 	// so the disabled answer must not depend on one.
 	describe("a disabled plugin", () => {
@@ -213,28 +258,43 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 		});
 	});
 
-	it("exposes disable as a no-argument call that confirms on the host", () => {
-		const plugin = validPlugin();
-		const result = read(plugin);
-		expect(result.ok).toBe(true);
-		if (!result.ok || !result.value.enabled) return;
-		result.value.disable();
-		expect(plugin.disable).toHaveBeenCalledWith(true);
-	});
+	describe("disableDailyNotes", () => {
+		it("confirms the disable on the host", () => {
+			const plugin = validPlugin();
+			new ObsidianCompanionPluginAdapter(makeApp(plugin)).disableDailyNotes();
+			expect(plugin.disable).toHaveBeenCalledWith(true);
+		});
 
-	it("calls disable with the plugin as its receiver", () => {
-		const plugin = {
-			id: "daily-notes",
-			enabled: true,
-			instance: { options: {} },
-			disable(this: { id: string }, _confirm: boolean) {
-				if (this?.id !== "daily-notes") throw new Error("lost receiver");
-			},
-		};
-		const result = read(plugin);
-		expect(result.ok).toBe(true);
-		if (!result.ok || !result.value.enabled) return;
-		const { disable } = result.value;
-		expect(() => disable()).not.toThrow();
+		it("calls disable with the plugin as its receiver", () => {
+			let receiverId = "";
+			const plugin = {
+				id: "daily-notes",
+				enabled: true,
+				instance: { options: {} },
+				disable(this: { id: string }, _confirm: boolean) {
+					receiverId = this?.id ?? "";
+				},
+			};
+			new ObsidianCompanionPluginAdapter(makeApp(plugin)).disableDailyNotes();
+			expect(receiverId).toBe("daily-notes");
+		});
+
+		// The button that calls this only exists because a read just succeeded.
+		// A plugin that vanished in between needs no disabling, and the tab
+		// re-renders without the card, so the state corrects itself.
+		it("does nothing when the companion plugin cannot be reached", () => {
+			expect(() => new ObsidianCompanionPluginAdapter(makeApp(null)).disableDailyNotes()).not.toThrow();
+		});
+
+		it("does not let a throwing host escape", () => {
+			const plugin = {
+				enabled: true,
+				instance: { options: {} },
+				disable: () => {
+					throw new Error("boom");
+				},
+			};
+			expect(() => new ObsidianCompanionPluginAdapter(makeApp(plugin)).disableDailyNotes()).not.toThrow();
+		});
 	});
 });

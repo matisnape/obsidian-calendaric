@@ -10,19 +10,7 @@
  */
 export type DailyNotesPluginState =
 	| { enabled: false }
-	| {
-			enabled: true;
-			format: string;
-			folder: string;
-			template: string;
-			/**
-			 * Turns the companion plugin off, already carrying the host's confirm
-			 * flag. Declared as taking no receiver, so a caller may hold it on its
-			 * own: the implementation has to close over the object it belongs to
-			 * rather than depend on how it is called.
-			 */
-			disable: (this: void) => void;
-	  };
+	| { enabled: true; format: string; folder: string; template: string };
 
 /**
  * Separates a plugin the user simply does not have from one whose object no
@@ -42,4 +30,12 @@ export type CompanionPluginRead<T> =
 
 export interface CompanionPluginPort {
 	readDailyNotes(): CompanionPluginRead<DailyNotesPluginState>;
+
+	/**
+	 * Turns the core Daily Notes plugin off. An operation on the port rather
+	 * than a function handed out inside the read value: a callable member would
+	 * let an implementation supply a method that silently depends on a receiver
+	 * the caller does not have, which no function type can rule out.
+	 */
+	disableDailyNotes(): void;
 }
