@@ -162,10 +162,12 @@ export function checkNoteFolder(
  * an escape at all — moment prints the bracket and keeps reading tokens, which
  * is why `gggg-[Www` renders "2027-[5201".
  *
- * Known ceiling: a run longer than moment's own token, `\WWW`, is skipped
- * whole where moment escapes only the first two characters. No real format
- * writes one, and reading moment's token table here would cost more than it
- * buys.
+ * A backslash escapes exactly one token, so the scan consumes at most two
+ * identical characters after it — moment's longest week token, `WW` or `ww`.
+ * `\WWW` therefore writes a literal "WW" and still leaves a real `W` behind.
+ * Two is the right cap for every question this scan answers: a longer run
+ * belongs to some other token, and mis-splitting one of those cannot invent or
+ * hide a `w` or a `W`.
  */
 function tokenChars(format: string): string {
 	let chars = "";
@@ -182,7 +184,7 @@ function tokenChars(format: string): string {
 		} else if (ch === "\\") {
 			const escaped = format[i + 1];
 			i++;
-			while (escaped !== undefined && format[i + 1] === escaped) i++;
+			if (escaped !== undefined && format[i + 1] === escaped) i++;
 			continue;
 		}
 

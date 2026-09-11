@@ -407,3 +407,56 @@ describe("getWeekNumber with moment escapes", () => {
 		expect(getWeekNumber(date, fmt)).toBe(date.clone().isoWeekday(1).week());
 	});
 });
+
+describe("getWeekNumber escape permutations", () => {
+	// 2026-12-27 is a Sunday in ISO week 52 whose own locale week is 1, so an
+	// ISO answer and a locale answer can never be mistaken for one another.
+	const DATE = moment("2026-12-27");
+
+	// `writes` is what moment renders for the format, measured rather than
+	// reasoned about; `weekNumber` is the number that name really carries.
+	const CASES: { format: string; writes: string; weekNumber: number }[] = [
+		{ format: "gggg-[W]ww", writes: "2027-W01", weekNumber: 1 },
+		{ format: "GGGG-[W]WW", writes: "2026-W52", weekNumber: 52 },
+		{ format: "[WW]ww", writes: "WW01", weekNumber: 1 },
+		{ format: "gggg-[Www", writes: "2027-[5201", weekNumber: 52 },
+		{ format: "[\\W]WW", writes: "\\W52", weekNumber: 52 },
+		{ format: "\\WW", writes: "WW", weekNumber: 1 },
+		{ format: "\\WWW", writes: "WW52", weekNumber: 52 },
+		{ format: "\\WWW ww", writes: "WW52 01", weekNumber: 52 },
+		{ format: "\\www", writes: "ww1", weekNumber: 1 },
+		{ format: "\\W W", writes: "W 52", weekNumber: 52 },
+		{ format: "\\\\W", writes: "52", weekNumber: 52 },
+		{ format: "\\[WW", writes: "[52", weekNumber: 52 },
+		{ format: "\\Wo", writes: "Wo", weekNumber: 1 },
+		{ format: "\\Wow", writes: "Wo1", weekNumber: 1 },
+		{ format: "ww\\WW", writes: "01WW", weekNumber: 1 },
+	];
+
+	for (const { format, writes, weekNumber } of CASES) {
+		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
+			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
+		});
+	}
+});
+
+describe("getWeekNumber escape permutations inside a weekday span", () => {
+	// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53 and
+	// whose locale week is 1, while the date's own locale week is 2.
+	const DATE = moment("2027-01-03");
+
+	const CASES: { format: string; writes: string; weekNumber: number }[] = [
+		{ format: "{{monday:\\WWW}}", writes: "WW53", weekNumber: 53 },
+		{ format: "{{monday:\\WW ww}}", writes: "WW 01", weekNumber: 1 },
+		{ format: "{{monday:\\WW}}", writes: "WW", weekNumber: 2 },
+		{ format: "{{monday:[WW]ww}}", writes: "WW01", weekNumber: 1 },
+	];
+
+	for (const { format, writes, weekNumber } of CASES) {
+		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
+			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
+		});
+	}
+});
