@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [master]
 
+# The job only needs to read the code. Without this, a pull request from a branch
+# in this repository runs npm scripts with a writable token.
+permissions:
+  contents: read
+
 jobs:
   # One job, so the pull request gets exactly one status check. The steps run in
   # order and the job stops at the first non-zero exit, which names the failed
@@ -14,14 +19,15 @@ jobs:
     name: install, test, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # mise.toml is this repo's own Node pin, so the gate runs the version the
-      # project actually develops against instead of a second version to keep in
-      # step with it. setup-node reads mise.toml natively.
-      - uses: actions/setup-node@v4
+      # Keep this version equal to the node pin in mise.toml. setup-node cannot
+      # read mise.toml on any released version, so the number is repeated here
+      # rather than derived. node-version-file is the better answer once a release
+      # supports mise.toml: actions/setup-node#1421.
+      - uses: actions/setup-node@v7
         with:
-          node-version-file: mise.toml
+          node-version: 24.12.0
           cache: npm
 
       - name: install
