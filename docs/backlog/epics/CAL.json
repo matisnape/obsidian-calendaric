@@ -10,7 +10,7 @@
       "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:render-calendar-grid",
         "calendaric:calendar-month-grid-render"
@@ -82,8 +82,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": "UNSETTLED, reported rather than judged: the disabled-week-number-column branch is DOM-only (calendar.ts:105 for the header cell, calendar.ts:145 for the row cells, both on settings.showWeekNumbers). Code review says it is correct, but reading is not measuring. The repo has no jsdom harness and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass) that jsdom does not provide, so a rendering test needs a new dependency plus mocks for those helpers -- a separate story. This criterion blocks US-CAL-01 from reaching done until that harness exists."
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarRender.test.ts > \"AC-CAL-01.5: ...\" renders the grid twice, with showWeekNumbers on and off, and asserts both states: on, one .calendaric-weeknum-header, six .calendaric-weeknum-cell, and eight cells per row; off, zero of each and seven cells per row. Mutation-checked by the orchestrator at BOTH branches of the setting, separately: forcing the header cell at calendar.ts:101 fails it, and forcing the row cells at calendar.ts:141 fails it. This supersedes the earlier evidence, which reported the criterion UNSETTLED because the repository had no DOM harness -- happy-dom now runs per file via a `// @vitest-environment happy-dom` pragma, and src/__mocks__/obsidianDom.ts shims createEl, createDiv, empty and addClass, which is exactly the set src/ui/ calls."
         },
         {
           "id": "AC-CAL-01.6",
