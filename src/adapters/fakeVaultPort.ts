@@ -19,7 +19,7 @@ export class FakeVaultPort implements VaultPort {
 		return this.files.get(path);
 	}
 
-	fileExists(path: string): boolean {
+	pathExists(path: string): boolean {
 		return this.folders.has(path) || this.files.has(path);
 	}
 

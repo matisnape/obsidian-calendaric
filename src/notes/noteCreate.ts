@@ -22,7 +22,7 @@ export async function createNote(
 	vault: VaultPort,
 ): Promise<NoteFile> {
 	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : null;
-	if (folder && !vault.fileExists(folder)) {
+	if (folder && !vault.pathExists(folder)) {
 		await vault.createFolder(folder);
 	}
 

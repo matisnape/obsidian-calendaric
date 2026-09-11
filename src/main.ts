@@ -6,6 +6,7 @@ import { createNote } from "./notes/noteCreate";
 import { openNoteInNewTab } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
+import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import type { NoteFile } from "./adapters/vaultPort";
 
 
@@ -76,7 +77,7 @@ export default class CalendaricPlugin extends Plugin {
 			if (!config.openAtStartup || !config.enabled) continue;
 
 			const date = window.moment();
-			const path = computeNotePath(date, config, this.app);
+			const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
 			const existing = this.app.vault.getAbstractFileByPath(path);
 
 			let file: NoteFile;

@@ -3,7 +3,7 @@ export interface NoteFile {
 }
 
 export interface VaultPort {
-	fileExists(path: string): boolean;
+	pathExists(path: string): boolean;
 	createFolder(path: string): Promise<void>;
 	createFile(path: string, content: string): Promise<NoteFile>;
 	readFile(file: NoteFile): Promise<string>;

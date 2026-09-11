@@ -8,6 +8,7 @@ import { createNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
 import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
+import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 
@@ -144,7 +145,7 @@ export class CalendarWidget {
 				const firstDay = week.days[0];
 				if (firstDay) {
 					const monday = firstDay.date.clone().isoWeekday(1);
-					const weekPath = computeNotePath(monday, this.settings.week, this.app);
+					const weekPath = computeNotePath(monday, this.settings.week, new ObsidianVaultConfigAdapter(this.app));
 					if (weekPaths.has(weekPath)) {
 						wDotContainer.appendChild(makeDotSvg());
 					}
@@ -172,7 +173,7 @@ export class CalendarWidget {
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				// Dot: daily note exists for this date
-				const dayPath = computeNotePath(day.date, this.settings.day, this.app);
+				const dayPath = computeNotePath(day.date, this.settings.day, new ObsidianVaultConfigAdapter(this.app));
 				if (dayPaths.has(dayPath)) {
 					dayDotContainer.appendChild(makeDotSvg());
 				}
@@ -222,7 +223,7 @@ export class CalendarWidget {
 		event: MouseEvent,
 	): Promise<void> {
 		const config = this.settings[granularity];
-		const path = computeNotePath(date, config, this.app);
+		const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
 		const existing = this.app.vault.getAbstractFileByPath(path);
 
 		if (existing) {

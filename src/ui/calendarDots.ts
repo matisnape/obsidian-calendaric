@@ -2,6 +2,8 @@ import type { App, EventRef } from "obsidian";
 import type { Moment } from "moment";
 import type { PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
+import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
+import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 
 /**
  * Scans vault files to determine which days/weeks in the visible month have
@@ -10,10 +12,12 @@ import { computeNotePath } from "../notes/noteUtils";
  */
 export class DotScanner {
 	private app: App;
+	private vaultConfig: VaultConfigPort;
 	private eventRefs: EventRef[] = [];
 
 	constructor(app: App, onUpdate: () => void) {
 		this.app = app;
+		this.vaultConfig = new ObsidianVaultConfigAdapter(app);
 
 		this.eventRefs.push(app.vault.on("create", onUpdate));
 		this.eventRefs.push(app.vault.on("delete", onUpdate));
@@ -34,7 +38,7 @@ export class DotScanner {
 		const cursor = start.clone();
 
 		while (cursor.isSameOrBefore(end, "day")) {
-			const path = computeNotePath(cursor, config, this.app);
+			const path = computeNotePath(cursor, config, this.vaultConfig);
 			if (this.app.vault.getAbstractFileByPath(path)) {
 				paths.add(path);
 			}
@@ -61,7 +65,7 @@ export class DotScanner {
 
 		while (cursor.isSameOrBefore(end, "day")) {
 			const monday = cursor.clone().isoWeekday(1);
-			const path = computeNotePath(monday, config, this.app);
+			const path = computeNotePath(monday, config, this.vaultConfig);
 			if (this.app.vault.getAbstractFileByPath(path)) {
 				paths.add(path);
 			}
