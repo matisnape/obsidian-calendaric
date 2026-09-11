@@ -14,17 +14,22 @@ place, and a later refactor could delete or rename the test in silence.
     python3 check_ac_coverage.py --report-only   always exit 0, still print
     python3 check_ac_coverage.py --self-check    prove this script works
 
-The gate compares a verdict's own evidence string against reality, in three
-groups. Only the first two fail:
+Every `pass` must be named by a test title, except the handful listed in
+NO_REGRESSION_IDS. Three groups; only the first two fail:
 
-  unbacked test claim   `pass`, evidence cites a test, no test title names the
-                        id. This is the drift worth failing on: the verdict
+  unbacked verdict      `pass`, not in NO_REGRESSION_IDS, no test title names
+                        the id. This is the drift worth failing on: the verdict
                         claims a regression that cannot be found.
   dangling reference    a test title names an id no epic file defines. A typo,
                         or a criterion renumbered out from under the test.
-  no regression behind  `pass`, evidence cites review or a one-off observation
-                        instead of a test. Listed and counted, never failed:
-                        nothing can be tagged for it. Auditable, not hidden.
+  no regression behind  `pass`, in NO_REGRESSION_IDS, no test. Listed and
+                        counted, never failed: nothing can be tagged for it.
+                        Auditable, not hidden.
+
+The evidence string is not read. Three successive attempts to classify it —
+enumerating test markers, inverting to a closed non-test set, anchoring that
+set to the front — each leaked a real test-backed verdict into the group that
+never fails. Prose has no fixed grammar; an id does.
 
 A criterion that is `unverified`, `n-a` or `fail` with no test is not reported
 at all. Several criteria here are legitimately untestable in this environment
@@ -57,53 +62,33 @@ AC_IN_TITLE = re.compile(r"\bAC-[A-Z]+-\d{2}\.\d+\b(?!\.\d)")
 # build_backlog.py's AC_STATUSES, which is the gate that enforces them.
 AC_STATUSES = ("unverified", "pass", "fail", "n-a")
 
-# Which evidence counts as claiming a test is decided by INVERSION, and the
-# inversion is the whole point.
+# The four criteria settled by observation rather than by a test.
 #
-# The first two versions of this enumerated the ways prose names a test —
-# "vitest:", then also ".test.ts", "suite", "spec", "covered by". Each
-# enumeration leaked within a round: first "covered by the noteCreate suite;
-# code review of the wiring", then "code review plus the computeNoteDate test:
-# does not mutate the input date". Both were real `pass` verdicts resting on
-# real tests, and both were classified as review-backed and dropped from the
-# failing list. The reason is structural, not a missing pattern: the ways
-# English can name a test are unbounded, so any allowlist of them fails OPEN at
-# its edge, which is the one direction this gate must never fail.
+# This is an allowlist of IDS, not of prose, and that is the whole design. The
+# first three versions classified the evidence string — first by enumerating
+# test markers, then by inverting to a closed set of non-test markers anchored
+# at the front — and each leaked within a round:
 #
-# So the closed set is the other side. These are the prefixes the orchestrator
-# writes when a verdict rests on something that is not a test. Everything else
-# — every unrecognised wording, every mixed string, empty evidence — claims a
-# test by construction and must be backed by a test title naming the id.
-# Adding a spelling here can only ever make the gate weaker, so it is a
-# deliberate act; forgetting one makes the gate noisier, which is safe.
+#   "covered by the noteCreate suite; code review of the wiring"
+#   "code review plus the computeNoteDate test: does not mutate the input date"
+#   "code review: wiring checked; vitest: noteDate.test.ts proves immutability"
 #
-# Anchored at the start, so "code review:" excuses a verdict only when it is
-# what the verdict is founded on. A string that merely mentions a review later
-# ("... plus code review of the wiring") still claims a test.
-NON_TEST_PREFIX = re.compile(
-    r"\s*(?:code review:|measured by the orchestrator:)",
-    re.IGNORECASE,
-)
-
-
-def claims_a_test(evidence):
-    """True unless the evidence opens with a recognised non-test marker.
-
-    Fail closed by construction: the recognised set is small and closed, and
-    everything outside it — unfamiliar wording, a mixed string, no evidence at
-    all — is treated as claiming a test. A false alarm costs one tagged title.
-    A missed unbacked verdict is the thing this gate exists to prevent.
-
-    Sniffing prose at all is not the right long-term shape. The eventual one is
-    a validated `evidence_kind` field on the criterion itself, set when the
-    verdict is recorded, which removes the guessing entirely. Deferred because
-    it is a schema change across 60-plus criteria already recorded in the epic
-    files, and those files are held by eleven live branches; it folds into the
-    retro-tagging pass, when those evidence strings are being edited anyway.
-    """
-    if not evidence or not evidence.strip():
-        return True
-    return not NON_TEST_PREFIX.match(evidence)
+# Every one was a `pass` resting on a real test that the gate excused. Prose
+# has no fixed grammar, so any reading of it fails open somewhere; the last
+# leak arrived in the opposite word order from the one before it. No string is
+# parsed now, so no string can leak in either order.
+#
+# ADDING AN ENTRY HERE IS A STATEMENT, not a formality: it says this criterion
+# has no regression behind it and never will, so nothing can ever be tagged for
+# it. That is a real reduction in what the gate protects. Four entries is
+# small enough that a fifth should be argued for in review; if this list grows
+# quietly, the gate is being hollowed out one criterion at a time.
+NO_REGRESSION_IDS = frozenset({
+    "AC-ARCH-09.2",   # code review of ci.yml: pull_request-only, no push key
+    "AC-ARCH-09.5",   # code review of ci.yml: no lint step, DEC-26 named
+    "AC-MIG-01.1",    # code review of settings.ts: testable_by manual
+    "AC-MIG-01.5",    # code review of the import modal: testable_by manual
+})
 
 
 def load_criteria(epics_dir):
@@ -215,8 +200,8 @@ def check(criteria, tagged):
     """(unbacked, no_regression, dangling). Pure, so --self-check drives it."""
     known = {c[2] for c in criteria}
     untagged_pass = [c for c in criteria if c[3] == "pass" and c[2] not in tagged]
-    unbacked = [c for c in untagged_pass if claims_a_test(c[4])]
-    no_regression = [c for c in untagged_pass if not claims_a_test(c[4])]
+    unbacked = [c for c in untagged_pass if c[2] not in NO_REGRESSION_IDS]
+    no_regression = [c for c in untagged_pass if c[2] in NO_REGRESSION_IDS]
     dangling = sorted(tagged - known)
     return unbacked, no_regression, dangling
 
@@ -236,8 +221,8 @@ def report(unbacked, no_regression, dangling, total_tagged):
           f"{len(no_regression)} passing without regression\n")
 
     if unbacked:
-        print(f"UNBACKED TEST CLAIMS ({len(unbacked)}) — FAIL. Evidence cites a "
-              "test, no test names the id.")
+        print(f"UNBACKED VERDICTS ({len(unbacked)}) — FAIL. Marked `pass`, "
+              "no test names the id.")
         by_story(unbacked)
         print()
 
@@ -250,7 +235,7 @@ def report(unbacked, no_regression, dangling, total_tagged):
 
     if no_regression:
         print(f"PASSING WITH NO REGRESSION BEHIND THEM ({len(no_regression)}) — "
-              "not a failure. The verdict rests on review or a one-off "
+              "not a failure. Listed in NO_REGRESSION_IDS as settled by "
               "observation, so there is no test to name. Nothing to tag; each "
               "one is a decision about whether the verdict should stand.")
         by_story(no_regression)
@@ -273,12 +258,18 @@ def self_check():
          "code review: ci.yml has no push key — inspected verbatim"),
         ("ARCH", "US-ARCH-09", "AC-ARCH-09.1", "pass",
          "measured by the orchestrator: check 'install, test, build' passed in 19s"),
+        ("MIG", "US-MIG-01", "AC-MIG-01.1", "pass",
+         "code review: settings.ts renders the import banner"),
         ("ARCH", "US-ARCH-03", "AC-ARCH-03.2", "pass",
          "FakeVaultPort covers it (src/notes/noteOpen.test.ts)"),
         ("FMT", "US-FMT-06", "AC-FMT-06.2", "pass",
          "code review plus the computeNoteDate test: does not mutate the input date"),
         ("FMT", "US-FMT-06", "AC-FMT-06.3", "pass",
          "settled while pairing on Thursday"),
+        ("FMT", "US-FMT-06", "AC-FMT-06.4", "pass",
+         "code review: wiring checked; vitest: noteDate.test.ts proves it"),
+        ("FMT", "US-FMT-06", "AC-FMT-06.5", "pass",
+         "vitest: noteDate.test.ts proves it; code review: wiring checked"),
         ("CAL", "US-CAL-01", "AC-CAL-01.5", "n-a", "needs a jsdom harness"),
         ("CAL", "US-CAL-01", "AC-CAL-01.6", "fail", "measured by hand: wrong"),
     ]
@@ -299,24 +290,26 @@ def self_check():
     unbacked_ids = [c[2] for c in unbacked]
     no_regression_ids = [c[2] for c in no_regression]
 
-    # Rule 1. A vitest-claiming `pass` with no test naming it is a failure.
-    assert "AC-NOTE-03.2" in unbacked_ids, unbacked_ids
-    # And so is the unmarked string that only names a .test.ts path.
-    assert "AC-ARCH-03.2" in unbacked_ids, unbacked_ids
-    # The round 4 leak: a test named after a review marker that has no colon.
-    assert "AC-FMT-06.2" in unbacked_ids, unbacked_ids
-    # Evidence matching no marker at all must reach the reported list too, not
-    # just be classified correctly in isolation.
-    assert "AC-FMT-06.3" in unbacked_ids, unbacked_ids
-    assert len(unbacked_ids) == 4, unbacked_ids
+    # Rule 1. A `pass` not in the allowlist, with no test naming it, fails —
+    # whatever its evidence says. Every string below leaked past a previous
+    # prose classifier; none of them is read any more.
+    assert "AC-NOTE-03.2" in unbacked_ids, unbacked_ids   # plain vitest claim
+    assert "AC-ARCH-03.2" in unbacked_ids, unbacked_ids   # bare .test.ts path
+    assert "AC-FMT-06.2" in unbacked_ids, unbacked_ids    # review, then test
+    assert "AC-FMT-06.3" in unbacked_ids, unbacked_ids    # no marker at all
+    # Both orders of mixed evidence, which is what defeated prefix matching:
+    # the non-test marker first (round 5's leak) and the test marker first.
+    assert "AC-FMT-06.4" in unbacked_ids, unbacked_ids
+    assert "AC-FMT-06.5" in unbacked_ids, unbacked_ids
+    assert len(unbacked_ids) == 7, unbacked_ids   # the six above, plus AC-ARCH-09.1
 
-    # Rule 2. Review- and observation-backed `pass` verdicts never fail, and
-    # they must be listed, not dropped. Both markers in the closed set are
-    # exercised: "code review:" and "measured by the orchestrator:".
-    assert "AC-ARCH-09.2" in no_regression_ids, no_regression_ids
-    assert "AC-ARCH-09.1" in no_regression_ids, no_regression_ids
-    assert len(no_regression_ids) == 2, no_regression_ids
+    # Rule 2. An allowlisted `pass` with no test does not fail, and is listed
+    # rather than dropped. AC-ARCH-09.1 is deliberately NOT in the allowlist
+    # even though its evidence reads like an observation: only the id decides.
+    assert set(no_regression_ids) == {"AC-ARCH-09.2", "AC-MIG-01.1"}, no_regression_ids
+    assert "AC-ARCH-09.1" in unbacked_ids, unbacked_ids
     assert not set(no_regression_ids) & set(unbacked_ids)
+    assert set(no_regression_ids) <= NO_REGRESSION_IDS
 
     # Rule 3. A test naming an id the catalogue does not define is a failure.
     assert dangling == ["AC-NOTE-99.9"], dangling
@@ -329,30 +322,10 @@ def self_check():
     # A `pass` that IS named stays quiet too, or the gate is just noise.
     assert check(catalogue[:1], {"AC-NOTE-03.1"}) == ([], [], [])
 
-    # Fail closed by construction. Anything the closed set does not open with
-    # claims a test, so these must all be rule 1.
-    assert claims_a_test(None) and claims_a_test("   ")
-    # Each of the three strings that leaked past an enumerating classifier.
-    # Round 2: a test named in prose the allowlist did not know.
-    assert claims_a_test("covered by the noteCreate suite; code review of the wiring")
-    # Round 4: "code review" without its colon, then a bare "test:".
-    assert claims_a_test(
-        "code review plus the computeNoteDate test: does not mutate the input date")
-    # And the general case an allowlist can never cover: wording nobody
-    # anticipated, matching no marker at all.
-    assert claims_a_test("settled while pairing on Thursday")
-    assert claims_a_test("vitest: dailyNotesImport.test.ts plus code review")
-    # A marker only excuses the verdict when it is what the verdict opens with.
-    # This string carries a full "code review:" marker, colon and all, but not
-    # at the front — un-anchoring the match would read it as review-backed and
-    # drop a real test claim, which is the round 2 leak in a new disguise.
-    assert claims_a_test(
-        "the computeNoteDate suite settles this; code review: wiring checked too")
-    assert claims_a_test("code review of the wiring, plus the noteCreate suite")
-    # And the recognised non-test phrasings really are recognised.
-    assert not claims_a_test("code review: settings.ts renders the banner")
-    assert not claims_a_test("measured by the orchestrator: 19s on the merged PR")
-    assert not claims_a_test("  Code Review: leading space, any case")
+    # An allowlisted criterion that DOES get a test stays quiet as well: the
+    # allowlist excuses a missing test, it does not silence a present one.
+    allow_tagged = [c for c in catalogue if c[2] == "AC-ARCH-09.2"]
+    assert check(allow_tagged, {"AC-ARCH-09.2"}) == ([], [], [])
 
     end_to_end_check()
 
@@ -361,18 +334,28 @@ def self_check():
           "and main() returns the exit codes those verdicts call for")
 
 
+# AC-MIG-01.1 is here because it is in NO_REGRESSION_IDS; AC-NOTE-03.2 carries
+# the same "code review:" prose but is NOT allowlisted, so it must still fail.
+# The pair is what proves the id decides and the string does not.
 SYNTHETIC_EPIC = {
     "epic": "NOTE",
-    "stories": [{
-        "id": "US-NOTE-03",
-        "acceptance_criteria": [
-            {"id": "AC-NOTE-03.1", "status": "pass",
-             "evidence": "vitest: src/notes/noteCreate.test.ts > creates it"},
-            {"id": "AC-NOTE-03.2", "status": "pass",
-             "evidence": "code review: the folder walk is top down"},
-            {"id": "AC-NOTE-03.3", "status": "unverified", "evidence": None},
-        ],
-    }],
+    "stories": [
+        {
+            "id": "US-NOTE-03",
+            "acceptance_criteria": [
+                {"id": "AC-NOTE-03.1", "status": "pass",
+                 "evidence": "vitest: src/notes/noteCreate.test.ts > creates it"},
+                {"id": "AC-NOTE-03.3", "status": "unverified", "evidence": None},
+            ],
+        },
+        {
+            "id": "US-MIG-01",
+            "acceptance_criteria": [
+                {"id": "AC-MIG-01.1", "status": "pass",
+                 "evidence": "code review: settings.ts renders the banner"},
+            ],
+        },
+    ],
 }
 
 
@@ -415,18 +398,18 @@ def end_to_end_check():
     # is listed, and listing must not fail the build.
     code, out = run(named)
     assert code == 0, (code, out)
-    assert "AC-NOTE-03.2" in out and "NO REGRESSION" in out, out
+    assert "AC-MIG-01.1" in out and "NO REGRESSION" in out, out
 
     # The same catalogue with the id missing from the title exits 1. Without
     # this, `return 1 if ...` could become `return 0` and nothing would notice.
     code, out = run(vitest_report("noteCreate > creates it"))
     assert code == 1, (code, out)
-    assert "UNBACKED TEST CLAIMS (1)" in out, out
+    assert "UNBACKED VERDICTS (1)" in out, out
 
     # --report-only prints the same finding and still exits 0.
     code, out = run(vitest_report("noteCreate > creates it"), "--report-only")
     assert code == 0, (code, out)
-    assert "UNBACKED TEST CLAIMS (1)" in out, out
+    assert "UNBACKED VERDICTS (1)" in out, out
     assert "report-only" in out, out
 
     # A test naming an id no epic file defines exits 1 on its own.
@@ -518,10 +501,13 @@ def end_to_end_check():
     # A review-only catalogue is where an unchecked report is most dangerous:
     # nothing is taggable, so zero titles look exactly like a clean run.
     review_only = json.loads(json.dumps(SYNTHETIC_EPIC))
-    review_only["stories"][0]["acceptance_criteria"] = [
-        {"id": "AC-NOTE-03.2", "status": "pass",
-         "evidence": "code review: the folder walk is top down"},
-    ]
+    review_only["stories"] = [{
+        "id": "US-MIG-01",
+        "acceptance_criteria": [
+            {"id": "AC-MIG-01.1", "status": "pass",
+             "evidence": "code review: settings.ts renders the banner"},
+        ],
+    }]
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
         epics = tmp / "epics"
@@ -555,6 +541,11 @@ def main(argv=None):
         return 0
 
     criteria = load_criteria(args.epics_dir)
+    stale = sorted(NO_REGRESSION_IDS - {c[2] for c in criteria})
+    if stale and args.epics_dir == EPICS_DIR:
+        sys.exit(f"NO_REGRESSION_IDS names criteria the catalogue does not "
+                 f"define: {stale}. An exemption for a renumbered or deleted "
+                 "criterion protects nothing and hides that the list is stale.")
     tagged = tagged_ids(test_titles(REPO_ROOT, args.vitest_json))
     unbacked, no_regression, dangling = check(criteria, tagged)
     report(unbacked, no_regression, dangling, len(tagged))

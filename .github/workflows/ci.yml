@@ -53,15 +53,12 @@ jobs:
       # `pass` verdicts with no test title naming their criterion id, so
       # enforcing now would make master red the moment this merged.
       #
-      # Fifteen of those are a tagging job: the evidence names a real vitest
-      # test. The other two, AC-ARCH-09.1 and AC-ARCH-09.4, rest on an observed
-      # check run and on a script re-run, but their evidence opens with wording
-      # the checker's closed non-test marker set does not recognise ("gh pr
-      # checks ..." and "detect-ci-gates.sh ..."). They are counted as test
-      # claims because anything outside that closed set is, by design. Either
-      # reword those two to open with a recognised marker, or accept them as
-      # blocking. That set is deliberately hard to widen: every spelling added
-      # to it makes the gate weaker.
+      # Fifteen of those are a tagging job: a real vitest test settles each one
+      # and only the id is missing from its title. The other two,
+      # AC-ARCH-09.1 and AC-ARCH-09.4, rest on an observed check run and on a
+      # script re-run. Nothing can be tagged for those, so they are settled by
+      # adding them to NO_REGRESSION_IDS in check_ac_coverage.py or by
+      # accepting them as blocking — a decision, not a tagging job.
       #
       # To enforce: settle those 17, then delete the
       # `continue-on-error` line below. Nothing else changes — the command is

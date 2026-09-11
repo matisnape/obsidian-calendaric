@@ -119,13 +119,12 @@ cannot be reviewed against either story's criteria.
    When the evidence cites a test, name the criterion's id in that test's
    title, so the verdict has something holding it in place:
    `it("AC-NOTE-03.5: creates every missing intermediate folder, top down")`.
-   `npm run check:ac` fails on a `pass` whose evidence claims a test no test
-   title names. Evidence claims a test unless it OPENS with `code review:` or
-   `measured by the orchestrator:` — those two are the whole recognised set,
-   and a verdict resting on one of them is listed separately and does not
-   fail, because there is nothing to tag for it. Anything else, including a
-   review mentioned mid-sentence, counts as claiming a test. Write one of
-   those two prefixes when a verdict does not rest on a test.
+   `npm run check:ac` fails on any `pass` no test title names. The evidence
+   string is not read: the only exemption is the `NO_REGRESSION_IDS` list in
+   `check_ac_coverage.py`, which names the few criteria settled by observation
+   rather than by a test. Adding an id to it says that criterion has no
+   regression behind it and never will, so it is a deliberate change to argue
+   for in review, not a way to quiet the gate.
 7. **Review.** Open the pull request, then
    `python3 set_status.py US-CAL-14 in-review`.
 8. **Close.** After the merge, `python3 set_status.py US-CAL-14 done`.
