@@ -1,5 +1,7 @@
 import { Notice, Plugin, TFile } from "obsidian";
-import { CalendaricSettings, CalendaricSettingsTab, DEFAULT_SETTINGS } from "./settings";
+import { CalendaricSettingsTab } from "./settings";
+import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
+import type { CalendaricSettings, StoredConfig } from "./settings/model";
 import { CalendarView } from "./ui/CalendarView";
 import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
 import { computeNotePath } from "./notes/noteUtils";
@@ -15,8 +17,16 @@ import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 
 
 export default class CalendaricPlugin extends Plugin {
-	// Obsidian constructs the plugin before onload() can read the saved data, so
-	// the field starts on the defaults rather than on an assertion that it is set.
+	/**
+	 * Everything that was on disk, groups this version cannot reach included.
+	 *
+	 * Obsidian constructs the plugin before onload() can read the saved data, so
+	 * both this and `settings` start on the defaults rather than on an assertion
+	 * that they are set (US-ARCH-04).
+	 */
+	private stored: StoredConfig = defaultStoredConfig();
+
+	/** The group in use, flattened. What the settings screen and the views read and edit. */
 	settings: CalendaricSettings = { ...DEFAULT_SETTINGS };
 
 	async onload() {
@@ -99,14 +109,17 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData() as Partial<CalendaricSettings>
-		);
+		this.stored = loadStoredConfig(await this.loadData());
+		this.settings = toSettings(this.stored);
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		// Writing through applySettings is what keeps a second configuration group,
+		// and anything else on disk this version does not read, out of harm's way.
+		const next = applySettings(this.stored, this.settings);
+		await this.saveData(next);
+		// Only after the write, so a failed save leaves this field equal to the disk.
+		// The Daily Notes import relies on that: it rolls its values back on a throw.
+		this.stored = next;
 	}
 }
