@@ -304,3 +304,14 @@
 .is-mobile .calendaric-today-btn {
   display: none;
 }
+
+.calendaric-import-conflict {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendaric-import-conflict strong {
+  flex: none;
+}

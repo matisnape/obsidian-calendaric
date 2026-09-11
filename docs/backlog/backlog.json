@@ -5396,7 +5396,7 @@
       "story": "As someone who already uses Obsidian's built-in Daily Notes plugin, I want Calendaric to offer to copy its folder, format and template into my day configuration, so that I do not have to retype settings I already have working.",
       "rationale": "This vault currently has the core Daily Notes plugin configured and enabled, so this is a real, present-day migration path, not a hypothetical one.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calendaric:read-legacy-daily-notes-config",
         "calendaric:import-daily-notes-settings",
@@ -5421,8 +5421,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "code review: settings.ts renders the import banner (Setting with Import/Dismiss buttons) when getDailyNotesPlugin() detects the core plugin enabled and the day config has not been marked imported; no automated test since AC is testable_by: manual and no live Obsidian instance is available in this environment."
         },
         {
           "id": "AC-MIG-01.2",
@@ -5437,8 +5437,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/dailyNotesImport.test.ts (applyDailyNotesImport copies folder/format/template, marks day enabled and records completion) plus code review of the save/rollback wiring in settings.ts; AC is testable_by: integration and remains unverified against a live Obsidian instance."
         },
         {
           "id": "AC-MIG-01.3",
@@ -5449,8 +5449,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/dailyNotesImport.test.ts > defaults to YYYY-MM-DD when the core plugin format is empty.",
           "failure_path": true
         },
         {
@@ -5463,8 +5463,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/dailyNotesImport.test.ts (import marks itself completed so the banner logic will not re-offer it, and a repeat call is idempotent) plus code review; AC is testable_by: integration and remains unverified against a live Obsidian instance.",
           "failure_path": true
         },
         {
@@ -5477,8 +5477,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "code review: dailyNotesImportModal.ts renders current-vs-incoming values per field and only calls applyDailyNotesImport with the keys the user checked; AC is testable_by: manual and no live Obsidian instance is available in this environment.",
           "failure_path": true
         },
         {
@@ -5490,8 +5490,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/dailyNotesImport.test.ts (banner condition is false once the plugin is disabled or already imported) plus code review; AC is testable_by: integration and remains unverified against a live Obsidian instance.",
           "failure_path": true
         }
       ],

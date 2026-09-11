@@ -1,6 +1,16 @@
-import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "./types";
-import { isDailyNotesPluginEnabled, getLegacyDailyNoteSettings, disableDailyNotesPlugin } from "./settings/dailyNotesImport";
+import {
+	isDailyNotesPluginEnabled,
+	getLegacyDailyNoteSettings,
+	disableDailyNotesPlugin,
+	shouldOfferDailyNotesImport,
+	planDailyNotesImport,
+	applyDailyNotesImport,
+	DEFAULT_DAY_FORMAT,
+} from "./settings/dailyNotesImport";
+import type { DailyNotesImportKey } from "./settings/dailyNotesImport";
+import { DailyNotesImportConflictModal } from "./settings/dailyNotesImportModal";
 import type CalendaricPlugin from "./main";
 
 export type WeekStartOption =
@@ -76,7 +86,7 @@ const GRANULARITY_PERIODICITY: Record<Granularity, string> = {
 };
 
 const DEFAULT_FORMAT: Record<ActiveGranularity, string> = {
-	day: "YYYY-MM-DD",
+	day: DEFAULT_DAY_FORMAT,
 	week: "gggg-[W]ww",
 };
 
@@ -113,11 +123,12 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	// -------------------------------------------------------------------------
 	private renderImportCard(containerEl: HTMLElement): void {
 		const { app, settings } = this.plugin;
-		const isEnabled = isDailyNotesPluginEnabled(app);
 
-		if (!isEnabled) return;
+		// AC-MIG-01.6: no banner at all while the core plugin is off.
+		if (!isDailyNotesPluginEnabled(app)) return;
 
-		if (settings.hasMigratedDailyNoteSettings) {
+		// AC-MIG-01.4: the import banner is replaced by the "still active" notice once it ran.
+		if (!shouldOfferDailyNotesImport(app, settings)) {
 			const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
 			notice.createEl("strong", { text: "Daily Notes plugin is still active" });
 			notice.createEl("p", {
@@ -148,13 +159,30 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
 		importBtn.addEventListener("click", async () => {
 			const legacy = getLegacyDailyNoteSettings(app);
-			settings.day.format = legacy.format !== "" ? legacy.format : DEFAULT_FORMAT["day"];
-			settings.day.folder = legacy.folder;
-			settings.day.templatePath = legacy.template;
-			settings.day.enabled = true;
-			settings.hasMigratedDailyNoteSettings = true;
-			await this.save();
-			this.display();
+			const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
+				const previousDay = { ...settings.day };
+				const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
+				applyDailyNotesImport(settings, legacy, confirmed);
+				try {
+					// Only the write to disk is rolled back; a failed refresh must not undo a stored import.
+					await this.plugin.saveSettings();
+				} catch (error) {
+					Object.assign(settings.day, previousDay);
+					settings.hasMigratedDailyNoteSettings = previouslyMigrated;
+					console.error("Calendaric: the Daily Notes import could not be saved", error);
+					new Notice("Could not save the Daily Notes import.");
+					return;
+				}
+				this.plugin.onSettingsChange();
+				this.display();
+			};
+
+			const plan = planDailyNotesImport(legacy, settings.day);
+			if (plan.conflicts.length === 0) {
+				await applyAndSaveImport([]);
+				return;
+			}
+			new DailyNotesImportConflictModal(app, plan.conflicts, applyAndSaveImport).open();
 		});
 
 		const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });

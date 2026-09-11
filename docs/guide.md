@@ -14,6 +14,10 @@ Standard [moment.js format tokens](https://momentjs.com/docs/#/displaying/format
 | `gggg-[W]ww` | `2026-W16` |
 | `YYYY-MM` | `2026-04` |
 
+When Obsidian's built-in Daily Notes plugin stored no format of its own, the
+Daily Notes import writes `YYYY-MM-DD` into the Format field of Calendaric's
+Daily Notes group instead of leaving it empty.
+
 ### Week tokens (Weekly Notes only)
 
 Calendaric extends the Format field with week tokens that insert the date of a specific weekday within the target week. These are only evaluated for Weekly Notes.
