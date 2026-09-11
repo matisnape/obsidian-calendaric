@@ -123,7 +123,8 @@ function normalizeSet(set: CalendarSet): CalendarSet {
 	return normalized;
 }
 
-function pickGlobals(raw: Record<string, unknown>): GlobalSettings {
+function pickGlobals(source: unknown): GlobalSettings {
+	const raw: Record<string, unknown> = isRecord(source) ? source : {};
 	const weekStart = raw.weekStart;
 	return {
 		weekStart: typeof weekStart === "string" ? (weekStart as WeekStartOption) : DEFAULT_GLOBALS.weekStart,
@@ -158,13 +159,13 @@ export function loadStoredConfig(raw: unknown): StoredConfig {
 		: [];
 	const calendarSets = storedSets.length > 0 ? storedSets : [defaultCalendarSet()];
 
-	const requestedId = asString(raw.activeCalendarSet, "");
-	const activeIndex = Math.max(
-		calendarSets.findIndex((set) => set.id === requestedId),
+	const requested = asString(raw.activeCalendarSet, "");
+	const index = Math.max(
+		calendarSets.findIndex((set) => set.id === requested),
 		0,
 	);
-	const activeSet = calendarSets[activeIndex] as CalendarSet;
-	calendarSets[activeIndex] = normalizeSet(activeSet);
+	const activeSet = calendarSets[index] as CalendarSet;
+	calendarSets[index] = normalizeSet(activeSet);
 
 	return {
 		...raw,
@@ -175,15 +176,20 @@ export function loadStoredConfig(raw: unknown): StoredConfig {
 }
 
 /**
- * The group currently in effect. Falls back to the first group when
- * `activeCalendarSet` names one that is gone, so a hand-edited file still loads.
+ * Where the group in effect sits in the list. Positional, because two groups can
+ * carry the same id and only one of them is the one being edited. Falls back to
+ * the first group when `activeCalendarSet` names one that is gone.
  */
-export function getActiveSet(stored: StoredConfig): CalendarSet {
-	return (
-		stored.calendarSets.find((set) => set.id === stored.activeCalendarSet) ??
-		stored.calendarSets[0] ??
-		defaultCalendarSet(stored.activeCalendarSet)
+function activeSetIndex(stored: StoredConfig): number {
+	return Math.max(
+		stored.calendarSets.findIndex((set) => set.id === stored.activeCalendarSet),
+		0,
 	);
+}
+
+/** The group currently in effect. */
+export function getActiveSet(stored: StoredConfig): CalendarSet {
+	return stored.calendarSets[activeSetIndex(stored)] ?? defaultCalendarSet(stored.activeCalendarSet);
 }
 
 /** Flatten the group in use into the settings object the rest of the plugin reads. */
@@ -193,7 +199,7 @@ export function toSettings(stored: StoredConfig): CalendaricSettings {
 	for (const granularity of GRANULARITIES) {
 		configs[granularity] = normalizeConfig(active[granularity]);
 	}
-	return { ...pickGlobals({ ...stored }), ...configs };
+	return { ...pickGlobals(stored), ...configs };
 }
 
 /**
@@ -207,12 +213,13 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 		updated[granularity] = { ...active[granularity], ...settings[granularity] };
 	}
 
+	const index = activeSetIndex(stored);
 	const calendarSets =
 		stored.calendarSets.length > 0
-			? stored.calendarSets.map((set) => (set.id === active.id ? updated : set))
+			? stored.calendarSets.map((set, position) => (position === index ? updated : set))
 			: [updated];
 
-	return { ...stored, ...pickGlobals({ ...settings }), calendarSets };
+	return { ...stored, ...pickGlobals(settings), calendarSets };
 }
 
 /** Granularities whose notes are switched on, in day-to-year order. */

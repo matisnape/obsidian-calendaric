@@ -245,6 +245,19 @@ describe("AC-SET-01.3 an extra named group survives a load and save", () => {
 		expect(saved.calendarSets[1]).toEqual(alien);
 	});
 
+	it("rewrites one group only when two groups carry the same id", () => {
+		const twin = { ...EXTRA_SET, id: "Default" };
+		const raw = storedFixture({ calendarSets: [...(storedFixture().calendarSets as CalendarSet[]), twin as CalendarSet] });
+		const stored = loadStoredConfig(raw);
+
+		const settings = toSettings(stored);
+		settings.day.folder = "somewhere/else";
+		const saved = applySettings(stored, settings);
+
+		expect(saved.calendarSets[0]?.day?.folder).toBe("somewhere/else");
+		expect(saved.calendarSets[1]).toEqual(twin);
+	});
+
 	it("keeps the extra group when the in-use group is edited", () => {
 		const raw = storedFixture({ calendarSets: [...(storedFixture().calendarSets as CalendarSet[]), EXTRA_SET as CalendarSet] });
 		const stored = loadStoredConfig(raw);
