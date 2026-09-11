@@ -78,6 +78,25 @@ describe("resolveFileDate — AC-FMT-07.4 the identity equals the one computed e
 		expect(result?.noteDate).toBe(computeNoteDate(gridCell, "week"));
 	});
 
+	it("gives the Sunday that ends the week the same identity as that week's note", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+		// ISO week 16 runs Mon 2026-04-13 .. Sun 2026-04-19, and a note created
+		// from that Sunday is written as "2026-W16" — so the grid's Sunday cell
+		// must resolve to the identity of the file it would open.
+		const gridCell = moment("2026-04-19T09:00:00");
+
+		expect(result?.noteDate).toBe(computeNoteDate(gridCell, "week"));
+	});
+
+	it("does not give the Sunday of the previous week that week's identity", () => {
+		const result = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
+		// Sun 2026-04-12 belongs to ISO week 15 and a note created from it is
+		// written as "2026-W15" — it must never collide with week 16's note.
+		const gridCell = moment("2026-04-12T09:00:00");
+
+		expect(result?.noteDate).not.toBe(computeNoteDate(gridCell, "week"));
+	});
+
 	it("never gives a day-note and a week-note of the same date one identity", () => {
 		const day = resolveFileDate("Daily/2026-04-13.md", CONFIGS, NO_DEFAULT_FOLDER);
 		const week = resolveFileDate("Weekly/2026-W16.md", CONFIGS, NO_DEFAULT_FOLDER);
