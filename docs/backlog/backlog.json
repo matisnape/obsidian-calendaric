@@ -2049,7 +2049,7 @@
       "story": "As someone journaling day by day, I want {{yesterday}} and {{tomorrow}} in a daily note's template to resolve to the adjacent calendar days, so that I can link into my journal's timeline without typing dates.",
       "rationale": "This is a daily-only convenience carried over from the source plugins; the rewrite should keep the asymmetry explicit rather than silently extending or dropping it.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:template-token-yesterday-tomorrow",
         "calendaric:template-token-yesterday-tomorrow"
@@ -5396,7 +5396,7 @@
       "story": "As someone who already uses Obsidian's built-in Daily Notes plugin, I want Calendaric to offer to copy its folder, format and template into my day configuration, so that I do not have to retype settings I already have working.",
       "rationale": "This vault currently has the core Daily Notes plugin configured and enabled, so this is a real, present-day migration path, not a hypothetical one.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calendaric:read-legacy-daily-notes-config",
         "calendaric:import-daily-notes-settings",
