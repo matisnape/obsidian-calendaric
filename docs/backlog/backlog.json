@@ -2072,8 +2072,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > substitutes {{yesterday}} / > formats {{yesterday}} and {{tomorrow}} with the configured daily format"
         },
         {
           "id": "AC-TPL-02.2",
@@ -2085,8 +2085,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > substitutes {{tomorrow}}"
         },
         {
           "id": "AC-TPL-02.3",
@@ -2098,8 +2098,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts > does not substitute {{yesterday}} for weekly granularity / > does not substitute {{tomorrow}} for weekly granularity / > leaves both adjacent-day tokens intact in a weekly template",
           "failure_path": true
         }
       ]
