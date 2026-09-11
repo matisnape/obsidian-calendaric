@@ -6951,6 +6951,77 @@
           "decided_on": "2026-09-11"
         }
       ]
+    },
+    {
+      "id": "US-ARCH-09",
+      "epic": "ARCH",
+      "title": "A budget-aware GitHub Actions workflow enforces the release build's gates on every pull request",
+      "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, lint, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
+      "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-09.1",
+          "given": "a pull request is opened or updated against the default branch",
+          "when": "the workflow runs",
+          "then": [
+            "it runs install, lint, test and build as one combined job",
+            "it reports one status check on the pull request for that job"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-09.2",
+          "given": "the workflow's trigger configuration",
+          "when": "it is inspected",
+          "then": [
+            "it triggers only on pull_request events",
+            "it does not trigger on every push to a branch that has no open pull request"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-09.3",
+          "given": "any one of install, lint, test or build fails during the workflow run",
+          "when": "the workflow completes",
+          "then": [
+            "the status check reported on the pull request is failing",
+            "the workflow's own log names which step failed"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        },
+        {
+          "id": "AC-ARCH-09.4",
+          "given": "the workflow has completed at least one real run on a pull request",
+          "when": "the project's CI-gate detection is re-run afterward",
+          "then": [
+            "it finds real pipeline or check-run data instead of falling back to a local YAML parse",
+            "the project's tool config can then be corrected from provisional to confirmed"
+          ],
+          "verifies": "architecture",
+          "testable_by": "manual",
+          "status": "unverified",
+          "evidence": null
+        }
+      ]
     }
   ],
   "icebox": [
