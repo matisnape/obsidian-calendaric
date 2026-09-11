@@ -1,7 +1,8 @@
 import type { App, EventRef } from "obsidian";
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
+import type { ICalendarMonth, PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
+import { getWeekAnchor } from "./calendarUtils";
 import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 
@@ -49,27 +50,22 @@ export class DotScanner {
 	}
 
 	/**
-	 * Returns the set of vault paths that correspond to weekly notes whose ISO
-	 * Monday falls within the same weeks shown in the displayed month.
-	 * Week dot container is keyed by the ISO Monday date string.
+	 * Returns the set of vault paths that correspond to weekly notes for the
+	 * rows of the given grid.
+	 *
+	 * Takes the grid rather than the month so the scan cannot disagree with what
+	 * was drawn: `getWeekAnchor` is the same date the week number came from, and
+	 * the row set is the same six rows.
 	 */
-	getWeekNotePaths(month: Moment, config: PeriodicConfig): Set<string> {
+	getWeekNotePaths(grid: ICalendarMonth, config: PeriodicConfig): Set<string> {
 		const paths = new Set<string>();
 		if (!config.enabled || !config.format) return paths;
 
-		// Collect the ISO Mondays of all weeks visible in the month grid
-		// (some may start in the previous or next month)
-		const start = month.clone().startOf("month").startOf("isoWeek");
-		const end = month.clone().endOf("month").endOf("isoWeek");
-		const cursor = start.clone();
-
-		while (cursor.isSameOrBefore(end, "day")) {
-			const monday = cursor.clone().isoWeekday(1);
-			const path = computeNotePath(monday, config, this.vaultConfig);
+		for (const week of grid) {
+			const path = computeNotePath(getWeekAnchor(week.days), config, this.vaultConfig);
 			if (this.app.vault.getAbstractFileByPath(path)) {
 				paths.add(path);
 			}
-			cursor.add(1, "week");
 		}
 
 		return paths;

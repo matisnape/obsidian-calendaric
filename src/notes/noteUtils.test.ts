@@ -286,3 +286,36 @@ describe("getWeekNumber", () => {
 		}
 	});
 });
+
+describe("getWeekNumber with awkward formats", () => {
+	const DIVERGENT_DATE = moment("2026-12-28");
+
+	it("keeps a double-brace span that formatWithWeekTokens does not recognise", () => {
+		// `notaday` is not a weekday, so formatWithWeekTokens hands the span to
+		// moment, which renders the WW inside it as an ISO week number. Stripping
+		// the span would hide a week number the filename really carries.
+		const fmt = "gggg-[W]ww, {{notaday:WW}}";
+		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE)).toContain("53");
+		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
+	});
+
+	it("keeps an unterminated double-brace span", () => {
+		const fmt = "gggg-[W]ww, {{monday:WW";
+		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
+	});
+
+	it("strips a recognised weekday span whatever its case", () => {
+		expect(getWeekNumber(DIVERGENT_DATE, "gggg-[W]ww, {{MONDAY:GGGG-[W]WW}}")).toBe(1);
+	});
+
+	it("strips every recognised weekday name", () => {
+		const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+		for (const day of days) {
+			expect(getWeekNumber(DIVERGENT_DATE, `gggg-[W]ww, {{${day}:WW}}`)).toBe(1);
+		}
+	});
+
+	it("is unaffected by a brace span that carries no week token", () => {
+		expect(getWeekNumber(DIVERGENT_DATE, "GGGG-[W]WW, {{notaday:DD}}")).toBe(53);
+	});
+});

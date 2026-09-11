@@ -2,7 +2,7 @@ import type { Moment } from "moment";
 import { TFile } from "obsidian";
 import type { App, EventRef } from "obsidian";
 import type { CalendaricSettings } from "../settings";
-import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
+import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { createNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
@@ -137,7 +137,7 @@ export class CalendarWidget {
 
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
 		const dayPaths = this.dots.getDayNotePaths(this.displayedMonth, this.settings.day);
-		const weekPaths = this.dots.getWeekNotePaths(this.displayedMonth, this.settings.week);
+		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
 
 		for (const week of grid) {
 			const tr = this.gridBodyEl.createEl("tr");
@@ -147,25 +147,20 @@ export class CalendarWidget {
 				const wDiv = wTd.createDiv({ cls: "calendaric-weeknum", text: String(week.weekNumber) });
 				const wDotContainer = wDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				// Dot: weekly note exists for the ISO Monday of this week
-				const firstDay = week.days[0];
-				if (firstDay) {
-					const monday = firstDay.date.clone().isoWeekday(1);
-					const weekPath = computeNotePath(monday, this.settings.week, this.vaultConfig);
-					if (weekPaths.has(weekPath)) {
-						wDotContainer.appendChild(makeDotSvg());
-					}
-					if (weekPath === this.activeFilePath) {
-						wDiv.addClass("is-active");
-					}
+				// Dot: weekly note exists for the week this row shows
+				const anchor = getWeekAnchor(week.days);
+				const weekPath = computeNotePath(anchor, this.settings.week, this.vaultConfig);
+				if (weekPaths.has(weekPath)) {
+					wDotContainer.appendChild(makeDotSvg());
+				}
+				if (weekPath === this.activeFilePath) {
+					wDiv.addClass("is-active");
 				}
 
 				if (this.settings.week.enabled) {
 					wDiv.style.cursor = "pointer";
 					wDiv.addEventListener("click", (e) => {
-						if (!firstDay) return;
-						const anchor = firstDay.date.clone().isoWeekday(1);
-						void this.handleNoteClick(anchor, "week", e);
+						void this.handleNoteClick(anchor.clone(), "week", e);
 					});
 				}
 			}

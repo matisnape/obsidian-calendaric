@@ -152,13 +152,17 @@ export function checkNoteFolder(
 }
 
 /**
- * Spans of a format string that are not moment tokens for the format's own
- * date: `[literal]` escapes and `{{weekday:fmt}}` week tokens. The default
- * weekly format `gggg-[W]ww` prints a literal "W", and a nested token such as
- * `{{monday:GGGG-[W]WW}}` describes its own weekday — neither may decide which
- * week system the format uses.
+ * Spans of a format string that never describe the format's own date: a
+ * `[literal]` escape, which moment prints verbatim, and a week token, which
+ * `formatWithWeekTokens` resolves against its named weekday. The default weekly
+ * format `gggg-[W]ww` prints a literal "W" and `{{monday:GGGG-[W]WW}}` numbers
+ * the Monday, so neither may decide which week system the format uses.
+ *
+ * Built from `WEEK_TOKEN_RE` so the two cannot drift: a brace span that
+ * `formatWithWeekTokens` leaves alone reaches moment as tokens, and a `WW`
+ * inside it does land in the filename.
  */
-const NON_TOKEN_SPANS = /\[[^\]]*\]|\{\{[^}]*\}\}/g;
+const NON_TOKEN_SPANS = new RegExp(`\\[[^\\]]*\\]|${WEEK_TOKEN_RE.source}`, "gi");
 
 /**
  * The week number the plugin shows for a date.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
-import { getMonthGrid, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
+import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import type { PeriodicConfig } from "../types";
@@ -283,5 +283,57 @@ describe("AC-CAL-01.6: dates stay correct across leap years and year boundaries"
 		days.filter((d) => d.date.year() === 2026).forEach((d) => {
 			expect(d.isAdjacentMonth).toBe(true);
 		});
+	});
+});
+
+describe("getWeekAnchor", () => {
+	it("returns the row's own first day, not the ISO Monday of that day", () => {
+		// Sunday-start March 2026: the row runs Sun 03-01 to Sat 03-07, while the
+		// ISO Monday of Sun 03-01 is 02-23 — a different week.
+		const grid = getMonthGrid(moment("2026-03-15"), 0, WEEK_FORMAT);
+		const anchor = getWeekAnchor(grid[0].days);
+		expect(anchor.format("YYYY-MM-DD")).toBe("2026-03-01");
+		expect(anchor.clone().isoWeekday(1).format("YYYY-MM-DD")).toBe("2026-02-23");
+	});
+
+	it("hands back a copy, so a caller cannot mutate the grid", () => {
+		const grid = getMonthGrid(moment("2026-03-15"), 1, WEEK_FORMAT);
+		getWeekAnchor(grid[0].days).add(10, "day");
+		expect(grid[0].days[0].date.format("YYYY-MM-DD")).toBe("2026-02-23");
+	});
+});
+
+describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => {
+	const weekConfig: PeriodicConfig = {
+		enabled: true,
+		format: WEEK_FORMAT,
+		folder: "Weekly",
+		templatePath: "",
+		openAtStartup: false,
+	};
+	const vaultConfig = new FakeVaultConfigPort();
+
+	// Every week start, over the December-to-January boundary in both directions,
+	// where the ISO week and the locale week name different weeks.
+	for (const weekStart of [0, 1, 2, 3, 4, 5, 6]) {
+		for (const month of ["2026-12-15", "2027-01-15"]) {
+			it(`row anchor matches the displayed number for weekStart=${weekStart}, ${month}`, () => {
+				const grid = getMonthGrid(moment(month), weekStart, WEEK_FORMAT);
+				grid.forEach((week) => {
+					const path = computeNotePath(getWeekAnchor(week.days), weekConfig, vaultConfig);
+					expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
+				});
+			});
+		}
+	}
+
+	it("numbers a Sunday-start row by its own week, not the previous one", () => {
+		// The regression the review caught: the ISO Monday of Sun 2026-03-01 is
+		// 02-23, so an isoWeekday(1) anchor named the week before the row.
+		const grid = getMonthGrid(moment("2026-03-15"), 0, WEEK_FORMAT);
+		const row = grid.find((w) => w.days[0].date.format("YYYY-MM-DD") === "2026-03-01");
+		const path = computeNotePath(getWeekAnchor(row!.days), weekConfig, vaultConfig);
+		expect(row?.weekNumber).toBe(moment("2026-03-01").week());
+		expect(path).toContain(`W${String(row!.weekNumber).padStart(2, "0")}`);
 	});
 });
