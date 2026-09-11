@@ -2,6 +2,12 @@ export interface NoteFile {
 	path: string;
 }
 
+/** Obsidian's saved fold state for one file: which line ranges are collapsed. */
+export interface FoldState {
+	folds: { from: number; to: number }[];
+	lines: number;
+}
+
 export interface VaultPort {
 	/**
 	 * The object that stands for the vault behind this port.
@@ -21,4 +27,7 @@ export interface VaultPort {
 	createFile(path: string, content: string): Promise<NoteFile>;
 	readFile(file: NoteFile): Promise<string>;
 	getTemplateFile(templatePath: string): NoteFile | null;
+	/** The fold state saved for this file, or null when it has none. */
+	readFoldState(file: NoteFile): FoldState | null;
+	applyFoldState(file: NoteFile, foldState: FoldState): Promise<void>;
 }

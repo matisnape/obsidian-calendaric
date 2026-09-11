@@ -83,7 +83,14 @@ export default class CalendaricPlugin extends Plugin {
 				// Create silently — bypass confirmBeforeCreate on startup
 				// Only day/week notes are supported for creation; month/quarter/year are not yet implemented
 				if (key !== "day" && key !== "week") break;
-				file = await createNote(path, date, key, config, new ObsidianVaultAdapter(this.app));
+				file = await createNote(
+					path,
+					date,
+					key,
+					config,
+					new ObsidianVaultAdapter(this.app),
+					(message) => new Notice(message),
+				);
 			}
 
 			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app), path);

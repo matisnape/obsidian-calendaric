@@ -1,6 +1,6 @@
 import type { Moment } from "moment";
 import type { PeriodicConfig } from "../types";
-import type { NoteFile, VaultPort } from "../adapters/vaultPort";
+import type { FoldState, NoteFile, VaultPort } from "../adapters/vaultPort";
 import { folderChainSegments, hasUnusableSegment } from "./noteUtils";
 import { substituteTemplateTokens } from "./templateTokens";
 
@@ -10,6 +10,10 @@ type Granularity = "day" | "week";
  * Create a periodic note at the given path for the given date.
  * If a template is configured, its content is read and tokens substituted
  * before the file is created.
+ *
+ * `warn` carries a template problem to wherever the user can see it. It stays
+ * optional because a template that cannot be read must never cost the user the
+ * note, so a caller with nowhere to show a warning still gets a note.
  *
  * Does NOT open the file — that's the caller's responsibility.
  * Does NOT compute the path — that's the caller's responsibility too, via
@@ -22,12 +26,19 @@ export async function createNote(
 	granularity: Granularity,
 	config: PeriodicConfig,
 	vault: VaultPort,
+	warn?: (message: string) => void,
 ): Promise<NoteFile> {
 	const folder = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
 	await ensureFolderChain(folder, vault);
 
-	const content = await buildNoteContent(date, granularity, config, path, vault);
-	return await vault.createFile(path, content);
+	const template = await readTemplate(date, granularity, config, path, vault, warn);
+	const file = await vault.createFile(path, template.content);
+
+	// The fold state describes lines, so it can only be attached once those lines
+	// exist as a file.
+	if (template.foldState) await vault.applyFoldState(file, template.foldState);
+
+	return file;
 }
 
 /**
@@ -63,20 +74,54 @@ async function ensureFolderChain(folder: string, vault: VaultPort): Promise<void
 	}
 }
 
-async function buildNoteContent(
+interface NoteTemplate {
+	content: string;
+	foldState: FoldState | null;
+}
+
+/** What a note starts from when no template applies: nothing, and no folds. */
+const BLANK_NOTE: NoteTemplate = { content: "", foldState: null };
+
+/**
+ * Read the configured template and expand its tokens.
+ *
+ * Every way the template can fail to arrive ends in a blank note rather than a
+ * rejection, because the note is the thing the user asked for and the template
+ * is a convenience on top of it. A missing configuration is silent; a template
+ * that was configured and then could not be read is the case the user has to
+ * hear about, so it warns and names the path it tried.
+ */
+async function readTemplate(
 	date: Moment,
 	granularity: Granularity,
 	config: PeriodicConfig,
 	notePath: string,
 	vault: VaultPort,
-): Promise<string> {
-	const title = notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
+	warn?: (message: string) => void,
+): Promise<NoteTemplate> {
+	if (!config.templatePath) return BLANK_NOTE;
 
-	if (!config.templatePath) return "";
+	const reportUnreadable = (): NoteTemplate => {
+		warn?.(`Calendaric could not read the template: ${config.templatePath}`);
+		return BLANK_NOTE;
+	};
 
 	const templateFile = vault.getTemplateFile(config.templatePath);
-	if (!templateFile) return "";
+	if (!templateFile) return reportUnreadable();
 
-	const raw = await vault.readFile(templateFile);
-	return substituteTemplateTokens(raw, date, granularity, config, title);
+	const title = notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
+
+	try {
+		const raw = await vault.readFile(templateFile);
+		return {
+			content: substituteTemplateTokens(raw, date, granularity, config, title),
+			foldState: vault.readFoldState(templateFile),
+		};
+	} catch (error) {
+		// The vault named the file and then refused it — deleted between the two
+		// calls, or unreadable. The reason only reaches the console; the user gets
+		// the note and the warning.
+		console.error(`Calendaric could not read the template: ${config.templatePath}`, error);
+		return reportUnreadable();
+	}
 }

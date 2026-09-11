@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import moment from "moment";
 import { createNote } from "./noteCreate";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
@@ -18,13 +18,15 @@ function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 const DATE = moment("2026-04-13T14:30:00");
 
 describe("createNote", () => {
-	it("creates the file at the given path with no template configured", async () => {
+	it("creates the file with empty content when no template is configured (AC-NOTE-05.2)", async () => {
 		const vault = new FakeVaultPort();
+		const warn = vi.fn();
 
-		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault);
+		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, warn);
 
 		expect(file.path).toBe("journal/daily/2026-04-13.md");
 		expect(vault.contentAt("journal/daily/2026-04-13.md")).toBe("");
+		expect(warn).not.toHaveBeenCalled();
 	});
 
 	it("creates the missing target folder before creating the file (AC-ARCH-03.3: target folder missing)", async () => {
@@ -132,7 +134,7 @@ describe("createNote", () => {
 		expect(vault.createdFolders).toEqual([]);
 	});
 
-	it("renders the configured template into the note content", async () => {
+	it("renders the configured template into the note content (AC-NOTE-05.1)", async () => {
 		const vault = new FakeVaultPort();
 		vault.seedFile("Templates/daily.md", "# {{title}}");
 
@@ -147,7 +149,7 @@ describe("createNote", () => {
 		expect(vault.contentAt(file.path)).toBe("# 2026-04-13");
 	});
 
-	it("creates an empty note when the configured template is absent (AC-ARCH-03.3: template absent)", async () => {
+	it("creates an empty note when the configured template is absent (AC-ARCH-03.3: template absent, AC-NOTE-05.3)", async () => {
 		const vault = new FakeVaultPort();
 
 		const file = await createNote(
@@ -191,5 +193,100 @@ describe("createNote", () => {
 		await expect(
 			createNote("journal/daily/Invalid-date.md", moment.invalid(), "day", makeConfig(), vault),
 		).rejects.toThrow("Unparseable date string");
+	});
+	it("expands every token the template carries, not only the title (AC-NOTE-05.1)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile(
+			"Templates/daily.md",
+			"# {{title}}\n[[{{yesterday}}]] <- {{date}} -> [[{{tomorrow}}]]",
+		);
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+		);
+
+		expect(vault.contentAt(file.path)).toBe(
+			"# 2026-04-13\n[[2026-04-12]] <- 2026-04-13 -> [[2026-04-14]]",
+		);
+	});
+
+	it("warns by name about a template that cannot be found (AC-NOTE-05.3)", async () => {
+		const vault = new FakeVaultPort();
+		const warn = vi.fn();
+
+		await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/missing.md" }),
+			vault,
+			warn,
+		);
+
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0][0]).toContain("Templates/missing.md");
+	});
+
+	// The metadata cache can still name a template that the read then fails on —
+	// a file deleted between the two calls, or one Obsidian cannot open.
+	it("still creates an empty note when the template read fails (AC-NOTE-05.3)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+		vault.failReadFile("Templates/daily.md", new Error("EIO: read failed"));
+		const warn = vi.fn();
+		// The reason behind the warning belongs in the console, so it is captured
+		// here rather than printed through the suite's output.
+		const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			warn,
+		);
+
+		expect(vault.contentAt(file.path)).toBe("");
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn.mock.calls[0][0]).toContain("Templates/daily.md");
+		expect(logged).toHaveBeenCalledTimes(1);
+		logged.mockRestore();
+	});
+
+	it("applies the template's saved fold state to the new note (AC-NOTE-05.4)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+		const foldState = { folds: [{ from: 0, to: 4 }], lines: 12 };
+		vault.seedFoldState("Templates/daily.md", foldState);
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+		);
+
+		expect(vault.appliedFoldStates).toEqual([{ path: file.path, foldState }]);
+	});
+
+	it("applies no fold state when the template has none saved (AC-NOTE-05.4)", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+
+		await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+		);
+
+		expect(vault.appliedFoldStates).toEqual([]);
 	});
 });
