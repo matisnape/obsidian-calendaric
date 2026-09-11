@@ -274,7 +274,7 @@
       "story": "As someone keeping a periodic journal, I want creating a note to work the same reliable way for every granularity Calendaric supports, so that switching between daily, weekly, monthly, and yearly notes never surprises me with a create that silently does nothing or crashes.",
       "rationale": "The old code has three different, inconsistent answers for what happens when a create goes wrong; users need one predictable answer.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:create-daily-note",
         "dni:create-weekly-note",
