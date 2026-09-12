@@ -575,7 +575,7 @@
       "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
       "rationale": "Two P1 defects show why this matters. An Obsidian 1.13 change to the settings dialog crashed the Periodic Notes settings pane. Another integration read a state container as a plain object instead of using its accessor or subscription API, so a shipped feature always returned nothing.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "forks:settings-tab-crash-guard-1.13"
       ],
