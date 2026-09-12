@@ -484,7 +484,7 @@
       "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
       "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:should-use-periodic-notes-settings",
         "dni:detect-periodic-notes-plugin",
@@ -514,8 +514,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "PASS. Precedence: src/settings/importSource.test.ts 'AC-MIG-05.1: day resolves to Periodic Notes even while core Daily Notes is enabled' and 'AC-MIG-05.1: every granularity the active calendar set enables resolves to Periodic Notes'. Shape: the active set is never read as an object; the plugin's own calendarSetManager.getActiveGranularities() is asked, the surface recorded verified in docs/mapping/sources/pn.json api_surface (src/calendarSetManager.ts:124-127) and called the same way by the Calendar fork (docs/mapping/sources/cal.json, capability periodic-notes-monthly-plugin-resolution); guarded by src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.1: takes the answer from the calendar set manager, not from the settings object'. Mutations: restricting the Periodic Notes branch to non-day granularities in importSource.ts turned 16 passed into 2 failed | 14 passed; making the adapter read plugin['settings'] instead of plugin['calendarSetManager'] turned 16 passed into 7 failed | 9 passed. The Calendar plugin cannot override anything because no Calendar surface is read: companionPluginPort.ts exposes the core Daily Notes plugin and Periodic Notes only. Not settled here: a live vault running a Periodic Notes build other than the surveyed 0.0.17 fork -- AC-MIG-05.4 is what stops such a build from producing an import."
         },
         {
           "id": "AC-MIG-05.2",
@@ -526,8 +526,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.2: day resolves to core Daily Notes when the Periodic Notes active set leaves day off', 'AC-MIG-05.2: day resolves to core Daily Notes when Periodic Notes is absent', 'AC-MIG-05.2: day reports no source when the core Daily Notes plugin is disabled' and 'AC-MIG-05.2: no granularity beyond day falls back to core Daily Notes'. Mutation: moving the fallback from day to week in src/settings/importSource.ts turned 16 passed into 4 failed | 12 passed.",
           "failure_path": true
         },
         {
@@ -540,8 +540,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.3: reports every granularity as having no external configuration', 'AC-MIG-05.3: does not throw when neither predecessor plugin can be read' and 'AC-MIG-05.3: does not throw when a predecessor plugin is installed but broken'; the adapter half is src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.3: reports the plugin as absent when neither id is installed'. Mutation: throwing instead of returning the no-source answer in src/settings/importSource.ts turned 16 passed into 15 failed | 1 passed.",
           "failure_path": true
         },
         {
@@ -553,8 +553,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.4: reports a mismatch when the plugin carries no calendar set manager', 'AC-MIG-05.4: reports a mismatch when getActiveGranularities is missing' and 'AC-MIG-05.4: reports a mismatch when the plugin throws instead of answering' (the real manager throws 'No active calendar set found'); the resolution half is src/settings/importSource.test.ts 'AC-MIG-05.4: every granularity reads as not externally configured' and 'AC-MIG-05.4: day still falls back to core Daily Notes'. Mutations: dropping the missing-manager guard in obsidianPeriodicNotesAdapter.ts turned 16 passed into 1 failed | 15 passed; treating an unreadable read as governing in importSource.ts turned 16 passed into 7 failed | 9 passed.",
           "failure_path": true
         },
         {
@@ -566,8 +566,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.5: answers for every granularity Calendaric knows, from the one list' and 'AC-MIG-05.5: reads each predecessor plugin once for the whole resolution'; resolveImportSources loops GRANULARITIES from src/settings/model.ts, so day, week, month, quarter and year share one routine. Mutation: replacing that list with ['day'] in src/settings/importSource.ts turned 16 passed into 8 failed | 8 passed. Note for the consumer: the routine is not yet reached from src/main.ts -- the import that calls it is US-MIG-04 / US-MIG-06."
         }
       ],
       "decisions": [
