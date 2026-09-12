@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { App } from "obsidian";
 import { ObsidianCompanionPluginAdapter } from "./obsidianCompanionPluginAdapter";
+import { decideDailyNotesCard } from "../settings/dailyNotesImport";
 
 function makeApp(plugin: unknown): App {
 	return {
@@ -202,24 +203,6 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 			expect(result.problem).toMatch(/options/i);
 		});
 
-		// AC-ARCH-04.4: the defect this story was written for — a state container
-		// that needs an accessor, read as if it were a plain record of values.
-		it("reports a mismatch when the options container requires a subscribe accessor", () => {
-			const result = read(validPlugin({ subscribe: () => () => undefined }));
-			expect(result.ok).toBe(false);
-			if (result.ok) return;
-			expect(result.reason).toBe("mismatch");
-			expect(result.problem).toMatch(/accessor/i);
-		});
-
-		it("reports a mismatch when the options container requires a get accessor", () => {
-			const result = read(validPlugin({ get: () => ({ format: "YYYY" }) }));
-			expect(result.ok).toBe(false);
-			if (result.ok) return;
-			expect(result.reason).toBe("mismatch");
-			expect(result.problem).toMatch(/accessor/i);
-		});
-
 		// A number where a format string belongs is a wrong assumption about the
 		// companion plugin, so it is refused rather than read through as "".
 		it.each(["format", "folder", "template"])("reports a mismatch when %s is not a string", (key) => {
@@ -255,6 +238,116 @@ describe("ObsidianCompanionPluginAdapter.readDailyNotes", () => {
 			expect(result.ok).toBe(true);
 			if (!result.ok || !result.value.enabled) return;
 			expect(result.value.format).toBe("");
+		});
+	});
+
+	// AC-ARCH-04.4 had this adapter REFUSE a state container, on the grounds that
+	// a container is not a record of values. AC-ARCH-07.2 is the later and
+	// narrower rule: a container is readable, through the API it publishes.
+	// Refusing one leaves the read just as broken as reading it wrong, and the
+	// story's own Why names reading it wrong as the shipped P1. Every other shape
+	// AC-ARCH-04.4 covers -- a missing method, an absent instance, a non-string
+	// value, a throwing getter -- is still refused, and still tested above.
+	describe("AC-ARCH-07.2: a state container is read through its own accessor", () => {
+		/** A Svelte-style store: the value exists only inside the subscription. */
+		function store(value: unknown) {
+			return {
+				subscribe(this: unknown, run: (v: unknown) => void) {
+					run(value);
+					return () => undefined;
+				},
+			};
+		}
+
+		it("AC-ARCH-07.2: reads a store's values through subscribe rather than as properties", () => {
+			const result = read(validPlugin(store({ format: "YYYY-MM-DD", folder: "Daily", template: "t/d" })));
+			expect(result.ok).toBe(true);
+			if (!result.ok || !result.value.enabled) return;
+			expect(result.value).toMatchObject({ format: "YYYY-MM-DD", folder: "Daily", template: "t/d" });
+		});
+
+		// The store's own method may read state off its receiver, exactly as the
+		// registry's getPluginById does.
+		it("AC-ARCH-07.2: subscribes with the container as the receiver", () => {
+			let receiverId = "";
+			const options = {
+				id: "options-store",
+				subscribe(this: { id: string }, run: (v: unknown) => void) {
+					receiverId = this?.id ?? "";
+					run({ format: "YYYY" });
+					return () => undefined;
+				},
+			};
+			read(validPlugin(options));
+			expect(receiverId).toBe("options-store");
+		});
+
+		// The settings tab re-reads on every render. A subscription left open per
+		// render is a leak the user never sees and never recovers from.
+		it("AC-ARCH-07.2: releases the subscription once it has the published value", () => {
+			const unsubscribe = vi.fn();
+			const options = {
+				subscribe: (run: (v: unknown) => void) => {
+					run({ format: "YYYY" });
+					return unsubscribe;
+				},
+			};
+			read(validPlugin(options));
+			expect(unsubscribe).toHaveBeenCalledTimes(1);
+		});
+
+		it("AC-ARCH-07.2: reads a container that publishes through get() through get()", () => {
+			const result = read(validPlugin({ get: () => ({ format: "YYYY", folder: "f", template: "t" }) }));
+			expect(result.ok).toBe(true);
+			if (!result.ok || !result.value.enabled) return;
+			expect(result.value).toMatchObject({ format: "YYYY", folder: "f", template: "t" });
+		});
+	});
+
+	describe("AC-ARCH-07.3: a container that publishes nothing usable reads as unavailable", () => {
+		it("AC-ARCH-07.3: returns a typed mismatch when the store publishes a non-record", () => {
+			const options = {
+				subscribe: (run: (v: unknown) => void) => {
+					run("not a settings object");
+					return () => undefined;
+				},
+			};
+			const result = read(validPlugin(options));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/subscribe/);
+		});
+
+		// A store that publishes nothing synchronously is not one this code can
+		// read, and waiting for it would block the settings tab.
+		it("AC-ARCH-07.3: returns a typed mismatch when subscribe publishes no value at all", () => {
+			const options = { subscribe: () => () => undefined };
+			const result = read(validPlugin(options));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+		});
+
+		it("AC-ARCH-07.3: returns a typed mismatch when get() hands back a non-record", () => {
+			const result = read(validPlugin({ get: () => undefined }));
+			expect(result.ok).toBe(false);
+			if (result.ok) return;
+			expect(result.reason).toBe("mismatch");
+			expect(result.problem).toMatch(/get/);
+		});
+
+		// The criterion's second clause: the feature that depends on this read is
+		// withdrawn and named, never left on screen offering an import that would
+		// store three empty strings.
+		it("AC-ARCH-07.3: the import card reads as unreadable, never as an offer", () => {
+			const options = { subscribe: () => () => undefined };
+			const companion = new ObsidianCompanionPluginAdapter(makeApp(validPlugin(options)));
+			const card = decideDailyNotesCard(companion, {
+				hasMigratedDailyNoteSettings: false,
+				day: { enabled: true, format: "", folder: "", templatePath: "" },
+			});
+			expect(card.kind).toBe("unreadable");
 		});
 	});
 

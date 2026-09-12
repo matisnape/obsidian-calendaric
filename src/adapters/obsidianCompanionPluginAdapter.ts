@@ -9,10 +9,14 @@ import type {
 const DAILY_NOTES_ID = "daily-notes";
 
 /**
- * Names the accessor contracts a state container uses instead of exposing its
- * values directly. Reading such a container as a plain record yields undefined
- * for every field, which is how a feature can ship broken for every user while
- * every call appears to succeed.
+ * The accessor contracts a state container publishes its values through instead
+ * of exposing them directly. Reading such a container as a plain record yields
+ * undefined for every field, which is how a feature ships broken for every user
+ * while every call still appears to succeed.
+ *
+ * `subscribe` comes first because it is the Svelte store contract the recorded
+ * defect was about, and a store carrying both publishes the same value through
+ * either one.
  */
 const ACCESSOR_KEYS = ["subscribe", "get"] as const;
 
@@ -34,6 +38,55 @@ function mismatch<T>(problem: string): CompanionPluginRead<T> {
 
 function describe(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * AC-ARCH-07.2: reads a state container the way the container itself requires.
+ *
+ * A Svelte-style store keeps its value inside the subscription and exposes
+ * nothing as a property, so `options.format` is undefined for every field while
+ * the read still reports success -- the P1 this port was written to stop.
+ * Detecting such a container and refusing it leaves the read just as broken, so
+ * the accessor is used rather than merely recognised. A container with no
+ * accessor is already the record of values and is returned unchanged.
+ */
+function readStateContainer(container: Record<string, unknown>): CompanionPluginRead<Record<string, unknown>> {
+	const accessor = ACCESSOR_KEYS.find((key) => typeof container[key] === "function");
+	if (accessor === undefined) return { ok: true, value: container };
+
+	const published = accessor === "subscribe" ? readBySubscribe(container) : readByGet(container);
+
+	// AC-ARCH-07.3: the accessor ran and still produced nothing this code can
+	// read. Reading on would store an empty format, folder and template over the
+	// user's own while reporting a successful import.
+	if (!isRecord(published)) {
+		return mismatch(
+			`The core Daily Notes plugin's options container published no readable values through its '${accessor}' accessor.`,
+		);
+	}
+
+	return { ok: true, value: published };
+}
+
+/**
+ * The store contract: subscribing publishes the current value at once, and
+ * hands back the unsubscriber. The settings tab re-reads on every render, so a
+ * subscription left open per render is a leak the user can neither see nor
+ * recover from.
+ */
+function readBySubscribe(container: Record<string, unknown>): unknown {
+	const subscribe = container["subscribe"] as (this: unknown, run: (value: unknown) => void) => unknown;
+	let published: unknown;
+	const release = subscribe.call(container, (value) => {
+		published = value;
+	});
+	if (typeof release === "function") (release as (this: unknown) => void).call(container);
+	return published;
+}
+
+function readByGet(container: Record<string, unknown>): unknown {
+	const get = container["get"] as (this: unknown) => unknown;
+	return get.call(container);
 }
 
 /**
@@ -138,16 +191,13 @@ export class ObsidianCompanionPluginAdapter implements CompanionPluginPort {
 			return mismatch("The core Daily Notes plugin exposes no options record.");
 		}
 
-		const accessor = ACCESSOR_KEYS.find((key) => typeof options[key] === "function");
-		if (accessor !== undefined) {
-			return mismatch(
-				`The core Daily Notes plugin stores its options behind a '${accessor}' accessor, not as readable values.`,
-			);
-		}
+		// AC-ARCH-07.2: whatever the container is, it is read through its own API.
+		const published = readStateContainer(options);
+		if (!published.ok) return published;
 
 		const settings: Record<SettingKey, string> = { format: "", folder: "", template: "" };
 		for (const key of SETTING_KEYS) {
-			const value = options[key];
+			const value = published.value[key];
 			// An unstored value is ordinary and falls back downstream (AC-MIG-01.3),
 			// but a value of the wrong type is a wrong assumption and is refused.
 			if (value === undefined || value === null) continue;
