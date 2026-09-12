@@ -15,6 +15,7 @@ import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings/model";
+import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import type CalendaricPlugin from "./main";
 
 /** The core Daily Notes plugin, with its options behind a store. */
@@ -35,7 +36,13 @@ function render(options: unknown): HTMLElement {
 		saveSettings: () => Promise.resolve(),
 		onSettingsChange: () => undefined,
 	} as unknown as CalendaricPlugin;
-	const tab = new CalendaricSettingsTab(app, plugin);
+	// The real adapter, over the broken host above: src/main.ts constructs it
+	// exactly this way, and the chain under test is what it reads out of that
+	// host, not where the `new` happens.
+	const tab = new CalendaricSettingsTab(app, plugin, {
+		companion: new ObsidianCompanionPluginAdapter(app),
+		desktop: { openPluginFile: () => undefined },
+	});
 	tab.display();
 	return tab.containerEl;
 }

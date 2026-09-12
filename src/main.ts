@@ -13,6 +13,8 @@ import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
+import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
+import { ElectronDesktopShellAdapter } from "./adapters/electronDesktopShellAdapter";
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
 import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
@@ -62,7 +64,15 @@ export default class CalendaricPlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
 
-		this.addSettingTab(new CalendaricSettingsTab(this.app, this));
+		// Both host capabilities the settings screen needs are constructed here
+		// and handed over as ports. The screen names neither implementation,
+		// which is what keeps the view off the adapter layer (AC-ARCH-01.1).
+		this.addSettingTab(
+			new CalendaricSettingsTab(this.app, this, {
+				companion: new ObsidianCompanionPluginAdapter(this.app),
+				desktop: new ElectronDesktopShellAdapter(this.app),
+			}),
+		);
 
 		// Lets the 'Page preview' plugin list the grid as a hover source and gate it on Mod.
 		this.registerHoverLinkSource(HOVER_LINK_SOURCE, {

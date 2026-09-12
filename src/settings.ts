@@ -3,7 +3,8 @@ import type { Granularity, PeriodicConfig } from "./types";
 import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
-import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
+import type { CompanionPluginPort } from "./adapters/companionPluginPort";
+import type { DesktopShellPort } from "./adapters/desktopShellPort";
 import type CalendaricPlugin from "./main";
 
 // The configuration model lives in ./settings/model, which knows nothing about
@@ -24,6 +25,9 @@ const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 
 /** The granularities whose settings the screen can edit today. */
 type ActiveGranularity = "day" | "week";
+
+/** The format and template guide, shipped inside the plugin's own folder. */
+const FORMAT_GUIDE_PATH = "docs/guide.md";
 
 const GRANULARITY_LABELS: Record<Granularity, string> = {
 	day: "Daily Notes",
@@ -89,12 +93,28 @@ function renderGuardedSection(containerEl: HTMLElement, label: string, render: (
 	}
 }
 
+/**
+ * What this screen needs from outside its own layer, as interfaces.
+ *
+ * Both are host capabilities, and neither implementation is named here:
+ * src/main.ts is where a port meets the adapter behind it, which is the one
+ * allowed direction US-ARCH-01 is about.
+ */
+export interface SettingsTabPorts {
+	/** Reads and writes another plugin's settings. Typed because its shape is not ours. */
+	readonly companion: CompanionPluginPort;
+	/** Opens a file in the operating system. Absent on mobile. */
+	readonly desktop: DesktopShellPort;
+}
+
 export class CalendaricSettingsTab extends PluginSettingTab {
 	private plugin: CalendaricPlugin;
+	private ports: SettingsTabPorts;
 
-	constructor(app: App, plugin: CalendaricPlugin) {
+	constructor(app: App, plugin: CalendaricPlugin, ports: SettingsTabPorts) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.ports = ports;
 	}
 
 	display(): void {
@@ -104,7 +124,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		// AC-ARCH-07.1: one guard per section, so a host change costs the section
 		// that touches it and nothing else.
 		renderGuardedSection(containerEl, "Daily Notes import", () => {
-			renderDailyNotesImportCard(containerEl, this.plugin, new ObsidianCompanionPluginAdapter(this.plugin.app), {
+			renderDailyNotesImportCard(containerEl, this.plugin, this.ports.companion, {
 				save: () => this.save(),
 				refresh: () => this.display(),
 			});
@@ -249,12 +269,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const guideLink = formatDesc.createEl("a", { text: "Format & template guide", href: "#" });
 		guideLink.addEventListener("click", (e) => {
 			e.preventDefault();
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const basePath: string = (this.app.vault.adapter as any).basePath ?? "";
-			const guidePath = `${basePath}/.obsidian/plugins/obsidian-calendaric/docs/guide.md`;
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const { shell } = (window as any).require("electron") as { shell: { openPath: (p: string) => void } };
-			shell.openPath(guidePath);
+			this.ports.desktop.openPluginFile(FORMAT_GUIDE_PATH);
 		});
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {
