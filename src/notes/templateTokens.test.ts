@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import moment from "moment";
 import { substituteTemplateTokens } from "./templateTokens";
+import { createNote } from "./noteCreate";
+import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import type { PeriodicConfig } from "../types";
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
@@ -269,5 +271,154 @@ describe("substituteTemplateTokens — weekly", () => {
 		const config = makeConfig({ format: "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}" });
 		const result = substituteTemplateTokens("{{date}}", WEEKLY_DATE, "week", config, "t");
 		expect(result).toBe("2026-W16, 13.04 – 19.04");
+	});
+});
+
+describe("substituteTemplateTokens — leaves what it does not recognise (US-TPL-06)", () => {
+	// Every test here pairs the unrecognised text with a token that IS recognised,
+	// or picks text a loosened pattern would eat. A "leave it alone" assertion on
+	// its own still passes when substitution does nothing at all, which is the one
+	// failure these tests exist to catch.
+
+	it("AC-TPL-06.1: replaces only the recognised token and leaves a different template engine's syntax untouched", () => {
+		// <%* ... %> is Templater's own scripting syntax, not this plugin's. Only
+		// the {{date}} token belongs to us; everything else must survive verbatim,
+		// including the whitespace and punctuation around it.
+		const template = "{{date}} <%* tp.file.rename(tp.file.title) %>";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("2026-04-13 <%* tp.file.rename(tp.file.title) %>");
+	});
+
+	it("AC-TPL-06.1: leaves another engine's syntax alone even when it carries braces of its own", () => {
+		// Templater scripting is JavaScript, so a block of it contains { } pairs.
+		// A pattern that reached for the next closing brace rather than for '}}'
+		// would cut this block open.
+		const template = "<% if (tp.date.now()) { %>a{{date}}b<% } %>";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("<% if (tp.date.now()) { %>a2026-04-13b<% } %>");
+	});
+
+	it("AC-TPL-06.1, AC-TPL-06.2: substitutes a recognised token immediately next to an unrecognised, similarly-shaped one", () => {
+		// {{dateTime}} is not a token this plugin knows — it only resembles {{date}}
+		// by sharing a prefix. Sitting right next to a real {{date}} is the case a
+		// prefix-based or non-anchored match would get wrong.
+		const template = "{{date}} {{dateTime}}";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("2026-04-13 {{dateTime}}");
+	});
+
+	it("AC-TPL-06.2: leaves an unrecognised {{...}} token exactly as written, never as an empty string", () => {
+		const result = substituteTemplateTokens("{{fooBar}}|{{date}}", DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("{{fooBar}}|2026-04-13");
+		expect(result).toContain("{{fooBar}}");
+	});
+
+	it("AC-TPL-06.2: leaves a token name that differs from a recognised one only by case or spacing", () => {
+		// Every name here is one edit away from {{date}}. A case-insensitive or
+		// whitespace-tolerant match would claim all four.
+		const template = "{{DATE}} {{ date }} {{date }} {{ date}} {{date}}";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("{{DATE}} {{ date }} {{date }} {{ date}} 2026-04-13");
+	});
+
+	it("AC-TPL-06.2: leaves an unrecognised token untouched even where it reads as markdown code", () => {
+		// The substitution runs over the raw string with no awareness of markdown
+		// structure, so a code span or fence carries no special protection — and
+		// needs none, because an unrecognised token is left alone everywhere. The
+		// {{date}} outside the fence is what shows substitution ran at all.
+		const template = "{{date}}\nUse `{{templaterDate}}` inside a fence:\n```\n{{templaterDate}}\n```";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("2026-04-13\nUse `{{templaterDate}}` inside a fence:\n```\n{{templaterDate}}\n```");
+	});
+
+	it("AC-TPL-06.2: keeps the surplus braces of a doubled delimiter around the token it recognises inside them", () => {
+		// {{{date}}} carries a recognised {{date}} inside a brace this plugin has no
+		// meaning for. The token is substituted and the surplus brace stays — the
+		// criterion forbids deleting it, not reading the token it wraps.
+		const result = substituteTemplateTokens("{{{date}}}", DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("{2026-04-13}");
+	});
+
+	it("AC-TPL-06.3: leaves a template with no recognised tokens unchanged, byte for byte", () => {
+		// Every line is something a loosened pattern would claim: a token-shaped
+		// name, another engine's syntax, a stray opening delimiter. The leading and
+		// trailing newlines are part of "byte for byte" — a comparison against
+		// trimmed content would not see either one change.
+		const template = "\n# Notes\n{{fooBar}} <%* tp.file.title %>\n{{ date }} and a stray {{date\nplain line\n";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe(template);
+	});
+
+	it("AC-TPL-06.5: leaves a stray, never-closed '{{date' delimiter exactly as written", () => {
+		const template = "prefix {{date suffix {{date}}";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("prefix {{date suffix 2026-04-13");
+	});
+
+	it("AC-TPL-06.5: does not let an unclosed '{{date:' reach past itself for the next token's closing braces", () => {
+		// '{{date:DD ' has no '}}' of its own. The next '}}' in the body belongs to a
+		// different token, so a format group that may cross '{' pairs the two halves
+		// up, formats the text between them as a moment pattern, and destroys both.
+		const template = "{{date:DD {{date:MM}}";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("{{date:DD 04");
+	});
+
+	it("AC-TPL-06.5: does not let an unclosed offset token reach past itself for the next token's closing braces", () => {
+		// The same hole in the offset pattern's optional format group.
+		const template = "{{date+1d:DD {{date:MM}}";
+		const result = substituteTemplateTokens(template, DAILY_DATE, "day", makeConfig(), "t");
+		expect(result).toBe("{{date+1d:DD 04");
+	});
+});
+
+describe("createNote — the file's first content is already substituted (US-TPL-06)", () => {
+	// These two live beside the substitution they are about rather than in
+	// noteCreate.test.ts, because what they pin is the token system's contract
+	// with a second template engine: the note reaches the vault substituted or it
+	// does not reach it at all.
+	const noWarn = () => undefined;
+
+	it("AC-TPL-06.4: writes the fully substituted content, so an external engine's first look is never the raw template", async () => {
+		// Templater and the core Templates plugin both act on a file the moment it
+		// is created. Whatever they read is whatever createFile was handed, so that
+		// one argument is the whole of this criterion.
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{date}}\n{{title}} <%* tp.file.title %>\n{{fooBar}}");
+		const createFile = vi.spyOn(vault, "createFile");
+
+		await createNote(
+			"journal/2026-04-13.md",
+			DAILY_DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			noWarn,
+		);
+
+		expect(createFile).toHaveBeenCalledWith(
+			"journal/2026-04-13.md",
+			"# 2026-04-13\n2026-04-13 <%* tp.file.title %>\n{{fooBar}}",
+		);
+	});
+
+	it("AC-TPL-06.4: writes the note's content once, never a pre-substitution version followed by a substituted one", async () => {
+		// A second write would be a second create event, and the engine would have
+		// already run against the first one.
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{date}}");
+		const createFile = vi.spyOn(vault, "createFile");
+
+		await createNote(
+			"journal/2026-04-13.md",
+			DAILY_DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			noWarn,
+		);
+
+		expect(createFile).toHaveBeenCalledTimes(1);
+		expect(createFile).toHaveBeenNthCalledWith(1, "journal/2026-04-13.md", "# 2026-04-13");
 	});
 });

@@ -464,7 +464,7 @@
       "story": "As someone whose template mixes this plugin's own tokens with a full template engine's own syntax, I want substitution to touch only the tokens it recognises, so that the engine's own scripting is still intact for it to run once the file exists.",
       "rationale": "The token system and a full template engine have to coexist inside the same file; the only way that works is if each one only ever touches what it understands.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [
         "vault:daily-write-frontmatter",
@@ -493,8 +493,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:283 (a {{date}} beside Templater's <%* ... %> block), :292 (the same with braces inside the block, which a pattern reaching for the next single '}' would cut open) and :301 (a recognised token adjacent to the similarly-named {{dateTime}}). Each asserts the whole output string verbatim, so any deletion around the token is caught. Mutation-checked: widening the plain pass at src/notes/templateTokens.ts:85 to /\\{\\{date\\}\\}.*/g turns 49 passed into 6 failed, and all three of these are among them."
         },
         {
           "id": "AC-TPL-06.2",
@@ -506,8 +506,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:310 ({{fooBar}} beside a real {{date}}, with an explicit toContain for the 'never an empty string' half), :316 (four names one edit from {{date}} -- {{DATE}}, {{ date }}, {{date }}, {{ date}}), :324 (a token-shaped string in a code span and a fence, which get no special protection and need none) and :334 (the surplus brace of {{{date}}} survives the token read inside it). Every case pairs the unrecognised text with a token that IS substituted, so a no-op implementation fails rather than passes. Mutation-checked twice: loosening the plain pass to /\\{\\{\\s*\\w+\\s*\\}\\}/gi reddens :310, :316, :324 and :301; making it swallow surrounding braces reddens :334 alone.",
           "failure_path": true
         },
         {
@@ -519,8 +519,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:342. The body is chosen so that every line is something a loosened pattern would claim -- a token-shaped name, another engine's syntax, a spaced {{ date }}, a stray unclosed {{date -- and the leading and trailing newlines are asserted too, so a trimmed comparison would not pass. Mutation-checked: loosening the plain pass at src/notes/templateTokens.ts:85 to /\\{\\{\\s*\\w+\\s*\\}\\}/gi reddens it."
         },
         {
           "id": "AC-TPL-06.4",
@@ -532,8 +532,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:382 and :405, which drive createNote() against a FakeVaultPort and spy on createFile. Whatever an external engine reads is whatever that one call was handed, so the argument IS the criterion: :382 asserts the fully substituted string (recognised tokens expanded, Templater syntax and {{fooBar}} intact), :405 asserts exactly one call and that it carries the substituted content, so no pre-substitution version reaches the vault first. They live in this file rather than noteCreate.test.ts because what they pin is the token system's boundary with a second engine. Production: src/notes/noteCreate.ts substitutes inside readTemplate() and the result is the only thing handed to vault.createFile(). Mutation-checked twice: making readTemplate return the raw template reddens both; inserting an extra createFile of the unsubstituted body before the real one reddens :405."
         },
         {
           "id": "AC-TPL-06.5",
@@ -545,8 +545,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "This criterion was FAILING and is now fixed. Both format groups used [^}]+, so an unclosed '{{date:DD ' reached past itself, paired with the closing braces of the NEXT token, and formatted the text between the two halves as a moment pattern -- '{{date:DD {{date:MM}}' became '13 {{1pmt1:04', destroying both. Fix: [^{}]+ in the plain custom-format pass (src/notes/templateTokens.ts:81) and in DATE_OFFSET_RE (:35), so neither can cross a '{'. vitest: src/notes/templateTokens.test.ts:352 (a stray {{date followed by a real {{date}}), :358 (the custom-format case, written red before the fix) and :367 (the offset case, likewise). Mutation-checked three ways: reverting either group to [^}]+ reddens its own test alone, and letting the plain pass accept /\\{\\{date[^}]*\\}\\}/g reddens :352.",
           "failure_path": true
         }
       ]
