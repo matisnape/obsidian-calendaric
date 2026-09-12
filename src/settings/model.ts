@@ -282,7 +282,7 @@ export function resolveEffectiveConfig(source: ConfigSource, granularity: Granul
 }
 
 /** Anything that can answer whether a granularity is on: flattened settings, or a stored group. */
-type EnabledSource = Partial<Record<Granularity, { enabled?: boolean }>>;
+export type EnabledSource = Partial<Record<Granularity, { enabled?: boolean }>>;
 
 export function getActiveGranularities(configs: EnabledSource): Granularity[] {
 	return GRANULARITIES.filter((granularity) => configs[granularity]?.enabled === true);
