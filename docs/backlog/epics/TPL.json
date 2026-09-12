@@ -376,7 +376,7 @@
       "story": "As someone whose templates use another plugin to rename, move, or add content to a new note, I want Calendaric to apply its own template only once, so that later changes are not reverted or duplicated.",
       "rationale": "Every template in this vault hands later changes to another plugin. Reapplying Calendaric's template would overwrite or duplicate those changes.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [
         "vault:create-weekly-note-rename-move",
