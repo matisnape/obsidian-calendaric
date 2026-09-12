@@ -255,24 +255,6 @@ const LIFECYCLE = "src/main.ts";
 const isConcreteAdapter = (path: string): boolean =>
 	/^src\/adapters\/[a-z][A-Za-z0-9]*Adapter\.ts$/.test(path);
 
-const isCompanionModule = (path: string): boolean =>
-	path.startsWith("src/adapters/") && /companionplugin/.test(path.toLowerCase());
-
-const layerOf = (path: string): Layer => {
-	if (path === LIFECYCLE) return "lifecycle";
-	if (path.startsWith("src/adapters/")) {
-		if (isCompanionModule(path)) return "integration";
-		return isConcreteAdapter(path) ? "adapter" : "port";
-	}
-	if (path.startsWith("src/ui/")) return "view";
-	// src/settings.ts IS the settings tab. Under src/settings/ a Card or a Modal
-	// draws, and everything else is the configuration model, which is pure. A
-	// new file there counts as domain until its name says it draws -- so an
-	// impure one fails AC-ARCH-01.2 loudly instead of passing unclassified.
-	if (path === "src/settings.ts") return "view";
-	return /^src\/settings\/\w+(Card|Modal)\.ts$/.test(path) ? "view" : "domain";
-};
-
 /**
  * One static import or re-export, up to its module specifier.
  *
@@ -340,6 +322,50 @@ const EDGES: Edge[] = LAYERED.flatMap((from) =>
 		ref.module === null ? [] : [{ from, to: ref.module, typeOnly: ref.typeOnly }],
 	),
 );
+
+/**
+ * The cross-plugin port: the one module where another plugin's shape is written
+ * down, and the only type any other layer may hold that shape as.
+ */
+const COMPANION_PORT = "src/adapters/companionPluginPort.ts";
+
+/**
+ * The integration layer, DERIVED rather than listed: the cross-plugin port, plus
+ * every module under src/adapters/ that depends on it.
+ *
+ * An adapter is in this layer because it implements one of that port's
+ * interfaces, which is what being a cross-plugin adapter means here. Naming the
+ * layer this way is what makes it survive a plugin being added -- an adapter for
+ * a fourth companion lands in the integration layer by importing the port, with
+ * nothing to edit in this file. Spelling it as a name pattern is what went
+ * stale: obsidianPeriodicNotesAdapter.ts landed reading a plugin registry and
+ * was classified as ordinary vault IO, because its name says nothing about
+ * which side of the plugin boundary it stands on.
+ *
+ * Scoped to src/adapters/ on purpose. Domain and view modules import the port
+ * too -- that is the allowed direction, not membership of this layer.
+ */
+const INTEGRATION: ReadonlySet<string> = new Set([
+	COMPANION_PORT,
+	...LAYERED.filter(
+		(path) =>
+			path.startsWith("src/adapters/") &&
+			referencesOf(path).some((ref) => ref.module === COMPANION_PORT),
+	),
+]);
+
+const layerOf = (path: string): Layer => {
+	if (path === LIFECYCLE) return "lifecycle";
+	if (INTEGRATION.has(path)) return "integration";
+	if (path.startsWith("src/adapters/")) return isConcreteAdapter(path) ? "adapter" : "port";
+	if (path.startsWith("src/ui/")) return "view";
+	// src/settings.ts IS the settings tab. Under src/settings/ a Card or a Modal
+	// draws, and everything else is the configuration model, which is pure. A
+	// new file there counts as domain until its name says it draws -- so an
+	// impure one fails AC-ARCH-01.2 loudly instead of passing unclassified.
+	if (path === "src/settings.ts") return "view";
+	return /^src\/settings\/\w+(Card|Modal)\.ts$/.test(path) ? "view" : "domain";
+};
 
 /**
  * The check itself: every runtime import of a concrete adapter made by a module
@@ -451,20 +477,64 @@ describe("AC-ARCH-01.3: the lifecycle module is the composition root, and a sink
 });
 
 describe("AC-ARCH-01.5: a companion plugin is reached only as a typed port", () => {
-	const PORT = "src/adapters/companionPluginPort.ts";
+	const PORT = COMPANION_PORT;
 
-	// Naming a companion plugin, or naming one of the two registries Obsidian
-	// lists them in. A read that goes around the port is a read that can be
-	// wrong about a plugin the user upgraded on their own.
-	const COMPANION_SURFACE =
-		/\binternalPlugins\b|\bapp\.plugins\b|["'](daily-notes|periodic-notes|templater-obsidian)["']/;
+	// What the criterion forbids is OBTAINING a companion plugin's state outside
+	// this boundary, and a plugin id alone obtains nothing. The first version of
+	// this check matched the id wherever it appeared, and fired on
+	// src/settings/importSource.ts, whose `{ source: "periodic-notes" }` is the
+	// discriminant tag of a result union -- correct code, reported as a
+	// violation. A check that fires on correct code is a check the next person
+	// deletes, so the two are told apart here.
+	//
+	// Two surfaces, because obtaining the state takes both and either one alone
+	// is enough to catch it:
 
-	it("AC-ARCH-01.5: no layer but the integration layer names a companion plugin", () => {
-		const outside = LAYERED.filter((path) => layerOf(path) !== "integration").filter((path) =>
-			COMPANION_SURFACE.test(read(path)),
-		);
+	// One: the registry itself, in every form this codebase reaches it by --
+	// `app.internalPlugins`, the string-indexed `["plugins"]` hop a narrowing
+	// adapter uses, and the lookup methods either registry answers to.
+	const PLUGIN_REGISTRY = /\binternalPlugins\b|\.plugins\b|\[\s*["']plugins["']\s*\]|\bgetPluginById\b|\bgetPlugin\b/;
+
+	// Two: an id used AS a lookup -- indexing something with it, passing it as a
+	// call's argument, or comparing a value against it. A tag is none of those:
+	// it sits after a `:` or a `|`, which no branch below matches.
+	const COMPANION_IDS = "daily-notes|periodic-notes-anks|periodic-notes|templater-obsidian";
+	const ID_AS_LOOKUP = new RegExp(
+		[
+			`[\\w)\\]]\\[\\s*["'](?:${COMPANION_IDS})["']`, // registry["periodic-notes"]
+			`\\(\\s*["'](?:${COMPANION_IDS})["']\\s*[,)]`, // getPluginById("daily-notes")
+			`[=!]==?\\s*["'](?:${COMPANION_IDS})["']`, // id === "periodic-notes"
+			`["'](?:${COMPANION_IDS})["']\\s*[=!]==?`, // "periodic-notes" === id
+		].join("|"),
+	);
+
+	it("AC-ARCH-01.5: no layer but the integration layer looks a companion plugin up", () => {
+		const outside = LAYERED.filter((path) => layerOf(path) !== "integration").filter((path) => {
+			const source = read(path);
+			return PLUGIN_REGISTRY.test(source) || ID_AS_LOOKUP.test(source);
+		});
 
 		expect(outside).toEqual([]);
+	});
+
+	// The pair above is only worth having while it still fires. Both halves are
+	// checked against text rather than against the tree, so that a rewrite that
+	// narrowed either one into uselessness fails here and not silently.
+	it("AC-ARCH-01.5: the lookup patterns tell a lookup from a tag", () => {
+		const lookups = [
+			'const registry = (app as Record<string, unknown>)["plugins"];',
+			'const plugin = registry["periodic-notes"];',
+			'app.internalPlugins.getPluginById("daily-notes");',
+			'if (id === "periodic-notes") return true;',
+		];
+		const tags = [
+			'export type ImportSource = { source: "periodic-notes" } | { source: "daily-notes" };',
+			'return { source: "periodic-notes" };',
+			'const label: Record<string, string> = { "daily-notes": "Daily Notes" };',
+		];
+
+		expect(lookups.filter((line) => !PLUGIN_REGISTRY.test(line) && !ID_AS_LOOKUP.test(line))).toEqual([]);
+		expect(tags.filter((line) => PLUGIN_REGISTRY.test(line) || ID_AS_LOOKUP.test(line))).toEqual([]);
 	});
 
 	it("AC-ARCH-01.5: every other layer takes the port, never the adapter", () => {
