@@ -14,7 +14,7 @@ python3 report.py --next                        # 1. what can start now
 python3 report.py --story US-CAL-14             # 2. read the ticket
 git switch -c cal-14-render-the-month-grid      # 3. branch (name comes from --next)
 python3 set_status.py US-CAL-14 in-progress     # 4. claim it
-python3 set_status.py US-CAL-14 in-review       # 5. when the PR is open
+python3 set_status.py US-CAL-14 in-review       # 5. every criterion judged, PR open
 ```
 
 `set_status.py` re-runs the validator and reverts the file if the change is not
@@ -71,7 +71,7 @@ todo  ->  in-progress  ->  in-review  ->  done
 |---|---|---|
 | `todo` | Not started. Every story starts here. | — |
 | `in-progress` | An agent has a branch open and is writing code. | The building agent, before its first commit. |
-| `in-review` | The pull request is open and waiting on a review. | The building agent, right after it opens the PR. |
+| `in-review` | Every criterion is `pass` or `n-a`, and the pull request is open and waiting on a review. A story with an `unverified` or `fail` criterion stays `in-progress`, whoever owes the check. | The building agent, right after it opens the PR. |
 | `blocked` | Work cannot continue. Record why in the commit message. | Whoever hits the wall. |
 | `done` | Merged, and every criterion is `pass` or `n-a`. | The agent that merges. |
 
@@ -133,7 +133,7 @@ cannot be reviewed against either story's criteria.
 
 `build_backlog.py` exits non-zero and writes nothing when:
 
-- a story is `done` while a criterion is still `unverified` or `fail`
+- a story is `in-review` or `done` while a criterion is still `unverified` or `fail`
 - a judged criterion carries no evidence
 - a story id, a criterion id, or a status is malformed or unknown
 - a story depends on a story id that does not exist

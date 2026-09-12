@@ -321,7 +321,7 @@
       "story": "As someone who enables a new note granularity, I want the full set of navigation commands to appear for it automatically, so that every granularity gets the same keyboard support without anyone writing new code for it.",
       "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "pn:dynamic-command-registration"
       ],

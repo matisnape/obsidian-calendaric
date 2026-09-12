@@ -156,12 +156,17 @@ def main() -> int:
                                     f"which is not true or false")
             if not any(a.get("failure_path") is True for a in acs):
                 problems.append(f"{sid}: no criterion marked failure_path")
-            if story["status"] == "done":
+            # `in-review` and `done` both assert that every criterion has been
+            # judged. A story with an unverified or failing criterion still has
+            # work owed on it, whoever owes it, so it belongs in `in-progress` --
+            # otherwise `in-review` silently means two different things and the
+            # board cannot be read.
+            if story["status"] in ("in-review", "done"):
                 open_acs = [a["id"] for a in acs if a.get("status") not in ("pass", "n-a")]
                 if open_acs:
                     problems.append(
-                        f"{sid}: marked done with {len(open_acs)} criteria not passed "
-                        f"({', '.join(open_acs[:4])})")
+                        f"{sid}: marked {story['status']} with {len(open_acs)} criteria not "
+                        f"settled ({', '.join(open_acs[:4])})")
             stories.append(story)
 
         if seen_nums and sorted(seen_nums) != list(range(1, len(seen_nums) + 1)):

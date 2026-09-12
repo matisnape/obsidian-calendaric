@@ -918,7 +918,7 @@
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
       "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "calui:periodic-note-file-cache",
         "pn:cache-index-build-on-load",
