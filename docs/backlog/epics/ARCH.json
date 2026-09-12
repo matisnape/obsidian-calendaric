@@ -10,7 +10,7 @@
       "story": "As a maintainer extending Calendaric, I want the codebase organized into layers with one allowed dependency direction, so that I can change one concern without having to understand or risk breaking the others.",
       "rationale": "The map shows the old code mixing note IO, date parsing, settings resolution and UI inside single files, and reaching into other plugins' internals from three separate layers at once.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -30,8 +30,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "fail",
-          "evidence": "FAILS, and the failure is the finding. src/arch.test.ts 'AC-ARCH-01.1: no module outside src/main.ts constructs an adapter, beyond the four on record' asserts the exact list of runtime concrete-adapter imports made outside the composition root. Four remain, all in the calendar view: src/ui/calendar.ts -> obsidianVaultAdapter, obsidianVaultConfigAdapter, obsidianWorkspaceAdapter, and src/ui/calendarDots.ts -> obsidianVaultConfigAdapter. Clearing them means threading three ports from src/main.ts through CalendarView into CalendarWidget and DotScanner, which is a refactor of the view rather than part of this check. The settings tab, which was the fifth, is fixed: src/main.ts builds ObsidianCompanionPluginAdapter and ElectronDesktopShellAdapter and hands the tab SettingsTabPorts. Mutation, re-measured after the US-MIG-05 rebase: added 'import { ObsidianVaultAdapter } from \"../adapters/obsidianVaultAdapter\";' to src/ui/cellActions.ts -- arch.test.ts 32 passed -> 1 failed | 31 passed -> restored 32 passed."
+          "status": "pass",
+          "evidence": "src/arch.test.ts \"AC-ARCH-01.1: no module outside src/main.ts constructs an adapter\" -- its KNOWN_DEBT list is now empty, so the assertion is that adapterWiring(EDGES) reports nothing at all. Settled by US-ARCH-11, which moved the four remaining constructions (src/ui/calendar.ts and src/ui/calendarDots.ts) into src/main.ts behind a CalendarDeps object. The checker is proved able to fail by the sibling case \"AC-ARCH-01.4: a new view-to-vault-IO import fails the check, named by file and by import\", which feeds it a synthetic src/ui/newPane.ts -> src/adapters/obsidianVaultAdapter.ts edge and requires it to be reported."
         },
         {
           "id": "AC-ARCH-01.2",
@@ -917,7 +917,7 @@
       "story": "As a maintainer changing how Calendaric reads the vault, I want the calendar view to receive vault access as an injected port rather than build its own adapter, so that I can swap or fake that access without editing the view, and so the layering rule holds in fact and not only in the import list.",
       "rationale": "AC-ARCH-01.1 fails today: src/ui/calendar.ts constructs ObsidianVaultAdapter, ObsidianWorkspaceAdapter and ObsidianVaultConfigAdapter (lines 56-58), and src/ui/calendarDots.ts constructs ObsidianVaultConfigAdapter (line 21). The intent is already half-expressed -- calendarDots.ts:15 declares the field as VaultConfigPort and then assigns a concrete adapter to it, so the port exists and only the construction site is wrong. Removing the four imports alone would turn the criterion green while leaving src/ui/calendarDots.ts:43 and :66 calling app.vault.getAbstractFileByPath directly, which satisfies the letter of the boundary rule and none of its purpose. This story covers both halves. It cannot be expressed as a dependency of US-ARCH-01, because US-ARCH-01 is what waits on it.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
