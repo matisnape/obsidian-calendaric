@@ -30,38 +30,82 @@ function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 // isoWeekday(1)=Apr 13, isoWeekday(7)=Apr 19
 const MONDAY = moment("2026-04-13"); // Monday, ISO week 16
 
+// The numeric week-start values `resolveWeekStart` produces: moment's day(),
+// 0=Sunday through 6=Saturday.
+const MONDAY_START = 1;
+const SUNDAY_START = 0;
+
 describe("applyWeekTokens", () => {
 	it("substitutes {{monday:DD.MM}}", () => {
-		// MONDAY = Apr 13 (Mon W16), isoWeekday(1) = Apr 13
-		expect(applyWeekTokens("{{monday:DD.MM}}", MONDAY)).toBe("13.04");
+		// MONDAY = Apr 13 (Mon W16), Monday of its own Monday-start week = Apr 13
+		expect(applyWeekTokens("{{monday:DD.MM}}", MONDAY, MONDAY_START)).toBe("13.04");
 	});
 
 	it("substitutes {{sunday:DD.MM}}", () => {
-		// isoWeekday(7) = Apr 19
-		expect(applyWeekTokens("{{sunday:DD.MM}}", MONDAY)).toBe("19.04");
+		// Last day of the Monday-start week Apr 13–19 = Apr 19
+		expect(applyWeekTokens("{{sunday:DD.MM}}", MONDAY, MONDAY_START)).toBe("19.04");
 	});
 
 	it("substitutes after moment.format() output (no week tokens remain)", () => {
 		const afterMoment = "2026-W16, {{monday:DD.MM}} – {{sunday:DD.MM}}";
-		expect(applyWeekTokens(afterMoment, MONDAY)).toBe("2026-W16, 13.04 – 19.04");
+		expect(applyWeekTokens(afterMoment, MONDAY, MONDAY_START)).toBe("2026-W16, 13.04 – 19.04");
 	});
 
 	it("handles wednesday with YYYY-MM-DD format", () => {
 		// Wed of week Apr 13–19 = Apr 15
-		expect(applyWeekTokens("{{wednesday:YYYY-MM-DD}}", MONDAY)).toBe("2026-04-15");
+		expect(applyWeekTokens("{{wednesday:YYYY-MM-DD}}", MONDAY, MONDAY_START)).toBe("2026-04-15");
 	});
 
 	it("is case-insensitive for weekday names", () => {
-		expect(applyWeekTokens("{{Monday:DD.MM}}", MONDAY)).toBe("13.04");
-		expect(applyWeekTokens("{{SUNDAY:DD.MM}}", MONDAY)).toBe("19.04");
+		expect(applyWeekTokens("{{Monday:DD.MM}}", MONDAY, MONDAY_START)).toBe("13.04");
+		expect(applyWeekTokens("{{SUNDAY:DD.MM}}", MONDAY, MONDAY_START)).toBe("19.04");
 	});
 
 	it("leaves unrecognised tokens untouched", () => {
-		expect(applyWeekTokens("{{date}}", MONDAY)).toBe("{{date}}");
+		expect(applyWeekTokens("{{date}}", MONDAY, MONDAY_START)).toBe("{{date}}");
 	});
 
 	it("is a no-op on strings without tokens", () => {
-		expect(applyWeekTokens("2026-W16", MONDAY)).toBe("2026-W16");
+		expect(applyWeekTokens("2026-W16", MONDAY, MONDAY_START)).toBe("2026-W16");
+	});
+
+	// DEC-01: the week a token resolves inside is the note's OWN seven-day week,
+	// counted from the configured start day. isoWeekday() would count from a
+	// Monday whatever the setting says, which is the bug US-TPL-03 fixes.
+	describe("honours the configured week start", () => {
+		// Apr 12, 2026 is a Sunday. Under a Sunday-start week it OPENS the week
+		// Apr 12–18, so that week's Monday is Apr 13, the next day. Under a
+		// Monday-start week the same date CLOSES the week Apr 6–12, whose Monday
+		// is Apr 6. One date, two weeks, two different Mondays.
+		const SUNDAY = moment("2026-04-12");
+
+		it("resolves {{monday:...}} forward from a Sunday that starts a Sunday-start week", () => {
+			expect(applyWeekTokens("{{monday:YYYY-MM-DD}}", SUNDAY, SUNDAY_START)).toBe("2026-04-13");
+		});
+
+		it("resolves {{monday:...}} back from a Sunday that closes a Monday-start week", () => {
+			expect(applyWeekTokens("{{monday:YYYY-MM-DD}}", SUNDAY, MONDAY_START)).toBe("2026-04-06");
+		});
+
+		it("keeps the whole Sunday-start week in one seven-day span", () => {
+			const template = "{{sunday:DD.MM}}–{{saturday:DD.MM}}";
+			expect(applyWeekTokens(template, SUNDAY, SUNDAY_START)).toBe("12.04–18.04");
+		});
+
+		it("resolves {{sunday:...}} to the week's own first day, not its last, on a Sunday-start week", () => {
+			// A Monday-start reading of Apr 15 puts its Sunday on Apr 19; a
+			// Sunday-start reading puts it on Apr 12, before the note's own date.
+			const wednesday = moment("2026-04-15");
+			expect(applyWeekTokens("{{sunday:DD.MM}}", wednesday, SUNDAY_START)).toBe("12.04");
+			expect(applyWeekTokens("{{sunday:DD.MM}}", wednesday, MONDAY_START)).toBe("19.04");
+		});
+
+		it("counts the week from a start day that is neither Monday nor Sunday", () => {
+			// weekStart = 4 (Thursday). Apr 15 is a Wednesday, so its Thursday-start
+			// week opened on Apr 9 and its Monday is Apr 13.
+			const wednesday = moment("2026-04-15");
+			expect(applyWeekTokens("{{thursday:DD.MM}}|{{monday:DD.MM}}", wednesday, 4)).toBe("09.04|13.04");
+		});
 	});
 });
 
