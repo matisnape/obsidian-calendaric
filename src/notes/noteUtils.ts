@@ -17,14 +17,38 @@ export const WEEKDAY_ISO: Record<string, number> = {
 };
 
 /**
+ * That weekday's date inside `date`'s own seven-day week (DEC-01).
+ *
+ * The week runs from its configured first day, never from the ISO Monday. Both
+ * arguments are moment's `day()` numbering, 0=Sunday through 6=Saturday, which
+ * is what `resolveWeekStart` hands out; `WEEKDAY_ISO` holds ISO numbers, so `% 7`
+ * folds its Sunday (7) onto moment's Sunday (0).
+ *
+ * Sun 2026-04-12 is the case the numbering exists for. Under `weekStart` 0 that
+ * Sunday OPENS the week 12–18 April, so its Monday is 13 April, the next day.
+ * Under `weekStart` 1 the same date CLOSES the week 6–12 April, so its Monday is
+ * 6 April. `isoWeekday(1)` answers 6 April for both, which is the bug.
+ *
+ * This is the display side's rule, in one expression rather than a second one:
+ * `getMonthGrid` walks back to the `weekStart` day on or before its first date
+ * and `getWeekAnchor` reads the week off that day.
+ */
+export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): Moment {
+	const weekOpened = date.clone().subtract((date.day() - weekStart + 7) % 7, "day");
+	return weekOpened.add(((isoDay % 7) - weekStart + 7) % 7, "day");
+}
+
+/**
  * Second-pass substitution of `{{weekday:fmt}}` tokens in a format string.
  * Runs after moment.format() — safe because moment never outputs `{{...}}`.
+ *
+ * `weekStart` is moment's `day()` numbering, 0=Sunday through 6=Saturday.
  */
-export function applyWeekTokens(fmt: string, date: Moment): string {
+export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): string {
 	return fmt.replace(WEEK_TOKEN_RE, (_match, weekday: string, tokenFmt: string) => {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) return _match;
-		return date.clone().isoWeekday(isoDay).format(tokenFmt);
+		return weekdayWithin(date, isoDay, weekStart).format(tokenFmt);
 	});
 }
 

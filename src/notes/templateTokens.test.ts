@@ -246,30 +246,129 @@ describe("substituteTemplateTokens — weekly", () => {
 	const WEEKLY_DATE = moment("2026-04-13");
 	const weeklyConfig = makeConfig({ format: "gggg-[W]ww" });
 
-	it("substitutes {{monday:DD.MM}}", () => {
-		const result = substituteTemplateTokens("{{monday:DD.MM}}", WEEKLY_DATE, "week", weeklyConfig, "t");
+	// The numeric week-start values `resolveWeekStart` produces: moment's day(),
+	// 0=Sunday through 6=Saturday.
+	const MONDAY_START = 1;
+	const SUNDAY_START = 0;
+
+	it("AC-TPL-03.1: substitutes {{monday:DD.MM}} with that weekday of the note's own week", () => {
+		const result = substituteTemplateTokens("{{monday:DD.MM}}", WEEKLY_DATE, "week", weeklyConfig, "t", MONDAY_START);
 		expect(result).toBe("13.04");
 	});
 
-	it("substitutes {{sunday:DD.MM}}", () => {
-		const result = substituteTemplateTokens("{{sunday:DD.MM}}", WEEKLY_DATE, "week", weeklyConfig, "t");
+	it("AC-TPL-03.1: substitutes {{sunday:DD.MM}}", () => {
+		const result = substituteTemplateTokens("{{sunday:DD.MM}}", WEEKLY_DATE, "week", weeklyConfig, "t", MONDAY_START);
 		expect(result).toBe("19.04");
 	});
 
-	it("substitutes full weekly template", () => {
+	it("AC-TPL-03.1: formats each weekday token with its own FORMAT", () => {
+		// Two tokens, two formats, one date each. A single shared format would
+		// print the same shape twice and this assertion would catch it.
+		const template = "{{monday:DD.MM}} / {{monday:dddd D MMMM YYYY}}";
+		const result = substituteTemplateTokens(template, WEEKLY_DATE, "week", weeklyConfig, "t", MONDAY_START);
+		expect(result).toBe("13.04 / Monday 13 April 2026");
+	});
+
+	it("AC-TPL-03.1: substitutes full weekly template", () => {
 		const template = "# Week {{monday:DD.MM}} – {{sunday:DD.MM}}\n### Monday {{monday:DD.MM}}";
-		const result = substituteTemplateTokens(template, WEEKLY_DATE, "week", weeklyConfig, "t");
+		const result = substituteTemplateTokens(template, WEEKLY_DATE, "week", weeklyConfig, "t", MONDAY_START);
 		expect(result).toBe("# Week 13.04 – 19.04\n### Monday 13.04");
 	});
 
-	it("does not substitute {{monday:fmt}} for daily granularity", () => {
-		const result = substituteTemplateTokens("{{monday:DD.MM}}", WEEKLY_DATE, "day", makeConfig(), "t");
-		expect(result).toBe("{{monday:DD.MM}}");
+	// DEC-01: a week-based token follows the CONFIGURED week start, never a
+	// hardcoded ISO Monday. Apr 12, 2026 is a Sunday: under a Sunday-start week
+	// it OPENS the week Apr 12–18, whose Monday is the next day, Apr 13. Under a
+	// Monday-start week the same date CLOSES the week Apr 6–12, whose Monday is
+	// Apr 6. The two readings are one week apart, so a wrong one is silent.
+	const SUNDAY_STARTING_ITS_WEEK = moment("2026-04-12");
+
+	it("AC-TPL-03.2: resolves {{monday:FORMAT}} to the day after a Sunday that starts a Sunday-start week", () => {
+		const result = substituteTemplateTokens(
+			"{{monday:YYYY-MM-DD}}",
+			SUNDAY_STARTING_ITS_WEEK,
+			"week",
+			weeklyConfig,
+			"t",
+			SUNDAY_START,
+		);
+		expect(result).toBe("2026-04-13");
 	});
+
+	it("AC-TPL-03.2: does not resolve to the Monday of the Monday-start grouping of the same date", () => {
+		// Same date, same token, the other week start. This is the value the old
+		// isoWeekday(1) implementation returned for BOTH settings.
+		const sundayStart = substituteTemplateTokens(
+			"{{monday:YYYY-MM-DD}}",
+			SUNDAY_STARTING_ITS_WEEK,
+			"week",
+			weeklyConfig,
+			"t",
+			SUNDAY_START,
+		);
+		const mondayStart = substituteTemplateTokens(
+			"{{monday:YYYY-MM-DD}}",
+			SUNDAY_STARTING_ITS_WEEK,
+			"week",
+			weeklyConfig,
+			"t",
+			MONDAY_START,
+		);
+		expect(mondayStart).toBe("2026-04-06");
+		expect(sundayStart).not.toBe(mondayStart);
+	});
+
+	it("AC-TPL-03.3: leaves a bare {{monday}} exactly as written", () => {
+		// Paired with a token that IS substituted, so the assertion still fails if
+		// weekday substitution stopped running at all.
+		const result = substituteTemplateTokens(
+			"{{monday}}|{{monday:DD.MM}}",
+			WEEKLY_DATE,
+			"week",
+			weeklyConfig,
+			"t",
+			MONDAY_START,
+		);
+		expect(result).toBe("{{monday}}|13.04");
+	});
+
+	it("AC-TPL-03.4: leaves {{monday:}} with an empty format exactly as written", () => {
+		const result = substituteTemplateTokens(
+			"{{monday:}}|{{monday:DD.MM}}",
+			WEEKLY_DATE,
+			"week",
+			weeklyConfig,
+			"t",
+			MONDAY_START,
+		);
+		expect(result).toBe("{{monday:}}|13.04");
+	});
+
+	it("AC-TPL-03.4: raises no error and deletes no surrounding text around {{monday:}}", () => {
+		const template = "### Monday {{monday:}} — notes";
+		const result = substituteTemplateTokens(template, WEEKLY_DATE, "week", weeklyConfig, "t", MONDAY_START);
+		expect(result).toBe(template);
+	});
+
+	it.each(["day", "month", "year"] as const)(
+		"AC-TPL-03.5: leaves {{friday:FORMAT}} as written in a %s template",
+		(granularity) => {
+			// {{date}} rides along so the assertion fails if substitution as a whole
+			// stopped running, rather than only the weekday pass being skipped.
+			const result = substituteTemplateTokens(
+				"{{friday:DD.MM}}|{{date}}",
+				WEEKLY_DATE,
+				granularity,
+				makeConfig(),
+				"t",
+				MONDAY_START,
+			);
+			expect(result).toBe("{{friday:DD.MM}}|2026-04-13");
+		},
+	);
 
 	it("{{date}} uses weekly format with week tokens for weekly notes", () => {
 		const config = makeConfig({ format: "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}" });
-		const result = substituteTemplateTokens("{{date}}", WEEKLY_DATE, "week", config, "t");
+		const result = substituteTemplateTokens("{{date}}", WEEKLY_DATE, "week", config, "t", MONDAY_START);
 		expect(result).toBe("2026-W16, 13.04 – 19.04");
 	});
 });

@@ -54,6 +54,16 @@ const DATE_OFFSET_RE = /\{\{date([+-]\d+)([A-Za-z])(?::([^{}]+))?\}\}/g;
  *
  * Monthly and yearly notes carry neither group: there is no "yesterday" for a
  * month, and a year has no one Monday. They get the universal tokens only.
+ *
+ * `weekStart` is moment's `day()` numbering, 0=Sunday through 6=Saturday — what
+ * `resolveWeekStart` hands out. It decides which seven days a weekday token is
+ * allowed to reach into (DEC-01).
+ *
+ * ponytail: the default matches `DEFAULT_GLOBALS.weekStart` ("monday") in
+ * settings/model.ts, so the callers that have no settings to hand keep the
+ * shipped default instead of a second convention. Carrying the live setting
+ * from the settings screen down to here is US-FMT-03, which owns the week-start
+ * plumbing for every feature at once; drop the default when that lands.
  */
 export function substituteTemplateTokens(
 	content: string,
@@ -61,6 +71,7 @@ export function substituteTemplateTokens(
 	granularity: ReleaseGranularity,
 	config: PeriodicConfig,
 	title: string,
+	weekStart = 1,
 ): string {
 	let out = content;
 
@@ -103,7 +114,7 @@ export function substituteTemplateTokens(
 
 	if (granularity === "week") {
 		// {{monday:fmt}} – {{sunday:fmt}} in template body
-		out = applyWeekTokens(out, date);
+		out = applyWeekTokens(out, date, weekStart);
 	}
 
 	return out;
