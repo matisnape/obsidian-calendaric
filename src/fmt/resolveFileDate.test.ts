@@ -5,8 +5,10 @@ import moment from "moment";
 import "moment/locale/pl";
 import "moment/locale/ar";
 moment.locale("en");
-import { resolveFileDate } from "./resolveFileDate";
+import { resolveFileDate, resolvePeriodNote } from "./resolveFileDate";
 import { computeNoteDate } from "./noteDate";
+import { parseFilename } from "./parseFilename";
+import { computeNotePath } from "../notes/noteUtils";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -260,5 +262,68 @@ describe("resolveFileDate — AC-FMT-07.5 a daily filename outside the daily fol
 
 	it("is not recognised when the folder name only shares a prefix with the configured one", () => {
 		expect(resolveFileDate("DailyArchive/2026/2026-04-13.md", NESTED, NO_DEFAULT_FOLDER)).toBeNull();
+	});
+});
+
+describe("resolveFileDate — AC-FMT-08.2 the configured format beats its basename-only derivative", () => {
+	// A week folder holding a day-precision filename: the full format reads the
+	// week token and lands on the week's Monday, while the basename alone reads
+	// a plain date and lands on the day itself. Two genuinely different dates,
+	// which is what makes the precedence observable at all.
+	const weekFormat = "GGGG-[W]WW/YYYY-MM-DD";
+	const configs = { day: config("YYYY-MM-DD", "Daily"), week: config(weekFormat, "Weekly") };
+
+	it("AC-FMT-08.2: uses the date the full configured format produces, not the basename-only one", () => {
+		// Written by the writer rather than typed here, so the two sides cannot
+		// drift apart behind a hardcoded string.
+		const written = computeNotePath(moment("2020-03-04T12:00:00"), configs.week, NO_DEFAULT_FOLDER);
+		const basename = written.slice(written.lastIndexOf("/") + 1).replace(/\.md$/, "");
+		const derivedFormat = weekFormat.slice(weekFormat.lastIndexOf("/") + 1);
+
+		const basenameOnly = parseFilename(basename, derivedFormat, false)?.date.format("YYYY-MM-DD");
+		const resolved = resolveFileDate(written, configs, NO_DEFAULT_FOLDER);
+
+		// The test proves nothing if the two readings happen to coincide.
+		expect(basenameOnly).toBeTypeOf("string");
+		expect(resolved?.date.format("YYYY-MM-DD")).not.toBe(basenameOnly);
+
+		// The full format's own reading is the one that survives the round trip.
+		expect(resolved?.noteDate).toBe(computeNoteDate(moment("2020-03-04T12:00:00"), "week", weekFormat));
+	});
+});
+
+describe("resolvePeriodNote — AC-FMT-08.1 an exact and a prefix match for the same period", () => {
+	const configs = {
+		day: { ...config("YYYY-MM-DD", "Daily"), allowPrefixMatch: true },
+		week: config("GGGG-[W]WW", "Weekly"),
+	};
+	const date = moment("2026-04-13T09:00:00");
+	const exact = computeNotePath(date, configs.day, NO_DEFAULT_FOLDER);
+	const prefixed = `${exact.replace(/\.md$/, "")} standup.md`;
+	const noteDate = computeNoteDate(date, "day", configs.week.format);
+
+	it("AC-FMT-08.1: treats the exact match as the note for that period", () => {
+		// Listed prefix-first: the winner must come from the rule, not the order.
+		expect(resolvePeriodNote([prefixed, exact], noteDate, configs, NO_DEFAULT_FOLDER)).toBe(exact);
+		expect(resolvePeriodNote([exact, prefixed], noteDate, configs, NO_DEFAULT_FOLDER)).toBe(exact);
+	});
+
+	it("AC-FMT-08.1: does not offer the prefix-matched file as an equally valid alternative", () => {
+		// Both files really do resolve to this period on their own — the second
+		// one is dropped by the precedence rule, not by failing to match.
+		expect(resolveFileDate(prefixed, configs, NO_DEFAULT_FOLDER)?.noteDate).toBe(noteDate);
+		expect(resolveFileDate(prefixed, configs, NO_DEFAULT_FOLDER)?.prefixMatch).toBe(true);
+		expect(resolveFileDate(exact, configs, NO_DEFAULT_FOLDER)?.prefixMatch).toBe(false);
+
+		// One winner, and it is never the prefix match while the exact one is there.
+		expect(resolvePeriodNote([prefixed, exact], noteDate, configs, NO_DEFAULT_FOLDER)).not.toBe(prefixed);
+	});
+
+	it("AC-FMT-08.1: still answers with the prefix match when no exact match exists", () => {
+		expect(resolvePeriodNote([prefixed], noteDate, configs, NO_DEFAULT_FOLDER)).toBe(prefixed);
+	});
+
+	it("AC-FMT-08.1: answers null when no candidate belongs to the period", () => {
+		expect(resolvePeriodNote([exact, prefixed], "day:0", configs, NO_DEFAULT_FOLDER)).toBeNull();
 	});
 });
