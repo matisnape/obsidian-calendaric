@@ -1,6 +1,6 @@
 import { TFile, TFolder } from "obsidian";
-import type { App } from "obsidian";
-import type { FoldState, NoteFile, VaultPort } from "./vaultPort";
+import type { App, EventRef } from "obsidian";
+import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort } from "./vaultPort";
 
 /**
  * Obsidian's fold store is not part of the published API, so it is described
@@ -13,7 +13,7 @@ interface FoldManager {
 }
 
 /** Wires VaultPort to the real Obsidian Vault/MetadataCache API. */
-export class ObsidianVaultAdapter implements VaultPort {
+export class ObsidianVaultAdapter implements VaultPort, VaultIndexPort {
 	constructor(private app: App) {}
 
 	get backingVault(): object {
@@ -33,6 +33,45 @@ export class ObsidianVaultAdapter implements VaultPort {
 		// Only a note counts. A TFolder at the same path still answers pathExists,
 		// which is how callers tell "occupied" from "free".
 		return file instanceof TFile ? file : null;
+	}
+
+	listNotes(): NoteFile[] {
+		return this.app.vault.getMarkdownFiles();
+	}
+
+	frontmatterString(file: NoteFile, key: string): string | null {
+		if (!(file instanceof TFile)) return null;
+		// Obsidian types a frontmatter value as `any`; it is whatever the user
+		// typed, so it is read as `unknown` and narrowed here instead.
+		const frontmatter: Record<string, unknown> | undefined = this.app.metadataCache.getFileCache(file)?.frontmatter;
+		const value = frontmatter?.[key];
+		return typeof value === "string" ? value : null;
+	}
+
+	onChange(handler: (change: VaultChange) => void): () => void {
+		const vaultRefs: EventRef[] = [
+			this.app.vault.on("create", (file) => {
+				if (file instanceof TFile) handler({ kind: "create", file });
+			}),
+			this.app.vault.on("delete", (file) => {
+				if (file instanceof TFile) handler({ kind: "delete", file });
+			}),
+			// Fires for a rename made anywhere, the app or an external script:
+			// Obsidian watches the vault folder and reports what it finds.
+			this.app.vault.on("rename", (file, oldPath) => {
+				if (file instanceof TFile) handler({ kind: "rename", file, oldPath });
+			}),
+		];
+		// The frontmatter of a new file is parsed after the create event, so a
+		// caller reading frontmatter needs this second source to see it at all.
+		const metadataRef = this.app.metadataCache.on("changed", (file) => {
+			handler({ kind: "metadata", file });
+		});
+
+		return () => {
+			for (const ref of vaultRefs) this.app.vault.offref(ref);
+			this.app.metadataCache.offref(metadataRef);
+		};
 	}
 
 	async createFolder(path: string): Promise<void> {

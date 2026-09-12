@@ -1,7 +1,7 @@
-import type { FoldState, NoteFile, VaultPort } from "./vaultPort";
+import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort } from "./vaultPort";
 
 /** In-memory VaultPort substitute for tests — no running Obsidian required. */
-export class FakeVaultPort implements VaultPort {
+export class FakeVaultPort implements VaultPort, VaultIndexPort {
 	private folders = new Set<string>();
 	private files = new Map<string, string>();
 	private lostFolderRaces = new Set<string>();
@@ -10,7 +10,11 @@ export class FakeVaultPort implements VaultPort {
 	private foldStates = new Map<string, FoldState>();
 	private foldReadErrors = new Map<string, Error>();
 	private foldApplyErrors = new Map<string, Error>();
+	private frontmatter = new Map<string, Record<string, string>>();
+	private handlers = new Set<(change: VaultChange) => void>();
 	createdFolders: string[] = [];
+	/** How many times the whole note list was asked for — a rescan is visible here. */
+	listNotesCalls = 0;
 	createFileError: Error | null = null;
 	appliedFoldStates: { path: string; foldState: FoldState }[] = [];
 
@@ -60,6 +64,34 @@ export class FakeVaultPort implements VaultPort {
 		this.files.set(path, content);
 	}
 
+	seedFrontmatter(path: string, frontmatter: Record<string, string>): void {
+		this.frontmatter.set(path, frontmatter);
+	}
+
+	/** Moves a seeded file, the way the host does before it reports the rename. */
+	renameFile(from: string, to: string): void {
+		const content = this.files.get(from);
+		if (content === undefined) throw new Error(`File not found: ${from}`);
+		this.files.delete(from);
+		this.files.set(to, content);
+
+		const frontmatter = this.frontmatter.get(from);
+		if (frontmatter) {
+			this.frontmatter.delete(from);
+			this.frontmatter.set(to, frontmatter);
+		}
+	}
+
+	deleteFile(path: string): void {
+		this.files.delete(path);
+		this.frontmatter.delete(path);
+	}
+
+	/** Reports a change to everything subscribed through `onChange`. */
+	emitChange(change: VaultChange): void {
+		for (const handler of [...this.handlers]) handler(change);
+	}
+
 	seedFoldState(path: string, foldState: FoldState): void {
 		this.foldStates.set(path, foldState);
 	}
@@ -78,6 +110,20 @@ export class FakeVaultPort implements VaultPort {
 
 	getFile(path: string): NoteFile | null {
 		return this.files.has(path) ? { path } : null;
+	}
+
+	listNotes(): NoteFile[] {
+		this.listNotesCalls++;
+		return [...this.files.keys()].filter((path) => path.endsWith(".md")).map((path) => ({ path }));
+	}
+
+	frontmatterString(file: NoteFile, key: string): string | null {
+		return this.frontmatter.get(file.path)?.[key] ?? null;
+	}
+
+	onChange(handler: (change: VaultChange) => void): () => void {
+		this.handlers.add(handler);
+		return () => this.handlers.delete(handler);
 	}
 
 	async createFolder(path: string): Promise<void> {
