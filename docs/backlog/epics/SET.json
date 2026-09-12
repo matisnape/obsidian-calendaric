@@ -500,7 +500,7 @@
       "story": "As someone whose settings file can be edited outside the plugin, I want Calendaric to keep working even when the stored configuration is incomplete or malformed, so that one bad or missing field never breaks the whole plugin.",
       "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:persist-plugin-settings"
       ],

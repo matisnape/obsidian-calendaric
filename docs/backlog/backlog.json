@@ -2111,7 +2111,7 @@
       "story": "As someone whose weekly template lays out one heading per day, I want {{monday:FORMAT}} through {{sunday:FORMAT}} to resolve to the correct calendar date for that weekday of my own week, so that the headings are right whether my week starts on Monday or on Sunday.",
       "rationale": "The current implementation hard-codes an ISO Monday-start week for this token family, so it silently produces the wrong date whenever the configured week start is not Monday; this pins the correct rule down before the bug is carried into the rewrite.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:template-token-day-of-week",
         "calendaric:template-token-weekday-body"
@@ -2136,8 +2136,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/notes/templateTokens.test.ts: \"AC-TPL-03.1: substitutes {{monday:DD.MM}} with that weekday of the note's own week\", \"AC-TPL-03.1: substitutes {{sunday:DD.MM}}\", \"AC-TPL-03.1: formats each weekday token with its own FORMAT\" and \"AC-TPL-03.1: substitutes full weekly template\". Mutation 1 in src/notes/noteUtils.ts: weekOpened.add(((isoDay % 7) - weekStart + 7) % 7, \"day\") -> weekOpened.add(0, \"day\") took 57 passed to 3 failed | 54 passed, failing the {{sunday:DD.MM}} and full-template cases. Mutation 2: .format(tokenFmt) -> .format(\"DD.MM\") took 57 passed to 3 failed | 54 passed, failing the own-FORMAT case. Both restored to 57 passed. Reachable from src/main.ts:8 -> src/notes/noteCreate.ts:6 -> src/notes/templateTokens.ts:3 -> applyWeekTokens -> weekdayWithin; the production call passes no weekStart and so uses the shipped default of Monday, which is the setting this criterion names."
         },
         {
           "id": "AC-TPL-03.2",
@@ -2151,7 +2151,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": "The Sunday-start rule is settled as a unit in src/notes/templateTokens.test.ts: \"AC-TPL-03.2: resolves {{monday:FORMAT}} to the day after a Sunday that starts a Sunday-start week\" and \"AC-TPL-03.2: does not resolve to the Monday of the Monday-start grouping of the same date\" (Sun 2026-04-12 -> 2026-04-13 under weekStart 0, 2026-04-06 under weekStart 1). Mutation in src/notes/noteUtils.ts: weekdayWithin(date, isoDay, weekStart) -> date.clone().isoWeekday(isoDay), which restores the hard-coded ISO Monday, took 57 passed to 2 failed | 55 passed, failing exactly those two tests; restored to 57 passed. The criterion stays unverified because its own text asks for a check against a live vault set to \"Start week on: Sunday\" and explicitly not a unit fixture. That clause cannot be settled here for a second reason: no caller passes a weekStart yet, so the plugin still runs on the Monday default. Carrying the live setting down to substituteTemplateTokens is US-FMT-03 (AC-FMT-03.2). What would settle it: after US-FMT-03 lands, set Start week on: Sunday in a real vault and create the weekly note for a Sunday, then read the {{monday:FORMAT}} heading in the created note."
         },
         {
           "id": "AC-TPL-03.3",
@@ -2163,8 +2163,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/notes/templateTokens.test.ts: \"AC-TPL-03.3: leaves a bare {{monday}} exactly as written\", which pairs the bare token with a {{monday:DD.MM}} that must still resolve, so a no-op substitution cannot pass it. Mutation in src/notes/noteUtils.ts: WEEK_TOKEN_RE :([^}]+)\\}\\} -> (?::([^}]+))?\\}\\}, making the :FORMAT part optional, took 57 passed to 1 failed | 56 passed, failing exactly that test; restored to 57 passed.",
           "failure_path": true
         },
         {
@@ -2177,8 +2177,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/notes/templateTokens.test.ts: \"AC-TPL-03.4: leaves {{monday:}} with an empty format exactly as written\" and \"AC-TPL-03.4: raises no error and deletes no surrounding text around {{monday:}}\". Mutation in src/notes/noteUtils.ts: WEEK_TOKEN_RE :([^}]+)\\}\\} -> :([^}]*)\\}\\}, letting an empty format match, took 57 passed to 2 failed | 55 passed, failing exactly those two tests; restored to 57 passed. A third test settles the criterion's \"no text is deleted\" clause against the failure US-TPL-06 fixed for {{date:FORMAT}}: \"AC-TPL-03.4: an unclosed {{monday:DD does not borrow the next weekday token's closing braces\". WEEK_TOKEN_RE carried the same [^}] format group, so \"{{monday:DD {{monday:MM}}\" rendered \"13 {{0on1am2026:04\" — both tokens gone and the text between them formatted as a moment pattern. The group now excludes { as its two siblings in templateTokens.ts do. Mutation in src/notes/noteUtils.ts: :([^{}]+)\\}\\} -> :([^}]+)\\}\\}, letting the group cross { again, took 58 passed to 1 failed | 57 passed, failing exactly that test; restored to 58 passed. The empty-format mutation above was re-run against the wider suite and still holds: :([^{}]+)\\}\\} -> :([^{}]*)\\}\\} took 58 passed to 2 failed | 56 passed.",
           "failure_path": true
         },
         {
@@ -2191,8 +2191,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/notes/templateTokens.test.ts: the it.each case \"AC-TPL-03.5: leaves {{friday:FORMAT}} as written in a %s template\", run for day, month and year, each pairing the weekday token with a {{date}} that must still resolve. Mutation in src/notes/templateTokens.ts: if (granularity === \"week\") -> if (granularity.length > 0), which runs the weekday pass for every granularity, took 57 passed to 3 failed | 54 passed, failing all three cases; restored to 57 passed.",
           "failure_path": true
         }
       ],
@@ -4281,7 +4281,7 @@
       "story": "As someone whose settings file can be edited outside the plugin, I want Calendaric to keep working even when the stored configuration is incomplete or malformed, so that one bad or missing field never breaks the whole plugin.",
       "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:persist-plugin-settings"
       ],
@@ -4304,8 +4304,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.1: every committed change on the settings screen writes the configuration\" and \"AC-SET-06.1: one committed field change reaches the disk on its own\". The first walks every commit handler in src/settings.ts and requires each to call this.save(); the second drives the real plugin's saveSettings() over a stand-in loadData/saveData and watches the write land. Mutations: deleting `await this.save();` from the allow-prefix-matching handler in src/settings.ts took 18 passed to 1 failed | 17 passed; deleting `await this.saveData(next);` from saveSettings in src/main.ts took 18 passed to 4 failed | 14 passed. Both restored to 18 passed."
         },
         {
           "id": "AC-SET-06.2",
@@ -4316,8 +4316,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.2: restores every stored setting when the plugin loads again\" and \"AC-SET-06.2: survives a second close and reopen without drifting\". Every editable key is moved off its default, saved through the real plugin, read back by a second plugin over the same JSON, and compared whole. Mutation: applySettings writing `...pickGlobals(stored)` instead of `...pickGlobals(settings)` in src/settings/model.ts took 18 passed to 2 failed | 16 passed, restored 18 passed."
         },
         {
           "id": "AC-SET-06.3",
@@ -4329,8 +4329,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.3: fills every missing field of a half-written granularity\", plus the three sibling AC-SET-06.3 cases for the globals, for every granularity being complete after the load, and for no stored configuration at all. Mutation: `format: asString(raw.format, DEFAULT_PERIODIC_CONFIG.format)` changed to `format: raw.format as string` in normalizeConfig (src/settings/model.ts) took 18 passed to 2 failed | 16 passed — both failures inside AC-SET-06.3 — restored 18 passed.",
           "failure_path": true
         },
         {
@@ -4343,8 +4343,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.4: writes a malformed granularity back as a configuration, not as its characters\", with \"AC-SET-06.4: replaces a granularity of the wrong shape, leaving the others as stored\" and \"AC-SET-06.4: replaces a global of the wrong type with its default, one field at a time\" covering the load side. The load side already held before this story; the save side did not, and the guard added to applySettings is what this criterion bought. Mutation: dropping that guard (`isRecord(storedConfig) ? { ...storedConfig } : {}` back to `{ ...storedConfig }` in src/settings/model.ts) took 18 passed to 1 failed | 17 passed, restored 18 passed — the stored `day: \"garbage\"` came back out as {\"0\":\"g\",\"1\":\"a\",...}.",
           "failure_path": true
         },
         {
@@ -4357,8 +4357,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.5: every persisted, user-editable key has at least one production reader\", held in place by \"AC-SET-06.5: finds the keys the settings screen makes editable\" and \"AC-SET-06.5: every key the screen edits is one the plugin persists\". The audit reads the ten editable keys off src/settings.ts and looks for a read of each outside the writer, the storage model and the type declarations; all ten have one, so no setting is stored and shown as editable while nothing uses it. Mutation: removing the only production read of openAtStartup (`if (!config.openAtStartup || !config.enabled) continue;` to `if (!config.enabled) continue;` in src/main.ts) took 18 passed to 1 failed | 17 passed with `expected [ 'openAtStartup' ] to deeply equal []`, restored 18 passed."
         }
       ],
       "shared_coverage": {
@@ -4762,7 +4762,7 @@
       "story": "As someone who enables a new note granularity, I want the full set of navigation commands to appear for it automatically, so that every granularity gets the same keyboard support without anyone writing new code for it.",
       "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:dynamic-command-registration"
       ],
@@ -4785,8 +4785,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.1: registers exactly the five navigation commands for an active granularity\" and \"AC-CMD-05.1: each command invokes its own action for its own granularity\""
         },
         {
           "id": "AC-CMD-05.2",
@@ -4798,8 +4798,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.2: the newly enabled granularity's five commands appear on the same running instance\"; sync() is called from CalendaricPlugin.onSettingsChange, not at load only"
         },
         {
           "id": "AC-CMD-05.3",
@@ -4811,8 +4811,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.3: the disabled granularity's five commands disappear on the same running instance\"",
           "failure_path": true
         },
         {
@@ -4838,8 +4838,8 @@
           ],
           "verifies": "compat",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.5: every generated id is the one it has always been\", against a frozen list of all twenty ids written out by hand Mutation-checked by the orchestrator: making commandId() append PHRASE[action] turns 13 passed into 2 failed."
         },
         {
           "id": "AC-CMD-05.6",
@@ -4851,8 +4851,8 @@
           ],
           "verifies": "compat",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.6: the display name is no part of the id\"; commandId reads only the granularity and the action Mutation-checked by the orchestrator: making commandId() append PHRASE[action] turns 13 passed into 2 failed."
         },
         {
           "id": "AC-CMD-05.7",
@@ -4863,8 +4863,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.7: registers nothing at all when every granularity is off\"",
           "failure_path": true
         },
         {
@@ -4876,8 +4876,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.8: quarter is reserved, so enabling it registers nothing\" Mutation-checked by the orchestrator: dropping the isReleaseGranularity filter in sync() turns 13 passed into 2 failed.",
           "failure_path": true
         }
       ],
@@ -6783,7 +6783,7 @@
       "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
       "rationale": "Two P1 defects show why this matters. An Obsidian 1.13 change to the settings dialog crashed the Periodic Notes settings pane. Another integration read a state container as a plain object instead of using its accessor or subscription API, so a shipped feature always returned nothing.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "forks:settings-tab-crash-guard-1.13"
       ],
@@ -6804,8 +6804,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settingsTabGuard.test.ts > \"AC-ARCH-07.1: skips a section that throws instead of letting the error escape\" / \"AC-ARCH-07.1: leaves nothing half-rendered from the section that threw\" / \"AC-ARCH-07.1: renders every other section after one of them fails\" / \"AC-ARCH-07.1: names the skipped section rather than dropping it silently\" / \"AC-ARCH-07.1: guards each section separately, not the tab as a whole\". The real display() runs under happy-dom with an Obsidian-owned surface broken: the import card half-draws and then throws, and separately Obsidian's own Setting class throws for the three sections that build rows with it. Mutation-checked twice on src/settings.ts. Neutering the rollback loop in renderGuardedSection (\"while (containerEl.childNodes.length > before) {\" -> \"while (false) {\"): 6 passed -> 2 failed | 4 passed -> 6 passed restored. Calling renderDailyNotesImportCard outside renderGuardedSection: 6 passed -> 4 failed | 2 passed -> 6 passed restored. Reachable from main.ts:65, which registers CalendaricSettingsTab.",
           "failure_path": true
         },
         {
@@ -6818,8 +6818,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > \"AC-ARCH-07.2: reads a store's values through subscribe rather than as properties\" / \"AC-ARCH-07.2: subscribes with the container as the receiver\" / \"AC-ARCH-07.2: releases the subscription once it has the published value\" / \"AC-ARCH-07.2: reads a container that publishes through get() through get()\". Mutation-checked on src/adapters/obsidianCompanionPluginAdapter.ts: making readStateContainer find no accessor (\"ACCESSOR_KEYS.find((key) => typeof container[key] === \\\"function\\\")\" -> \"ACCESSOR_KEYS.find(() => false)\"), which is exactly the plain-object property read the criterion forbids: 36 passed -> 8 failed | 28 passed -> 36 passed restored. Supersedes the two AC-ARCH-04.4 tests that refused an accessor-backed container outright rather than reading through it; every other shape AC-ARCH-04.4 names (missing method, absent instance, non-string value, throwing getter) is still refused and still tested."
         },
         {
           "id": "AC-ARCH-07.3",
@@ -6832,8 +6832,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "The typed result: vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > \"AC-ARCH-07.3: returns a typed mismatch when the store publishes a non-record\" / \"AC-ARCH-07.3: returns a typed mismatch when subscribe publishes no value at all\" / \"AC-ARCH-07.3: returns a typed mismatch when get() hands back a non-record\" / \"AC-ARCH-07.3: the import card reads as unreadable, never as an offer\". What the user sees: vitest: src/settingsCompanionUnavailable.test.ts > \"AC-ARCH-07.3: tells the user the settings could not be read\" / \"AC-ARCH-07.3: names the documented fallback, which is entering them by hand\" / \"AC-ARCH-07.3: offers no import button that would store empty values\" / \"AC-ARCH-07.3: still offers the import when the store publishes readable values\" -- the whole chain unmocked, from the registered settings tab down to the accessor read. This closes the clause AC-ARCH-04.4 left unverified for want of a DOM harness. Mutation-checked twice on src/adapters/obsidianCompanionPluginAdapter.ts, both times by reporting an unusable publication as an empty success (the mismatch return in readStateContainer -> \"return { ok: true, value: {} };\"), which is the silent no-op the criterion forbids: adapter test 36 passed -> 4 failed | 32 passed -> 36 passed restored; on-screen test 4 passed -> 3 failed | 1 passed -> 4 passed restored.",
           "failure_path": true
         },
         {
@@ -6846,8 +6846,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-07.4: one module reads Obsidian's internal plugin registry\" > \"the adapter is the module that reads it\" / \"no other shipped module reads that surface directly\" -- walks every shipped .ts under src/ (tests and __mocks__ excluded, because they stand in for the host) and requires the internalPlugins surface to appear only in src/adapters/obsidianCompanionPluginAdapter.ts. Mutation-checked on src/settings.ts by adding a second reader to display() (\"void (this.app as unknown as Record<string, unknown>)[\\\"internalPlugins\\\"];\"): 18 passed -> 1 failed | 17 passed -> 18 passed restored."
         }
       ],
       "resolves": [
