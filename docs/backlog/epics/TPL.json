@@ -376,7 +376,7 @@
       "story": "As someone whose templates use another plugin to rename, move, or add content to a new note, I want Calendaric to apply its own template only once, so that later changes are not reverted or duplicated.",
       "rationale": "Every template in this vault hands later changes to another plugin. Reapplying Calendaric's template would overwrite or duplicate those changes.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [
         "vault:create-weekly-note-rename-move",
@@ -405,8 +405,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.1: substitutes once, writes once, and that write is the note's final content\" and > \"AC-TPL-05.1: leaves the written body alone once the create has settled\". The first spies on vault.createFile and asserts one call and one substitution pass, then compares that call's own argument with what the vault holds. Production: the only substitution call site is src/notes/noteCreate.ts:184, reached once from createNote at :94, and its result is the sole argument to vault.createFile at :95; the module is reachable from src/main.ts:8. Mutation: wrapping :184 in a second substituteTemplateTokens pass took the file from \"Tests 8 passed (8)\" to \"Tests 4 failed | 4 passed (8)\"; restored 8 passed."
         },
         {
           "id": "AC-TPL-05.2",
@@ -419,8 +419,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.2: the calendar refresh finds the note at its current name and location\", > \"AC-TPL-05.2: the move is never reverted and the body is never re-substituted\" and > \"AC-TPL-05.2: opening the note again opens the moved file, without touching the template\". The companion plugin's move is simulated as the host rename event, which is how Obsidian reports a rename made by anyone (src/adapters/obsidianVaultAdapter.ts:59-62, itself covered by AC-NOTE-11.3). What the simulation settles is this plugin's three Thens: PeriodicNoteIndex files the note under its new path, the old path stays gone, no substitution pass and no write run, and openNoteIn opens the moved file. What it does not settle is a live vault with a real companion plugin installed; the plugin cannot tell one renamer from another, because the port hands it the same event either way. Mutation: src/notes/periodicNoteIndex.ts:143 forgetting change.file.path instead of change.oldPath took the file from \"Tests 8 passed (8)\" to \"Tests 1 failed | 7 passed (8)\"; restored 8 passed.",
           "failure_path": true
         },
         {
@@ -433,8 +433,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.3: an empty template leaves an empty note, with no warning and no retry\" and > \"AC-TPL-05.3: a template that carries no tokens is written through unchanged\". Both assert exactly one substitution pass, one write, and no warn call, so an empty result is carried through rather than judged. Production: src/notes/noteCreate.ts:181-186 warns only when the READ fails; it never inspects the substituted content. Mutation: adding a retry branch at :94 (warn, then a second readTemplate when the content is empty) took the file from \"Tests 8 passed (8)\" to \"Tests 1 failed | 7 passed (8)\"; restored 8 passed.",
           "failure_path": true
         },
         {
@@ -447,8 +447,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.4: with no external engine at all, the note is exactly the token-substituted content\". createNote takes no engine port at all, so the call in the test IS the no-engine case; it asserts the note's body equals the substitution's own return value verbatim, and that nothing further ran (no warn, no fold pass). Production: src/notes/noteCreate.ts:94-95. Mutation: appending a newline to template.content at :95 took the file from \"Tests 8 passed (8)\" to \"Tests 7 failed | 1 passed (8)\"; restored 8 passed."
         }
       ],
       "resolves": [
