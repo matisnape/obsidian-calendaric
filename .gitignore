@@ -23,3 +23,9 @@ data.json
 
 # Python
 __pycache__/
+
+# Generated from live GitHub state (docs/backlog/build_pr_index.py); goes
+# stale the moment any branch merges a new PR, unlike backlog.json which
+# only reflects this branch's own epic edits. Regenerate with:
+#   python3 docs/backlog/build_pr_index.py
+docs/backlog/pull_requests.json
