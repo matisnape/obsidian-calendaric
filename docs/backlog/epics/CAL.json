@@ -111,7 +111,7 @@
       "story": "As someone planning ahead or looking back, I want to step the grid forward and backward one month at a time and jump straight back to the current month, so that I can browse freely without losing track of where 'now' is.",
       "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:navigate-month",
         "calui:reset-to-current-month",
@@ -133,8 +133,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.1: shows the following month\", plus a step out of a 31-day month into a shorter one and a second step from a month already visited. The displayed date is held on the first of the month, so repeated steps cannot drift the way a 31st does when moment clamps it into February. Mutation-checked by the orchestrator: stepping by a week instead of a month fails 7 of the 14 tests."
         },
         {
           "id": "AC-CAL-02.2",
@@ -145,8 +145,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.2: shows the preceding month\", plus January stepping back into December of the previous year."
         },
         {
           "id": "AC-CAL-02.3",
@@ -158,8 +158,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.3: shows the current month again from far away in either direction\" and \"AC-CAL-02.3: leaves today's cell in the grid it returns to\". The second reads the real clock, because getMonthGrid derives isToday from window.moment(), and asserts the returned grid holds exactly one isToday cell rather than one borrowed from an adjacent month."
         },
         {
           "id": "AC-CAL-02.4",
@@ -172,7 +172,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "HALF SETTLED, and the missing half needs a DOM harness this repository does not have. The second clause is proved: vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.4: reports the inactive state and does nothing when activated\" asserts atCurrentMonth is true, that clicking leaves the month unchanged, and that the redraw counter stays at zero, so the handler really is inert; three further tests cover repeated clicks, the return to the active state after leaving the month, and September 2027 not matching September 2026. Mutation-checked by the orchestrator: removing the early exit from toToday fails 2 tests. The FIRST clause -- that the control is SHOWN in an inactive state -- is not proved. calendar.ts sets is-disabled and aria-disabled from nav.atCurrentMonth, but nothing tests that link: vitest runs in the node environment, neither jsdom nor happy-dom is installed, and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass). This is the same missing harness that holds AC-CAL-01.5 and the \"user sees the notice\" clause of US-ARCH-04 open.",
           "failure_path": true
         },
         {
@@ -184,8 +184,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.5: shows January of the following year\", plus the same crossing from a December reached by stepping rather than by construction.",
           "failure_path": true
         }
       ],
