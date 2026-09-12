@@ -55,6 +55,8 @@
   .badge.unverified,.badge.todo { background:#232838; color:var(--dim); }
   .badge.in-progress { background:rgba(189,140,255,.16); color:var(--purple); border-color:rgba(189,140,255,.34); }
   .badge.in-review { background:rgba(139,214,255,.16); color:#8bd6ff; border-color:rgba(139,214,255,.34); }
+  a.badge { text-decoration:none; }
+  a.badge:hover { border-color:var(--accent); }
   code,.mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
   .path { color:var(--dim); }
   .note { color:var(--dim); font-size:12.5px; margin-top:4px; }
@@ -106,7 +108,11 @@
 <script>
 const MAP_FILE = "mapping/calendaric-map.json";
 const BACKLOG_FILE = "backlog/backlog.json";
-let MAP = null, BL = null, TAB = "kanban";
+// Generated separately from backlog.json by build_pr_index.py — see that
+// file's header for why. Optional: a missing or unparsable file must never
+// break the page, only leave stories without a pull-request link.
+const PR_FILE = "backlog/pull_requests.json";
+let MAP = null, BL = null, PRS = {}, TAB = "kanban";
 const F = { source:"", category:"", extra:"", q:"" };
 
 const TABS = [
@@ -129,6 +135,19 @@ const bdg = (cls, txt) => `<span class="badge ${cls}">${esc(txt)}</span>`;
 const list = a => (a && a.length) ? `<ul class="tight note">${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : "";
 const catLabel = id => (MAP.categories.find(c => c.id === id) || {}).label || id || "—";
 const capByUid = uid => MAP.capabilities.find(c => c.uid === uid);
+
+// The most recently merged/updated pull request known for a story, or null.
+// PRS.stories is absent (fetch failed) or empty (no match) just as often as
+// populated, so every caller must tolerate null.
+const prFor = storyId => (PRS.stories && PRS.stories[storyId] && PRS.stories[storyId][0]) || null;
+
+function prLink(story) {
+  if (story.status !== "in-review" && story.status !== "done") return "";
+  const pr = prFor(story.id);
+  if (!pr) return "";
+  return `<a class="badge neutral" href="${esc(pr.url)}" target="_blank" rel="noopener"
+    title="${esc(pr.title)}">PR #${esc(pr.number)} &#8599;</a>`;
+}
 
 function acRoll(story) {
   const acs = story.acceptance_criteria || [];
@@ -207,6 +226,7 @@ function storyBlock(s, open) {
         ${bdg(s.status, s.status)} ${bdg("neutral", `${roll.pass}/${roll.total} AC`)}
         ${(s.decisions || []).length ? bdg("done", `${s.decisions.length} decided`) : ""}
         ${(s.open_questions || []).length ? bdg("blocked", `${s.open_questions.length} open`) : ""}
+        ${prLink(s)}
       </span></summary>
     <div class="note" style="margin-top:8px">${esc(s.story)}</div>
     ${s.rationale ? `<div class="note"><i>Why:</i> ${esc(s.rationale)}</div>` : ""}
@@ -251,7 +271,8 @@ const VIEWS = {
             <span class="kid">${esc(s.id)}</span>
             <span class="kt">${esc(s.title)}</span>
             <span class="kmeta">${bdg("epic", s.epic)} ${bdg(s.priority || "could", s.priority || "?")}
-              ${r.fail ? bdg("fail", `${r.fail} failing`) : bdg("neutral", `${r.pass}/${r.total} AC`)}</span>
+              ${r.fail ? bdg("fail", `${r.fail} failing`) : bdg("neutral", `${r.pass}/${r.total} AC`)}
+              <span onclick="event.stopPropagation()">${prLink(s)}</span></span>
             <div class="bar"><i style="width:${r.pct}%"></i></div>
           </div>`;
         }).join("") : `<div class="note" style="padding:6px 4px">empty</div>`) + `</div>`;
@@ -394,8 +415,12 @@ Promise.all([
   fetch(BACKLOG_FILE).then(r => r.ok ? r.json()
     : { meta:{ story_statuses:["todo","in-progress","in-review","blocked","done"] }, epics:[], stories:[], icebox:[],
         coverage:{ excused:[] } }),
-]).then(([m, b]) => {
-  MAP = m; BL = b;
+  // Optional and generated separately (build_pr_index.py). A 404 (never
+  // generated, or gitignored and not run yet) or bad JSON must never break
+  // the board — it only means no story gets a pull-request link.
+  fetch(PR_FILE).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+]).then(([m, b, p]) => {
+  MAP = m; BL = b; PRS = p && typeof p === "object" ? p : {};
   const c = BL.coverage || {};
   document.getElementById("sub").textContent =
     `${BL.stories.length} stories · ${BL.stories.reduce((n, s) => n + (s.acceptance_criteria || []).length, 0)} acceptance criteria · ` +
