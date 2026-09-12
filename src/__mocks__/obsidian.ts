@@ -23,6 +23,13 @@ export class Setting {
 	addButton(_cb: (btn: unknown) => void): this { return this; }
 }
 
+export class ItemView {
+	leaf: unknown;
+	constructor(leaf: unknown) {
+		this.leaf = leaf;
+	}
+}
+
 export class Modal {
 	app: unknown;
 	contentEl: HTMLElement;
