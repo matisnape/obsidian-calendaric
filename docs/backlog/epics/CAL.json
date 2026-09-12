@@ -435,7 +435,7 @@
       "story": "As someone who keeps a monthly note, I want clicking the month header to take me to that month's note, and a separate, dedicated control to jump back to today, so that neither action is at risk of accidentally triggering the other.",
       "rationale": "This carries forward a feature the user relies on today that is currently implemented in a fragile, easily-broken way; the rewrite must make it a real, first-class part of the header rather than a workaround layered on top of it.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:month-header-interactions",
         "cal:month-header-click-open-monthly-note",
