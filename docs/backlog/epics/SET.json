@@ -199,7 +199,7 @@
       "story": "As someone relying on periodic notes, I want each granularity's effective format, folder and template to resolve to one predictable value, so that I never have to guess which of several possible sources of that setting actually won.",
       "rationale": "The old plugins let format, folder and template be set in more than one place at once; a single resolver removes the guesswork the vault currently gets right only by coincidence.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:get-periodic-note-settings",
         "dni:resolve-daily-settings",
@@ -231,8 +231,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.1: uses the documented built-in default format when a granularity's format is empty\" and \"AC-SET-03.1: returns a defined value for every field of every granularity\". DEFAULT_FORMATS in src/settings/model.ts is now the single table; it replaced the settings-screen placeholder and the import's DEFAULT_DAY_FORMAT, which were two more copies. Mutation-checked by the orchestrator: deleting the empty-format substitution fails 2 of the 41 tests."
         },
         {
           "id": "AC-SET-03.2",
@@ -244,8 +244,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.2: resolves an unset folder to the vault root and applies no template\". The resolver returns \"\" for an unset folder, which src/notes/noteUtils.ts:86 already treats as the vault root. The \"default new-file location\" fallback at noteUtils.ts:73 is deliberately untouched: it belongs to AC-NOTE-03.2, which is already pass, and moving it here would reopen a closed criterion."
         },
         {
           "id": "AC-SET-03.3",
@@ -257,7 +257,7 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": "HALF SETTLED, and the missing half is wiring, not correctness. vitest: src/settings/model.test.ts > \"AC-SET-03.3: hands two callers the same format, folder, template and prefix-match values\" and \"AC-SET-03.3: is unaffected by a caller that writes to the config it was handed\" prove the resolver is deterministic and returns a fresh object per call; mutation-checked by the orchestrator (returning the stored object itself fails 3 tests). But no consumer calls it yet: src/ui/calendar.ts and src/notes/noteCreate.ts still read settings[granularity] directly, so two parts of the running plugin can still disagree. The criterion is about two callers agreeing, so it stays unverified until the consumers are wired. Deliberately not done in this ticket: US-NOTE-04 and US-CAL-02 own those two files right now and the edit would collide."
         },
         {
           "id": "AC-SET-03.4",
@@ -269,8 +269,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts:542 > \"AC-SET-03.4: resolves the daily note from Calendaric's own configuration, never the external Daily Notes file\". The test first proves the external file is present, readable and disagreeing on all three fields, by running decideDailyNotesCard against a read-counting port; it then resolves and asserts the read counter did not move. An assertion on the resolved values alone would pass even if the file were read."
         },
         {
           "id": "AC-SET-03.5",
@@ -282,8 +282,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.5: substitutes the built-in default for a hand-edited value of the wrong type\" — format stored as a number and allowPrefixMatch as a string both fall back to the built-in default, while folder and templatePath resolve normally. Mutation-checked by the orchestrator: bypassing normalizeConfig fails it.",
           "failure_path": true
         }
       ]

@@ -7,9 +7,13 @@ import {
 	getActiveSet,
 	getInactiveGranularities,
 	loadStoredConfig,
+	resolveEffectiveConfig,
 	toSettings,
+	DEFAULT_FORMATS,
 } from "./model";
 import type { CalendarSet, StoredConfig } from "./model";
+import { decideDailyNotesCard } from "./dailyNotesImport";
+import type { CompanionPluginPort } from "../adapters/companionPluginPort";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
 
 /** A fully written-out stored configuration, as `saveData` would have left it. */
@@ -471,3 +475,135 @@ describe("getActiveGranularities / getInactiveGranularities", () => {
 		expect(getInactiveGranularities(set)).toEqual(["week", "month", "quarter", "year"]);
 	});
 });
+
+describe("resolveEffectiveConfig", () => {
+	/** A stored group that mentions its id and nothing else: every field is unset. */
+	function emptyGroupSettings() {
+		return toSettings(loadStoredConfig({ calendarSets: [{ id: "Default" }] }));
+	}
+
+	it("AC-SET-03.1: uses the documented built-in default format when a granularity's format is empty", () => {
+		const settings = emptyGroupSettings();
+
+		const formats = GRANULARITIES.map((granularity) => resolveEffectiveConfig(settings, granularity).format);
+
+		expect(formats).toEqual(["YYYY-MM-DD", "gggg-[W]ww", "YYYY-MM", "YYYY-[Q]Q", "YYYY"]);
+		expect(formats).toEqual(GRANULARITIES.map((granularity) => DEFAULT_FORMATS[granularity]));
+	});
+
+	it("AC-SET-03.1: returns a defined value for every field of every granularity", () => {
+		const settings = emptyGroupSettings();
+
+		for (const granularity of GRANULARITIES) {
+			const effective = resolveEffectiveConfig(settings, granularity);
+			for (const value of Object.values(effective)) {
+				expect(value).toBeDefined();
+			}
+		}
+	});
+
+	it("AC-SET-03.2: resolves an unset folder to the vault root and applies no template", () => {
+		const settings = emptyGroupSettings();
+
+		const effective = resolveEffectiveConfig(settings, "day");
+
+		expect(effective.folder).toBe("");
+		expect(effective.templatePath).toBe("");
+	});
+
+	it("AC-SET-03.3: hands two callers the same format, folder, template and prefix-match values", () => {
+		const settings = toSettings(loadStoredConfig(storedFixture()));
+
+		const noteCreation = resolveEffectiveConfig(settings, "week");
+		const calendarView = resolveEffectiveConfig(settings, "week");
+
+		expect(calendarView).toEqual(noteCreation);
+		expect(calendarView).toMatchObject({
+			format: "gggg-[W]ww",
+			folder: "journal/week",
+			templatePath: "templates/week",
+			allowPrefixMatch: true,
+		});
+	});
+
+	it("AC-SET-03.3: is unaffected by a caller that writes to the config it was handed", () => {
+		const settings = toSettings(loadStoredConfig(storedFixture()));
+
+		const noteCreation = resolveEffectiveConfig(settings, "day");
+		noteCreation.format = "clobbered";
+		noteCreation.folder = "clobbered";
+
+		expect(resolveEffectiveConfig(settings, "day")).toMatchObject({
+			format: "YYYY-MM-DD",
+			folder: "journal/day",
+		});
+	});
+
+	it("AC-SET-03.4: resolves the daily note from Calendaric's own configuration, never the external Daily Notes file", () => {
+		const companion = countingCompanionPort();
+		const settings = toSettings(loadStoredConfig(storedFixture()));
+
+		// The external file is present, readable and disagrees on all three fields.
+		const card = decideDailyNotesCard(companion.port, {
+			hasMigratedDailyNoteSettings: settings.hasMigratedDailyNoteSettings,
+			day: settings.day,
+		});
+		expect(card).toEqual({
+			kind: "offer",
+			legacy: { format: "DD-MM-YYYY", folder: "External", template: "templates/external" },
+		});
+		const readsBefore = companion.reads();
+
+		const effective = resolveEffectiveConfig(settings, "day");
+
+		expect(effective).toMatchObject({
+			format: "YYYY-MM-DD",
+			folder: "journal/day",
+			templatePath: "templates/day",
+		});
+		expect(companion.reads()).toBe(readsBefore);
+	});
+
+	it("AC-SET-03.5: substitutes the built-in default for a hand-edited value of the wrong type", () => {
+		const stored = loadStoredConfig({
+			calendarSets: [
+				{
+					id: "Default",
+					day: {
+						enabled: true,
+						format: 20260912,
+						folder: "journal/day",
+						templatePath: "templates/day",
+						allowPrefixMatch: "yes",
+					},
+				},
+			],
+		});
+
+		const effective = resolveEffectiveConfig(toSettings(stored), "day");
+
+		expect(effective.format).toBe(DEFAULT_FORMATS.day);
+		expect(effective.allowPrefixMatch).toBe(DEFAULT_PERIODIC_CONFIG.allowPrefixMatch);
+		expect(effective.folder).toBe("journal/day");
+		expect(effective.templatePath).toBe("templates/day");
+		expect(effective.enabled).toBe(true);
+	});
+});
+
+/** A companion plugin whose daily-note settings disagree with Calendaric's, counting every read. */
+function countingCompanionPort(): { port: CompanionPluginPort; reads: () => number } {
+	let reads = 0;
+	return {
+		port: {
+			readDailyNotes: () => {
+				reads += 1;
+				return {
+					ok: true,
+					value: { enabled: true, format: "DD-MM-YYYY", folder: "External", template: "templates/external" },
+				};
+			},
+			disableDailyNotes: () => ({ ok: true }),
+		},
+		reads: () => reads,
+	};
+}

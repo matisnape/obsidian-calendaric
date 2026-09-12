@@ -1,7 +1,8 @@
 import type { CompanionPluginAction, CompanionPluginPort } from "../adapters/companionPluginPort";
+import { DEFAULT_FORMATS } from "./model";
 
 /** Documented default used when the core plugin stored no format (AC-MIG-01.3). */
-export const DEFAULT_DAY_FORMAT = "YYYY-MM-DD";
+export const DEFAULT_DAY_FORMAT = DEFAULT_FORMATS.day;
 
 export type DailyNotesImportKey = "format" | "folder" | "templatePath";
 
