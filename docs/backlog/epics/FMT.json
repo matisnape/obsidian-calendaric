@@ -722,7 +722,7 @@
       "story": "As someone whose vault holds notes written under more than one naming habit, I want one predictable winner when a filename could be read in more than one way, so that the same file never resolves to a different date after an unrelated change.",
       "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently between runs.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -758,8 +758,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts:279-292 > \"AC-FMT-08.1: ...\" -- precedence asserted in BOTH candidate list orders, so the winner does not depend on how the paths arrived, which is the unspecified thing this story exists to remove. The second clause is the stronger half and is asserted separately at :284-292: the test checks resolvePeriodNote DROPS the prefix-matched file, not merely that the exact one also resolves. Production: resolvePeriodNote at src/fmt/resolveFileDate.ts:87-104 returns `candidates[0]?.path ?? null`, a single string -- the signature makes \"both\" inexpressible. Mutation-checked by the orchestrator: removing the sort entirely fails 2 of the 29 tests in that file.",
           "failure_path": true
         },
         {
@@ -772,8 +772,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts:230-249 > \"AC-FMT-08.2: ...\". The test guards against its own tautology first: it asserts the basename-only reading and the full-format reading produce DIFFERENT dates before asserting which one wins. Both readings are computed at test time from computeNotePath, the real writer, so the case cannot silently degrade into two equal dates. Production: no change was needed -- parseFilename at src/fmt/parseFilename.ts:106-116 already tries the full configured format before the basename-only one, per DEC-14.",
           "failure_path": true
         }
       ],

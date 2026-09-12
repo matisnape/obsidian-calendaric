@@ -12,6 +12,13 @@ export interface FileDateIdentity {
 	date: Moment;
 	/** The shared identity string — computeNoteDate is what every other feature compares on. */
 	noteDate: string;
+	/**
+	 * True when the filename only STARTS with what the format writes, matched
+	 * under the granularity's opt-in prefix setting (AC-FMT-04.3). It is carried
+	 * out of here because it decides precedence between two files naming the
+	 * same period (AC-FMT-08.1), which this function alone cannot see.
+	 */
+	prefixMatch: boolean;
 }
 
 /**
@@ -43,15 +50,14 @@ function matchGranularity(
 	const relative = stripFolder(path, resolveNoteFolder(config.folder, vaultConfig));
 	if (relative === null) return null;
 
-	// ponytail: prefix matching stays off until a setting exposes it — that is
-	// the documented default (AC-FMT-04.3), and no config field carries it yet.
-	let parsed = parseFilename(relative, config.format, false);
+	// Prefix matching is the granularity's own opt-in (US-SET-01), off by default.
+	let parsed = parseFilename(relative, config.format, config.allowPrefixMatch);
 	// A note may sit in a subfolder under the configured folder: the folder
 	// scopes the search, it does not fix the depth (AC-FMT-07.1). parseFilename
 	// already falls back to the filename when the FORMAT is nested; a
 	// slash-free format needs that same fallback applied to the path.
 	if (!parsed && !config.format.includes("/")) {
-		parsed = parseFilename(basename(relative), config.format, false);
+		parsed = parseFilename(basename(relative), config.format, config.allowPrefixMatch);
 	}
 	if (!parsed) return null;
 
@@ -62,7 +68,40 @@ function matchGranularity(
 		// for a day: it is what every other caller must pass to agree with this
 		// identity (AC-FMT-07.4).
 		noteDate: computeNoteDate(parsed.date, granularity, configs.week.format),
+		prefixMatch: parsed.prefixMatch,
 	};
+}
+
+/**
+ * The one note for a period, picked out of candidate vault paths.
+ *
+ * An exact match wins over a prefix match: a file the format writes verbatim IS
+ * that period's note, and a longer name that merely starts with it is a second
+ * reading of the same period, never an equal one (AC-FMT-08.1). Only one path
+ * comes back, so no caller can quietly treat the loser as an alternative.
+ *
+ * Below that the lowest path wins, because a caller's list order is exactly the
+ * unspecified thing this story exists to remove: the same vault must answer the
+ * same file however the paths arrived.
+ */
+export function resolvePeriodNote(
+	paths: readonly string[],
+	noteDate: string,
+	configs: Record<FileGranularity, PeriodicConfig>,
+	vaultConfig: VaultConfigPort,
+): string | null {
+	const candidates: { path: string; prefixMatch: boolean }[] = [];
+
+	for (const path of paths) {
+		const identity = resolveFileDate(path, configs, vaultConfig);
+		if (identity?.noteDate === noteDate) candidates.push({ path, prefixMatch: identity.prefixMatch });
+	}
+
+	candidates.sort(
+		(a, b) => Number(a.prefixMatch) - Number(b.prefixMatch) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
+	);
+
+	return candidates[0]?.path ?? null;
 }
 
 function basename(path: string): string {
