@@ -6,15 +6,42 @@
 // gives us the standard DOM and nothing more, so the plugin's own view code
 // cannot render under test until these exist.
 //
-// The method set is exactly what `src/ui/` calls today: createEl, createDiv
-// (calendar.ts:67-169, modal.ts), empty (calendar.ts:65,118,129) and addClass
-// (calendar.ts:153,178). A shim for a method nothing calls is untested code
-// pretending to be a harness. Add the next method when the next test needs it.
+// The method set is every DOM extension called anywhere under `src/` outside
+// tests, derived by grepping each name Obsidian declares on Node/Element
+// against the tree -- not by reading the one file the first test happened to
+// need. Scoping that grep to `src/ui/` is what made the first version of this
+// shim too small: it has to serve the settings tab too, and the settings tab
+// is where three of these eight live.
 //
-// The same applies inside DomElementInfo: `cls`, `text` and `attr` are the
-// three options the view code passes. `title`, `parent`, `prepend`, `value`,
-// `type`, `placeholder` and `href` are each a one-line addition when a caller
-// appears.
+//   createEl      calendar.ts:71-165, modal.ts, settings.ts, dailyNotesImport*
+//   createDiv     calendar.ts:67-170, modal.ts:31, settings.ts, dailyNotesImportCard
+//   createSpan    settings.ts:162,310 and settings/dailyNotesImportModal.ts:35
+//   empty         calendar.ts:65,118,129,270; CalendarView.ts:27; settings.ts:71,228
+//   addClass      calendar.ts:153,178; CalendarView.ts:28
+//   toggleClass   settings.ts:189 (and calendar.ts:141 once pull request #20 lands)
+//   setAttr       settings.ts:211,212
+//   appendText    settings.ts:213,229
+//
+// Only `toggleClass` is exercised by a test of its own, because only it
+// branches: it adds the class on true and removes it on false, and AC-CAL-02.4
+// will ask this shim whether the "return to today" control is inactive. A shim
+// that got that backwards would hand a green verdict to a criterion that is
+// false. The other seven delegate straight to a standard DOM call with no
+// branch, so the tests that render real view code are their check.
+//
+// `detach()` (calendarCommand.ts:77, obsidianCalendarLeafAdapter.ts:51,77) is
+// deliberately absent: those calls are on the app's CalendarLeafHandle port,
+// not on a DOM element.
+//
+// `isShown()` (obsidianCalendarLeafAdapter.ts:13) is absent on purpose too.
+// It reports whether any ancestor hides the element, which happy-dom does not
+// model, so a shim would have to guess. obsidianCalendarLeafAdapter.test.ts:57
+// already injects its own, and its comment names isShown as one of "the parts
+// no headless environment provides". Injecting beats guessing here.
+//
+// Inside DomElementInfo, `cls`, `text` and `attr` are the three options the
+// view code passes. `title`, `parent`, `prepend`, `value`, `type`,
+// `placeholder` and `href` are each a one-line addition when a caller appears.
 
 /**
  * The three DomElementInfo options the view code passes.
@@ -89,6 +116,14 @@ export function installObsidianDom(): void {
 		return this.createEl("div", o, callback);
 	};
 
+	Node.prototype.createSpan = function (
+		this: Node,
+		o?: ElementOptions | string,
+		callback?: (el: HTMLSpanElement) => void,
+	): HTMLSpanElement {
+		return this.createEl("span", o, callback);
+	};
+
 	Element.prototype.empty = function (this: Element): void {
 		while (this.firstChild !== null) {
 			this.removeChild(this.firstChild);
@@ -97,5 +132,32 @@ export function installObsidianDom(): void {
 
 	Element.prototype.addClass = function (this: Element, ...classes: string[]): void {
 		this.classList.add(...classes);
+	};
+
+	Element.prototype.toggleClass = function (
+		this: Element,
+		classes: string | string[],
+		value: boolean,
+	): void {
+		for (const cls of typeof classes === "string" ? [classes] : classes) {
+			this.classList.toggle(cls, value);
+		}
+	};
+
+	Element.prototype.setAttr = function (
+		this: Element,
+		qualifiedName: string,
+		value: string | number | boolean | null,
+	): void {
+		// Obsidian drops the attribute rather than writing the string "null".
+		if (value === null) {
+			this.removeAttribute(qualifiedName);
+			return;
+		}
+		this.setAttribute(qualifiedName, String(value));
+	};
+
+	Element.prototype.appendText = function (this: Element, val: string): void {
+		this.appendChild((this.ownerDocument ?? document).createTextNode(val));
 	};
 }
