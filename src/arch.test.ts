@@ -2,7 +2,8 @@
    plugin shipping node:fs breaks on Obsidian mobile and fails community review.
    This file is a test, esbuild never sees it, and reading the repository's own
    configuration is the whole point of it. */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 
@@ -176,5 +177,38 @@ describe("AC-ARCH-06.1: one command produces a loadable plugin", () => {
 
 		expect(manifest.id).toBeTruthy();
 		expect(manifest.version).toBeTruthy();
+	});
+});
+
+describe("AC-ARCH-07.4: one module reads Obsidian's internal plugin registry", () => {
+	// `app.internalPlugins` is undocumented and moves between Obsidian versions,
+	// which is the whole reason the adapter exists. Reaching for it is only worth
+	// the risk while exactly one file has to change when the host changes: a
+	// second reader turns every Obsidian release into a hunt through the tree.
+	//
+	// Read as source text rather than by import graph, because the shape that
+	// breaks is a property name in a string-indexed read, which no type can see.
+	const SURFACE = /\binternalPlugins\b/;
+	const ADAPTER = "src/adapters/obsidianCompanionPluginAdapter.ts";
+
+	// Tests and the Obsidian mock are excluded on purpose: they stand in for the
+	// host, so naming the surface is what they are for. This asserts about what
+	// ships in the bundle.
+	const shipped = readdirSync(root("src"), { recursive: true, encoding: "utf8" })
+		.map((entry) => `src/${entry.split(sep).join("/")}`)
+		.filter((path) => path.endsWith(".ts"))
+		.filter((path) => !path.endsWith(".test.ts"))
+		.filter((path) => !path.includes("/__mocks__/"))
+		.sort();
+
+	it("the adapter is the module that reads it", () => {
+		expect(shipped).toContain(ADAPTER);
+		expect(read(ADAPTER)).toMatch(SURFACE);
+	});
+
+	it("no other shipped module reads that surface directly", () => {
+		const others = shipped.filter((path) => path !== ADAPTER);
+
+		expect(others.filter((path) => SURFACE.test(read(path)))).toEqual([]);
 	});
 });

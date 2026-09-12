@@ -575,7 +575,7 @@
       "story": "As a Calendaric user, I want the plugin to keep working, or fail visibly, when Obsidian changes its own UI internals or a companion plugin changes its internal state shape, so that an Obsidian or Periodic Notes update never leaves my settings screen crashed or a feature silently doing nothing.",
       "rationale": "Two P1 defects show why this matters. An Obsidian 1.13 change to the settings dialog crashed the Periodic Notes settings pane. Another integration read a state container as a plain object instead of using its accessor or subscription API, so a shipped feature always returned nothing.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "forks:settings-tab-crash-guard-1.13"
       ],
@@ -596,8 +596,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settingsTabGuard.test.ts > \"AC-ARCH-07.1: skips a section that throws instead of letting the error escape\" / \"AC-ARCH-07.1: leaves nothing half-rendered from the section that threw\" / \"AC-ARCH-07.1: renders every other section after one of them fails\" / \"AC-ARCH-07.1: names the skipped section rather than dropping it silently\" / \"AC-ARCH-07.1: guards each section separately, not the tab as a whole\". The real display() runs under happy-dom with an Obsidian-owned surface broken: the import card half-draws and then throws, and separately Obsidian's own Setting class throws for the three sections that build rows with it. Mutation-checked twice on src/settings.ts. Neutering the rollback loop in renderGuardedSection (\"while (containerEl.childNodes.length > before) {\" -> \"while (false) {\"): 6 passed -> 2 failed | 4 passed -> 6 passed restored. Calling renderDailyNotesImportCard outside renderGuardedSection: 6 passed -> 4 failed | 2 passed -> 6 passed restored. Reachable from main.ts:65, which registers CalendaricSettingsTab.",
           "failure_path": true
         },
         {
@@ -610,8 +610,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > \"AC-ARCH-07.2: reads a store's values through subscribe rather than as properties\" / \"AC-ARCH-07.2: subscribes with the container as the receiver\" / \"AC-ARCH-07.2: releases the subscription once it has the published value\" / \"AC-ARCH-07.2: reads a container that publishes through get() through get()\". Mutation-checked on src/adapters/obsidianCompanionPluginAdapter.ts: making readStateContainer find no accessor (\"ACCESSOR_KEYS.find((key) => typeof container[key] === \\\"function\\\")\" -> \"ACCESSOR_KEYS.find(() => false)\"), which is exactly the plain-object property read the criterion forbids: 36 passed -> 8 failed | 28 passed -> 36 passed restored. Supersedes the two AC-ARCH-04.4 tests that refused an accessor-backed container outright rather than reading through it; every other shape AC-ARCH-04.4 names (missing method, absent instance, non-string value, throwing getter) is still refused and still tested."
         },
         {
           "id": "AC-ARCH-07.3",
@@ -624,8 +624,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "The typed result: vitest: src/adapters/obsidianCompanionPluginAdapter.test.ts > \"AC-ARCH-07.3: returns a typed mismatch when the store publishes a non-record\" / \"AC-ARCH-07.3: returns a typed mismatch when subscribe publishes no value at all\" / \"AC-ARCH-07.3: returns a typed mismatch when get() hands back a non-record\" / \"AC-ARCH-07.3: the import card reads as unreadable, never as an offer\". What the user sees: vitest: src/settingsCompanionUnavailable.test.ts > \"AC-ARCH-07.3: tells the user the settings could not be read\" / \"AC-ARCH-07.3: names the documented fallback, which is entering them by hand\" / \"AC-ARCH-07.3: offers no import button that would store empty values\" / \"AC-ARCH-07.3: still offers the import when the store publishes readable values\" -- the whole chain unmocked, from the registered settings tab down to the accessor read. This closes the clause AC-ARCH-04.4 left unverified for want of a DOM harness. Mutation-checked twice on src/adapters/obsidianCompanionPluginAdapter.ts, both times by reporting an unusable publication as an empty success (the mismatch return in readStateContainer -> \"return { ok: true, value: {} };\"), which is the silent no-op the criterion forbids: adapter test 36 passed -> 4 failed | 32 passed -> 36 passed restored; on-screen test 4 passed -> 3 failed | 1 passed -> 4 passed restored.",
           "failure_path": true
         },
         {
@@ -638,8 +638,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-07.4: one module reads Obsidian's internal plugin registry\" > \"the adapter is the module that reads it\" / \"no other shipped module reads that surface directly\" -- walks every shipped .ts under src/ (tests and __mocks__ excluded, because they stand in for the host) and requires the internalPlugins surface to appear only in src/adapters/obsidianCompanionPluginAdapter.ts. Mutation-checked on src/settings.ts by adding a second reader to display() (\"void (this.app as unknown as Record<string, unknown>)[\\\"internalPlugins\\\"];\"): 18 passed -> 1 failed | 17 passed -> 18 passed restored."
         }
       ],
       "resolves": [

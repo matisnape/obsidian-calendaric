@@ -52,6 +52,43 @@ function getMoment() {
 	return (window as any).moment as typeof import("moment") | undefined;
 }
 
+/**
+ * AC-ARCH-07.1: draws one section of the settings tab and contains a failure to
+ * that section.
+ *
+ * `containerEl` belongs to Obsidian, and so do the UI classes drawn into it.
+ * Obsidian reshapes both between versions -- the 1.13 settings dialog is what
+ * crashed the Periodic Notes pane -- and a section that throws against a
+ * changed host would otherwise abort `display()` part-way and leave the tab
+ * showing whatever had been drawn up to that point.
+ *
+ * So the nodes that section added are taken back out, and the user is told
+ * which part is missing rather than left looking at a gap. Sections after it
+ * still render, because each call has its own guard.
+ *
+ * The recovery path itself uses `createDiv`, which Obsidian also owns. A host
+ * that no longer provides it renders nothing at all, guard included; that is
+ * the outer edge of what a plugin can catch from inside.
+ */
+function renderGuardedSection(containerEl: HTMLElement, label: string, render: () => void): void {
+	const before = containerEl.childNodes.length;
+	try {
+		render();
+	} catch (error) {
+		while (containerEl.childNodes.length > before) {
+			const partial = containerEl.lastChild;
+			if (partial === null) break;
+			containerEl.removeChild(partial);
+		}
+		console.error(`Calendaric: the ${label} settings section could not be rendered`, error);
+		const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--warning" });
+		notice.createEl("strong", { text: `${label} is unavailable` });
+		notice.createEl("p", {
+			text: "This part of the settings screen does not work with this version of Obsidian. Everything else on this screen is unaffected.",
+		});
+	}
+}
+
 export class CalendaricSettingsTab extends PluginSettingTab {
 	private plugin: CalendaricPlugin;
 
@@ -64,13 +101,17 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		renderDailyNotesImportCard(containerEl, this.plugin, new ObsidianCompanionPluginAdapter(this.plugin.app), {
-			save: () => this.save(),
-			refresh: () => this.display(),
+		// AC-ARCH-07.1: one guard per section, so a host change costs the section
+		// that touches it and nothing else.
+		renderGuardedSection(containerEl, "Daily Notes import", () => {
+			renderDailyNotesImportCard(containerEl, this.plugin, new ObsidianCompanionPluginAdapter(this.plugin.app), {
+				save: () => this.save(),
+				refresh: () => this.display(),
+			});
 		});
-		this.renderGeneralSection(containerEl);
-		this.renderPeriodicNotesSection(containerEl);
-		this.renderAdvancedSection(containerEl);
+		renderGuardedSection(containerEl, "General", () => this.renderGeneralSection(containerEl));
+		renderGuardedSection(containerEl, "Periodic Notes", () => this.renderPeriodicNotesSection(containerEl));
+		renderGuardedSection(containerEl, "Advanced", () => this.renderAdvancedSection(containerEl));
 	}
 
 	private async save(): Promise<void> {

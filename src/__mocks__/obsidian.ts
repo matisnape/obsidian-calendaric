@@ -64,6 +64,15 @@ export class Menu {
 	}
 }
 
+/**
+ * The real one writes an SVG into the element. Nothing under test reads the
+ * icon back, so a no-op is the whole stand-in -- what the settings tab needs is
+ * that calling it does not throw.
+ */
+export function setIcon(_el: HTMLElement, _iconId: string): void {
+	// Intentionally empty.
+}
+
 // The real Platform is read off the running host; tests that care inject their
 // own flag through WorkspacePort.isMacOS instead of leaning on this default.
 export const Platform = { isMacOS: false };
