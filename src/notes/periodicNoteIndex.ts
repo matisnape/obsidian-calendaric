@@ -1,0 +1,179 @@
+import type { Moment } from "moment";
+import type { PeriodicConfig } from "../types";
+import type { VaultConfigPort } from "../adapters/vaultConfigPort";
+import type { NoteFile, VaultChange, VaultIndexPort } from "../adapters/vaultPort";
+import type { FileGranularity } from "../fmt/resolveFileDate";
+import { resolveFileDate } from "../fmt/resolveFileDate";
+import { computeNoteDate } from "../fmt/noteDate";
+import { resolveNoteFolder } from "./noteUtils";
+
+/** The two granularities a file can be resolved to, configured. */
+export type PeriodicConfigs = Record<FileGranularity, PeriodicConfig>;
+
+/**
+ * The format a frontmatter date is read against, per granularity.
+ *
+ * Deliberately not the configured format. A frontmatter date is what a
+ * template or a script writes to say "this file is that period's note" when
+ * the filename cannot say it, so it has to be readable without knowing how
+ * this vault happens to name its files.
+ */
+const FRONTMATTER_FORMAT: Record<FileGranularity, string> = {
+	day: "YYYY-MM-DD",
+	week: "gggg-[W]ww",
+};
+
+/**
+ * The Monday inside the week `date` starts, which is that week's identity
+ * whatever numbering named it.
+ *
+ * The default frontmatter week format numbers locale weeks, and a locale week
+ * can start on a Sunday — a day that belongs to the previous ISO week. Left
+ * alone it would file the note one week early. `parseFilename` walks the same
+ * step for a locale-numbered filename, so the two agree on which week is which.
+ */
+function mondayWithin(date: Moment): Moment {
+	return date.clone().add((1 - date.isoWeekday() + 7) % 7, "days");
+}
+
+/** One indexed note: the file, plus the path it was indexed under. */
+interface IndexedNote {
+	file: NoteFile;
+	/**
+	 * Held separately from `file.path` because a rename rewrites the path on
+	 * the host's own file object. This one still says where the entry was
+	 * filed, which is what a later `forget(oldPath)` has to match against.
+	 */
+	path: string;
+}
+
+/**
+ * Which file is each period's note, kept current as the vault changes.
+ *
+ * The vault is read once, at construction; after that every create, delete,
+ * rename and frontmatter change reported by the port updates the one entry it
+ * touches. A lookup is a map read, so the features that ask per calendar cell
+ * — dots, jump, open-or-create — never scan the vault.
+ *
+ * A settings change is the exception: `applySettings` throws the index away and
+ * rebuilds it, because which files count is exactly what those settings decide
+ * and an entry made under the old ones cannot be corrected in place.
+ */
+export class PeriodicNoteIndex {
+	/** noteDate -> the note filed for that period. */
+	private byNoteDate = new Map<string, IndexedNote>();
+	/** path -> the noteDate it was filed under, so a change can find its entry. */
+	private noteDateByPath = new Map<string, string>();
+	private unsubscribe: () => void;
+
+	constructor(
+		private vault: VaultIndexPort,
+		private vaultConfig: VaultConfigPort,
+		private configs: PeriodicConfigs,
+	) {
+		this.unsubscribe = vault.onChange((change) => this.noticeChange(change));
+		this.rebuild();
+	}
+
+	/** The note for that period, or null when the vault holds none. */
+	get(granularity: FileGranularity, date: Moment): NoteFile | null {
+		return this.byNoteDate.get(this.noteDateFor(granularity, date))?.file ?? null;
+	}
+
+	/** Every path currently indexed. For tests and for diagnosing a stale index. */
+	paths(): string[] {
+		return [...this.noteDateByPath.keys()];
+	}
+
+	/** Take the new configuration and rebuild: it decides which files count at all. */
+	applySettings(configs: PeriodicConfigs): void {
+		this.configs = configs;
+		this.rebuild();
+	}
+
+	/** Stop listening. The index is dead after this; build another one. */
+	destroy(): void {
+		this.unsubscribe();
+		this.unsubscribe = () => undefined;
+	}
+
+	private noticeChange(change: VaultChange): void {
+		// Both ends of a rename: the entry the file had before, and whatever
+		// was filed at the path it has landed on.
+		if (change.oldPath !== undefined) this.forget(change.oldPath);
+		this.forget(change.file.path);
+		if (change.kind !== "delete") this.remember(change.file);
+	}
+
+	private rebuild(): void {
+		this.byNoteDate.clear();
+		this.noteDateByPath.clear();
+		for (const file of this.vault.listNotes()) this.remember(file);
+	}
+
+	private remember(file: NoteFile): void {
+		const noteDate = this.identify(file);
+		if (noteDate === null) return;
+
+		this.byNoteDate.set(noteDate, { file, path: file.path });
+		this.noteDateByPath.set(file.path, noteDate);
+	}
+
+	private forget(path: string): void {
+		const noteDate = this.noteDateByPath.get(path);
+		if (noteDate === undefined) return;
+
+		this.noteDateByPath.delete(path);
+		// Two files can name one period and only the last one seen holds it, so
+		// the entry goes only when this path is the one still filed there.
+		if (this.byNoteDate.get(noteDate)?.path === path) this.byNoteDate.delete(noteDate);
+	}
+
+	/** Which period this file is the note for, by name first and frontmatter second. */
+	private identify(file: NoteFile): string | null {
+		const byName = resolveFileDate(file.path, this.configs, this.vaultConfig);
+		if (byName) return byName.noteDate;
+
+		return this.identifyByFrontmatter(file);
+	}
+
+	/**
+	 * The period a file's frontmatter claims, when its name claims none.
+	 *
+	 * The folder still decides: a file outside every configured folder is not a
+	 * periodic note however its frontmatter is written, which is the same rule
+	 * `resolveFileDate` applies to a filename.
+	 */
+	private identifyByFrontmatter(file: NoteFile): string | null {
+		// Day before week, for the reason resolveFileDate gives: the more
+		// specific period wins when a file could answer to either.
+		for (const granularity of ["day", "week"] as const) {
+			if (!this.isUnderFolder(file.path, this.configs[granularity].folder)) continue;
+
+			const written = this.vault.frontmatterString(file, granularity);
+			if (written === null) continue;
+
+			const date = window.moment(written, FRONTMATTER_FORMAT[granularity], true);
+			if (!date.isValid()) continue;
+
+			return this.noteDateFor(granularity, granularity === "week" ? mondayWithin(date) : date);
+		}
+		return null;
+	}
+
+	private isUnderFolder(path: string, folder: string): boolean {
+		const resolved = resolveNoteFolder(folder, this.vaultConfig);
+		return resolved === "" || path.startsWith(`${resolved}/`);
+	}
+
+	/**
+	 * The identity string a period is filed under.
+	 *
+	 * The weekly format is passed even for a day, because it is what decides
+	 * where a week starts — the same argument every other caller of
+	 * `computeNoteDate` has to pass to agree with this index (AC-FMT-07.4).
+	 */
+	private noteDateFor(granularity: FileGranularity, date: Moment): string {
+		return computeNoteDate(date, granularity, this.configs.week.format);
+	}
+}
