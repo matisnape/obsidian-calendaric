@@ -1,8 +1,6 @@
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
+import type { PeriodicConfig, ReleaseGranularity } from "../types";
 import { formatWithWeekTokens, applyWeekTokens } from "./noteUtils";
-
-type Granularity = "day" | "week";
 
 /**
  * Substitute all Calendaric template body variables in `content`.
@@ -19,11 +17,14 @@ type Granularity = "day" | "week";
  *
  * Weekly only:
  *   {{monday:fmt}} – {{sunday:fmt}}  → that weekday within the note's week
+ *
+ * Monthly and yearly notes carry neither group: there is no "yesterday" for a
+ * month, and a year has no one Monday. They get the universal tokens only.
  */
 export function substituteTemplateTokens(
 	content: string,
 	date: Moment,
-	granularity: Granularity,
+	granularity: ReleaseGranularity,
 	config: PeriodicConfig,
 	title: string,
 ): string {

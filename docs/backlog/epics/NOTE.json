@@ -274,7 +274,7 @@
       "story": "As someone keeping a periodic journal, I want creating a note to work the same reliable way for every granularity Calendaric supports, so that switching between daily, weekly, monthly, and yearly notes never surprises me with a create that silently does nothing or crashes.",
       "rationale": "The old code has three different, inconsistent answers for what happens when a create goes wrong; users need one predictable answer.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:create-daily-note",
         "dni:create-weekly-note",
@@ -309,8 +309,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:380 > \"AC-NOTE-04.1: ...\" asserts {outcome:\"created\", file} is returned and the file is written at the resolved path, across all four release granularities; :401 pins the four distinct paths. Production: createPeriodicNote, src/notes/noteCreate.ts:40."
         },
         {
           "id": "AC-NOTE-04.2",
@@ -322,8 +322,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:412 collects the outcome for all four granularities and asserts every one is \"exists\"; :439 collects the error message for all four and asserts the text is identical. Sameness is asserted across a collected array, not one granularity at a time, which is the way this criterion is easy to fake. Mutation-checked by the orchestrator: removing the exists branch from noteCreate.ts fails 3 of 33 tests."
         },
         {
           "id": "AC-NOTE-04.3",
@@ -335,8 +335,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:464 asserts the throw matches /quarter[\\s\\S]*not supported in this release/, that nothing was written and that no folder was created. Production: the isReleaseGranularity check at src/notes/noteCreate.ts:52-56, over RELEASE_GRANULARITIES in src/types.ts:15-21. Quarter is reserved per DEC-23.",
           "failure_path": true
         },
         {
@@ -349,8 +349,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:474 asserts the created-folder sequence and the \"created\" outcome for all four granularities. The folder-chain logic itself is US-NOTE-03's and is unchanged; this criterion is about createPeriodicNote still reaching it.",
           "failure_path": true
         },
         {
@@ -364,8 +364,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:494 asserts {outcome:\"exists\", file}, that the existing content is unchanged, and then CALLS openNoteIn with the returned file and checks it opened -- so the third clause, that the caller can act on the report to open the existing note, is proved rather than assumed. :512 separately asserts no template is read and no warning raised on the exists path. Production: src/notes/noteCreate.ts:58-59.",
           "failure_path": true
         },
         {
@@ -378,8 +378,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:531 seeds a FOLDER at the path and asserts the throw contains \"<path> is not a Markdown note\" and that nothing at the path changed; src/ui/cellActions.test.ts:487 exercises the same message through the click path. The distinction from AC-NOTE-04.5 is real in the fakes, not only in the titles: seedFile makes getFile return the note, seedFolder makes pathExists true while getFile returns null. Production: src/notes/noteCreate.ts:61-63.",
           "failure_path": true
         }
       ],

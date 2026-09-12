@@ -481,11 +481,16 @@ describe("openOrCreateNote", () => {
 		expect(ports.workspace.opened).toEqual([]);
 	});
 
-	it("AC-CAL-03.2: refuses to create when a folder already occupies the note's path", async () => {
+	// The wording belongs to `createPeriodicNote`, the one entry point every
+	// caller creates through (DEC-12), so the click path inherits AC-NOTE-04.6
+	// rather than carrying a second answer of its own.
+	it("AC-CAL-03.2, AC-NOTE-04.6: refuses to create when a folder already occupies the note's path", async () => {
 		const ports = makePorts();
 		ports.vault.seedFolder(pathFor(DAY));
 
-		await expect(clickDay(ports)).rejects.toThrow(/folder already uses/);
+		await expect(clickDay(ports)).rejects.toThrow(
+			`${pathFor(DAY)} is not a Markdown note`,
+		);
 		expect(ports.vault.contentAt(pathFor(DAY))).toBeUndefined();
 		expect(ports.workspace.opened).toEqual([]);
 	});
