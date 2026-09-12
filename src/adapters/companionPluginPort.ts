@@ -46,3 +46,21 @@ export interface CompanionPluginPort {
 	 */
 	disableDailyNotes(): CompanionPluginAction;
 }
+
+/**
+ * What Periodic Notes governs, asked of the plugin rather than inferred.
+ *
+ * That plugin computes the answer itself, from whichever calendar set is
+ * active, and publishes it as `calendarSetManager.getActiveGranularities()`.
+ * Its `settings` field is a Svelte store, so a read of `settings.day.enabled`
+ * yields undefined on every build that has one -- the defect recorded against
+ * `periodic-notes-weekly-detection` in docs/mapping/sources/cal.json, which
+ * shipped as "weekly notes are off" for every user who had them on.
+ *
+ * The value is the names that plugin reports, not Calendaric's own Granularity
+ * type: they are another plugin's strings, and a build that names a granularity
+ * this one does not know must not turn the whole read into a failure.
+ */
+export interface PeriodicNotesPort {
+	readActiveGranularities(): CompanionPluginRead<readonly string[]>;
+}
