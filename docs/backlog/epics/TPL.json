@@ -179,7 +179,7 @@
       "story": "As someone whose weekly template lays out one heading per day, I want {{monday:FORMAT}} through {{sunday:FORMAT}} to resolve to the correct calendar date for that weekday of my own week, so that the headings are right whether my week starts on Monday or on Sunday.",
       "rationale": "The current implementation hard-codes an ISO Monday-start week for this token family, so it silently produces the wrong date whenever the configured week start is not Monday; this pins the correct rule down before the bug is carried into the rewrite.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "dni:template-token-day-of-week",
         "calendaric:template-token-weekday-body"
