@@ -400,7 +400,7 @@
       "story": "As someone keeping a periodic journal, I want creating a note to work the same reliable way for every granularity Calendaric supports, so that switching between daily, weekly, monthly, and yearly notes never surprises me with a create that silently does nothing or crashes.",
       "rationale": "The old code has three different, inconsistent answers for what happens when a create goes wrong; users need one predictable answer.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:create-daily-note",
         "dni:create-weekly-note",
@@ -435,8 +435,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:380 > \"AC-NOTE-04.1: ...\" asserts {outcome:\"created\", file} is returned and the file is written at the resolved path, across all four release granularities; :401 pins the four distinct paths. Production: createPeriodicNote, src/notes/noteCreate.ts:40."
         },
         {
           "id": "AC-NOTE-04.2",
@@ -448,8 +448,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:412 collects the outcome for all four granularities and asserts every one is \"exists\"; :439 collects the error message for all four and asserts the text is identical. Sameness is asserted across a collected array, not one granularity at a time, which is the way this criterion is easy to fake. Mutation-checked by the orchestrator: removing the exists branch from noteCreate.ts fails 3 of 33 tests."
         },
         {
           "id": "AC-NOTE-04.3",
@@ -461,8 +461,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:464 asserts the throw matches /quarter[\\s\\S]*not supported in this release/, that nothing was written and that no folder was created. Production: the isReleaseGranularity check at src/notes/noteCreate.ts:52-56, over RELEASE_GRANULARITIES in src/types.ts:15-21. Quarter is reserved per DEC-23.",
           "failure_path": true
         },
         {
@@ -475,8 +475,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:474 asserts the created-folder sequence and the \"created\" outcome for all four granularities. The folder-chain logic itself is US-NOTE-03's and is unchanged; this criterion is about createPeriodicNote still reaching it.",
           "failure_path": true
         },
         {
@@ -490,8 +490,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:494 asserts {outcome:\"exists\", file}, that the existing content is unchanged, and then CALLS openNoteIn with the returned file and checks it opened -- so the third clause, that the caller can act on the report to open the existing note, is proved rather than assumed. :512 separately asserts no template is read and no warning raised on the exists path. Production: src/notes/noteCreate.ts:58-59.",
           "failure_path": true
         },
         {
@@ -504,8 +504,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/noteCreate.test.ts:531 seeds a FOLDER at the path and asserts the throw contains \"<path> is not a Markdown note\" and that nothing at the path changed; src/ui/cellActions.test.ts:487 exercises the same message through the click path. The distinction from AC-NOTE-04.5 is real in the fakes, not only in the titles: seedFile makes getFile return the note, seedFolder makes pathExists true while getFile returns null. Production: src/notes/noteCreate.ts:61-63.",
           "failure_path": true
         }
       ],
@@ -1044,7 +1044,7 @@
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
       "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:periodic-note-file-cache",
         "pn:cache-index-build-on-load",
@@ -1075,8 +1075,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts, six titles naming AC-NOTE-11.1 -- files present at build time are found for their period across granularities. Production: PeriodicNoteIndex.rebuild in src/notes/periodicNoteIndex.ts, which lists the vault once rather than rescanning per lookup."
         },
         {
           "id": "AC-NOTE-11.2",
@@ -1087,8 +1087,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts, three titles naming AC-NOTE-11.2 -- a file created after the index is built is returned by the very next lookup. The vault create event is subscribed through the port, not through Obsidian directly; src/adapters/obsidianVaultAdapter.test.ts covers the adapter half."
         },
         {
           "id": "AC-NOTE-11.3",
@@ -1100,7 +1100,7 @@
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": "PARTLY SETTLED, and the missing half is blocked on another pull request, not on this work. Obsidian's own rename event is covered: src/adapters/obsidianVaultAdapter.test.ts:145 proves the adapter reports a rename, and the index re-keys on it. The criterion also names an EXTERNAL script renaming a raw ISO-week title to a longer \"pretty\" title, and that case needs prefix matching: the pretty title is a date range that only matches the original by its prefix. src/fmt/resolveFileDate.ts on this branch's base passes `false` for allowPrefixMatch behind a comment reading \"no config field carries it yet\" -- stale, since US-SET-01 added PeriodicConfig.allowPrefixMatch (src/types.ts:12). US-FMT-08 wires it. The existing test at periodicNoteIndex.test.ts:107-128 invents a weekly format that happens to moment-parse and never exercises prefix matching, so it is not evidence for this clause. Settle this after US-FMT-08 merges, with a test using allowPrefixMatch: true against a real date-range title."
         },
         {
           "id": "AC-NOTE-11.4",
@@ -1111,8 +1111,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "The inverse case, and the one an index keyed on filenames alone passes by accident. vitest: src/notes/periodicNoteIndex.test.ts:132 (outside the configured folder), :138 (vault root) and :144 (created outside after the index was built). The frontmatter path has its own guard rather than relying on the filename path's: periodicNoteIndex.ts:151 checks isUnderFolder before consulting frontmatter at all. Mutation-checked by the orchestrator: removing that guard fails 1 of the 21 tests.",
           "failure_path": true
         },
         {
@@ -1126,8 +1126,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "All three clauses, each with its own test: src/notes/periodicNoteIndex.test.ts:156, :165 and :174. The third clause -- a file that no longer matches is no longer returned by ANY lookup -- is the one an incremental index gets wrong, and applySettings avoids it by construction: periodicNoteIndex.ts:89 replaces the configuration and calls rebuild(), which clears both maps and re-lists the vault, rather than patching entries. Mutation-checked by the orchestrator: making applySettings keep the old entries fails 3 of the 21 tests."
         },
         {
           "id": "AC-NOTE-11.6",
@@ -1138,8 +1138,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: eight titles naming AC-NOTE-11.6 across src/notes/periodicNoteIndex.test.ts and src/adapters/obsidianVaultAdapter.test.ts -- a file inside the configured folder whose frontmatter carries the period is found even though its filename does not match. The new port capability is typed `Record<string, unknown> | undefined` and narrowed to a string (src/adapters/obsidianVaultAdapter.ts:44-48); no `any` reaches the boundary. The folder check runs before frontmatter is read, so this cannot become a back door around AC-NOTE-11.4."
         },
         {
           "id": "AC-NOTE-11.7",
@@ -1152,7 +1152,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "PARTLY SETTLED. The first clause is proved: vitest, three titles naming AC-NOTE-11.7 -- after a delete event the lookup for that period returns nothing. The second clause says the calendar dot for that day disappears, which needs the index wired into the calendar view; the brief forbade that, because src/main.ts and src/ui/calendar.ts both belong to other open pull requests. Nothing here is uncalled by accident: the index is deliberately not wired, the same way US-SET-03's resolver is not. Settle this clause with the ticket that wires them.",
           "failure_path": true
         }
       ]
@@ -1876,7 +1876,7 @@
       "story": "As someone whose vault holds notes written under more than one naming habit, I want one predictable winner when a filename could be read in more than one way, so that the same file never resolves to a different date after an unrelated change.",
       "rationale": "Today the winner depends on an unspecified list order, so the same vault can resolve differently between runs.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -1912,8 +1912,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts:279-292 > \"AC-FMT-08.1: ...\" -- precedence asserted in BOTH candidate list orders, so the winner does not depend on how the paths arrived, which is the unspecified thing this story exists to remove. The second clause is the stronger half and is asserted separately at :284-292: the test checks resolvePeriodNote DROPS the prefix-matched file, not merely that the exact one also resolves. Production: resolvePeriodNote at src/fmt/resolveFileDate.ts:87-104 returns `candidates[0]?.path ?? null`, a single string -- the signature makes \"both\" inexpressible. Mutation-checked by the orchestrator: removing the sort entirely fails 2 of the 29 tests in that file.",
           "failure_path": true
         },
         {
@@ -1926,8 +1926,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/fmt/resolveFileDate.test.ts:230-249 > \"AC-FMT-08.2: ...\". The test guards against its own tautology first: it asserts the basename-only reading and the full-format reading produce DIFFERENT dates before asserting which one wins. Both readings are computed at test time from computeNotePath, the real writer, so the case cannot silently degrade into two equal dates. Production: no change was needed -- parseFilename at src/fmt/parseFilename.ts:106-116 already tries the full configured format before the basename-only one, per DEC-14.",
           "failure_path": true
         }
       ],
@@ -1942,7 +1942,7 @@
       "story": "As someone applying a template to a new periodic note, I want {{date}}, {{date:FORMAT}}, {{time}}, {{title}}, and date-arithmetic tokens like {{date+1d:FORMAT}} filled in automatically, so that the note already carries the right day, time, and name without me typing them by hand.",
       "rationale": "These tokens apply to every granularity, so their exact output is the baseline the rest of the token system builds on.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:template-token-date-time-calc",
         "pn:template-token-expansion",
@@ -1971,8 +1971,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts:21 uses the note's own date, and :26 proves the granularity's configured format is what renders it, not a fixed default (DD.MM.YYYY yields 13.04.2026). Production: formatWithWeekTokens(config.format, date) at src/notes/templateTokens.ts:76-77."
         },
         {
           "id": "AC-TPL-01.2",
@@ -1984,8 +1984,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Both directions asserted, which is what this criterion is about: a {{date}} that FOLLOWS a {{date:FORMAT}} and one that PRECEDES it are each substituted independently. The custom-format pass at src/notes/templateTokens.ts:73 runs before the plain pass at :76-77, so the ordering is deliberate rather than incidental."
         },
         {
           "id": "AC-TPL-01.3",
@@ -1997,8 +1997,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateTokens.test.ts, describe with a fake clock at 09:07 and a note date carrying 14:30. Three tests assert 09:07 and not 14:30, including one where the note date is midnight. Production: window.moment() at src/notes/templateTokens.ts:82, not the date parameter. Mutation-checked by the orchestrator: rewiring it to date.format(\"HH:mm\") fails 3 of 36 tests. This is a behaviour FIX -- the previous test asserted the note date's time, which was the bug."
         },
         {
           "id": "AC-TPL-01.4",
@@ -2010,8 +2010,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The substitution-level test is tautological on its own, so the evidence is the creation-level one: src/notes/noteCreate.test.ts asserts journal/daily/Monday review.md yields \"# Monday review\". Production: src/notes/noteCreate.ts:119, notePath.split(\"/\").pop()?.replace(/\\.md$/, \"\") -- the filename at the moment substitution runs, with the extension removed."
         },
         {
           "id": "AC-TPL-01.5",
@@ -2023,8 +2023,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: eight tests in the date-arithmetic describe of src/notes/templateTokens.test.ts -- forward and backward, an explicit FORMAT and none (falling back to the configured format), every supported unit, month and year boundaries, week-token parity with computeNotePath, weekly granularity, and a spy test proving the note's own date is not mutated. Production: the token regex at src/notes/templateTokens.ts:32 and the shift at :64-70. Units are d/w/M/y and deliberately not h/m/s, documented in a ponytail: comment at :12-14; every release granularity is a whole day or longer."
         },
         {
           "id": "AC-TPL-01.6",
@@ -2036,8 +2036,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: three tests in src/notes/templateTokens.test.ts -- a missing unit letter, a malformed token with no FORMAT, and a malformed token sitting beside valid ones, the last asserting the mixed output string verbatim so a deletion elsewhere in the body would be caught. Production: src/notes/templateTokens.ts:65-66 returns the match unchanged when the duration is undefined, so nothing throws and nothing is removed.",
           "failure_path": true
         }
       ]
@@ -2490,7 +2490,7 @@
       "story": "As someone scanning a month at a glance, I want the grid to always show a full 6-week rectangle with the surrounding days filled in and clearly marked as not-this-month, so that the layout never jumps in height and I can still see the start/end of neighbouring weeks.",
       "rationale": "A stable, complete grid is the foundation every other interaction in this epic is drawn on top of.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:render-calendar-grid",
         "calendaric:calendar-month-grid-render"
@@ -2562,8 +2562,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": "UNSETTLED, reported rather than judged: the disabled-week-number-column branch is DOM-only (calendar.ts:105 for the header cell, calendar.ts:145 for the row cells, both on settings.showWeekNumbers). Code review says it is correct, but reading is not measuring. The repo has no jsdom harness and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass) that jsdom does not provide, so a rendering test needs a new dependency plus mocks for those helpers -- a separate story. This criterion blocks US-CAL-01 from reaching done until that harness exists."
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarRender.test.ts > \"AC-CAL-01.5: ...\" renders the grid twice, with showWeekNumbers on and off, and asserts both states: on, one .calendaric-weeknum-header, six .calendaric-weeknum-cell, and eight cells per row; off, zero of each and seven cells per row. Mutation-checked by the orchestrator at BOTH branches of the setting, separately: forcing the header cell at calendar.ts:101 fails it, and forcing the row cells at calendar.ts:141 fails it. This supersedes the earlier evidence, which reported the criterion UNSETTLED because the repository had no DOM harness -- happy-dom now runs per file via a `// @vitest-environment happy-dom` pragma, and src/__mocks__/obsidianDom.ts shims createEl, createDiv, empty and addClass, which is exactly the set src/ui/ calls."
         },
         {
           "id": "AC-CAL-01.6",
@@ -2591,7 +2591,7 @@
       "story": "As someone planning ahead or looking back, I want to step the grid forward and backward one month at a time and jump straight back to the current month, so that I can browse freely without losing track of where 'now' is.",
       "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:navigate-month",
         "calui:reset-to-current-month",
@@ -2613,8 +2613,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.1: shows the following month\", plus a step out of a 31-day month into a shorter one and a second step from a month already visited. The displayed date is held on the first of the month, so repeated steps cannot drift the way a 31st does when moment clamps it into February. Mutation-checked by the orchestrator: stepping by a week instead of a month fails 7 of the 14 tests."
         },
         {
           "id": "AC-CAL-02.2",
@@ -2625,8 +2625,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.2: shows the preceding month\", plus January stepping back into December of the previous year."
         },
         {
           "id": "AC-CAL-02.3",
@@ -2638,8 +2638,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.3: shows the current month again from far away in either direction\" and \"AC-CAL-02.3: leaves today's cell in the grid it returns to\". The second reads the real clock, because getMonthGrid derives isToday from window.moment(), and asserts the returned grid holds exactly one isToday cell rather than one borrowed from an adjacent month."
         },
         {
           "id": "AC-CAL-02.4",
@@ -2652,7 +2652,7 @@
           "verifies": "behaviour",
           "testable_by": "manual",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "HALF SETTLED, and the missing half needs a DOM harness this repository does not have. The second clause is proved: vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.4: reports the inactive state and does nothing when activated\" asserts atCurrentMonth is true, that clicking leaves the month unchanged, and that the redraw counter stays at zero, so the handler really is inert; three further tests cover repeated clicks, the return to the active state after leaving the month, and September 2027 not matching September 2026. Mutation-checked by the orchestrator: removing the early exit from toToday fails 2 tests. The FIRST clause -- that the control is SHOWN in an inactive state -- is not proved. calendar.ts sets is-disabled and aria-disabled from nav.atCurrentMonth, but nothing tests that link: vitest runs in the node environment, neither jsdom nor happy-dom is installed, and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass). This is the same missing harness that holds AC-CAL-01.5 and the \"user sees the notice\" clause of US-ARCH-04 open.",
           "failure_path": true
         },
         {
@@ -2664,8 +2664,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.5: shows January of the following year\", plus the same crossing from a December reached by stepping rather than by construction.",
           "failure_path": true
         }
       ],
@@ -3980,7 +3980,7 @@
       "story": "As someone relying on periodic notes, I want each granularity's effective format, folder and template to resolve to one predictable value, so that I never have to guess which of several possible sources of that setting actually won.",
       "rationale": "The old plugins let format, folder and template be set in more than one place at once; a single resolver removes the guesswork the vault currently gets right only by coincidence.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "dni:get-periodic-note-settings",
         "dni:resolve-daily-settings",
@@ -4012,8 +4012,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.1: uses the documented built-in default format when a granularity's format is empty\" and \"AC-SET-03.1: returns a defined value for every field of every granularity\". DEFAULT_FORMATS in src/settings/model.ts is now the single table; it replaced the settings-screen placeholder and the import's DEFAULT_DAY_FORMAT, which were two more copies. Mutation-checked by the orchestrator: deleting the empty-format substitution fails 2 of the 41 tests."
         },
         {
           "id": "AC-SET-03.2",
@@ -4025,8 +4025,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.2: resolves an unset folder to the vault root and applies no template\". The resolver returns \"\" for an unset folder, which src/notes/noteUtils.ts:86 already treats as the vault root. The \"default new-file location\" fallback at noteUtils.ts:73 is deliberately untouched: it belongs to AC-NOTE-03.2, which is already pass, and moving it here would reopen a closed criterion."
         },
         {
           "id": "AC-SET-03.3",
@@ -4038,7 +4038,7 @@
           "verifies": "behaviour",
           "testable_by": "unit",
           "status": "unverified",
-          "evidence": null
+          "evidence": "HALF SETTLED, and the missing half is wiring, not correctness. vitest: src/settings/model.test.ts > \"AC-SET-03.3: hands two callers the same format, folder, template and prefix-match values\" and \"AC-SET-03.3: is unaffected by a caller that writes to the config it was handed\" prove the resolver is deterministic and returns a fresh object per call; mutation-checked by the orchestrator (returning the stored object itself fails 3 tests). But no consumer calls it yet: src/ui/calendar.ts and src/notes/noteCreate.ts still read settings[granularity] directly, so two parts of the running plugin can still disagree. The criterion is about two callers agreeing, so it stays unverified until the consumers are wired. Deliberately not done in this ticket: US-NOTE-04 and US-CAL-02 own those two files right now and the edit would collide."
         },
         {
           "id": "AC-SET-03.4",
@@ -4050,8 +4050,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts:542 > \"AC-SET-03.4: resolves the daily note from Calendaric's own configuration, never the external Daily Notes file\". The test first proves the external file is present, readable and disagreeing on all three fields, by running decideDailyNotesCard against a read-counting port; it then resolves and asserts the read counter did not move. An assertion on the resolved values alone would pass even if the file were read."
         },
         {
           "id": "AC-SET-03.5",
@@ -4063,8 +4063,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/model.test.ts > \"AC-SET-03.5: substitutes the built-in default for a hand-edited value of the wrong type\" — format stored as a number and allowPrefixMatch as a string both fall back to the built-in default, while folder and templatePath resolve normally. Mutation-checked by the orchestrator: bypassing normalizeConfig fails it.",
           "failure_path": true
         }
       ]
@@ -6476,7 +6476,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "grep confirms src/notes/templateTokens.ts has no obsidian import; vitest: src/notes/templateTokens.test.ts (13 tests) runs with no obsidian module resolution."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-03.4: pure logic does not reach for the Obsidian API\" — asserts that the import lines of templateTokens.ts, noteUtils.ts and noteDate.ts name no \"obsidian\" module. Mutation-checked: prepending an obsidian import to templateTokens.ts fails it. Supersedes the one-off grep this criterion rested on before."
         },
         {
           "id": "AC-ARCH-03.5",
@@ -6521,7 +6521,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "code review plus npx tsc --showConfig: tsconfig.json:9 sets \"strict\": true as the single strict-family setting, and no individually-enabled strict sub-flag remains. noImplicitReturns (line 10) and the other retained flags are outside the strict family, so they are not a hand-picked subset of it."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.1: enables strict mode whole, never flag by flag\" — reads tsconfig.json, requires strict:true, and requires that none of the nine strict-family sub-flags appears on its own. Mutation-checked: pinning strictNullChecks fails it."
         },
         {
           "id": "AC-ARCH-04.2",
@@ -6533,7 +6533,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "code review: no \"any\" (explicit or asserted) remains in the companion-plugin boundary -- grep for \": any\" and \"as any\" across src/adapters/companionPluginPort.ts and src/adapters/obsidianCompanionPluginAdapter.ts returns nothing; the untyped registry is reached through unknown and narrowed. The any usages left in src/ are Obsidian-host internals (window.moment, vault.config, vault.adapter.basePath, require(\"electron\")), which this criterion does not cover -- it names a companion plugin runtime object."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.2: the companion-plugin boundary is typed, not `any`\" — asserts companionPluginPort.ts and obsidianCompanionPluginAdapter.ts contain no \": any\", \"as any\" or \"<any>\". Mutation-checked: adding a field typed any to the port fails it. Supersedes the one-off grep."
         },
         {
           "id": "AC-ARCH-04.3",
@@ -6575,7 +6575,7 @@
           "verifies": "architecture",
           "testable_by": "unit",
           "status": "pass",
-          "evidence": "measured by the orchestrator, not reported: injecting `const __probe: number = \"not a number\"` into src/settings.test.ts made npm run build exit 2, and removing it returned exit 0. tsconfig.json include is src/**/*.ts, so the compiler now covers test files too -- which also closes the project-memory note that tsc skipped *.test.ts. The build fails rather than warning.",
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-04.5: the type checker reads the tests too\" — asserts tsconfig include covers src/**/*.ts, that no exclude entry names a test file, and that noUncheckedIndexedAccess stays on. Supersedes the orchestrator probe (injecting a type error into src/settings.test.ts and watching npm run build exit 2), which proved the same thing once and left nothing behind.",
           "failure_path": true
         }
       ]
@@ -6692,7 +6692,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "measured by the orchestrator: deleted main.js, ran npm run build, and main.js (22040 bytes) plus manifest.json were produced at the plugin root with no manual step. build is npm run typecheck followed by esbuild production, so a type error stops the bundle rather than shipping a stale one. styles.css is absent in this repo, which the criterion allows."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-06.1: one command produces a loadable plugin\" — asserts npm run build is typecheck followed by the production esbuild run, that esbuild writes main.js at the plugin root, and that manifest.json carries an id and a version. Supersedes the orchestrator observation (deleted main.js, ran the build, 22040 bytes reappeared), which is not repeatable in CI."
         },
         {
           "id": "AC-ARCH-06.2",
@@ -6980,7 +6980,7 @@
           "verifies": "architecture",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "measured by the orchestrator: gh pr checks 6 on the real merged PR: one check named \"install, test, build\" reported pass in 19s — one combined job, one status check, exactly as specified."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.1: the pull request gets one job and one status check\" — asserts ci.yml declares exactly one job and that install, test and build are steps inside it. One job is what makes one status check. The observed run stands behind it: gh pr checks 6 reported a single check named \"install, test, build\", passing in 19s."
         },
         {
           "id": "AC-ARCH-09.2",
@@ -6993,7 +6993,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review: .github/workflows/ci.yml has on: {pull_request: {branches: [master]}} and no push key — inspected verbatim, only workflow file in .github/workflows/."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.2: runs on pull requests, not on every push\" — asserts the on: block opens with pull_request and that no push trigger exists. Mutation-checked. Previously code review only, and listed in NO_REGRESSION_IDS; it has a regression behind it now and has left that list."
         },
         {
           "id": "AC-ARCH-09.3",
@@ -7033,7 +7033,7 @@
           "verifies": "architecture",
           "testable_by": "manual",
           "status": "pass",
-          "evidence": "code review: ci.yml has no lint step; the comment above jobs.gates names DEC-26 as the reason and the exit condition (lint joins the workflow once the pre-existing debt is paid down)."
+          "evidence": "vitest: src/arch.test.ts > \"AC-ARCH-09.5: runs no lint step, per DEC-26\" — asserts no workflow step runs npm run lint or eslint. Mutation-checked: adding a lint step fails it. Previously code review only, and listed in NO_REGRESSION_IDS; it has a regression behind it now and has left that list."
         }
       ],
       "decisions": [
