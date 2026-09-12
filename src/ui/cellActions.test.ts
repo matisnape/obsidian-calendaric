@@ -29,6 +29,13 @@ const dayConfig: PeriodicConfig = {
 
 const WEEK_FORMAT = "gggg-[W]ww";
 
+/** The month header's config: the vault root, so the prompt names a bare filename. */
+const monthConfig: PeriodicConfig = {
+	...dayConfig,
+	format: "YYYY-MM",
+	folder: "",
+};
+
 /** The day every click test uses, and the path its note lands on. */
 const DAY = "2026-04-13";
 
@@ -493,6 +500,36 @@ describe("openOrCreateNote", () => {
 		);
 		expect(ports.vault.contentAt(pathFor(DAY))).toBeUndefined();
 		expect(ports.workspace.opened).toEqual([]);
+	});
+
+	// The month header is the third caller of this function, and the first one
+	// to hand it a granularity the confirmation copy had never been asked
+	// about. Both places keyed on the granularity are checked here: the label
+	// that names the kind of note, and the subject that names the period.
+	it("AC-CAL-05.1: asks for a monthly note by its month, then creates and opens it", async () => {
+		const month = moment("2026-04-01");
+		const path = computeNotePath(month, monthConfig, new FakeVaultConfigPort());
+		const ports = makePorts();
+		const confirm = stubConfirm(true);
+
+		await openOrCreateNote({
+			date: month,
+			granularity: "month",
+			config: monthConfig,
+			confirmBeforeCreate: true,
+			event: makeClick(),
+			ports,
+			confirmCreate: confirm.confirm,
+		});
+
+		expect(confirm.asked).toEqual([
+			{
+				title: "New monthly note",
+				body: "The month of April 2026 has no monthly note yet. Create 2026-04.md?",
+			},
+		]);
+		expect(ports.vault.contentAt(path)).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
 	});
 });
 

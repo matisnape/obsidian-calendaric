@@ -19,11 +19,12 @@ import { openNote } from "../notes/noteOpen";
  * ports.
  */
 
-type Granularity = "day" | "week";
+type Granularity = "day" | "week" | "month";
 
 const GRANULARITY_LABEL: Record<Granularity, string> = {
 	day: "daily",
 	week: "weekly",
+	month: "monthly",
 };
 
 /** The id Obsidian's Page preview plugin knows this grid by. */
@@ -177,12 +178,30 @@ async function createNoteInTurn(
 function describeCreate(date: Moment, granularity: Granularity, path: string): CreateRequest {
 	const label = GRANULARITY_LABEL[granularity];
 	const filename = path.split("/").pop() ?? path;
-	const subject = granularity === "week" ? `The week of ${date.format("LL")}` : date.format("dddd, LL");
+	const subject = subjectFor(granularity, date);
 
 	return {
 		title: `New ${label} note`,
 		body: `${subject} has no ${label} note yet. Create ${filename}?`,
 	};
+}
+
+/**
+ * Names the period the way a person would read it back, not just its filename.
+ *
+ * A plain switch rather than a record: `noImplicitReturns` fails the build if a
+ * future granularity lands here without a case, which is what keeps this in
+ * step with `GRANULARITY_LABEL` above.
+ */
+function subjectFor(granularity: Granularity, date: Moment): string {
+	switch (granularity) {
+		case "week":
+			return `The week of ${date.format("LL")}`;
+		case "month":
+			return `The month of ${date.format("MMMM YYYY")}`;
+		case "day":
+			return date.format("dddd, LL");
+	}
 }
 
 /** The `hover-link` payload Obsidian's Page preview plugin listens for. */

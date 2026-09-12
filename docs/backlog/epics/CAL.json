@@ -435,7 +435,7 @@
       "story": "As someone who keeps a monthly note, I want clicking the month header to take me to that month's note, and a separate, dedicated control to jump back to today, so that neither action is at risk of accidentally triggering the other.",
       "rationale": "This carries forward a feature the user relies on today that is currently implemented in a fragile, easily-broken way; the rewrite must make it a real, first-class part of the header rather than a workaround layered on top of it.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "calui:month-header-interactions",
         "cal:month-header-click-open-monthly-note",
@@ -460,8 +460,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.test.ts \"AC-CAL-05.1: opens the displayed month's note in the active pane, leaving the grid where it was\", \"AC-CAL-05.1: creates the displayed month's note first when it is missing, then opens it\"; src/ui/cellActions.test.ts \"AC-CAL-05.1: asks for a monthly note by its month, then creates and opens it\". Proven red by mutate-check: replacing the header's open with nav.toToday() fails 5 of the 9 render tests."
         },
         {
           "id": "AC-CAL-05.2",
@@ -472,8 +472,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.test.ts \"AC-CAL-05.2: opens the month's note in a split when the click carries the split modifier\", \"AC-CAL-05.2: creates the missing month note first, then opens it in the split\". Proven red by mutate-check: dropping the click event on the way to openOrCreateNote fails both split tests and no others."
         },
         {
           "id": "AC-CAL-05.3",
@@ -484,8 +484,8 @@
           ],
           "verifies": "compat",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.test.ts \"AC-CAL-05.3: resets the grid to the current month when monthly notes are not configured\". Proven red by mutate-check: forcing the settings.month.enabled guard false fails this test alone.",
           "failure_path": true
         },
         {
@@ -497,8 +497,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.test.ts \"AC-CAL-05.4: right-clicking a month that has a note opens that file's context menu at the click\", \"AC-CAL-05.4: right-clicking a month with no note opens no file menu\". Proven red by mutate-check: deleting menu.showAtMouseEvent(event) fails the first, deleting the missing-file guard fails the second."
         },
         {
           "id": "AC-CAL-05.5",
@@ -510,8 +510,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.test.ts \"AC-CAL-05.5: the header's click target is its own element, not the month/year markup or a nav control\". Proven red by mutate-check: removing the calendaric-month-header class fails 8 of 9 render tests, and leaving the title's display spans in place across a re-render fails this test."
         }
       ],
       "decisions": [
