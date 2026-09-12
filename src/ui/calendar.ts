@@ -1,4 +1,5 @@
 import type { Moment } from "moment";
+import { Menu } from "obsidian";
 import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
@@ -9,7 +10,7 @@ import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapt
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 import { MonthNavigation } from "./calendarNav";
-import { hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
+import { HOVER_LINK_SOURCE, hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
@@ -73,7 +74,19 @@ export class CalendarWidget implements HoverParent {
 
 		// Nav header
 		const nav = wrapper.createDiv({ cls: "calendaric-nav" });
-		this.titleEl = nav.createEl("h3", { cls: "calendaric-title" });
+		// "calendaric-month-header" is this element's own contract: the class the
+		// open/reset/context-menu behaviour below is wired to (AC-CAL-05.5). The
+		// month/year spans renderGrid() fills it with are for display only and
+		// are rebuilt on every navigation, so nothing here may be identified by
+		// matching them.
+		this.titleEl = nav.createEl("h3", { cls: "calendaric-title calendaric-month-header" });
+		this.titleEl.setAttribute("aria-label", "Open this month's note");
+		this.titleEl.addEventListener("click", (e) => {
+			void this.handleMonthHeaderClick(e);
+		});
+		this.titleEl.addEventListener("contextmenu", (e) => {
+			this.handleMonthHeaderContextMenu(e);
+		});
 
 		const navButtons = nav.createDiv({ cls: "calendaric-nav-buttons" });
 
@@ -218,9 +231,41 @@ export class CalendarWidget implements HoverParent {
 		this.render();
 	}
 
+	/**
+	 * The month header's own click: open or create the displayed month's note,
+	 * or — when monthly notes are not configured at all — fall back to what the
+	 * dedicated "return to today" control does (AC-CAL-05.3). Never touches the
+	 * grid itself, so the displayed month survives the click either way
+	 * (AC-CAL-05.1).
+	 */
+	private async handleMonthHeaderClick(event: MouseEvent): Promise<void> {
+		if (!this.settings.month.enabled) {
+			this.nav.toToday();
+			return;
+		}
+		await this.handleNoteClick(this.nav.month, "month", event);
+	}
+
+	/**
+	 * The month header's file context menu (AC-CAL-05.4): only for a month that
+	 * already has a note. `file-menu` is the same workspace event a file
+	 * explorer row triggers, so every plugin that adds items there — including
+	 * Obsidian's own "Open in new tab" / "Delete" — populates this menu too.
+	 */
+	private handleMonthHeaderContextMenu(event: MouseEvent): void {
+		const path = computeNotePath(this.nav.month, this.settings.month, this.vaultConfig);
+		const file = this.vault.getFile(path);
+		if (!file) return;
+
+		event.preventDefault();
+		const menu = new Menu();
+		this.app.workspace.trigger("file-menu", menu, file, HOVER_LINK_SOURCE);
+		menu.showAtMouseEvent(event);
+	}
+
 	private async handleNoteClick(
 		date: Moment,
-		granularity: "day" | "week",
+		granularity: "day" | "week" | "month",
 		event: MouseEvent,
 	): Promise<void> {
 		try {

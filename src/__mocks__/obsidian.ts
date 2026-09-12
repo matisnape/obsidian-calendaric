@@ -42,6 +42,21 @@ export class TFile {
 	path = "";
 }
 
+/**
+ * Minimal stand-in so `new Menu()` and `menu.showAtMouseEvent(...)` resolve
+ * under test. Calendaric only builds the menu and hands it to the real
+ * "file-menu" workspace event — populating it is the running Obsidian's job,
+ * not this plugin's, so the fake tracks nothing beyond "it was shown".
+ */
+export class Menu {
+	shownAtEvent: MouseEvent | null = null;
+
+	showAtMouseEvent(evt: MouseEvent): this {
+		this.shownAtEvent = evt;
+		return this;
+	}
+}
+
 // The real Platform is read off the running host; tests that care inject their
 // own flag through WorkspacePort.isMacOS instead of leaning on this default.
 export const Platform = { isMacOS: false };
