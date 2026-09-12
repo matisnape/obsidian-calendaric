@@ -917,7 +917,7 @@
       "story": "As a maintainer changing how Calendaric reads the vault, I want the calendar view to receive vault access as an injected port rather than build its own adapter, so that I can swap or fake that access without editing the view, and so the layering rule holds in fact and not only in the import list.",
       "rationale": "AC-ARCH-01.1 fails today: src/ui/calendar.ts constructs ObsidianVaultAdapter, ObsidianWorkspaceAdapter and ObsidianVaultConfigAdapter (lines 56-58), and src/ui/calendarDots.ts constructs ObsidianVaultConfigAdapter (line 21). The intent is already half-expressed -- calendarDots.ts:15 declares the field as VaultConfigPort and then assigns a concrete adapter to it, so the port exists and only the construction site is wrong. Removing the four imports alone would turn the criterion green while leaving src/ui/calendarDots.ts:43 and :66 calling app.vault.getAbstractFileByPath directly, which satisfies the letter of the boundary rule and none of its purpose. This story covers both halves. It cannot be expressed as a dependency of US-ARCH-01, because US-ARCH-01 is what waits on it.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -936,8 +936,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.1: no view module constructs or names a concrete adapter\" and \"AC-ARCH-11.1: the widget and the dot scanner take their ports as a constructor parameter\". Mutation: calendarDots.ts constructor retyped to `private deps: ObsidianVaultConfigAdapter` -- both fail."
         },
         {
           "id": "AC-ARCH-11.2",
@@ -949,8 +949,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.2: no view module reads the vault off the App object\". Mutation: the day scan in calendarDots.ts put back to `this.app.vault.getAbstractFileByPath(path)` -- fails."
         },
         {
           "id": "AC-ARCH-11.3",
@@ -962,8 +962,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.3: one named dependency object travels the whole calendar chain\" and \"AC-ARCH-11.3: the lifecycle module is where that object is built\". Mutation: main.ts's `const calendarDeps: CalendarDeps` annotation dropped -- the second fails."
         },
         {
           "id": "AC-ARCH-11.4",
@@ -975,8 +975,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarFakes.test.ts \"AC-ARCH-11.4: renders and reacts to a vault change with fake ports only\" -- FakeVaultPort/FakeVaultConfigPort/FakeWorkspacePort passed as constructor arguments, no module import patched. Mutation: DotScanner's onChange handler stripped of its onUpdate() call -- fails."
         },
         {
           "id": "AC-ARCH-11.5",
@@ -988,8 +988,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.5: no view module makes a port optional or gives it a default\", with a companion case proving it reports both shapes by module and dependency name. Mutation: calendar.ts's `private deps: CalendarDeps` made `private deps?: CalendarDeps` -- fails. The type checker is the other half: an unsupplied argument is a tsc error, `npm run build` exit 0.",
           "failure_path": true
         }
       ],

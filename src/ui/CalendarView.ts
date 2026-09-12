@@ -1,12 +1,17 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import type CalendaricPlugin from "../main";
+import type { CalendarDeps } from "../adapters/calendarDeps";
 import { CalendarWidget } from "./calendar";
 import { VIEW_TYPE_CALENDAR } from "./viewType";
 
 export class CalendarView extends ItemView {
 	private calendar: CalendarWidget | null = null;
 
-	constructor(leaf: WorkspaceLeaf, private plugin: CalendaricPlugin) {
+	constructor(
+		leaf: WorkspaceLeaf,
+		private plugin: CalendaricPlugin,
+		private deps: CalendarDeps,
+	) {
 		super(leaf);
 	}
 
@@ -27,7 +32,7 @@ export class CalendarView extends ItemView {
 		container.empty();
 		container.addClass("calendaric-view");
 
-		this.calendar = new CalendarWidget(container, this.app, this.plugin.settings);
+		this.calendar = new CalendarWidget(container, this.app, this.plugin.settings, this.deps);
 
 		// Refresh every 60 seconds to catch midnight rollover
 		this.registerInterval(

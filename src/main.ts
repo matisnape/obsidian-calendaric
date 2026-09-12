@@ -22,6 +22,7 @@ import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { resolveEffectiveConfig } from "./settings/model";
 import type { NoteFile } from "./adapters/vaultPort";
+import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 
 /**
@@ -62,7 +63,14 @@ export default class CalendaricPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
+		// The calendar pane's whole host surface, built here and handed inward
+		// (AC-ARCH-11.3). The view and the widget below it name no adapter.
+		const calendarDeps: CalendarDeps = {
+			vault: new ObsidianVaultAdapter(this.app),
+			vaultConfig: new ObsidianVaultConfigAdapter(this.app),
+			workspace: new ObsidianWorkspaceAdapter(this.app),
+		};
+		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this, calendarDeps));
 
 		// Both host capabilities the settings screen needs are constructed here
 		// and handed over as ports. The screen names neither implementation,
