@@ -349,6 +349,24 @@ describe("substituteTemplateTokens — weekly", () => {
 		expect(result).toBe(template);
 	});
 
+	it("AC-TPL-03.4: an unclosed {{monday:DD does not borrow the next weekday token's closing braces", () => {
+		// The same failure US-TPL-06 fixed for {{date:FORMAT}}, in the weekday
+		// family: a format group that may cross `{` runs from the unclosed token
+		// all the way to the NEXT token's `}}`. Both tokens are then gone and the
+		// text between them is formatted as a moment pattern, which is the
+		// deletion this criterion forbids. The second token is well formed, so it
+		// must still resolve on its own.
+		const result = substituteTemplateTokens(
+			"{{monday:DD {{monday:MM}}",
+			WEEKLY_DATE,
+			"week",
+			weeklyConfig,
+			"t",
+			MONDAY_START,
+		);
+		expect(result).toBe("{{monday:DD 04");
+	});
+
 	it.each(["day", "month", "year"] as const)(
 		"AC-TPL-03.5: leaves {{friday:FORMAT}} as written in a %s template",
 		(granularity) => {

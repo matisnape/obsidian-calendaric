@@ -3,7 +3,17 @@ import type { PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { VaultPort } from "../adapters/vaultPort";
 
-const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^}]+)\}\}/gi;
+/**
+ * `{{monday:DD.MM}}` — a weekday name and the format to print its date in.
+ *
+ * The format group excludes `{` as well as `}`, for the reason `DATE_OFFSET_RE`
+ * in templateTokens.ts does (AC-TPL-06.5): left to cross `{`, an unclosed
+ * `{{monday:DD` runs on to the NEXT token's closing braces, so both tokens
+ * disappear and the text between them is formatted as a moment pattern.
+ * `{{monday:DD {{monday:MM}}` rendered "13 {{0on1am2026:04" before the `{` was
+ * excluded here.
+ */
+const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^{}]+)\}\}/gi;
 
 /** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
 export const WEEKDAY_ISO: Record<string, number> = {
