@@ -394,8 +394,13 @@ function buildFrom(
 		// real start to the wanted weekday inside it.
 		return { date: start.add((isoDay - start.isoWeekday() + 7) % 7, "days"), usedWeekPath: true };
 	}
-	if (year !== undefined && month !== undefined) {
-		const candidate = window.moment(`${year}-${pad2(month)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
+	// A year alone is a whole format: `YYYY` is what a yearly note is named
+	// with, and a month is not missing from it, it is simply not part of what
+	// that period is. The same holds for a month with no day. matchOne's
+	// re-render check still rejects a candidate that cannot explain the name,
+	// so filling the gaps here cannot widen what actually matches.
+	if (year !== undefined) {
+		const candidate = window.moment(`${year}-${pad2(month ?? 1)}-${pad2(day ?? 1)}`, "YYYY-MM-DD", true);
 		return candidate.isValid() ? { date: candidate, usedWeekPath: false } : null;
 	}
 	return null;

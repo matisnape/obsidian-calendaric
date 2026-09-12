@@ -1,14 +1,23 @@
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { NoteFile, VaultChange, VaultIndexPort } from "../adapters/vaultPort";
-import type { FileGranularity } from "../fmt/resolveFileDate";
+import type { FileConfigs, FileGranularity } from "../fmt/resolveFileDate";
 import { resolveFileDate } from "../fmt/resolveFileDate";
 import { computeNoteDate } from "../fmt/noteDate";
+import { RELEASE_GRANULARITIES } from "../types";
 import { resolveNoteFolder } from "./noteUtils";
 
-/** The two granularities a file can be resolved to, configured. */
-export type PeriodicConfigs = Record<FileGranularity, PeriodicConfig>;
+/**
+ * The granularities this index answers for, configured.
+ *
+ * Partial: an entry is what puts a granularity in the index at all, so the
+ * caller switches one off by leaving it out rather than by passing a disabled
+ * config the index would have to interpret.
+ */
+export type PeriodicConfigs = FileConfigs;
+
+/** Which way a jump looks for the closest existing note. */
+export type JumpDirection = "forward" | "backward";
 
 /**
  * The format a frontmatter date is read against, per granularity.
@@ -21,6 +30,8 @@ export type PeriodicConfigs = Record<FileGranularity, PeriodicConfig>;
 const FRONTMATTER_FORMAT: Record<FileGranularity, string> = {
 	day: "YYYY-MM-DD",
 	week: "gggg-[W]ww",
+	month: "YYYY-MM",
+	year: "YYYY",
 };
 
 /**
@@ -78,6 +89,35 @@ export class PeriodicNoteIndex {
 	/** The note for that period, or null when the vault holds none. */
 	get(granularity: FileGranularity, date: Moment): NoteFile | null {
 		return this.byNoteDate.get(this.noteDateFor(granularity, date))?.file ?? null;
+	}
+
+	/**
+	 * The nearest note before or after `date`'s own period, or null when the
+	 * vault holds none that way.
+	 *
+	 * The period `date` sits in is never the answer: a jump that could land on
+	 * the note the user is already looking at is not a jump, and "open this
+	 * period" is a command of its own.
+	 */
+	closest(granularity: FileGranularity, date: Moment, direction: JumpDirection): NoteFile | null {
+		const prefix = `${granularity}:`;
+		const from = Number(this.noteDateFor(granularity, date).slice(prefix.length));
+		let best: { at: number; file: NoteFile } | null = null;
+
+		// ponytail: a linear pass over the index. This runs on a keypress, over a
+		// map the vault's own note count bounds; a per-granularity sorted list is
+		// the upgrade if a vault ever makes the scan measurable.
+		for (const [noteDate, indexed] of this.byNoteDate) {
+			if (!noteDate.startsWith(prefix)) continue;
+
+			const at = Number(noteDate.slice(prefix.length));
+			if (direction === "forward" ? at <= from : at >= from) continue;
+			if (best === null || (direction === "forward" ? at < best.at : at > best.at)) {
+				best = { at, file: indexed.file };
+			}
+		}
+
+		return best?.file ?? null;
 	}
 
 	/** Every path currently indexed. For tests and for diagnosing a stale index. */
@@ -145,10 +185,12 @@ export class PeriodicNoteIndex {
 	 * `resolveFileDate` applies to a filename.
 	 */
 	private identifyByFrontmatter(file: NoteFile): string | null {
-		// Day before week, for the reason resolveFileDate gives: the more
+		// Narrowest period first, for the reason resolveFileDate gives: the more
 		// specific period wins when a file could answer to either.
-		for (const granularity of ["day", "week"] as const) {
-			if (!this.isUnderFolder(file.path, this.configs[granularity].folder)) continue;
+		for (const granularity of RELEASE_GRANULARITIES) {
+			const config = this.configs[granularity];
+			if (!config) continue;
+			if (!this.isUnderFolder(file.path, config.folder)) continue;
 
 			const written = this.vault.frontmatterString(file, granularity);
 			if (written === null) continue;
@@ -174,6 +216,6 @@ export class PeriodicNoteIndex {
 	 * `computeNoteDate` has to pass to agree with this index (AC-FMT-07.4).
 	 */
 	private noteDateFor(granularity: FileGranularity, date: Moment): string {
-		return computeNoteDate(date, granularity, this.configs.week.format);
+		return computeNoteDate(date, granularity, this.configs.week?.format ?? "");
 	}
 }
