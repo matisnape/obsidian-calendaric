@@ -909,6 +909,91 @@
           "failure_path": true
         }
       ]
+    },
+    {
+      "id": "US-ARCH-11",
+      "epic": "ARCH",
+      "title": "The calendar view receives its vault access instead of constructing it",
+      "story": "As a maintainer changing how Calendaric reads the vault, I want the calendar view to receive vault access as an injected port rather than build its own adapter, so that I can swap or fake that access without editing the view, and so the layering rule holds in fact and not only in the import list.",
+      "rationale": "AC-ARCH-01.1 fails today: src/ui/calendar.ts constructs ObsidianVaultAdapter, ObsidianWorkspaceAdapter and ObsidianVaultConfigAdapter (lines 56-58), and src/ui/calendarDots.ts constructs ObsidianVaultConfigAdapter (line 21). The intent is already half-expressed -- calendarDots.ts:15 declares the field as VaultConfigPort and then assigns a concrete adapter to it, so the port exists and only the construction site is wrong. Removing the four imports alone would turn the criterion green while leaving src/ui/calendarDots.ts:43 and :66 calling app.vault.getAbstractFileByPath directly, which satisfies the letter of the boundary rule and none of its purpose. This story covers both halves. It cannot be expressed as a dependency of US-ARCH-01, because US-ARCH-01 is what waits on it.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-11.1",
+          "given": "the calendar view modules (the calendar widget and the dot scanner)",
+          "when": "their constructors and fields are inspected",
+          "then": [
+            "each vault, vault-config and workspace dependency arrives as a constructor parameter whose declared type is a port interface",
+            "neither module contains a `new` of any concrete adapter class"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.2",
+          "given": "a view module that needs to know whether a vault file exists or to react to a vault change",
+          "when": "its source is inspected",
+          "then": [
+            "it obtains that information through an injected port, not through the Obsidian `App` object's vault surface",
+            "no view module calls `app.vault` directly for file lookup, creation, deletion or rename"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.3",
+          "given": "the plugin lifecycle module, which is the only place allowed to know every layer",
+          "when": "the construction of the calendar view's dependencies is traced",
+          "then": [
+            "every adapter the calendar view uses is constructed there and passed inward",
+            "the dependencies travel as one named dependency object rather than as separately threaded parameters, so adding a fifth port does not change three constructor signatures"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.4",
+          "given": "a test that wants to exercise the calendar widget without a running Obsidian vault",
+          "when": "it constructs the widget with fake ports only",
+          "then": [
+            "the widget renders and responds to a simulated vault change without any real vault being present",
+            "the test needs no monkey-patching of a module import to substitute the fakes"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.5",
+          "given": "a view module's port parameter is made optional, or is given a default that falls back to constructing a concrete adapter",
+          "when": "the project is type-checked and the architecture boundary check runs",
+          "then": [
+            "the build fails and names the module and the dependency that was left unsupplied",
+            "no view module is able to reach a working vault without the lifecycle module having handed it one"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": []
     }
   ],
   "uncovered": [],

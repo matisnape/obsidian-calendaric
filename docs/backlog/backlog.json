@@ -1044,7 +1044,7 @@
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
       "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "calui:periodic-note-file-cache",
         "pn:cache-index-build-on-load",
@@ -2111,7 +2111,7 @@
       "story": "As someone whose weekly template lays out one heading per day, I want {{monday:FORMAT}} through {{sunday:FORMAT}} to resolve to the correct calendar date for that weekday of my own week, so that the headings are right whether my week starts on Monday or on Sunday.",
       "rationale": "The current implementation hard-codes an ISO Monday-start week for this token family, so it silently produces the wrong date whenever the configured week start is not Monday; this pins the correct rule down before the bug is carried into the rewrite.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "dni:template-token-day-of-week",
         "calendaric:template-token-weekday-body"
@@ -2308,7 +2308,7 @@
       "story": "As someone whose templates use another plugin to rename, move, or add content to a new note, I want Calendaric to apply its own template only once, so that later changes are not reverted or duplicated.",
       "rationale": "Every template in this vault hands later changes to another plugin. Reapplying Calendaric's template would overwrite or duplicate those changes.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [],
       "constrained_by": [
         "vault:create-weekly-note-rename-move",
@@ -2337,8 +2337,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.1: substitutes once, writes once, and that write is the note's final content\" and > \"AC-TPL-05.1: leaves the written body alone once the create has settled\". The first spies on vault.createFile and asserts one call and one substitution pass, then compares that call's own argument with what the vault holds. Production: the only substitution call site is src/notes/noteCreate.ts:184, reached once from createNote at :94, and its result is the sole argument to vault.createFile at :95; the module is reachable from src/main.ts:8. Mutation: wrapping :184 in a second substituteTemplateTokens pass took the file from \"Tests 8 passed (8)\" to \"Tests 4 failed | 4 passed (8)\"; restored 8 passed."
         },
         {
           "id": "AC-TPL-05.2",
@@ -2351,8 +2351,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.2: the calendar refresh finds the note at its current name and location\", > \"AC-TPL-05.2: the move is never reverted and the body is never re-substituted\" and > \"AC-TPL-05.2: opening the note again opens the moved file, without touching the template\". The companion plugin's move is simulated as the host rename event, which is how Obsidian reports a rename made by anyone (src/adapters/obsidianVaultAdapter.ts:59-62, itself covered by AC-NOTE-11.3). What the simulation settles is this plugin's three Thens: PeriodicNoteIndex files the note under its new path, the old path stays gone, no substitution pass and no write run, and openNoteIn opens the moved file. What it does not settle is a live vault with a real companion plugin installed; the plugin cannot tell one renamer from another, because the port hands it the same event either way. Mutation: src/notes/periodicNoteIndex.ts:143 forgetting change.file.path instead of change.oldPath took the file from \"Tests 8 passed (8)\" to \"Tests 1 failed | 7 passed (8)\"; restored 8 passed.",
           "failure_path": true
         },
         {
@@ -2365,8 +2365,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.3: an empty template leaves an empty note, with no warning and no retry\" and > \"AC-TPL-05.3: a template that carries no tokens is written through unchanged\". Both assert exactly one substitution pass, one write, and no warn call, so an empty result is carried through rather than judged. Production: src/notes/noteCreate.ts:181-186 warns only when the READ fails; it never inspects the substituted content. Mutation: adding a retry branch at :94 (warn, then a second readTemplate when the content is empty) took the file from \"Tests 8 passed (8)\" to \"Tests 1 failed | 7 passed (8)\"; restored 8 passed.",
           "failure_path": true
         },
         {
@@ -2379,8 +2379,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/templateAppliedOnce.test.ts > \"AC-TPL-05.4: with no external engine at all, the note is exactly the token-substituted content\". createNote takes no engine port at all, so the call in the test IS the no-engine case; it asserts the note's body equals the substitution's own return value verbatim, and that nothing further ran (no warn, no fold pass). Production: src/notes/noteCreate.ts:94-95. Mutation: appending a newline to template.content at :95 took the file from \"Tests 8 passed (8)\" to \"Tests 7 failed | 1 passed (8)\"; restored 8 passed."
         }
       ],
       "resolves": [
@@ -2591,7 +2591,7 @@
       "story": "As someone planning ahead or looking back, I want to step the grid forward and backward one month at a time and jump straight back to the current month, so that I can browse freely without losing track of where 'now' is.",
       "rationale": "Browsing is the most frequent interaction with the view, and it must never require creating or opening any note to use.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "calui:navigate-month",
         "calui:reset-to-current-month",
@@ -2689,7 +2689,7 @@
       "story": "As someone keeping a daily journal, I want clicking any day in the grid to take me to that day's note, offering to create it if it does not exist yet, so that the grid is a single place to reach any day.",
       "rationale": "This is the single most common way a periodic note gets opened from the calendar.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "calui:day-cell-interactions",
         "calendaric:calendar-click-to-open-or-create",
@@ -3980,7 +3980,7 @@
       "story": "As someone relying on periodic notes, I want each granularity's effective format, folder and template to resolve to one predictable value, so that I never have to guess which of several possible sources of that setting actually won.",
       "rationale": "The old plugins let format, folder and template be set in more than one place at once; a single resolver removes the guesswork the vault currently gets right only by coincidence.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "dni:get-periodic-note-settings",
         "dni:resolve-daily-settings",
@@ -4762,7 +4762,7 @@
       "story": "As someone who enables a new note granularity, I want the full set of navigation commands to appear for it automatically, so that every granularity gets the same keyboard support without anyone writing new code for it.",
       "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "pn:dynamic-command-registration"
       ],
@@ -5870,7 +5870,7 @@
       "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
       "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "dni:should-use-periodic-notes-settings",
         "dni:detect-periodic-notes-plugin",
@@ -5900,8 +5900,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "PASS. Precedence: src/settings/importSource.test.ts 'AC-MIG-05.1: day resolves to Periodic Notes even while core Daily Notes is enabled' and 'AC-MIG-05.1: every granularity the active calendar set enables resolves to Periodic Notes'. Shape: the active set is never read as an object; the plugin's own calendarSetManager.getActiveGranularities() is asked, the surface recorded verified in docs/mapping/sources/pn.json api_surface (src/calendarSetManager.ts:124-127) and called the same way by the Calendar fork (docs/mapping/sources/cal.json, capability periodic-notes-monthly-plugin-resolution); guarded by src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.1: takes the answer from the calendar set manager, not from the settings object'. Mutations: restricting the Periodic Notes branch to non-day granularities in importSource.ts turned 16 passed into 2 failed | 14 passed; making the adapter read plugin['settings'] instead of plugin['calendarSetManager'] turned 16 passed into 7 failed | 9 passed. The Calendar plugin cannot override anything because no Calendar surface is read: companionPluginPort.ts exposes the core Daily Notes plugin and Periodic Notes only. Not settled here: a live vault running a Periodic Notes build other than the surveyed 0.0.17 fork -- AC-MIG-05.4 is what stops such a build from producing an import."
         },
         {
           "id": "AC-MIG-05.2",
@@ -5912,8 +5912,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.2: day resolves to core Daily Notes when the Periodic Notes active set leaves day off', 'AC-MIG-05.2: day resolves to core Daily Notes when Periodic Notes is absent', 'AC-MIG-05.2: day reports no source when the core Daily Notes plugin is disabled' and 'AC-MIG-05.2: no granularity beyond day falls back to core Daily Notes'. Mutation: moving the fallback from day to week in src/settings/importSource.ts turned 16 passed into 4 failed | 12 passed.",
           "failure_path": true
         },
         {
@@ -5926,8 +5926,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.3: reports every granularity as having no external configuration', 'AC-MIG-05.3: does not throw when neither predecessor plugin can be read' and 'AC-MIG-05.3: does not throw when a predecessor plugin is installed but broken'; the adapter half is src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.3: reports the plugin as absent when neither id is installed'. Mutation: throwing instead of returning the no-source answer in src/settings/importSource.ts turned 16 passed into 15 failed | 1 passed.",
           "failure_path": true
         },
         {
@@ -5939,8 +5939,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "PASS. src/adapters/obsidianPeriodicNotesAdapter.test.ts 'AC-MIG-05.4: reports a mismatch when the plugin carries no calendar set manager', 'AC-MIG-05.4: reports a mismatch when getActiveGranularities is missing' and 'AC-MIG-05.4: reports a mismatch when the plugin throws instead of answering' (the real manager throws 'No active calendar set found'); the resolution half is src/settings/importSource.test.ts 'AC-MIG-05.4: every granularity reads as not externally configured' and 'AC-MIG-05.4: day still falls back to core Daily Notes'. Mutations: dropping the missing-manager guard in obsidianPeriodicNotesAdapter.ts turned 16 passed into 1 failed | 15 passed; treating an unreadable read as governing in importSource.ts turned 16 passed into 7 failed | 9 passed.",
           "failure_path": true
         },
         {
@@ -5952,8 +5952,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "PASS. src/settings/importSource.test.ts 'AC-MIG-05.5: answers for every granularity Calendaric knows, from the one list' and 'AC-MIG-05.5: reads each predecessor plugin once for the whole resolution'; resolveImportSources loops GRANULARITIES from src/settings/model.ts, so day, week, month, quarter and year share one routine. Mutation: replacing that list with ['day'] in src/settings/importSource.ts turned 16 passed into 8 failed | 8 passed. Note for the consumer: the routine is not yet reached from src/main.ts -- the import that calls it is US-MIG-04 / US-MIG-06."
         }
       ],
       "decisions": [
@@ -6218,7 +6218,7 @@
       "story": "As a maintainer extending Calendaric, I want the codebase organized into layers with one allowed dependency direction, so that I can change one concern without having to understand or risk breaking the others.",
       "rationale": "The map shows the old code mixing note IO, date parsing, settings resolution and UI inside single files, and reaching into other plugins' internals from three separate layers at once.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -6238,8 +6238,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "fail",
+          "evidence": "FAILS, and the failure is the finding. src/arch.test.ts 'AC-ARCH-01.1: no module outside src/main.ts constructs an adapter, beyond the four on record' asserts the exact list of runtime concrete-adapter imports made outside the composition root. Four remain, all in the calendar view: src/ui/calendar.ts -> obsidianVaultAdapter, obsidianVaultConfigAdapter, obsidianWorkspaceAdapter, and src/ui/calendarDots.ts -> obsidianVaultConfigAdapter. Clearing them means threading three ports from src/main.ts through CalendarView into CalendarWidget and DotScanner, which is a refactor of the view rather than part of this check. The settings tab, which was the fifth, is fixed: src/main.ts builds ObsidianCompanionPluginAdapter and ElectronDesktopShellAdapter and hands the tab SettingsTabPorts. Mutation, re-measured after the US-MIG-05 rebase: added 'import { ObsidianVaultAdapter } from \"../adapters/obsidianVaultAdapter\";' to src/ui/cellActions.ts -- arch.test.ts 32 passed -> 1 failed | 31 passed -> restored 32 passed."
         },
         {
           "id": "AC-ARCH-01.2",
@@ -6251,8 +6251,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/arch.test.ts 'AC-ARCH-01.2: imports nothing from \"obsidian\" at runtime' and 'AC-ARCH-01.2: imports no adapter module and no view module', over every domain module the tree classifier finds (src/fmt/*, src/notes/*, src/commands/*, src/types.ts, src/settings/model.ts, dailyNotesImport.ts, importSource.ts); `import type` is read as type-only and allowed, which is what the domain uses for Command and for every port. Mutations, re-measured after the US-MIG-05 rebase: added 'import { Notice } from \"obsidian\";' to src/types.ts -- 32 passed -> 1 failed | 31 passed -> restored 32 passed; added 'import { ConfirmationModal } from \"../ui/modal\";' to src/notes/noteUtils.ts -- 32 passed -> 1 failed | 31 passed -> restored 32 passed."
         },
         {
           "id": "AC-ARCH-01.3",
@@ -6264,8 +6264,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/arch.test.ts 'AC-ARCH-01.3: src/main.ts imports from every layer', 'AC-ARCH-01.3: no other module imports from every layer' and 'AC-ARCH-01.3: nothing imports the lifecycle module at runtime'. src/main.ts reaches view, domain, port, adapter and integration; no other shipped module reaches all five. Three modules import the plugin class as a TYPE (src/settings.ts, src/settings/dailyNotesImportCard.ts, src/ui/CalendarView.ts) -- erased before the bundle exists, so no runtime edge and no cycle. Mutations, re-measured after the US-MIG-05 rebase: deleted main.ts's ObsidianCompanionPluginAdapter import -- 32 passed -> 1 failed | 31 passed -> restored 32 passed; turned src/ui/CalendarView.ts's 'import type CalendaricPlugin' into a runtime 'import CalendaricPlugin' -- 32 passed -> 1 failed | 31 passed -> restored 32 passed."
         },
         {
           "id": "AC-ARCH-01.4",
@@ -6277,8 +6277,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/arch.test.ts 'AC-ARCH-01.4: a new view-to-vault-IO import fails the check, named by file and by import' runs the same derivation (adapterWiring) over the real edge set plus one synthetic view->vault-IO import, and requires the report to differ from the recorded list and to contain 'src/ui/newPane.ts -> src/adapters/obsidianVaultAdapter.ts' -- the offending file and the disallowed import, both named. Mutation on the real tree, re-measured after the US-MIG-05 rebase: added 'import { ObsidianVaultAdapter } from \"../adapters/obsidianVaultAdapter\";' to src/ui/cellActions.ts -- arch.test.ts 32 passed -> 1 failed | 31 passed -> restored 32 passed, and the failure message printed that file and that import.",
           "failure_path": true
         },
         {
@@ -6291,8 +6291,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Re-derived after US-MIG-05 landed, which broke the first version of this check twice. (a) The integration layer is now DERIVED, not named: it is src/adapters/companionPluginPort.ts plus every src/adapters/ module importing it, so obsidianPeriodicNotesAdapter.ts classifies as integration on its own and a fourth companion adapter will too. (b) The surface scan no longer matches a bare id literal, which had fired on src/settings/importSource.ts, where '{ source: \"periodic-notes\" }' is a discriminant tag and the plugin is reached through PeriodicNotesPort -- correct code reported as a violation. It now matches the plugin REGISTRY (internalPlugins, .plugins, [\"plugins\"], getPlugin/getPluginById) or an id used AS a lookup (indexed with, passed as a call argument, or compared against), never an id sitting after ':' or '|'. Tests: 'AC-ARCH-01.5: no layer but the integration layer looks a companion plugin up', 'AC-ARCH-01.5: the lookup patterns tell a lookup from a tag' (four lookup forms must match, three tag forms must not), 'AC-ARCH-01.5: every other layer takes the port, never the adapter' and 'AC-ARCH-01.5: the port exports typed operations and nothing untyped' (asserted by shape, so a sibling adding operations does not break it). Four mutations, all on the post-rebase tree: registry hop '(window as unknown as Record<string, unknown>)[\"plugins\"]' added to src/notes/periodicNoteIndex.ts -- 32 passed -> 1 failed | 31 passed -> restored 32 passed; id comparison '=== \"periodic-notes\"' added to src/settings/model.ts -- 32 passed -> 1 failed | 31 passed -> restored 32 passed; src/settings/importSource.ts made to import ObsidianPeriodicNotesAdapter instead of taking the port -- 32 passed -> 3 failed | 29 passed -> restored 32 passed; and the derived membership itself, by stripping the companionPluginPort import out of obsidianPeriodicNotesAdapter.ts so it falls back to the vault-IO layer -- 32 passed -> 1 failed | 31 passed -> restored 32 passed."
         },
         {
           "id": "AC-ARCH-01.6",
@@ -6304,8 +6304,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The repository does make one desktop-only call: a settings link opened the format guide through (window as any).require(\"electron\").shell.openPath and read the desktop-only vault adapter's basePath, both inline in src/settings.ts. Moved behind one named boundary: src/adapters/desktopShellPort.ts (DesktopShellPort.openPluginFile) and src/adapters/electronDesktopShellAdapter.ts, constructed in src/main.ts and handed to the settings tab as a port. src/arch.test.ts 'AC-ARCH-01.6: one module holds every desktop-only import and call' scans every shipped module for require(\"electron\"), FileSystemAdapter, basePath, node: builtins, child_process, __dirname and process.* and requires the hit list to be exactly [electronDesktopShellAdapter.ts]; 'AC-ARCH-01.6: the view depends on that boundary's interface, never on the API' requires src/main.ts to be its only runtime importer. Mutation, re-measured after the US-MIG-05 rebase: added a require(\"electron\") call to src/ui/calendarNav.ts -- arch.test.ts 32 passed -> 1 failed | 31 passed -> restored 32 passed."
         }
       ],
       "resolves": [
@@ -6670,7 +6670,7 @@
       "story": "As a release owner, I want one clean build to run every gate and produce every release artifact, so that releases are reproducible.",
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [
         "forks:git-dependency-self-build"
       ],
@@ -6960,7 +6960,7 @@
       "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
       "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first — see DEC-26.",
       "priority": "must",
-      "status": "in-review",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -7117,6 +7117,91 @@
           "failure_path": true
         }
       ]
+    },
+    {
+      "id": "US-ARCH-11",
+      "epic": "ARCH",
+      "title": "The calendar view receives its vault access instead of constructing it",
+      "story": "As a maintainer changing how Calendaric reads the vault, I want the calendar view to receive vault access as an injected port rather than build its own adapter, so that I can swap or fake that access without editing the view, and so the layering rule holds in fact and not only in the import list.",
+      "rationale": "AC-ARCH-01.1 fails today: src/ui/calendar.ts constructs ObsidianVaultAdapter, ObsidianWorkspaceAdapter and ObsidianVaultConfigAdapter (lines 56-58), and src/ui/calendarDots.ts constructs ObsidianVaultConfigAdapter (line 21). The intent is already half-expressed -- calendarDots.ts:15 declares the field as VaultConfigPort and then assigns a concrete adapter to it, so the port exists and only the construction site is wrong. Removing the four imports alone would turn the criterion green while leaving src/ui/calendarDots.ts:43 and :66 calling app.vault.getAbstractFileByPath directly, which satisfies the letter of the boundary rule and none of its purpose. This story covers both halves. It cannot be expressed as a dependency of US-ARCH-01, because US-ARCH-01 is what waits on it.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "n-a"
+      ],
+      "depends_on": [],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-ARCH-11.1",
+          "given": "the calendar view modules (the calendar widget and the dot scanner)",
+          "when": "their constructors and fields are inspected",
+          "then": [
+            "each vault, vault-config and workspace dependency arrives as a constructor parameter whose declared type is a port interface",
+            "neither module contains a `new` of any concrete adapter class"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.2",
+          "given": "a view module that needs to know whether a vault file exists or to react to a vault change",
+          "when": "its source is inspected",
+          "then": [
+            "it obtains that information through an injected port, not through the Obsidian `App` object's vault surface",
+            "no view module calls `app.vault` directly for file lookup, creation, deletion or rename"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.3",
+          "given": "the plugin lifecycle module, which is the only place allowed to know every layer",
+          "when": "the construction of the calendar view's dependencies is traced",
+          "then": [
+            "every adapter the calendar view uses is constructed there and passed inward",
+            "the dependencies travel as one named dependency object rather than as separately threaded parameters, so adding a fifth port does not change three constructor signatures"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.4",
+          "given": "a test that wants to exercise the calendar widget without a running Obsidian vault",
+          "when": "it constructs the widget with fake ports only",
+          "then": [
+            "the widget renders and responds to a simulated vault change without any real vault being present",
+            "the test needs no monkey-patching of a module import to substitute the fakes"
+          ],
+          "verifies": "architecture",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": null
+        },
+        {
+          "id": "AC-ARCH-11.5",
+          "given": "a view module's port parameter is made optional, or is given a default that falls back to constructing a concrete adapter",
+          "when": "the project is type-checked and the architecture boundary check runs",
+          "then": [
+            "the build fails and names the module and the dependency that was left unsupplied",
+            "no view module is able to reach a working vault without the lifecycle module having handed it one"
+          ],
+          "verifies": "architecture",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": null,
+          "failure_path": true
+        }
+      ],
+      "decisions": []
     }
   ],
   "icebox": [
