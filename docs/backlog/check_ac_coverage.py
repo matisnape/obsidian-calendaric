@@ -89,9 +89,21 @@ AC_STATUSES = ("unverified", "pass", "fail", "n-a")
 # it. That is a real reduction in what the gate protects. Four entries is
 # small enough that a fifth should be argued for in review; if this list grows
 # quietly, the gate is being hollowed out one criterion at a time.
+#
+# The list held at four across the retro-tagging pass, and the trade is worth
+# reading. Two entries LEFT it: AC-ARCH-09.2 and AC-ARCH-09.5 are both claims
+# about ci.yml's own text, and src/arch.test.ts now reads that file and asserts
+# them, so each has a regression behind it after all. Two entries arrived in
+# their place, and both are `testable_by: manual` in the catalogue itself —
+# which is the only honest reason to be here. A criterion this repository could
+# test, and does not, belongs in a test rather than in this set.
 NO_REGRESSION_IDS = frozenset({
-    "AC-ARCH-09.2",   # code review of ci.yml: pull_request-only, no push key
-    "AC-ARCH-09.5",   # code review of ci.yml: no lint step, DEC-26 named
+    "AC-ARCH-06.4",   # the minimum-version citation rests on Obsidian's own
+                      # release feed, which is outside this repository. A test
+                      # could compare manifest.json against README.md and still
+                      # say nothing about whether either matches Obsidian.
+    "AC-ARCH-09.4",   # about detect-ci-gates.sh, a tool in another repository,
+                      # reading GitHub's check-run API. Neither side is here.
     "AC-MIG-01.1",    # code review of settings.ts: testable_by manual
     "AC-MIG-01.5",    # code review of the import modal: testable_by manual
 })
@@ -202,12 +214,19 @@ def tagged_ids(titles):
     return {m for t in titles for m in AC_IN_TITLE.findall(t)}
 
 
-def check(criteria, tagged):
-    """(unbacked, no_regression, dangling). Pure, so --self-check drives it."""
+def check(criteria, tagged, allowlist=NO_REGRESSION_IDS):
+    """(unbacked, no_regression, dangling). Pure, so --self-check drives it.
+
+    `allowlist` is a parameter so the self-check can bring its own. It used to
+    read the module global, which made the fixture below assert the contents of
+    the real NO_REGRESSION_IDS: settling a criterion with a new test, and so
+    removing its id from that set, broke the self-check for a reason that had
+    nothing to do with the classifier it tests.
+    """
     known = {c[2] for c in criteria}
     untagged_pass = [c for c in criteria if c[3] == "pass" and c[2] not in tagged]
-    unbacked = [c for c in untagged_pass if c[2] not in NO_REGRESSION_IDS]
-    no_regression = [c for c in untagged_pass if c[2] in NO_REGRESSION_IDS]
+    unbacked = [c for c in untagged_pass if c[2] not in allowlist]
+    no_regression = [c for c in untagged_pass if c[2] in allowlist]
     dangling = sorted(tagged - known)
     return unbacked, no_regression, dangling
 
@@ -251,6 +270,13 @@ def report(unbacked, no_regression, dangling, total_tagged):
         print("No failures.")
 
 
+# The allowlist the fixture below is written against. Deliberately NOT the real
+# NO_REGRESSION_IDS: this block tests the classifier, not the project's current
+# list of exemptions, and coupling the two made a settled criterion break the
+# self-check.
+FIXTURE_ALLOWLIST = frozenset({"AC-ARCH-09.2", "AC-MIG-01.1"})
+
+
 def self_check():
     """Both failure modes fire, and the two `pass` kinds are told apart."""
     catalogue = [
@@ -292,7 +318,8 @@ def self_check():
     assert tagged_ids(["suite > AC-NOTE-03.12: a real twelfth criterion"]) == \
         {"AC-NOTE-03.12"}
 
-    unbacked, no_regression, dangling = check(catalogue, tagged)
+    unbacked, no_regression, dangling = check(catalogue, tagged,
+                                              FIXTURE_ALLOWLIST)
     unbacked_ids = [c[2] for c in unbacked]
     no_regression_ids = [c[2] for c in no_regression]
 
@@ -315,7 +342,7 @@ def self_check():
     assert set(no_regression_ids) == {"AC-ARCH-09.2", "AC-MIG-01.1"}, no_regression_ids
     assert "AC-ARCH-09.1" in unbacked_ids, unbacked_ids
     assert not set(no_regression_ids) & set(unbacked_ids)
-    assert set(no_regression_ids) <= NO_REGRESSION_IDS
+    assert set(no_regression_ids) <= FIXTURE_ALLOWLIST
 
     # Rule 3. A test naming an id the catalogue does not define is a failure.
     assert dangling == ["AC-NOTE-99.9"], dangling
@@ -326,12 +353,14 @@ def self_check():
     assert quiet.isdisjoint(set(unbacked_ids) | set(no_regression_ids))
 
     # A `pass` that IS named stays quiet too, or the gate is just noise.
-    assert check(catalogue[:1], {"AC-NOTE-03.1"}) == ([], [], [])
+    assert check(catalogue[:1], {"AC-NOTE-03.1"}, FIXTURE_ALLOWLIST) == \
+        ([], [], [])
 
     # An allowlisted criterion that DOES get a test stays quiet as well: the
     # allowlist excuses a missing test, it does not silence a present one.
     allow_tagged = [c for c in catalogue if c[2] == "AC-ARCH-09.2"]
-    assert check(allow_tagged, {"AC-ARCH-09.2"}) == ([], [], [])
+    assert check(allow_tagged, {"AC-ARCH-09.2"}, FIXTURE_ALLOWLIST) == \
+        ([], [], [])
 
     end_to_end_check()
 

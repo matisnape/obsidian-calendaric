@@ -63,7 +63,7 @@ describe("planDailyNotesImport", () => {
 describe("applyDailyNotesImport", () => {
 	const legacy = { format: "DD-MM-YYYY", folder: "Journal", template: "templates/daily" };
 
-	it("copies folder, format and template, enables day, and records the import", () => {
+	it("AC-MIG-01.2: copies folder, format and template, enables day, and records the import", () => {
 		const target = makeTarget();
 		expect(applyDailyNotesImport(target, legacy)).toBe(true);
 		expect(target.day).toEqual({
