@@ -484,7 +484,7 @@
       "story": "As someone who has both the core Daily Notes plugin and the Periodic Notes plugin configured for the same period, I want Calendaric to pick the same source it always used to, so that importing does not quietly switch me to a different set of settings than the ones actually taking effect today.",
       "rationale": "Daily notes settings in the old plugins came from whichever of these plugins the code checked first; a merged importer must keep that precedence or it imports settings the vault was not actually using.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:should-use-periodic-notes-settings",
         "dni:detect-periodic-notes-plugin",
