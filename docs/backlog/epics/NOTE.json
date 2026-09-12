@@ -918,7 +918,7 @@
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
       "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "calui:periodic-note-file-cache",
         "pn:cache-index-build-on-load",
@@ -949,8 +949,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts, six titles naming AC-NOTE-11.1 -- files present at build time are found for their period across granularities. Production: PeriodicNoteIndex.rebuild in src/notes/periodicNoteIndex.ts, which lists the vault once rather than rescanning per lookup."
         },
         {
           "id": "AC-NOTE-11.2",
@@ -961,8 +961,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts, three titles naming AC-NOTE-11.2 -- a file created after the index is built is returned by the very next lookup. The vault create event is subscribed through the port, not through Obsidian directly; src/adapters/obsidianVaultAdapter.test.ts covers the adapter half."
         },
         {
           "id": "AC-NOTE-11.3",
@@ -974,7 +974,7 @@
           "verifies": "compat",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null
+          "evidence": "PARTLY SETTLED, and the missing half is blocked on another pull request, not on this work. Obsidian's own rename event is covered: src/adapters/obsidianVaultAdapter.test.ts:145 proves the adapter reports a rename, and the index re-keys on it. The criterion also names an EXTERNAL script renaming a raw ISO-week title to a longer \"pretty\" title, and that case needs prefix matching: the pretty title is a date range that only matches the original by its prefix. src/fmt/resolveFileDate.ts on this branch's base passes `false` for allowPrefixMatch behind a comment reading \"no config field carries it yet\" -- stale, since US-SET-01 added PeriodicConfig.allowPrefixMatch (src/types.ts:12). US-FMT-08 wires it. The existing test at periodicNoteIndex.test.ts:107-128 invents a weekly format that happens to moment-parse and never exercises prefix matching, so it is not evidence for this clause. Settle this after US-FMT-08 merges, with a test using allowPrefixMatch: true against a real date-range title."
         },
         {
           "id": "AC-NOTE-11.4",
@@ -985,8 +985,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "The inverse case, and the one an index keyed on filenames alone passes by accident. vitest: src/notes/periodicNoteIndex.test.ts:132 (outside the configured folder), :138 (vault root) and :144 (created outside after the index was built). The frontmatter path has its own guard rather than relying on the filename path's: periodicNoteIndex.ts:151 checks isUnderFolder before consulting frontmatter at all. Mutation-checked by the orchestrator: removing that guard fails 1 of the 21 tests.",
           "failure_path": true
         },
         {
@@ -1000,8 +1000,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "All three clauses, each with its own test: src/notes/periodicNoteIndex.test.ts:156, :165 and :174. The third clause -- a file that no longer matches is no longer returned by ANY lookup -- is the one an incremental index gets wrong, and applySettings avoids it by construction: periodicNoteIndex.ts:89 replaces the configuration and calls rebuild(), which clears both maps and re-lists the vault, rather than patching entries. Mutation-checked by the orchestrator: making applySettings keep the old entries fails 3 of the 21 tests."
         },
         {
           "id": "AC-NOTE-11.6",
@@ -1012,8 +1012,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: eight titles naming AC-NOTE-11.6 across src/notes/periodicNoteIndex.test.ts and src/adapters/obsidianVaultAdapter.test.ts -- a file inside the configured folder whose frontmatter carries the period is found even though its filename does not match. The new port capability is typed `Record<string, unknown> | undefined` and narrowed to a string (src/adapters/obsidianVaultAdapter.ts:44-48); no `any` reaches the boundary. The folder check runs before frontmatter is read, so this cannot become a back door around AC-NOTE-11.4."
         },
         {
           "id": "AC-NOTE-11.7",
@@ -1026,7 +1026,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "unverified",
-          "evidence": null,
+          "evidence": "PARTLY SETTLED. The first clause is proved: vitest, three titles naming AC-NOTE-11.7 -- after a delete event the lookup for that period returns nothing. The second clause says the calendar dot for that day disappears, which needs the index wired into the calendar view; the brief forbade that, because src/main.ts and src/ui/calendar.ts both belong to other open pull requests. Nothing here is uncalled by accident: the index is deliberately not wired, the same way US-SET-03's resolver is not. Settle this clause with the ticket that wires them.",
           "failure_path": true
         }
       ]
