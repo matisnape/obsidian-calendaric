@@ -26,8 +26,13 @@ const OFFSET_UNITS: Record<string, unitOfTime.DurationConstructor> = {
  * The unit letter is required by the pattern rather than validated after it, so
  * a malformed offset such as `{{date+7:DD.MM}}` never matches and survives into
  * the note exactly as the user typed it.
+ *
+ * The format group excludes `{` as well as `}`, so an unclosed `{{date+1d:DD`
+ * cannot reach past itself and pair up with the closing braces of whatever token
+ * comes next (AC-TPL-06.5). Left to cross `{`, it would format the text between
+ * the two halves as a moment pattern and destroy both of them.
  */
-const DATE_OFFSET_RE = /\{\{date([+-]\d+)([A-Za-z])(?::([^}]+))?\}\}/g;
+const DATE_OFFSET_RE = /\{\{date([+-]\d+)([A-Za-z])(?::([^{}]+))?\}\}/g;
 
 /**
  * Substitute all Calendaric template body variables in `content`.
@@ -70,8 +75,10 @@ export function substituteTemplateTokens(
 		return fmt === undefined ? formatWithWeekTokens(config.format, shifted) : shifted.format(fmt);
 	});
 
-	// {{date:custom}} — must be replaced before {{date}} to avoid double-match
-	out = out.replace(/\{\{date:([^}]+)\}\}/g, (_m, fmt: string) => date.format(fmt));
+	// {{date:custom}} — must be replaced before {{date}} to avoid double-match.
+	// The format excludes `{` for the reason DATE_OFFSET_RE does: an unclosed
+	// `{{date:DD` must not borrow the next token's `}}` (AC-TPL-06.5).
+	out = out.replace(/\{\{date:([^{}]+)\}\}/g, (_m, fmt: string) => date.format(fmt));
 
 	// {{date}} — uses the granularity's configured format (with week tokens)
 	const dateStr = formatWithWeekTokens(config.format, date);
