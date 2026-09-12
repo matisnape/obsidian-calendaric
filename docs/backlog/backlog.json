@@ -400,7 +400,7 @@
       "story": "As someone keeping a periodic journal, I want creating a note to work the same reliable way for every granularity Calendaric supports, so that switching between daily, weekly, monthly, and yearly notes never surprises me with a create that silently does nothing or crashes.",
       "rationale": "The old code has three different, inconsistent answers for what happens when a create goes wrong; users need one predictable answer.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:create-daily-note",
         "dni:create-weekly-note",
@@ -1942,7 +1942,7 @@
       "story": "As someone applying a template to a new periodic note, I want {{date}}, {{date:FORMAT}}, {{time}}, {{title}}, and date-arithmetic tokens like {{date+1d:FORMAT}} filled in automatically, so that the note already carries the right day, time, and name without me typing them by hand.",
       "rationale": "These tokens apply to every granularity, so their exact output is the baseline the rest of the token system builds on.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:template-token-date-time-calc",
         "pn:template-token-expansion",

@@ -10,7 +10,7 @@
       "story": "As someone applying a template to a new periodic note, I want {{date}}, {{date:FORMAT}}, {{time}}, {{title}}, and date-arithmetic tokens like {{date+1d:FORMAT}} filled in automatically, so that the note already carries the right day, time, and name without me typing them by hand.",
       "rationale": "These tokens apply to every granularity, so their exact output is the baseline the rest of the token system builds on.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "dni:template-token-date-time-calc",
         "pn:template-token-expansion",
