@@ -4281,7 +4281,7 @@
       "story": "As someone whose settings file can be edited outside the plugin, I want Calendaric to keep working even when the stored configuration is incomplete or malformed, so that one bad or missing field never breaks the whole plugin.",
       "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "todo",
       "covers": [
         "cal:persist-plugin-settings"
       ],
@@ -4762,7 +4762,7 @@
       "story": "As someone who enables a new note granularity, I want the full set of navigation commands to appear for it automatically, so that every granularity gets the same keyboard support without anyone writing new code for it.",
       "rationale": "A single template driving all granularities is what keeps the command set consistent and keeps ids stable as granularities are added.",
       "priority": "must",
-      "status": "in-review",
+      "status": "todo",
       "covers": [
         "pn:dynamic-command-registration"
       ],
@@ -4785,8 +4785,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.1: registers exactly the five navigation commands for an active granularity\" and \"AC-CMD-05.1: each command invokes its own action for its own granularity\""
+          "status": "unverified",
+          "evidence": null
         },
         {
           "id": "AC-CMD-05.2",
@@ -4798,8 +4798,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.2: the newly enabled granularity's five commands appear on the same running instance\"; sync() is called from CalendaricPlugin.onSettingsChange, not at load only"
+          "status": "unverified",
+          "evidence": null
         },
         {
           "id": "AC-CMD-05.3",
@@ -4811,8 +4811,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.3: the disabled granularity's five commands disappear on the same running instance\"",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -4838,8 +4838,8 @@
           ],
           "verifies": "compat",
           "testable_by": "unit",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.5: every generated id is the one it has always been\", against a frozen list of all twenty ids written out by hand Mutation-checked by the orchestrator: making commandId() append PHRASE[action] turns 13 passed into 2 failed."
+          "status": "unverified",
+          "evidence": null
         },
         {
           "id": "AC-CMD-05.6",
@@ -4851,8 +4851,8 @@
           ],
           "verifies": "compat",
           "testable_by": "unit",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.6: the display name is no part of the id\"; commandId reads only the granularity and the action Mutation-checked by the orchestrator: making commandId() append PHRASE[action] turns 13 passed into 2 failed."
+          "status": "unverified",
+          "evidence": null
         },
         {
           "id": "AC-CMD-05.7",
@@ -4863,8 +4863,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.7: registers nothing at all when every granularity is off\"",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         },
         {
@@ -4876,8 +4876,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "pass",
-          "evidence": "src/commands/granularityCommands.test.ts — \"AC-CMD-05.8: quarter is reserved, so enabling it registers nothing\" Mutation-checked by the orchestrator: dropping the isReleaseGranularity filter in sync() turns 13 passed into 2 failed.",
+          "status": "unverified",
+          "evidence": null,
           "failure_path": true
         }
       ],
