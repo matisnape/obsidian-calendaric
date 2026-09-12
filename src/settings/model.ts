@@ -225,7 +225,12 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 		const projected = normalizeConfig(storedConfig);
 		const edited = settings[granularity];
 
-		const patched: Record<string, unknown> = { ...storedConfig };
+		// A stored entry of the wrong shape is replaced rather than spread: spreading
+		// a string would write its own characters back as fields, and the plugin
+		// would have authored the malformed entry it is meant to recover from
+		// (AC-SET-06.4). The unreadable value is dropped; its default is what the
+		// rest of the plugin has been using since the load.
+		const patched: Record<string, unknown> = isRecord(storedConfig) ? { ...storedConfig } : {};
 		let touched = false;
 		for (const field of CONFIG_FIELDS) {
 			if (projected[field] === edited[field]) continue;
