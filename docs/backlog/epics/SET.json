@@ -500,7 +500,7 @@
       "story": "As someone whose settings file can be edited outside the plugin, I want Calendaric to keep working even when the stored configuration is incomplete or malformed, so that one bad or missing field never breaks the whole plugin.",
       "rationale": "The configuration file is plain text the user or another tool can touch directly, so the plugin cannot assume it is always well-formed.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "cal:persist-plugin-settings"
       ],
@@ -523,8 +523,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.1: every committed change on the settings screen writes the configuration\" and \"AC-SET-06.1: one committed field change reaches the disk on its own\". The first walks every commit handler in src/settings.ts and requires each to call this.save(); the second drives the real plugin's saveSettings() over a stand-in loadData/saveData and watches the write land. Mutations: deleting `await this.save();` from the allow-prefix-matching handler in src/settings.ts took 18 passed to 1 failed | 17 passed; deleting `await this.saveData(next);` from saveSettings in src/main.ts took 18 passed to 4 failed | 14 passed. Both restored to 18 passed."
         },
         {
           "id": "AC-SET-06.2",
@@ -535,8 +535,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.2: restores every stored setting when the plugin loads again\" and \"AC-SET-06.2: survives a second close and reopen without drifting\". Every editable key is moved off its default, saved through the real plugin, read back by a second plugin over the same JSON, and compared whole. Mutation: applySettings writing `...pickGlobals(stored)` instead of `...pickGlobals(settings)` in src/settings/model.ts took 18 passed to 2 failed | 16 passed, restored 18 passed."
         },
         {
           "id": "AC-SET-06.3",
@@ -548,8 +548,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.3: fills every missing field of a half-written granularity\", plus the three sibling AC-SET-06.3 cases for the globals, for every granularity being complete after the load, and for no stored configuration at all. Mutation: `format: asString(raw.format, DEFAULT_PERIODIC_CONFIG.format)` changed to `format: raw.format as string` in normalizeConfig (src/settings/model.ts) took 18 passed to 2 failed | 16 passed — both failures inside AC-SET-06.3 — restored 18 passed.",
           "failure_path": true
         },
         {
@@ -562,8 +562,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.4: writes a malformed granularity back as a configuration, not as its characters\", with \"AC-SET-06.4: replaces a granularity of the wrong shape, leaving the others as stored\" and \"AC-SET-06.4: replaces a global of the wrong type with its default, one field at a time\" covering the load side. The load side already held before this story; the save side did not, and the guard added to applySettings is what this criterion bought. Mutation: dropping that guard (`isRecord(storedConfig) ? { ...storedConfig } : {}` back to `{ ...storedConfig }` in src/settings/model.ts) took 18 passed to 1 failed | 17 passed, restored 18 passed — the stored `day: \"garbage\"` came back out as {\"0\":\"g\",\"1\":\"a\",...}.",
           "failure_path": true
         },
         {
@@ -576,8 +576,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/settings/persistence.test.ts: \"AC-SET-06.5: every persisted, user-editable key has at least one production reader\", held in place by \"AC-SET-06.5: finds the keys the settings screen makes editable\" and \"AC-SET-06.5: every key the screen edits is one the plugin persists\". The audit reads the ten editable keys off src/settings.ts and looks for a read of each outside the writer, the storage model and the type declarations; all ten have one, so no setting is stored and shown as editable while nothing uses it. Mutation: removing the only production read of openAtStartup (`if (!config.openAtStartup || !config.enabled) continue;` to `if (!config.enabled) continue;` in src/main.ts) took 18 passed to 1 failed | 17 passed with `expected [ 'openAtStartup' ] to deeply equal []`, restored 18 passed."
         }
       ],
       "shared_coverage": {
