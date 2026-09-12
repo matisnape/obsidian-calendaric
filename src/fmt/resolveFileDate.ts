@@ -1,11 +1,24 @@
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
+import type { PeriodicConfig, ReleaseGranularity } from "../types";
+import { RELEASE_GRANULARITIES } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import { resolveNoteFolder } from "../notes/noteUtils";
 import { parseFilename } from "./parseFilename";
 import { computeNoteDate } from "./noteDate";
 
-export type FileGranularity = "day" | "week";
+/**
+ * The granularities a file can be resolved to: every one this release writes
+ * notes for (US-CMD-05). Was day and week alone, which left month and year
+ * without the existence lookup their navigation commands ask for.
+ */
+export type FileGranularity = ReleaseGranularity;
+
+/**
+ * The configuration this resolver reads, one entry per granularity it should
+ * consider. Partial on purpose: a granularity the vault has switched off is
+ * simply absent, and an absent granularity claims no file.
+ */
+export type FileConfigs = Partial<Record<FileGranularity, PeriodicConfig>>;
 
 export interface FileDateIdentity {
 	granularity: FileGranularity;
@@ -22,18 +35,20 @@ export interface FileDateIdentity {
 }
 
 /**
- * Resolve which date and granularity an open file represents, day before week.
+ * Resolve which date and granularity an open file represents, narrowest period
+ * first: day, then week, then month, then year.
  *
- * Day wins a tie because it is the more specific period: a filename that
- * satisfies both formats describes one day, and a whole week is never the
- * better answer for it.
+ * The narrower period wins a tie because it is the more specific one: a
+ * filename that satisfies both a daily and a weekly format describes one day,
+ * and a whole week is never the better answer for it. The same argument carries
+ * up the chain, which is why the order is `RELEASE_GRANULARITIES` itself.
  */
 export function resolveFileDate(
 	path: string,
-	configs: Record<FileGranularity, PeriodicConfig>,
+	configs: FileConfigs,
 	vaultConfig: VaultConfigPort,
 ): FileDateIdentity | null {
-	for (const granularity of ["day", "week"] as const) {
+	for (const granularity of RELEASE_GRANULARITIES) {
 		const identity = matchGranularity(path, granularity, configs, vaultConfig);
 		if (identity) return identity;
 	}
@@ -43,10 +58,12 @@ export function resolveFileDate(
 function matchGranularity(
 	path: string,
 	granularity: FileGranularity,
-	configs: Record<FileGranularity, PeriodicConfig>,
+	configs: FileConfigs,
 	vaultConfig: VaultConfigPort,
 ): FileDateIdentity | null {
 	const config = configs[granularity];
+	if (!config) return null;
+
 	const relative = stripFolder(path, resolveNoteFolder(config.folder, vaultConfig));
 	if (relative === null) return null;
 
@@ -67,7 +84,7 @@ function matchGranularity(
 		// The weekly format decides where a week starts, so it is passed even
 		// for a day: it is what every other caller must pass to agree with this
 		// identity (AC-FMT-07.4).
-		noteDate: computeNoteDate(parsed.date, granularity, configs.week.format),
+		noteDate: computeNoteDate(parsed.date, granularity, configs.week?.format ?? ""),
 		prefixMatch: parsed.prefixMatch,
 	};
 }
@@ -87,7 +104,7 @@ function matchGranularity(
 export function resolvePeriodNote(
 	paths: readonly string[],
 	noteDate: string,
-	configs: Record<FileGranularity, PeriodicConfig>,
+	configs: FileConfigs,
 	vaultConfig: VaultConfigPort,
 ): string | null {
 	const candidates: { path: string; prefixMatch: boolean }[] = [];

@@ -257,3 +257,94 @@ describe("PeriodicNoteIndex — the subscription it owns", () => {
 		expect(index.get("day", moment("2026-04-13"))?.path).toBe(held);
 	});
 });
+
+const ALL_CONFIGS: PeriodicConfigs = {
+	...CONFIGS,
+	month: config("YYYY-MM", "Monthly"),
+	year: config("YYYY", "Yearly"),
+};
+
+describe("PeriodicNoteIndex — the granularities beyond day and week", () => {
+	it("returns a monthly note for any day inside that month", () => {
+		const index = indexOver(vaultWith("Monthly/2026-04.md"), ALL_CONFIGS);
+
+		expect(index.get("month", moment("2026-04-13"))?.path).toBe("Monthly/2026-04.md");
+		expect(index.get("month", moment("2026-04-30"))?.path).toBe("Monthly/2026-04.md");
+	});
+
+	it("returns a yearly note for any day inside that year", () => {
+		const index = indexOver(vaultWith("Yearly/2026.md"), ALL_CONFIGS);
+
+		expect(index.get("year", moment("2026-04-13"))?.path).toBe("Yearly/2026.md");
+		expect(index.get("year", moment("2026-12-31"))?.path).toBe("Yearly/2026.md");
+	});
+
+	it("answers nothing for a month or a year the vault holds no note for", () => {
+		const index = indexOver(vaultWith("Monthly/2026-04.md", "Yearly/2026.md"), ALL_CONFIGS);
+
+		expect(index.get("month", moment("2026-05-01"))).toBeNull();
+		expect(index.get("year", moment("2027-04-13"))).toBeNull();
+	});
+
+	it("keeps a granularity left out of the configuration out of the index", () => {
+		// CONFIGS names day and week only, so a monthly note is an ordinary file.
+		const index = indexOver(vaultWith("Monthly/2026-04.md"), CONFIGS);
+
+		expect(index.paths()).not.toContain("Monthly/2026-04.md");
+	});
+});
+
+describe("PeriodicNoteIndex — the closest note in one direction", () => {
+	it("returns the nearest later note, not merely a later one", () => {
+		const index = indexOver(
+			vaultWith("Daily/2026-04-13.md", "Daily/2026-04-15.md", "Daily/2026-04-20.md"),
+		);
+
+		expect(index.closest("day", moment("2026-04-13"), "forward")?.path).toBe("Daily/2026-04-15.md");
+	});
+
+	it("returns the nearest earlier note, not merely an earlier one", () => {
+		const index = indexOver(
+			vaultWith("Daily/2026-04-01.md", "Daily/2026-04-10.md", "Daily/2026-04-13.md"),
+		);
+
+		expect(index.closest("day", moment("2026-04-13"), "backward")?.path).toBe("Daily/2026-04-10.md");
+	});
+
+	it("never answers with the note for the period it was asked from", () => {
+		const index = indexOver(vaultWith("Daily/2026-04-13.md"));
+
+		expect(index.closest("day", moment("2026-04-13"), "forward")).toBeNull();
+		expect(index.closest("day", moment("2026-04-13"), "backward")).toBeNull();
+	});
+
+	it("answers nothing when the vault holds no note in that direction", () => {
+		const index = indexOver(vaultWith("Daily/2026-04-13.md"));
+
+		expect(index.closest("day", moment("2026-04-20"), "forward")).toBeNull();
+		expect(index.closest("day", moment("2026-04-01"), "backward")).toBeNull();
+	});
+
+	it("looks only at the granularity it was asked for", () => {
+		const index = indexOver(
+			vaultWith("Weekly/2026-W17.md", "Daily/2026-05-01.md"),
+			ALL_CONFIGS,
+		);
+
+		// A later weekly note exists; a later DAILY one does not.
+		expect(index.closest("week", moment("2026-04-13"), "forward")?.path).toBe("Weekly/2026-W17.md");
+		expect(index.closest("day", moment("2026-05-01"), "forward")).toBeNull();
+	});
+
+	it("finds the closest monthly and yearly note too", () => {
+		const index = indexOver(
+			vaultWith("Monthly/2026-02.md", "Monthly/2026-07.md", "Yearly/2024.md", "Yearly/2028.md"),
+			ALL_CONFIGS,
+		);
+
+		expect(index.closest("month", moment("2026-04-13"), "backward")?.path).toBe("Monthly/2026-02.md");
+		expect(index.closest("month", moment("2026-04-13"), "forward")?.path).toBe("Monthly/2026-07.md");
+		expect(index.closest("year", moment("2026-04-13"), "backward")?.path).toBe("Yearly/2024.md");
+		expect(index.closest("year", moment("2026-04-13"), "forward")?.path).toBe("Yearly/2028.md");
+	});
+});
