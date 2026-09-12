@@ -212,3 +212,308 @@ describe("AC-ARCH-07.4: one module reads Obsidian's internal plugin registry", (
 		expect(others.filter((path) => SURFACE.test(read(path)))).toEqual([]);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// US-ARCH-01: one allowed direction between the layers.
+//
+// Everything below asserts DIRECTION. None of it names the current import list
+// of a particular file, because two sibling branches are editing files this
+// covers right now and a check written against today's text would be stale
+// before it merged.
+//
+// Why a test and not an eslint rule. `@typescript-eslint/no-restricted-imports`
+// can express these zones and can honour `allowTypeImports`, so the rule is
+// expressible there. It would not be ENFORCED there: DEC-26 keeps lint out of
+// the merge gate (AC-ARCH-09.5 above asserts that), and master carries a
+// standing lint baseline, so a boundary break would land in a report no pull
+// request blocks on. `npm test` is the gate, so the boundary lives in a test.
+// ---------------------------------------------------------------------------
+
+/**
+ * The layers, as this repository is arranged rather than as a diagram would
+ * like it to be.
+ *
+ *   lifecycle    src/main.ts -- the composition root
+ *   view         src/ui/**, the settings tab, and the cards and modals it draws
+ *   domain       date and period logic, note logic, the configuration model
+ *   port         an interface over a host capability, carrying no implementation
+ *   adapter      the story's vault-IO layer: one implementation per host API
+ *   integration  the cross-plugin boundary: the companion port and its adapter
+ */
+type Layer = "lifecycle" | "view" | "domain" | "port" | "adapter" | "integration";
+
+/** Every layer a module may be imported FROM. `lifecycle` is not one: nothing may import it. */
+const ALL_LAYERS: readonly Layer[] = ["view", "domain", "port", "adapter", "integration"];
+
+const LIFECYCLE = "src/main.ts";
+
+/**
+ * A module holding a real host API call. The host it speaks to is the first
+ * word of its name, which is what keeps this structural: an adapter written
+ * tomorrow is classified by being named like one, with no list here to edit.
+ */
+const isConcreteAdapter = (path: string): boolean =>
+	/^src\/adapters\/[a-z][A-Za-z0-9]*Adapter\.ts$/.test(path);
+
+const isCompanionModule = (path: string): boolean =>
+	path.startsWith("src/adapters/") && /companionplugin/.test(path.toLowerCase());
+
+const layerOf = (path: string): Layer => {
+	if (path === LIFECYCLE) return "lifecycle";
+	if (path.startsWith("src/adapters/")) {
+		if (isCompanionModule(path)) return "integration";
+		return isConcreteAdapter(path) ? "adapter" : "port";
+	}
+	if (path.startsWith("src/ui/")) return "view";
+	// src/settings.ts IS the settings tab. Under src/settings/ a Card or a Modal
+	// draws, and everything else is the configuration model, which is pure. A
+	// new file there counts as domain until its name says it draws -- so an
+	// impure one fails AC-ARCH-01.2 loudly instead of passing unclassified.
+	if (path === "src/settings.ts") return "view";
+	return /^src\/settings\/\w+(Card|Modal)\.ts$/.test(path) ? "view" : "domain";
+};
+
+/**
+ * One static import or re-export, up to its module specifier.
+ *
+ * The `type` group is the distinction every criterion here turns on: TypeScript
+ * erases `import type` before esbuild sees the module, so it creates no edge at
+ * runtime and no code in the bundle. Reporting one as a dependency would fail
+ * files this repository is deliberately written to allow.
+ */
+const IMPORT_STATEMENT = /^[ \t]*(?:import|export)\s+(type\s+)?(?:[^;]*?\s)?from\s*["']([^"']+)["']/gm;
+
+interface Reference {
+	readonly specifier: string;
+	/** The repository path the specifier resolves to, or null when it leaves src. */
+	readonly module: string | null;
+	readonly typeOnly: boolean;
+}
+
+const resolveModule = (from: string, specifier: string): string | null => {
+	if (!specifier.startsWith(".")) return null;
+	const parts = from.split("/").slice(0, -1);
+	for (const segment of specifier.split("/")) {
+		if (segment === ".") continue;
+		if (segment === "..") parts.pop();
+		else parts.push(segment);
+	}
+	return `${parts.join("/")}.ts`;
+};
+
+const referencesOf = (path: string): Reference[] => {
+	const source = read(path);
+	const found: Reference[] = [];
+	IMPORT_STATEMENT.lastIndex = 0;
+	let match = IMPORT_STATEMENT.exec(source);
+	while (match !== null) {
+		const specifier = match[2] ?? "";
+		found.push({
+			specifier,
+			module: resolveModule(path, specifier),
+			typeOnly: match[1] !== undefined,
+		});
+		match = IMPORT_STATEMENT.exec(source);
+	}
+	return found;
+};
+
+interface Edge {
+	readonly from: string;
+	readonly to: string;
+	readonly typeOnly: boolean;
+}
+
+// `src/ui/test-setup.ts` is vitest.config.ts's setupFiles entry. esbuild bundles
+// what src/main.ts reaches and nothing else, so it never ships and belongs to no
+// layer.
+const LAYERED = readdirSync(root("src"), { recursive: true, encoding: "utf8" })
+	.map((entry) => `src/${entry.split(sep).join("/")}`)
+	.filter((path) => path.endsWith(".ts"))
+	.filter((path) => !path.endsWith(".test.ts"))
+	.filter((path) => !path.includes("/__mocks__/"))
+	.filter((path) => path !== "src/ui/test-setup.ts")
+	.sort();
+
+const EDGES: Edge[] = LAYERED.flatMap((from) =>
+	referencesOf(from).flatMap((ref) =>
+		ref.module === null ? [] : [{ from, to: ref.module, typeOnly: ref.typeOnly }],
+	),
+);
+
+/**
+ * The check itself: every runtime import of a concrete adapter made by a module
+ * other than the composition root, reported as "<offending file> -> <import>".
+ *
+ * Taking edges as an argument rather than reading EDGES is what lets
+ * AC-ARCH-01.4 be tested rather than argued: the same derivation runs over a
+ * tree carrying one extra import.
+ */
+const adapterWiring = (edges: readonly Edge[]): string[] =>
+	edges
+		.filter((edge) => !edge.typeOnly && isConcreteAdapter(edge.to) && edge.from !== LIFECYCLE)
+		.map((edge) => `${edge.from} -> ${edge.to}`)
+		.sort();
+
+describe("AC-ARCH-01.1: only the lifecycle module names an implementation", () => {
+	// The whole rule, stated once: view and domain see a PORT, and src/main.ts
+	// is the only module allowed to name the adapter behind it. Both halves of
+	// AC-ARCH-01.1 fall out of that, because the vault-IO layer and the
+	// cross-plugin-integration layer are each reached the same way.
+	//
+	// Asserted as an exact list rather than a ceiling: a fifth edge fails here,
+	// and so does paying one of these four off without deleting its line, which
+	// is what keeps the list from quietly becoming a licence.
+	const KNOWN_DEBT = [
+		"src/ui/calendar.ts -> src/adapters/obsidianVaultAdapter.ts",
+		"src/ui/calendar.ts -> src/adapters/obsidianVaultConfigAdapter.ts",
+		"src/ui/calendar.ts -> src/adapters/obsidianWorkspaceAdapter.ts",
+		"src/ui/calendarDots.ts -> src/adapters/obsidianVaultConfigAdapter.ts",
+	];
+
+	it("AC-ARCH-01.1: no module outside src/main.ts constructs an adapter, beyond the four on record", () => {
+		expect(adapterWiring(EDGES)).toEqual(KNOWN_DEBT);
+	});
+
+	it("AC-ARCH-01.4: a new view-to-vault-IO import fails the check, named by file and by import", () => {
+		const offence: Edge = {
+			from: "src/ui/newPane.ts",
+			to: "src/adapters/obsidianVaultAdapter.ts",
+			typeOnly: false,
+		};
+
+		const reported = adapterWiring([...EDGES, offence]);
+
+		expect(reported).not.toEqual(KNOWN_DEBT);
+		expect(reported).toContain("src/ui/newPane.ts -> src/adapters/obsidianVaultAdapter.ts");
+	});
+});
+
+describe("AC-ARCH-01.2: the domain layer runs without a host", () => {
+	const domain = LAYERED.filter((path) => layerOf(path) === "domain");
+
+	// A classifier bug that emptied this set would make both assertions below
+	// pass while checking nothing, which is the failure this file exists to
+	// prevent elsewhere.
+	it("describes a layer that has modules in it", () => {
+		expect(domain.length).toBeGreaterThan(5);
+	});
+
+	it('AC-ARCH-01.2: imports nothing from "obsidian" at runtime', () => {
+		const offenders = domain.filter((path) =>
+			referencesOf(path).some((ref) => !ref.typeOnly && ref.specifier === "obsidian"),
+		);
+
+		expect(offenders).toEqual([]);
+	});
+
+	it("AC-ARCH-01.2: imports no adapter module and no view module", () => {
+		const offenders = EDGES.filter((edge) => layerOf(edge.from) === "domain")
+			.filter((edge) => isConcreteAdapter(edge.to) || layerOf(edge.to) === "view")
+			.map((edge) => `${edge.from} -> ${edge.to}`);
+
+		expect(offenders).toEqual([]);
+	});
+});
+
+describe("AC-ARCH-01.3: the lifecycle module is the composition root, and a sink", () => {
+	const layersReachedBy = (path: string): Set<Layer> =>
+		new Set(
+			EDGES.filter((edge) => edge.from === path)
+				.map((edge) => layerOf(edge.to))
+				.filter((layer) => layer !== "lifecycle"),
+		);
+
+	it("AC-ARCH-01.3: src/main.ts imports from every layer", () => {
+		expect([...layersReachedBy(LIFECYCLE)].sort()).toEqual([...ALL_LAYERS].sort());
+	});
+
+	it("AC-ARCH-01.3: no other module imports from every layer", () => {
+		const spanning = LAYERED.filter((path) => path !== LIFECYCLE).filter((path) => {
+			const reached = layersReachedBy(path);
+			return ALL_LAYERS.every((layer) => reached.has(layer));
+		});
+
+		expect(spanning).toEqual([]);
+	});
+
+	// Three modules import the plugin class as a TYPE -- the settings tab, the
+	// import card and the calendar view all take it as a constructor argument.
+	// That import is erased before the bundle exists, so it is not the cycle the
+	// criterion forbids. A runtime import would be, and is what this catches.
+	it("AC-ARCH-01.3: nothing imports the lifecycle module at runtime", () => {
+		const importers = EDGES.filter((edge) => edge.to === LIFECYCLE && !edge.typeOnly).map(
+			(edge) => edge.from,
+		);
+
+		expect(importers).toEqual([]);
+	});
+});
+
+describe("AC-ARCH-01.5: a companion plugin is reached only as a typed port", () => {
+	const PORT = "src/adapters/companionPluginPort.ts";
+
+	// Naming a companion plugin, or naming one of the two registries Obsidian
+	// lists them in. A read that goes around the port is a read that can be
+	// wrong about a plugin the user upgraded on their own.
+	const COMPANION_SURFACE =
+		/\binternalPlugins\b|\bapp\.plugins\b|["'](daily-notes|periodic-notes|templater-obsidian)["']/;
+
+	it("AC-ARCH-01.5: no layer but the integration layer names a companion plugin", () => {
+		const outside = LAYERED.filter((path) => layerOf(path) !== "integration").filter((path) =>
+			COMPANION_SURFACE.test(read(path)),
+		);
+
+		expect(outside).toEqual([]);
+	});
+
+	it("AC-ARCH-01.5: every other layer takes the port, never the adapter", () => {
+		const consumers = EDGES.filter(
+			(edge) =>
+				layerOf(edge.to) === "integration" &&
+				layerOf(edge.from) !== "integration" &&
+				edge.from !== LIFECYCLE,
+		);
+
+		expect(consumers.filter((edge) => edge.to !== PORT).map((edge) => `${edge.from} -> ${edge.to}`)).toEqual([]);
+		expect(consumers.length).toBeGreaterThan(0);
+	});
+
+	// Asserted by shape, not by method name: a sibling branch is adding
+	// operations to this interface, and a check listing today's members would
+	// fail on work that is exactly what the port is for.
+	it("AC-ARCH-01.5: the port exports typed operations and nothing untyped", () => {
+		const body = /export interface CompanionPluginPort\s*\{([\s\S]*?)\n\}/.exec(read(PORT));
+
+		expect(body).not.toBeNull();
+
+		const members = (body?.[1] ?? "")
+			.split("\n")
+			.map((line) => line.trim())
+			.filter((line) => line.length > 0 && !line.startsWith("*") && !line.startsWith("/"));
+
+		expect(members.length).toBeGreaterThan(0);
+		expect(members.filter((member) => !/^\w+\([^)]*\):\s*\S+;$/.test(member))).toEqual([]);
+	});
+});
+
+describe("AC-ARCH-01.6: the desktop-only surface sits behind one named adapter", () => {
+	// Electron's shell, Node's builtins and the desktop file-system adapter's
+	// basePath all exist on desktop and not on mobile. A view module that
+	// reaches for one crashes the pane it drew as soon as a phone opens it.
+	const DESKTOP_ONLY =
+		/\brequire\(\s*["']electron["']\s*\)|\bFileSystemAdapter\b|\bbasePath\b|\bnode:[a-z_]+\b|\bchild_process\b|\b__dirname\b|\bprocess\.(platform|env|cwd)\b/;
+	const BOUNDARY = "src/adapters/electronDesktopShellAdapter.ts";
+
+	it("AC-ARCH-01.6: one module holds every desktop-only import and call", () => {
+		expect(LAYERED.filter((path) => DESKTOP_ONLY.test(read(path)))).toEqual([BOUNDARY]);
+	});
+
+	it("AC-ARCH-01.6: the view depends on that boundary's interface, never on the API", () => {
+		const importers = EDGES.filter((edge) => edge.to === BOUNDARY && !edge.typeOnly).map(
+			(edge) => edge.from,
+		);
+
+		expect(importers).toEqual([LIFECYCLE]);
+	});
+});
