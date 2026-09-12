@@ -464,7 +464,7 @@
       "story": "As someone whose template mixes this plugin's own tokens with a full template engine's own syntax, I want substitution to touch only the tokens it recognises, so that the engine's own scripting is still intact for it to run once the file exists.",
       "rationale": "The token system and a full template engine have to coexist inside the same file; the only way that works is if each one only ever touches what it understands.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [],
       "constrained_by": [
         "vault:daily-write-frontmatter",
