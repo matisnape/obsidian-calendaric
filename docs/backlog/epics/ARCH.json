@@ -10,7 +10,7 @@
       "story": "As a maintainer extending Calendaric, I want the codebase organized into layers with one allowed dependency direction, so that I can change one concern without having to understand or risk breaking the others.",
       "rationale": "The map shows the old code mixing note IO, date parsing, settings resolution and UI inside single files, and reaching into other plugins' internals from three separate layers at once.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
