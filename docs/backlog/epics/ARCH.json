@@ -917,7 +917,7 @@
       "story": "As a maintainer changing how Calendaric reads the vault, I want the calendar view to receive vault access as an injected port rather than build its own adapter, so that I can swap or fake that access without editing the view, and so the layering rule holds in fact and not only in the import list.",
       "rationale": "AC-ARCH-01.1 fails today: src/ui/calendar.ts constructs ObsidianVaultAdapter, ObsidianWorkspaceAdapter and ObsidianVaultConfigAdapter (lines 56-58), and src/ui/calendarDots.ts constructs ObsidianVaultConfigAdapter (line 21). The intent is already half-expressed -- calendarDots.ts:15 declares the field as VaultConfigPort and then assigns a concrete adapter to it, so the port exists and only the construction site is wrong. Removing the four imports alone would turn the criterion green while leaving src/ui/calendarDots.ts:43 and :66 calling app.vault.getAbstractFileByPath directly, which satisfies the letter of the boundary rule and none of its purpose. This story covers both halves. It cannot be expressed as a dependency of US-ARCH-01, because US-ARCH-01 is what waits on it.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
