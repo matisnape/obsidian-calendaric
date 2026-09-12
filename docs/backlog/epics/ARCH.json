@@ -936,8 +936,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.1: no view module constructs or names a concrete adapter\" and \"AC-ARCH-11.1: the widget and the dot scanner take their ports as a constructor parameter\". Mutation: calendarDots.ts constructor retyped to `private deps: ObsidianVaultConfigAdapter` -- both fail."
         },
         {
           "id": "AC-ARCH-11.2",
@@ -949,8 +949,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.2: no view module reads the vault off the App object\". Mutation: the day scan in calendarDots.ts put back to `this.app.vault.getAbstractFileByPath(path)` -- fails."
         },
         {
           "id": "AC-ARCH-11.3",
@@ -962,8 +962,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.3: one named dependency object travels the whole calendar chain\" and \"AC-ARCH-11.3: the lifecycle module is where that object is built\". Mutation: main.ts's `const calendarDeps: CalendarDeps` annotation dropped -- the second fails."
         },
         {
           "id": "AC-ARCH-11.4",
@@ -975,8 +975,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarFakes.test.ts \"AC-ARCH-11.4: renders and reacts to a vault change with fake ports only\" -- FakeVaultPort/FakeVaultConfigPort/FakeWorkspacePort passed as constructor arguments, no module import patched. Mutation: DotScanner's onChange handler stripped of its onUpdate() call -- fails."
         },
         {
           "id": "AC-ARCH-11.5",
@@ -988,8 +988,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "arch.test.ts \"AC-ARCH-11.5: no view module makes a port optional or gives it a default\", with a companion case proving it reports both shapes by module and dependency name. Mutation: calendar.ts's `private deps: CalendarDeps` made `private deps?: CalendarDeps` -- fails. The type checker is the other half: an unsupplied argument is a tsc error, `npm run build` exit 0.",
           "failure_path": true
         }
       ],

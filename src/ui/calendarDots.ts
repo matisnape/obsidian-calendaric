@@ -1,28 +1,29 @@
-import type { App, EventRef } from "obsidian";
 import type { Moment } from "moment";
 import type { ICalendarMonth, PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
 import { getWeekAnchor } from "./calendarUtils";
-import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
-import type { VaultConfigPort } from "../adapters/vaultConfigPort";
+import type { CalendarDeps } from "../adapters/calendarDeps";
 
 /**
  * Scans vault files to determine which days/weeks in the visible month have
- * existing periodic notes, and registers vault event listeners so dots update
- * live without a separate cache.
+ * existing periodic notes, and watches the vault so dots update live without a
+ * separate cache.
+ *
+ * Every vault question here goes through the injected ports (AC-ARCH-11.2), so
+ * the scanner runs against fakes with no Obsidian in the process.
  */
 export class DotScanner {
-	private app: App;
-	private vaultConfig: VaultConfigPort;
-	private eventRefs: EventRef[] = [];
+	private unsubscribe: () => void;
 
-	constructor(app: App, onUpdate: () => void) {
-		this.app = app;
-		this.vaultConfig = new ObsidianVaultConfigAdapter(app);
-
-		this.eventRefs.push(app.vault.on("create", onUpdate));
-		this.eventRefs.push(app.vault.on("delete", onUpdate));
-		this.eventRefs.push(app.vault.on("rename", onUpdate));
+	constructor(private deps: CalendarDeps, onUpdate: () => void) {
+		this.unsubscribe = deps.vault.onChange((change) => {
+			// A metadata change is the host finishing its parse of a file it has
+			// already reported as created, so it moves no dot. Create, delete and
+			// rename are the three that do — the same three this scanner watched
+			// before the port carried them.
+			if (change.kind === "metadata") return;
+			onUpdate();
+		});
 	}
 
 	/**
@@ -39,8 +40,8 @@ export class DotScanner {
 		const cursor = start.clone();
 
 		while (cursor.isSameOrBefore(end, "day")) {
-			const path = computeNotePath(cursor, config, this.vaultConfig);
-			if (this.app.vault.getAbstractFileByPath(path)) {
+			const path = computeNotePath(cursor, config, this.deps.vaultConfig);
+			if (this.deps.vault.pathExists(path)) {
 				paths.add(path);
 			}
 			cursor.add(1, "day");
@@ -62,8 +63,8 @@ export class DotScanner {
 		if (!config.enabled || !config.format) return paths;
 
 		for (const week of grid) {
-			const path = computeNotePath(getWeekAnchor(week.days), config, this.vaultConfig);
-			if (this.app.vault.getAbstractFileByPath(path)) {
+			const path = computeNotePath(getWeekAnchor(week.days), config, this.deps.vaultConfig);
+			if (this.deps.vault.pathExists(path)) {
 				paths.add(path);
 			}
 		}
@@ -72,12 +73,11 @@ export class DotScanner {
 	}
 
 	/**
-	 * Unregister all vault event listeners. Call when the calendar view closes.
+	 * Stop watching the vault. Call when the calendar view closes.
 	 */
 	destroy(): void {
-		for (const ref of this.eventRefs) {
-			this.app.vault.offref(ref);
-		}
-		this.eventRefs = [];
+		this.unsubscribe();
+		// A second destroy() is a no-op, the way clearing the ref list was.
+		this.unsubscribe = () => undefined;
 	}
 }

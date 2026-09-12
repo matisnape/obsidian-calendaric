@@ -387,17 +387,12 @@ describe("AC-ARCH-01.1: only the lifecycle module names an implementation", () =
 	// AC-ARCH-01.1 fall out of that, because the vault-IO layer and the
 	// cross-plugin-integration layer are each reached the same way.
 	//
-	// Asserted as an exact list rather than a ceiling: a fifth edge fails here,
-	// and so does paying one of these four off without deleting its line, which
-	// is what keeps the list from quietly becoming a licence.
-	const KNOWN_DEBT = [
-		"src/ui/calendar.ts -> src/adapters/obsidianVaultAdapter.ts",
-		"src/ui/calendar.ts -> src/adapters/obsidianVaultConfigAdapter.ts",
-		"src/ui/calendar.ts -> src/adapters/obsidianWorkspaceAdapter.ts",
-		"src/ui/calendarDots.ts -> src/adapters/obsidianVaultConfigAdapter.ts",
-	];
+	// Asserted as an exact list rather than a ceiling, and the list is now empty:
+	// US-ARCH-11 paid off the four calendar-view imports that used to sit here,
+	// so any new edge fails this.
+	const KNOWN_DEBT: string[] = [];
 
-	it("AC-ARCH-01.1: no module outside src/main.ts constructs an adapter, beyond the four on record", () => {
+	it("AC-ARCH-01.1: no module outside src/main.ts constructs an adapter", () => {
 		expect(adapterWiring(EDGES)).toEqual(KNOWN_DEBT);
 	});
 
@@ -585,5 +580,170 @@ describe("AC-ARCH-01.6: the desktop-only surface sits behind one named adapter",
 		);
 
 		expect(importers).toEqual([LIFECYCLE]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// US-ARCH-11: the calendar view is handed its vault access.
+//
+// AC-ARCH-01.1 above says no view module IMPORTS an adapter. That alone can be
+// satisfied by a module that keeps calling `app.vault` directly, which is what
+// the three checks here close: the dependency has to arrive as a port, it has
+// to arrive through the constructor, and it may not be optional or defaulted.
+// ---------------------------------------------------------------------------
+
+const VIEW_MODULES = LAYERED.filter((path) => layerOf(path) === "view");
+
+/** One declared constructor parameter, as written. */
+interface Parameter {
+	readonly name: string;
+	readonly type: string;
+	readonly optional: boolean;
+	readonly defaultValue: string | null;
+}
+
+/** Splits a parameter list on the commas that separate parameters, not the ones inside a type. */
+const splitParameters = (list: string): string[] => {
+	const parts: string[] = [];
+	let depth = 0;
+	let start = 0;
+	for (let at = 0; at < list.length; at++) {
+		const ch = list[at];
+		if (ch === "(" || ch === "[" || ch === "{" || ch === "<") depth++;
+		else if (ch === ")" || ch === "]" || ch === "}" || ch === ">") depth--;
+		else if (ch === "," && depth === 0) {
+			parts.push(list.slice(start, at));
+			start = at + 1;
+		}
+	}
+	parts.push(list.slice(start));
+	return parts.map((part) => part.trim()).filter((part) => part.length > 0);
+};
+
+/**
+ * Every parameter of every `constructor(...)` in a module.
+ *
+ * Read from the source text rather than from a type, because what the criteria
+ * forbid — an optional dependency, a default that builds an adapter — is a
+ * property of how the parameter is WRITTEN, and both are legal TypeScript.
+ */
+const constructorParameters = (source: string): Parameter[] => {
+	const found: Parameter[] = [];
+	for (let at = source.indexOf("constructor("); at !== -1; at = source.indexOf("constructor(", at + 1)) {
+		const open = source.indexOf("(", at);
+		let depth = 0;
+		let close = open;
+		for (; close < source.length; close++) {
+			const ch = source[close];
+			if (ch === "(") depth++;
+			else if (ch === ")") {
+				depth--;
+				if (depth === 0) break;
+			}
+		}
+
+		for (const raw of splitParameters(source.slice(open + 1, close))) {
+			// The `=` of a default, never the `=` of an arrow type.
+			const assign = /=(?!>)/.exec(raw);
+			const declaration = (assign ? raw.slice(0, assign.index) : raw).trim();
+			const parsed = /^(?:(?:private|protected|public|readonly)\s+)*([A-Za-z_$][\w$]*)(\?)?\s*:\s*([\s\S]+)$/.exec(
+				declaration,
+			);
+			if (!parsed) continue;
+			found.push({
+				name: parsed[1] ?? "",
+				type: (parsed[3] ?? "").trim(),
+				optional: parsed[2] !== undefined,
+				defaultValue: assign ? raw.slice(assign.index + 1).trim() : null,
+			});
+		}
+	}
+	return found;
+};
+
+/** A dependency on a host capability: a port interface, or the object that carries several. */
+const PORT_TYPE = /\b\w*(?:Port|Deps)\b/;
+
+describe("AC-ARCH-11.1: the calendar view is handed its vault access", () => {
+	// A classifier that returned nothing would make every check below pass while
+	// reading no file at all.
+	it("describes a layer that has modules in it", () => {
+		expect(VIEW_MODULES.length).toBeGreaterThan(3);
+	});
+
+	it("AC-ARCH-11.1: no view module constructs or names a concrete adapter", () => {
+		const offenders = VIEW_MODULES.filter((path) => {
+			const source = read(path);
+			return /\bnew\s+[A-Z]\w*Adapter\s*\(/.test(source) || /:\s*[A-Z]\w*Adapter\b/.test(source);
+		});
+
+		expect(offenders).toEqual([]);
+	});
+
+	it("AC-ARCH-11.1: the widget and the dot scanner take their ports as a constructor parameter", () => {
+		for (const path of ["src/ui/calendar.ts", "src/ui/calendarDots.ts"]) {
+			const ports = constructorParameters(read(path)).filter((parameter) => PORT_TYPE.test(parameter.type));
+
+			expect(`${path}: ${ports.map((parameter) => parameter.name).join(", ")}`).toBe(`${path}: deps`);
+		}
+	});
+});
+
+describe("AC-ARCH-11.3: the lifecycle module builds the pane's ports and passes them inward", () => {
+	// Three classes draw the pane -- the view, the widget, the dot scanner -- and
+	// the criterion is that the same ONE object travels down all three, so a
+	// fourth port added to it changes no signature here. Asserted as the whole
+	// parameter rather than as a name, because "one object" is the point: two
+	// port parameters on any of them would read differently and fail.
+	const CHAIN = ["src/ui/CalendarView.ts", "src/ui/calendar.ts", "src/ui/calendarDots.ts"];
+
+	it("AC-ARCH-11.3: one named dependency object travels the whole calendar chain", () => {
+		for (const path of CHAIN) {
+			const ports = constructorParameters(read(path))
+				.filter((parameter) => PORT_TYPE.test(parameter.type))
+				.map((parameter) => `${parameter.name}: ${parameter.type}`);
+
+			expect(`${path} takes ${ports.join(" + ")}`).toBe(`${path} takes deps: CalendarDeps`);
+		}
+	});
+
+	it("AC-ARCH-11.3: the lifecycle module is where that object is built", () => {
+		// The adapters inside it are already pinned to this module by
+		// AC-ARCH-01.1 above; what this adds is that the object they go into is
+		// assembled there too, rather than somewhere on the way down.
+		expect(read(LIFECYCLE)).toMatch(/:\s*CalendarDeps\b/);
+	});
+});
+
+describe("AC-ARCH-11.2: a view module reaches the vault only through a port", () => {
+	it("AC-ARCH-11.2: no view module reads the vault off the App object", () => {
+		const offenders = VIEW_MODULES.filter((path) => /\bapp\.vault\b/.test(read(path)));
+
+		expect(offenders).toEqual([]);
+	});
+});
+
+describe("AC-ARCH-11.5: a view module's port dependency is supplied, always", () => {
+	const unsupplied = (source: string, path: string): string[] =>
+		constructorParameters(source)
+			.filter((parameter) => PORT_TYPE.test(parameter.type))
+			.filter((parameter) => parameter.optional || parameter.defaultValue !== null)
+			.map((parameter) => `${path}: ${parameter.name}`);
+
+	it("AC-ARCH-11.5: no view module makes a port optional or gives it a default", () => {
+		expect(VIEW_MODULES.flatMap((path) => unsupplied(read(path), path))).toEqual([]);
+	});
+
+	// The check is only worth having while it still fires, and it is written
+	// against source text, so both shapes the criterion names are put to it here.
+	it("AC-ARCH-11.5: names the module and the dependency for either way of leaving one unsupplied", () => {
+		const optional = "constructor(containerEl: HTMLElement, deps?: CalendarDeps) {}";
+		const defaulted =
+			"constructor(containerEl: HTMLElement, deps: CalendarDeps = { vault: new ObsidianVaultAdapter(app) }) {}";
+		const required = "constructor(containerEl: HTMLElement, deps: CalendarDeps, onUpdate: () => void) {}";
+
+		expect(unsupplied(optional, "src/ui/pane.ts")).toEqual(["src/ui/pane.ts: deps"]);
+		expect(unsupplied(defaulted, "src/ui/pane.ts")).toEqual(["src/ui/pane.ts: deps"]);
+		expect(unsupplied(required, "src/ui/pane.ts")).toEqual([]);
 	});
 });

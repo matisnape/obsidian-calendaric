@@ -4,9 +4,7 @@ import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
-import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
-import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
-import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
+import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 import { MonthNavigation } from "./calendarNav";
@@ -33,9 +31,6 @@ export class CalendarWidget implements HoverParent {
 	private app: App;
 	private settings: CalendaricSettings;
 	private nav: MonthNavigation;
-	private vaultConfig: ObsidianVaultConfigAdapter;
-	private vault: ObsidianVaultAdapter;
-	private workspace: ObsidianWorkspaceAdapter;
 
 	// DOM references for partial updates
 	private titleEl!: HTMLElement;
@@ -45,7 +40,17 @@ export class CalendarWidget implements HoverParent {
 	private activeFilePath: string | null = null;
 	private fileOpenRef: EventRef | null = null;
 
-	constructor(containerEl: HTMLElement, app: App, settings: CalendaricSettings) {
+	/**
+	 * `deps` is required and has no default (AC-ARCH-11.5): a widget that could
+	 * fall back to building its own adapters would be one Obsidian import away
+	 * from the layering rule again, and nothing would say so.
+	 */
+	constructor(
+		containerEl: HTMLElement,
+		app: App,
+		settings: CalendaricSettings,
+		private deps: CalendarDeps,
+	) {
 		this.containerEl = containerEl;
 		this.app = app;
 		this.settings = settings;
@@ -53,10 +58,7 @@ export class CalendarWidget implements HoverParent {
 			() => window.moment(),
 			() => this.renderGrid(),
 		);
-		this.vaultConfig = new ObsidianVaultConfigAdapter(app);
-		this.vault = new ObsidianVaultAdapter(app);
-		this.workspace = new ObsidianWorkspaceAdapter(app);
-		this.dots = new DotScanner(app, () => this.renderGrid());
+		this.dots = new DotScanner(deps, () => this.renderGrid());
 
 		this.fileOpenRef = app.workspace.on("file-open", (file) => {
 			this.activeFilePath = file?.path ?? null;
@@ -174,7 +176,7 @@ export class CalendarWidget implements HoverParent {
 
 				// Dot: weekly note exists for the week this row shows
 				const anchor = getWeekAnchor(week.days);
-				const weekPath = computeNotePath(anchor, this.settings.week, this.vaultConfig);
+				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig);
 				if (weekPaths.has(weekPath)) {
 					wDotContainer.appendChild(makeDotSvg());
 				}
@@ -199,7 +201,7 @@ export class CalendarWidget implements HoverParent {
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				// Dot: daily note exists for this date
-				const dayPath = computeNotePath(day.date, this.settings.day, this.vaultConfig);
+				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig);
 				if (dayPaths.has(dayPath)) {
 					dayDotContainer.appendChild(makeDotSvg());
 				}
@@ -253,8 +255,8 @@ export class CalendarWidget implements HoverParent {
 	 * Obsidian's own "Open in new tab" / "Delete" — populates this menu too.
 	 */
 	private handleMonthHeaderContextMenu(event: MouseEvent): void {
-		const path = computeNotePath(this.nav.month, this.settings.month, this.vaultConfig);
-		const file = this.vault.getFile(path);
+		const path = computeNotePath(this.nav.month, this.settings.month, this.deps.vaultConfig);
+		const file = this.deps.vault.getFile(path);
 		if (!file) return;
 
 		event.preventDefault();
@@ -275,14 +277,14 @@ export class CalendarWidget implements HoverParent {
 				config: this.settings[granularity],
 				confirmBeforeCreate: this.settings.confirmBeforeCreate,
 				event,
-				ports: { vault: this.vault, vaultConfig: this.vaultConfig, workspace: this.workspace },
+				ports: this.deps,
 				confirmCreate: (request) => this.askToCreate(request),
 			});
 		} catch (error) {
 			// The click is the last caller: an unhandled rejection here would be
 			// a cell that silently does nothing. The notice rides the workspace
 			// port, the way US-NOTE-06 reports a note that vanished.
-			this.workspace.showNotice(
+			this.deps.workspace.showNotice(
 				error instanceof Error ? error.message : "Calendaric could not open that note.",
 			);
 		}

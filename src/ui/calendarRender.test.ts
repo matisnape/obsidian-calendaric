@@ -7,16 +7,21 @@ import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import { CalendarWidget } from "./calendar";
+import { ObsidianVaultAdapter } from "../adapters/obsidianVaultAdapter";
+import { ObsidianVaultConfigAdapter } from "../adapters/obsidianVaultConfigAdapter";
+import { ObsidianWorkspaceAdapter } from "../adapters/obsidianWorkspaceAdapter";
 import { DEFAULT_SETTINGS } from "../settings/model";
 import type { CalendaricSettings } from "../settings/model";
 
 /**
  * The host, as much of it as the header behaviour actually reaches.
  *
- * CalendarWidget does not take ports: it builds its own adapters over the real
- * `App`, so a header click runs the whole route — compute the path, look the
- * note up, create it, open it. Everything those adapters touch is here, and the
- * three lists are what the tests read back.
+ * The widget takes its ports now, and this file hands it the REAL adapters over
+ * this fake `App` on purpose: a header click then runs the whole route —
+ * compute the path, look the note up, create it, open it — including the
+ * adapter layer the fakes-only test in calendarFakes.test.ts leaves out.
+ * Everything those adapters touch is here, and the three lists are what the
+ * tests read back.
  *
  * The files are real `TFile` instances because `ObsidianWorkspaceAdapter`
  * compares the note it is handed against the object at the path by identity,
@@ -43,6 +48,14 @@ class FakeApp {
 				this.opened.push({ path: file.path, leaf });
 			},
 		}),
+	};
+
+	// ObsidianVaultAdapter.onChange subscribes to the metadata cache as well as
+	// to the vault, because a frontmatter date lands after the create event.
+	readonly metadataCache = {
+		on: (): object => ({}),
+		offref: (): undefined => undefined,
+		getFileCache: (): null => null,
 	};
 
 	readonly vault = {
@@ -72,7 +85,12 @@ class FakeApp {
 
 function render(settings: CalendaricSettings, app: FakeApp = new FakeApp()): HTMLElement {
 	const host = document.createElement("div");
-	new CalendarWidget(host, app.asApp(), settings);
+	const obsidianApp = app.asApp();
+	new CalendarWidget(host, obsidianApp, settings, {
+		vault: new ObsidianVaultAdapter(obsidianApp),
+		vaultConfig: new ObsidianVaultConfigAdapter(obsidianApp),
+		workspace: new ObsidianWorkspaceAdapter(obsidianApp),
+	});
 	return host;
 }
 
