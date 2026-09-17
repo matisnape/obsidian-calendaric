@@ -36,6 +36,13 @@ const monthConfig: PeriodicConfig = {
 	folder: "",
 };
 
+/** The week-number cell's config, in the vault root for the same reason. */
+const weekConfig: PeriodicConfig = {
+	...dayConfig,
+	format: WEEK_FORMAT,
+	folder: "",
+};
+
 /** The day every click test uses, and the path its note lands on. */
 const DAY = "2026-04-13";
 
@@ -526,6 +533,35 @@ describe("openOrCreateNote", () => {
 			{
 				title: "New monthly note",
 				body: "The month of April 2026 has no monthly note yet. Create 2026-04.md?",
+			},
+		]);
+		expect(ports.vault.contentAt(path)).toBe("");
+		expect(ports.workspace.opened).toEqual([{ file: { path }, mode: "reuse" }]);
+	});
+
+	// The week-number cell is the fourth caller, and the confirmation is the one
+	// place a granularity can go wrong without the compiler noticing: the label
+	// that names the kind of note, and the subject that names the period.
+	it("AC-CAL-04.2: asks for a weekly note by its week, then creates and opens it", async () => {
+		const anchor = moment("2026-04-13");
+		const path = computeNotePath(anchor, weekConfig, new FakeVaultConfigPort());
+		const ports = makePorts();
+		const confirm = stubConfirm(true);
+
+		await openOrCreateNote({
+			date: anchor,
+			granularity: "week",
+			config: weekConfig,
+			confirmBeforeCreate: true,
+			event: makeClick(),
+			ports,
+			confirmCreate: confirm.confirm,
+		});
+
+		expect(confirm.asked).toEqual([
+			{
+				title: "New weekly note",
+				body: "The week of April 13, 2026 has no weekly note yet. Create 2026-W16.md?",
 			},
 		]);
 		expect(ports.vault.contentAt(path)).toBe("");

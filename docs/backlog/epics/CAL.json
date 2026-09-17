@@ -354,8 +354,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.1: opens the week's existing note in the active pane\" - fails when the week cell's click is wired to the day granularity"
         },
         {
           "id": "AC-CAL-04.2",
@@ -366,8 +366,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.2: creates the missing week note without a prompt when the setting says so, then opens it\" and \"AC-CAL-04.2: writes nothing while the confirmation the same setting asks for is unanswered\", plus cellActions.test.ts \"AC-CAL-04.2: asks for a weekly note by its week, then creates and opens it\" - the last fails when GRANULARITY_LABEL.week stops reading \"weekly\""
         },
         {
           "id": "AC-CAL-04.3",
@@ -378,8 +378,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.3: opens the week's note in a split when the click carries the split modifier\" and \"AC-CAL-04.3: creates the missing week note first, then opens it in the split\" - both fail when isSplitModifierPressed returns false"
         },
         {
           "id": "AC-CAL-04.4",
@@ -391,8 +391,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.4: hovering a week that has a note asks Page preview for that note at the cell, and opens nothing\" - fails when the week cell's mouseover listener is removed"
         },
         {
           "id": "AC-CAL-04.5",
@@ -404,8 +404,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.5: hovering a week with no note previews its own path and creates no file\" - fails when the week cell's mouseover listener is removed",
           "failure_path": true
         }
       ],
