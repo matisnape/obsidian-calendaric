@@ -330,7 +330,7 @@
       "story": "As someone who reviews the week as a unit, I want clicking the week number to take me to that week's note, offering to create it if it does not exist, so that I do not have to find a specific day to reach the weekly summary.",
       "rationale": "The week-number column is a click target in its own right, not just a label.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calui:week-number-interactions",
         "calendaric:calendar-click-to-open-or-create",
