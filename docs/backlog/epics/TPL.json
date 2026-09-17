@@ -310,7 +310,7 @@
           "verifies": "data",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.1: reports nothing when the path resolves to an existing note\" and \"...for a template file that is empty\"; noteCreate.test.ts \"AC-TPL-04.1: reports nothing about a template that resolves to a real note\". Mutation: replacing the getTemplateFile short-circuit with `if (false)` fails both validator cases."
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.1: shows no problem for a template path that resolves to a note\" and \"...for a template file that is empty\" read the rendered tab; validateTemplatePath.test.ts covers the same id at the unit level. Mutations: reporting a problem unconditionally in settings.ts fails all five DOM cases; replacing the getTemplateFile short-circuit with `if (false)` fails both unit cases."
         },
         {
           "id": "AC-TPL-04.2",
@@ -322,7 +322,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.2: names the template as not found when nothing in the vault resolves\" asserts reason \"not-found\", the path, and the words \"not found\". Mutation: collapsing the folder reason to \"not-found\" fails the AC-TPL-04.3 pair, proving the two verdicts stay distinct.",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.2: shows the template as not found, by name, where it was configured\" asserts the text is on the settings screen, which is where the story says the user finds out; validateTemplatePath.test.ts asserts reason \"not-found\" plus the path and the words \"not found\". Mutation: reporting a problem unconditionally in settings.ts turns all five DOM cases red, so the empty-list assertions are not vacuous.",
           "failure_path": true
         },
         {
@@ -336,7 +336,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.3: reports a path that resolves to a folder, naming it a folder\" and \"...distinguishes a folder from an unresolvable path\"; noteCreate.test.ts \"AC-TPL-04.3: names a template path that is a folder as a folder, not as missing\". Mutations: reason \"is-folder\" -> \"not-found\", and unwiring the readTemplate folder branch, each turn the tests red.",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.3: shows a folder as a folder rather than as a missing file\" asserts the folder wording on screen and the absence of \"not found\"; validateTemplatePath.test.ts \"...distinguishes a folder from an unresolvable path\" pins reason and message apart; noteCreate.test.ts covers the note-creation warning. Mutations: reason \"is-folder\" -> \"not-found\", and unwiring the readTemplate folder branch, each turn tests red.",
           "failure_path": true
         },
         {
@@ -350,7 +350,7 @@
           "verifies": "behaviour",
           "testable_by": "integration",
           "status": "pass",
-          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.4: reports nothing when no template is configured for the granularity\" and noteCreate.test.ts of the same id. Mutations: returning a problem for an empty path fails the validator case; making readTemplate warn on an empty path fails the noteCreate case.",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.4: shows no problem when no template is configured\"; validateTemplatePath.test.ts and noteCreate.test.ts of the same id. Mutations: returning a problem for an empty path fails the validator case; reporting unconditionally in settings.ts fails the DOM case; making readTemplate warn on an empty path fails the noteCreate case.",
           "failure_path": true
         },
         {

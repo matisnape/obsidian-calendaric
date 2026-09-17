@@ -323,3 +323,10 @@
 .calendaric-import-conflict strong {
   flex: none;
 }
+
+/* A configured template path that does not resolve (US-TPL-04). Empty, and so
+   invisible, whenever the path is fine. Same variable-with-fallback shape as
+   .calendaric-callout--warning above, since neither var is guaranteed. */
+.calendaric-setting-problem {
+  color: var(--text-error, var(--text-warning, orange));
+}
