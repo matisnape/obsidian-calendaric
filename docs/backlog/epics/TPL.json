@@ -309,8 +309,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.1: reports nothing when the path resolves to an existing note\" and \"...for a template file that is empty\"; noteCreate.test.ts \"AC-TPL-04.1: reports nothing about a template that resolves to a real note\". Mutation: replacing the getTemplateFile short-circuit with `if (false)` fails both validator cases."
         },
         {
           "id": "AC-TPL-04.2",
@@ -321,8 +321,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.2: names the template as not found when nothing in the vault resolves\" asserts reason \"not-found\", the path, and the words \"not found\". Mutation: collapsing the folder reason to \"not-found\" fails the AC-TPL-04.3 pair, proving the two verdicts stay distinct.",
           "failure_path": true
         },
         {
@@ -335,8 +335,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.3: reports a path that resolves to a folder, naming it a folder\" and \"...distinguishes a folder from an unresolvable path\"; noteCreate.test.ts \"AC-TPL-04.3: names a template path that is a folder as a folder, not as missing\". Mutations: reason \"is-folder\" -> \"not-found\", and unwiring the readTemplate folder branch, each turn the tests red.",
           "failure_path": true
         },
         {
@@ -349,8 +349,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "validateTemplatePath.test.ts \"AC-TPL-04.4: reports nothing when no template is configured for the granularity\" and noteCreate.test.ts of the same id. Mutations: returning a problem for an empty path fails the validator case; making readTemplate warn on an empty path fails the noteCreate case.",
           "failure_path": true
         },
         {
@@ -363,8 +363,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "noteCreate.test.ts \"AC-TPL-04.5: creates an empty note body from an empty template and raises nothing\" asserts an empty body and that warn was never called. Mutation: substituteTemplateTokens(raw || \"# fallback\", ...) fails it.",
           "failure_path": true
         }
       ]
