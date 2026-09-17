@@ -25,6 +25,13 @@ export type ImportSource =
 type DailyNotesReader = Pick<CompanionPluginPort, "readDailyNotes">;
 
 /**
+ * The names, and not the values behind them. Narrowed so that widening the
+ * Periodic Notes port with a second read (US-MIG-04) cannot make this
+ * resolution look like it consults a calendar set's folders, which it does not.
+ */
+type PeriodicNotesReader = Pick<PeriodicNotesPort, "readActiveGranularities">;
+
+/**
  * Which plugin's settings each granularity should be imported from.
  *
  * The precedence is the one the predecessor plugins had between them, and it is
@@ -43,7 +50,7 @@ type DailyNotesReader = Pick<CompanionPluginPort, "readDailyNotes">;
  * this one replaces.
  */
 export function resolveImportSources(
-	periodicNotes: PeriodicNotesPort,
+	periodicNotes: PeriodicNotesReader,
 	dailyNotes: DailyNotesReader,
 ): Record<Granularity, ImportSource> {
 	const active = periodicNotes.readActiveGranularities();
