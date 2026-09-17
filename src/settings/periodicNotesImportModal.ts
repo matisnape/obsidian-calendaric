@@ -25,9 +25,9 @@ export class PeriodicNotesImportConflictModal extends Modal {
 
 	onOpen(): void {
 		const { contentEl } = this;
-		contentEl.createEl("h2", { text: "Periodic Notes import" });
+		contentEl.createEl("h2", { text: "Periodic notes import" });
 		contentEl.createEl("p", {
-			text: "These settings already have a value in Calendaric. Tick the ones you want to replace with the Periodic Notes value.",
+			text: "Calendaric already has a value for these settings. Tick the ones you want to replace.",
 		});
 
 		const boxes = new Map<PeriodicNotesFieldId, HTMLInputElement>();
@@ -39,17 +39,23 @@ export class PeriodicNotesImportConflictModal extends Modal {
 			row.createSpan({ text: ` — yours: "${field.current}" · Periodic Notes: "${field.incoming}"` });
 		}
 
+		// Both listeners stay synchronous and void the promise, the way this
+		// plugin's other click handlers do (src/ui/calendar.ts:86): an async
+		// listener hands a promise to an API whose return type is void.
 		const buttons = contentEl.createDiv({ cls: "modal-button-container" });
-		buttons.createEl("button", { text: "Keep my values" }).addEventListener("click", async () => {
-			await this.onConfirm([]);
-			this.close();
+		buttons.createEl("button", { text: "Keep my values" }).addEventListener("click", () => {
+			void this.confirm([]);
 		});
 		const importBtn = buttons.createEl("button", { text: "Import selected", cls: "mod-cta" });
-		importBtn.addEventListener("click", async () => {
+		importBtn.addEventListener("click", () => {
 			const confirmed = [...boxes.entries()].filter(([, box]) => box.checked).map(([id]) => id);
-			await this.onConfirm(confirmed);
-			this.close();
+			void this.confirm(confirmed);
 		});
+	}
+
+	private async confirm(confirmed: PeriodicNotesFieldId[]): Promise<void> {
+		await this.onConfirm(confirmed);
+		this.close();
 	}
 
 	onClose(): void {
