@@ -299,3 +299,153 @@ describe("CalendarWidget: the month header", () => {
 		expect(app.opened).toEqual([{ path: monthPath(1), leaf: false }]);
 	});
 });
+
+const WEEK_FORMAT = "gggg-[W]ww";
+
+/** Weekly notes configured, in the vault root, and created without a prompt. */
+const WEEKLY: CalendaricSettings = {
+	...DEFAULT_SETTINGS,
+	confirmBeforeCreate: false,
+	showWeekNumbers: true,
+	week: { ...DEFAULT_SETTINGS.week, enabled: true, format: WEEK_FORMAT },
+};
+
+/**
+ * The note path of the week the grid's `row`-th line stands for, derived from
+ * the calendar rather than from the widget: `weekStart` is Monday here, so the
+ * grid opens on the Monday on or before the 1st and each later row is seven
+ * days on.
+ */
+function weekPath(row = 0): string {
+	const anchor = window.moment().startOf("month").startOf("isoWeek").add(row * 7, "day");
+	return `${anchor.format(WEEK_FORMAT)}.md`;
+}
+
+function weekCell(host: HTMLElement, row = 0): HTMLElement {
+	const cell = host.querySelectorAll<HTMLElement>(".calendaric-weeknum")[row];
+	if (!cell) throw new Error(`no week-number cell on row ${row}`);
+	return cell;
+}
+
+function clickWeekCell(host: HTMLElement, init: MouseEventInit = {}): MouseEvent {
+	const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
+	weekCell(host).dispatchEvent(event);
+	return event;
+}
+
+function hoverWeekCell(host: HTMLElement, init: MouseEventInit = {}): MouseEvent {
+	const event = new MouseEvent("mouseover", { bubbles: true, cancelable: true, ...init });
+	weekCell(host).dispatchEvent(event);
+	return event;
+}
+
+/** The `hover-link` payloads the widget handed Obsidian, in order. */
+function hoverLinks(app: FakeApp): Record<string, unknown>[] {
+	return app.triggered
+		.filter((args) => args[0] === "hover-link")
+		.map((args) => args[1] as Record<string, unknown>);
+}
+
+describe("CalendarWidget: the week-number cell", () => {
+	it("AC-CAL-04.1: opens the week's existing note in the active pane", async () => {
+		const app = new FakeApp();
+		app.seed(weekPath());
+		const host = render(WEEKLY, app);
+
+		clickWeekCell(host);
+		await settle();
+
+		// `false` is Obsidian's "reuse the active unpinned tab".
+		expect(app.opened).toEqual([{ path: weekPath(), leaf: false }]);
+		expect(app.created).toEqual([]);
+	});
+
+	it("AC-CAL-04.2: creates the missing week note without a prompt when the setting says so, then opens it", async () => {
+		const app = new FakeApp();
+		const host = render(WEEKLY, app);
+
+		clickWeekCell(host);
+		await settle();
+
+		expect(app.created).toEqual([weekPath()]);
+		expect(app.opened).toEqual([{ path: weekPath(), leaf: false }]);
+	});
+
+	it("AC-CAL-04.2: writes nothing while the confirmation the same setting asks for is unanswered", async () => {
+		const app = new FakeApp();
+		// The same `confirmBeforeCreate` the day cell reads, left at its default.
+		const host = render({ ...WEEKLY, confirmBeforeCreate: true }, app);
+
+		clickWeekCell(host);
+		await settle();
+
+		expect(app.created).toEqual([]);
+		expect(app.opened).toEqual([]);
+	});
+
+	it("AC-CAL-04.3: opens the week's note in a split when the click carries the split modifier", async () => {
+		const app = new FakeApp();
+		app.seed(weekPath());
+		const host = render(WEEKLY, app);
+
+		// The mock host is not a Mac, so Ctrl is the split modifier there.
+		clickWeekCell(host, { ctrlKey: true });
+		await settle();
+
+		expect(app.opened).toEqual([{ path: weekPath(), leaf: "split" }]);
+	});
+
+	it("AC-CAL-04.3: creates the missing week note first, then opens it in the split", async () => {
+		const app = new FakeApp();
+		const host = render(WEEKLY, app);
+
+		clickWeekCell(host, { ctrlKey: true });
+		await settle();
+
+		expect(app.created).toEqual([weekPath()]);
+		expect(app.opened).toEqual([{ path: weekPath(), leaf: "split" }]);
+	});
+
+	it("AC-CAL-04.4: hovering a week that has a note asks Page preview for that note at the cell, and opens nothing", async () => {
+		const app = new FakeApp();
+		app.seed(weekPath());
+		const host = render(WEEKLY, app);
+		const displayed = headerText(host);
+
+		const event = hoverWeekCell(host, { ctrlKey: true });
+		await settle();
+
+		const links = hoverLinks(app);
+		expect(links).toHaveLength(1);
+		const request = links[0] ?? {};
+		// The payload carries the hovered event as it came, so Page preview reads
+		// the modifier the user actually held and owns the gate.
+		expect(request.event).toBe(event);
+		expect(request.source).toBe("calendaric");
+		// Near the cell means anchored to the cell: the popover opens at the
+		// element the user is pointing at, not at the row or the table.
+		expect(request.targetEl).toBe(weekCell(host));
+		expect(request.linktext).toBe(weekPath());
+		expect(request.sourcePath).toBe("");
+		// The widget is the hover parent, so the popover it owns closes with the pane.
+		expect(request.hoverParent).toHaveProperty("hoverPopover", null);
+		// A hover neither navigates nor opens.
+		expect(app.opened).toEqual([]);
+		expect(headerText(host)).toBe(displayed);
+	});
+
+	it("AC-CAL-04.5: hovering a week with no note previews its own path and creates no file", async () => {
+		const app = new FakeApp();
+		const host = render(WEEKLY, app);
+
+		hoverWeekCell(host, { ctrlKey: true });
+		await settle();
+
+		// An unresolved linktext is what makes Obsidian's own popover say the
+		// note is not there yet, so the hover never has to read the vault.
+		expect(hoverLinks(app).map((request) => request.linktext)).toEqual([weekPath()]);
+		expect(app.created).toEqual([]);
+		expect(app.files.has(weekPath())).toBe(false);
+		expect(app.opened).toEqual([]);
+	});
+});

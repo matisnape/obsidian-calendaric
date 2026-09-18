@@ -189,6 +189,12 @@ export class CalendarWidget implements HoverParent {
 					wDiv.addEventListener("click", (e) => {
 						void this.handleNoteClick(anchor.clone(), "week", e);
 					});
+					// The hover previews `weekPath`, which is the path the click
+					// above resolves from the same anchor — one reference date per
+					// row, whatever the week starts on (DEC-06).
+					wDiv.addEventListener("mouseover", (e) => {
+						this.handleNoteHover(e, wDiv, weekPath);
+					});
 				}
 			}
 
