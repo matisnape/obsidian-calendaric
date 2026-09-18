@@ -289,7 +289,7 @@
       "story": "As someone configuring which file a granularity's notes are templated from, I want to be told when that path does not point at a real, readable file, so that I find out at configuration time rather than the first time a note is created with an unexpectedly empty or broken body.",
       "rationale": "A template path is free text pointing into the vault; nothing stops it from going stale or being mistyped, so it has to be checked rather than assumed.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "pn:template-validation"
       ],
