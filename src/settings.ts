@@ -5,6 +5,8 @@ import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import type { CompanionPluginPort } from "./adapters/companionPluginPort";
 import type { DesktopShellPort } from "./adapters/desktopShellPort";
+import type { VaultPort } from "./adapters/vaultPort";
+import { validateTemplatePath } from "./notes/validateTemplatePath";
 import type CalendaricPlugin from "./main";
 
 // The configuration model lives in ./settings/model, which knows nothing about
@@ -105,6 +107,12 @@ export interface SettingsTabPorts {
 	readonly companion: CompanionPluginPort;
 	/** Opens a file in the operating system. Absent on mobile. */
 	readonly desktop: DesktopShellPort;
+	/**
+	 * Resolves a path against the vault, so a configured template can be
+	 * checked while it is being typed rather than when a note is first created
+	 * from it (US-TPL-04).
+	 */
+	readonly vault: VaultPort;
 }
 
 export class CalendaricSettingsTab extends PluginSettingTab {
@@ -307,16 +315,30 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// Template
 		const capitalPeriodicity = periodicity.charAt(0).toUpperCase() + periodicity.slice(1);
-		new Setting(content)
+		const templateSetting = new Setting(content)
 			.setName(`${capitalPeriodicity} Note Template`)
-			.setDesc("Choose the file to use as a template")
-			.addText((text) => {
-				text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
-				text.onChange(async (value) => {
-					config.templatePath = value;
-					await this.save();
-				});
+			.setDesc("Choose the file to use as a template");
+
+		// The whole point of US-TPL-04: a bad template path says so here, where
+		// it was typed, instead of waiting for the first note created from it.
+		// Emptied and refilled rather than assigned, because an empty message is
+		// how "nothing wrong" is drawn and `setText` is not in the DOM shim.
+		const templateProblem = templateSetting.descEl.createDiv({ cls: "calendaric-setting-problem" });
+		const showTemplateProblem = (value: string): void => {
+			const problem = validateTemplatePath(value, this.ports.vault);
+			templateProblem.empty();
+			if (problem) templateProblem.appendText(problem.message);
+		};
+		showTemplateProblem(config.templatePath);
+
+		templateSetting.addText((text) => {
+			text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
+			text.onChange(async (value) => {
+				config.templatePath = value;
+				showTemplateProblem(value);
+				await this.save();
 			});
+		});
 
 		// Allow prefix matching
 		new Setting(content)

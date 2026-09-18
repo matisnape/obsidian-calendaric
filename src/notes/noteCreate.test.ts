@@ -262,6 +262,78 @@ describe("createNote (AC-ARCH-03.1, AC-ARCH-03.2)", () => {
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining("Templates/missing.md"));
 	});
 
+	// A folder at the configured path is the one template failure the user can
+	// fix without going looking: the path is real, it is just the wrong kind of
+	// thing. Saying "not found" about it would be a wrong instruction.
+	it("AC-TPL-04.3: names a template path that is a folder as a folder, not as missing", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFolder("Templates/daily");
+		const warn = vi.fn();
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily" }),
+			vault,
+			warn,
+		);
+
+		expect(vault.contentAt(file.path)).toBe("");
+		expect(warn).toHaveBeenCalledTimes(1);
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining("Templates/daily"));
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining("folder"));
+		expect(warn).not.toHaveBeenCalledWith(expect.stringContaining("not found"));
+	});
+
+	// An empty template is a configured template that says nothing, which is not
+	// the same as a broken one. It resolves and it reads, so there is nothing to
+	// report — the note simply starts empty.
+	it("AC-TPL-04.5: creates an empty note body from an empty template and raises nothing", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/empty.md", "");
+		const warn = vi.fn();
+
+		const file = await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/empty.md" }),
+			vault,
+			warn,
+		);
+
+		expect(vault.contentAt(file.path)).toBe("");
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	it("AC-TPL-04.1: reports nothing about a template that resolves to a real note", async () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Templates/daily.md", "# {{title}}");
+		const warn = vi.fn();
+
+		await createNote(
+			"journal/daily/2026-04-13.md",
+			DATE,
+			"day",
+			makeConfig({ templatePath: "Templates/daily.md" }),
+			vault,
+			warn,
+		);
+
+		expect(warn).not.toHaveBeenCalled();
+	});
+
+	it("AC-TPL-04.4: reports nothing when no template is configured for the granularity", async () => {
+		const vault = new FakeVaultPort();
+		const warn = vi.fn();
+
+		const file = await createNote("journal/daily/2026-04-13.md", DATE, "day", makeConfig(), vault, warn);
+
+		expect(vault.contentAt(file.path)).toBe("");
+		expect(warn).not.toHaveBeenCalled();
+	});
+
 	// The metadata cache can still name a template that the read then fails on —
 	// a file deleted between the two calls, or one Obsidian cannot open.
 	it("still creates an empty note when the template read fails (AC-NOTE-05.3)", async () => {

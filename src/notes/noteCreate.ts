@@ -4,6 +4,7 @@ import { isReleaseGranularity } from "../types";
 import type { FoldState, NoteFile, VaultPort } from "../adapters/vaultPort";
 import { folderChainSegments, hasUnusableSegment } from "./noteUtils";
 import { substituteTemplateTokens } from "./templateTokens";
+import { validateTemplatePath } from "./validateTemplatePath";
 
 /**
  * What a create request did, for a caller that has to act on it either way.
@@ -168,13 +169,23 @@ async function readTemplate(
 ): Promise<NoteTemplate> {
 	if (!config.templatePath) return BLANK_NOTE;
 
+	const unreadable = `Calendaric could not read the template: ${config.templatePath}`;
 	const reportUnreadable = (): NoteTemplate => {
-		warn(`Calendaric could not read the template: ${config.templatePath}`);
+		warn(unreadable);
 		return BLANK_NOTE;
 	};
 
 	const templateFile = vault.getTemplateFile(config.templatePath);
-	if (!templateFile) return reportUnreadable();
+	if (!templateFile) {
+		// A folder at the path is the case this warning could not express before
+		// US-TPL-04: it reported every unresolved template the same way, which
+		// sent anyone who had typed a folder path looking for a missing file
+		// (AC-TPL-04.3). Anything else keeps the wording it has had since
+		// US-NOTE-05, because a plain absent template is not what changed here.
+		const problem = validateTemplatePath(config.templatePath, vault);
+		warn(problem?.reason === "is-folder" ? problem.message : unreadable);
+		return BLANK_NOTE;
+	}
 
 	const title = notePath.split("/").pop()?.replace(/\.md$/, "") ?? "";
 

@@ -13,10 +13,46 @@ export class PluginSettingTab {
 	}
 }
 
+/**
+ * Obsidian's `Setting` builds a small element tree inside the container and
+ * exposes each part, which callers draw into: `descEl` in particular carries
+ * more than the description string — US-TPL-04 renders the template problem
+ * there.
+ *
+ * So the tree is real here rather than stubbed away. A stub that returned
+ * `this` from every call let a settings section throw on `descEl` and be
+ * swallowed by `renderGuardedSection`, which looks exactly like a field
+ * choosing to report nothing.
+ *
+ * The `add*` callbacks stay unbuilt: no test reads a control back out, and the
+ * controls are the part of the class with the most host behaviour behind them.
+ * Only DOM tests construct a Setting -- the `createDiv`/`appendText` used here
+ * are the extensions `installObsidianDom` patches on, so this class is usable
+ * only under `@vitest-environment happy-dom`, which is where it is wanted.
+ */
 export class Setting {
-	constructor(_container: HTMLElement) {}
-	setName(_name: string): this { return this; }
-	setDesc(_desc: string): this { return this; }
+	settingEl: HTMLElement;
+	infoEl: HTMLElement;
+	nameEl: HTMLElement;
+	descEl: HTMLElement;
+	controlEl: HTMLElement;
+
+	constructor(container: HTMLElement) {
+		this.settingEl = container.createDiv({ cls: "setting-item" });
+		this.infoEl = this.settingEl.createDiv({ cls: "setting-item-info" });
+		this.nameEl = this.infoEl.createDiv({ cls: "setting-item-name" });
+		this.descEl = this.infoEl.createDiv({ cls: "setting-item-description" });
+		this.controlEl = this.settingEl.createDiv({ cls: "setting-item-control" });
+	}
+
+	setName(name: string): this {
+		this.nameEl.appendText(name);
+		return this;
+	}
+	setDesc(desc: string): this {
+		this.descEl.appendText(desc);
+		return this;
+	}
 	addDropdown(_cb: (dd: unknown) => void): this { return this; }
 	addToggle(_cb: (toggle: unknown) => void): this { return this; }
 	addText(_cb: (text: unknown) => void): this { return this; }

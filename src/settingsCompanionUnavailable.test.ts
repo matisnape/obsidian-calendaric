@@ -14,6 +14,7 @@
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
+import { FakeVaultPort } from "./adapters/fakeVaultPort";
 import { DEFAULT_SETTINGS } from "./settings/model";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import type CalendaricPlugin from "./main";
@@ -42,6 +43,7 @@ function render(options: unknown): HTMLElement {
 	const tab = new CalendaricSettingsTab(app, plugin, {
 		companion: new ObsidianCompanionPluginAdapter(app),
 		desktop: { openPluginFile: () => undefined },
+		vault: new FakeVaultPort(),
 	});
 	tab.display();
 	return tab.containerEl;
