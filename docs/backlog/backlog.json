@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-12",
+    "generated": "2026-09-18",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -2221,7 +2221,7 @@
       "story": "As someone configuring which file a granularity's notes are templated from, I want to be told when that path does not point at a real, readable file, so that I find out at configuration time rather than the first time a note is created with an unexpectedly empty or broken body.",
       "rationale": "A template path is free text pointing into the vault; nothing stops it from going stale or being mistyped, so it has to be checked rather than assumed.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:template-validation"
       ],
@@ -2241,8 +2241,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.1: shows no problem for a template path that resolves to a note\" and \"...for a template file that is empty\" read the rendered tab; validateTemplatePath.test.ts covers the same id at the unit level. Mutations: reporting a problem unconditionally in settings.ts fails all five DOM cases; replacing the getTemplateFile short-circuit with `if (false)` fails both unit cases."
         },
         {
           "id": "AC-TPL-04.2",
@@ -2253,8 +2253,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.2: shows the template as not found, by name, where it was configured\" asserts the text is on the settings screen, which is where the story says the user finds out; validateTemplatePath.test.ts asserts reason \"not-found\" plus the path and the words \"not found\". Mutation: reporting a problem unconditionally in settings.ts turns all five DOM cases red, so the empty-list assertions are not vacuous.",
           "failure_path": true
         },
         {
@@ -2267,8 +2267,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.3: shows a folder as a folder rather than as a missing file\" asserts the folder wording on screen and the absence of \"not found\"; validateTemplatePath.test.ts \"...distinguishes a folder from an unresolvable path\" pins reason and message apart; noteCreate.test.ts covers the note-creation warning. Mutations: reason \"is-folder\" -> \"not-found\", and unwiring the readTemplate folder branch, each turn tests red.",
           "failure_path": true
         },
         {
@@ -2281,8 +2281,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "settingsTemplateValidation.test.ts \"AC-TPL-04.4: shows no problem when no template is configured\"; validateTemplatePath.test.ts and noteCreate.test.ts of the same id. Mutations: returning a problem for an empty path fails the validator case; reporting unconditionally in settings.ts fails the DOM case; making readTemplate warn on an empty path fails the noteCreate case.",
           "failure_path": true
         },
         {
@@ -2295,8 +2295,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "noteCreate.test.ts \"AC-TPL-04.5: creates an empty note body from an empty template and raises nothing\" asserts an empty body and that warn was never called. Mutation: substituteTemplateTokens(raw || \"# fallback\", ...) fails it.",
           "failure_path": true
         }
       ]
@@ -2810,7 +2810,7 @@
       "story": "As someone who reviews the week as a unit, I want clicking the week number to take me to that week's note, offering to create it if it does not exist, so that I do not have to find a specific day to reach the weekly summary.",
       "rationale": "The week-number column is a click target in its own right, not just a label.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "calui:week-number-interactions",
         "calendaric:calendar-click-to-open-or-create",
@@ -2834,8 +2834,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.1: opens the week's existing note in the active pane\" - fails when the week cell's click is wired to the day granularity"
         },
         {
           "id": "AC-CAL-04.2",
@@ -2846,8 +2846,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.2: creates the missing week note without a prompt when the setting says so, then opens it\" and \"AC-CAL-04.2: writes nothing while the confirmation the same setting asks for is unanswered\", plus cellActions.test.ts \"AC-CAL-04.2: asks for a weekly note by its week, then creates and opens it\" - the last fails when GRANULARITY_LABEL.week stops reading \"weekly\""
         },
         {
           "id": "AC-CAL-04.3",
@@ -2858,8 +2858,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.3: opens the week's note in a split when the click carries the split modifier\" and \"AC-CAL-04.3: creates the missing week note first, then opens it in the split\" - both fail when isSplitModifierPressed returns false"
         },
         {
           "id": "AC-CAL-04.4",
@@ -2871,8 +2871,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.4: hovering a week that has a note asks Page preview for that note at the cell, and opens nothing\" - fails when the week cell's mouseover listener is removed"
         },
         {
           "id": "AC-CAL-04.5",
@@ -2884,8 +2884,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "calendarRender.test.ts \"AC-CAL-04.5: hovering a week with no note previews its own path and creates no file\" - fails when the week cell's mouseover listener is removed",
           "failure_path": true
         }
       ],
