@@ -358,7 +358,7 @@
       "story": "As someone who configured day, week, month and year notes through the Periodic Notes plugin, I want Calendaric to import exactly what is actually in effect for each of those, so that my real settings survive the switch instead of a stale leftover value.",
       "rationale": "This vault's Periodic Notes configuration currently disagrees with itself between an old top-level format and its live calendar set; getting this wrong would silently import the wrong folder and template.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "pn:legacy-settings-migration"
       ],
