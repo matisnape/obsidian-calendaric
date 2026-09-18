@@ -14,10 +14,8 @@
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
-import { FakeVaultPort } from "./adapters/fakeVaultPort";
 import { DEFAULT_SETTINGS } from "./settings/model";
-import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
-import { ObsidianPeriodicNotesAdapter } from "./adapters/obsidianPeriodicNotesAdapter";
+import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
 import type CalendaricPlugin from "./main";
 
 /** The core Daily Notes plugin, with its options behind a store. */
@@ -38,17 +36,12 @@ function render(options: unknown): HTMLElement {
 		saveSettings: () => Promise.resolve(),
 		onSettingsChange: () => undefined,
 	} as unknown as CalendaricPlugin;
-	// The real adapter, over the broken host above: src/main.ts constructs it
-	// exactly this way, and the chain under test is what it reads out of that
-	// host, not where the `new` happens.
-	const tab = new CalendaricSettingsTab(app, plugin, {
-		companion: new ObsidianCompanionPluginAdapter(app),
-		// This host has no community plugin registry, so Periodic Notes reads as
-		// absent and its own card stays off the screen.
-		periodicNotes: new ObsidianPeriodicNotesAdapter(app),
-		desktop: { openPluginFile: () => undefined },
-		vault: new FakeVaultPort(),
-	});
+	// The real adapters, over the broken host above: src/main.ts constructs them
+	// exactly this way, and the chain under test is what they read out of that
+	// host, not where the `new` happens. This host has no community plugin
+	// registry either, so Periodic Notes reads as absent and its card stays off
+	// the screen.
+	const tab = new CalendaricSettingsTab(app, plugin, makeSettingsTabPorts(app));
 	tab.display();
 	return tab.containerEl;
 }
