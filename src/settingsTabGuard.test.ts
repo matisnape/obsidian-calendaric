@@ -9,9 +9,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
-import { FakeVaultPort } from "./adapters/fakeVaultPort";
 import { DEFAULT_SETTINGS } from "./settings/model";
-import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
+import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
 import type CalendaricPlugin from "./main";
 
 /** Flipped per test, because vi.mock is hoisted once per file. */
@@ -49,13 +48,10 @@ function makeTab(): CalendaricSettingsTab {
 		saveSettings: () => Promise.resolve(),
 		onSettingsChange: () => undefined,
 	} as unknown as CalendaricPlugin;
-	// The import card is mocked above, so neither port is reached: what these
-	// tests break is the host, not the boundary.
-	return new CalendaricSettingsTab(app, plugin, {
-		companion: new ObsidianCompanionPluginAdapter(app),
-		desktop: { openPluginFile: () => undefined },
-		vault: new FakeVaultPort(),
-	});
+	// The Daily Notes card is mocked above, and this host publishes no community
+	// plugin registry, so the Periodic Notes card draws nothing: what these tests
+	// break is the host, not the boundary.
+	return new CalendaricSettingsTab(app, plugin, makeSettingsTabPorts(app));
 }
 
 const warnings = (el: HTMLElement): Element[] => Array.from(el.querySelectorAll(".calendaric-callout--warning"));

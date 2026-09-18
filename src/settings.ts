@@ -3,7 +3,8 @@ import type { Granularity, PeriodicConfig } from "./types";
 import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
-import type { CompanionPluginPort } from "./adapters/companionPluginPort";
+import { renderPeriodicNotesImportCard } from "./settings/periodicNotesImportCard";
+import type { CompanionPluginPort, PeriodicNotesPort } from "./adapters/companionPluginPort";
 import type { DesktopShellPort } from "./adapters/desktopShellPort";
 import type { VaultPort } from "./adapters/vaultPort";
 import { validateTemplatePath } from "./notes/validateTemplatePath";
@@ -105,6 +106,8 @@ function renderGuardedSection(containerEl: HTMLElement, label: string, render: (
 export interface SettingsTabPorts {
 	/** Reads and writes another plugin's settings. Typed because its shape is not ours. */
 	readonly companion: CompanionPluginPort;
+	/** Reads the Periodic Notes plugin's active calendar set, for the import card. */
+	readonly periodicNotes: Pick<PeriodicNotesPort, "readActiveCalendarSet">;
 	/** Opens a file in the operating system. Absent on mobile. */
 	readonly desktop: DesktopShellPort;
 	/**
@@ -133,6 +136,12 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		// that touches it and nothing else.
 		renderGuardedSection(containerEl, "Daily Notes import", () => {
 			renderDailyNotesImportCard(containerEl, this.plugin, this.ports.companion, {
+				save: () => this.save(),
+				refresh: () => this.display(),
+			});
+		});
+		renderGuardedSection(containerEl, "Periodic Notes import", () => {
+			renderPeriodicNotesImportCard(containerEl, this.plugin, this.ports.periodicNotes, {
 				save: () => this.save(),
 				refresh: () => this.display(),
 			});

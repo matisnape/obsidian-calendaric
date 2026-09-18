@@ -12,7 +12,7 @@ import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { FakeVaultPort } from "./adapters/fakeVaultPort";
 import { DEFAULT_SETTINGS } from "./settings/model";
-import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
+import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
 import type CalendaricPlugin from "./main";
 
 function makeApp(): App {
@@ -43,11 +43,9 @@ function problemsFor(templatePath: string, vault: FakeVaultPort): string[] {
 		onSettingsChange: () => undefined,
 	} as unknown as CalendaricPlugin;
 
-	const tab = new CalendaricSettingsTab(app, plugin, {
-		companion: new ObsidianCompanionPluginAdapter(app),
-		desktop: { openPluginFile: () => undefined },
-		vault,
-	});
+	// Only the vault is this story's business; every other port comes from the
+	// shared default, so a port added later does not reach this file.
+	const tab = new CalendaricSettingsTab(app, plugin, makeSettingsTabPorts(app, { vault }));
 	tab.display();
 
 	return Array.from(tab.containerEl.querySelectorAll(".calendaric-setting-problem"))

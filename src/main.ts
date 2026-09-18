@@ -14,6 +14,7 @@ import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
+import { ObsidianPeriodicNotesAdapter } from "./adapters/obsidianPeriodicNotesAdapter";
 import { ElectronDesktopShellAdapter } from "./adapters/electronDesktopShellAdapter";
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
@@ -78,6 +79,7 @@ export default class CalendaricPlugin extends Plugin {
 		this.addSettingTab(
 			new CalendaricSettingsTab(this.app, this, {
 				companion: new ObsidianCompanionPluginAdapter(this.app),
+				periodicNotes: new ObsidianPeriodicNotesAdapter(this.app),
 				desktop: new ElectronDesktopShellAdapter(this.app),
 				vault: new ObsidianVaultAdapter(this.app),
 			}),

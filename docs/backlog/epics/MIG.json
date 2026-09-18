@@ -358,7 +358,7 @@
       "story": "As someone who configured day, week, month and year notes through the Periodic Notes plugin, I want Calendaric to import exactly what is actually in effect for each of those, so that my real settings survive the switch instead of a stale leftover value.",
       "rationale": "This vault's Periodic Notes configuration currently disagrees with itself between an old top-level format and its live calendar set; getting this wrong would silently import the wrong folder and template.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:legacy-settings-migration"
       ],
@@ -384,8 +384,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "periodicNotesImport.test.ts \"AC-MIG-04.1: sets folder, format, template and enabled for every granularity the active calendar set enables\" and obsidianPeriodicNotesAdapter.test.ts \"AC-MIG-04.1: reports the active calendar set's enabled flag, format, folder and template per granularity\"; DEC-18's prefix-match flag covered by \"AC-MIG-04.1: carries the prefix-match flag across with the rest of the granularity\". Mutation: write() assigning \"\" instead of the incoming value turns 3 tests red."
         },
         {
           "id": "AC-MIG-04.2",
@@ -397,8 +397,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "obsidianPeriodicNotesAdapter.test.ts \"AC-MIG-04.2: takes the folder and template from the active calendar set, never from the stale top-level keys beside it\" — the fake plugin carries readable stale daily/weekly keys that disagree with the set. Mutation: reading manager.getSets() instead of getActiveSet(), and reading folder off the wrong entry field, each turn it red.",
           "failure_path": true
         },
         {
@@ -411,8 +411,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "obsidianPeriodicNotesAdapter.test.ts \"AC-MIG-04.3: reports the active set alone and merges no other set into it\" — two sets, the second active, and none of the first set's values reach the caller. Mutation: reading manager.getSets() instead of getActiveSet() turns it red.",
           "failure_path": true
         },
         {
@@ -425,8 +425,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "periodicNotesImport.test.ts \"AC-MIG-04.4: reports the incoming value next to the current one and replaces it only once confirmed\" and \"AC-MIG-04.4: confirming nothing changes no customised value\"; PeriodicNotesImportConflictModal renders that same current/incoming pair per row. Mutation: applying every conflict without checking `confirmed` turns both red.",
           "failure_path": true
         },
         {
@@ -439,8 +439,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "periodicNotesImport.test.ts \"AC-MIG-04.5: a second import of the same calendar set leaves the settings alone and marks nothing for review\" — runs the import twice, asserts the second reports no change, the settings deep-equal the first result, and the plan is empty so no field is offered for review again. Mutation: applyPeriodicNotesImport returning true unconditionally turns it red.",
           "failure_path": true
         },
         {
@@ -452,8 +452,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "periodicNotesImport.test.ts \"AC-MIG-04.6: hides the card when the Periodic Notes plugin is absent or disabled\", plus \"AC-MIG-04.6: hides the card when the active calendar set enables nothing\"; Obsidian's registry answers for enabled plugins only, so a disabled plugin reads as absent. Mutation: swapping the \"absent\" test for \"mismatch\" turns it red.",
           "failure_path": true
         }
       ],

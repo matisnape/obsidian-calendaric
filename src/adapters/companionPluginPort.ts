@@ -48,6 +48,43 @@ export interface CompanionPluginPort {
 }
 
 /**
+ * One granularity's entry inside a Periodic Notes calendar set.
+ *
+ * Five fields, because those are the five the import carries (US-MIG-04).
+ * `allowPrefixMatch` is among them by DEC-18: it has a direct equivalent in
+ * Calendaric's own model, and this vault's weekly notes are renamed to a longer
+ * title after creation, so dropping the flag would stop them resolving at all.
+ *
+ * `openAtStartup` is the one entry field deliberately left out. Calendaric lets
+ * exactly one granularity open a note at startup (`clearStartupNote`), and a
+ * calendar set carrying the flag on two granularities would import a state this
+ * plugin treats as impossible.
+ */
+export interface PeriodicNotesGranularityConfig {
+	enabled: boolean;
+	format: string;
+	folder: string;
+	templatePath: string;
+	allowPrefixMatch: boolean;
+}
+
+/**
+ * The one calendar set Periodic Notes reports as active.
+ *
+ * A single set rather than the list, because the import must never merge two of
+ * them (AC-MIG-04.3), and a type that cannot hold the others cannot merge them.
+ * Which set is active is that plugin's decision, read from its own manager.
+ *
+ * `granularities` is keyed by the names that plugin uses, not by Calendaric's
+ * `Granularity`: a build that names one this version does not know must not turn
+ * the whole read into a failure.
+ */
+export interface PeriodicNotesCalendarSet {
+	id: string;
+	granularities: Readonly<Record<string, PeriodicNotesGranularityConfig>>;
+}
+
+/**
  * What Periodic Notes governs, asked of the plugin rather than inferred.
  *
  * That plugin computes the answer itself, from whichever calendar set is
@@ -63,4 +100,14 @@ export interface CompanionPluginPort {
  */
 export interface PeriodicNotesPort {
 	readActiveGranularities(): CompanionPluginRead<readonly string[]>;
+
+	/**
+	 * The active calendar set's per-granularity folder, format, template and
+	 * enabled flag (AC-MIG-04.1).
+	 *
+	 * Separate from `readActiveGranularities` because it answers a different
+	 * question: that one asks what the plugin governs, this one asks with what.
+	 * A caller that needs only the names must not have to narrow a whole set.
+	 */
+	readActiveCalendarSet(): CompanionPluginRead<PeriodicNotesCalendarSet>;
 }

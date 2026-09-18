@@ -8,12 +8,14 @@ import type { Granularity } from "../types";
 import { GRANULARITIES } from "./model";
 import { resolveImportSources } from "./importSource";
 
-function periodic(read: CompanionPluginRead<readonly string[]>): PeriodicNotesPort {
+function periodic(
+	read: CompanionPluginRead<readonly string[]>,
+): Pick<PeriodicNotesPort, "readActiveGranularities"> {
 	return { readActiveGranularities: () => read };
 }
 
 /** Periodic Notes installed, with exactly these granularities enabled. */
-function enables(...granularities: string[]): PeriodicNotesPort {
+function enables(...granularities: string[]): Pick<PeriodicNotesPort, "readActiveGranularities"> {
 	return periodic({ ok: true, value: granularities });
 }
 
@@ -188,7 +190,7 @@ describe("resolveImportSources", () => {
 		it("AC-MIG-05.5: reads each predecessor plugin once for the whole resolution", () => {
 			let periodicReads = 0;
 			let dailyReads = 0;
-			const countingPeriodic: PeriodicNotesPort = {
+			const countingPeriodic: Pick<PeriodicNotesPort, "readActiveGranularities"> = {
 				readActiveGranularities: () => {
 					periodicReads += 1;
 					return { ok: true, value: ["day"] };

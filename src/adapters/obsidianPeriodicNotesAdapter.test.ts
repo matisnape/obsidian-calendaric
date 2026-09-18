@@ -197,3 +197,166 @@ describe("ObsidianPeriodicNotesAdapter.readActiveGranularities", () => {
 		});
 	});
 });
+
+/**
+ * A Periodic Notes instance shaped like this vault's: two calendar sets with one
+ * of them active, and the stale top-level per-granularity keys its stored data
+ * still carries beside them (docs/mapping/sources/pn.json OBS-pn-05, which
+ * records those keys as read exactly once at migration time and dead after;
+ * docs/mapping/sources/vault.json OBS-vault-03, which records the second set).
+ *
+ * The stale keys are readable here on purpose. A fake that hid them could not
+ * fail for an implementation that read them, which is the whole of AC-MIG-04.2.
+ */
+function periodicNotesWithSets(activeCalendarSet: string) {
+	const calendarSets = [
+		{
+			id: "Default",
+			ctime: 1,
+			day: {
+				enabled: true,
+				format: "YYYY-MM-DD",
+				folder: "Journal/Daily",
+				templatePath: "Templates/Day.md",
+				allowPrefixMatch: false,
+			},
+			week: {
+				enabled: true,
+				format: "gggg-[W]ww",
+				folder: "Journal/Weekly",
+				templatePath: "",
+				allowPrefixMatch: true,
+			},
+		},
+		{
+			id: "Work",
+			ctime: 2,
+			day: {
+				enabled: true,
+				format: "YYYY-MM-DD",
+				folder: "Kurs/Daily",
+				templatePath: "Kurs/Day.md",
+				allowPrefixMatch: false,
+			},
+		},
+	];
+	const raw = {
+		activeCalendarSet,
+		calendarSets,
+		daily: { folder: "Stale/Daily", format: "DD-MM-YYYY", template: "Stale/Day.md" },
+		weekly: { folder: "Stale/Weekly", format: "YYYY-[W]ww", template: "Stale/Week.md" },
+	};
+	return {
+		calendarSetManager: {
+			getActiveGranularities: () => ["day", "week"],
+			// The real manager's own lookup, its throw included: getActiveSet()
+			// raises "No active calendar set found" rather than falling back to
+			// the first set (docs/mapping/sources/pn.json, get-active-calendar-set).
+			getActiveSet: () => {
+				const active = calendarSets.find((set) => set.id === raw.activeCalendarSet);
+				if (!active) throw new Error("No active calendar set found");
+				return active;
+			},
+			getSets: () => calendarSets,
+		},
+		settings: Object.assign({ subscribe: (run: (value: unknown) => void) => (run(raw), () => undefined) }, raw),
+	};
+}
+
+function readSet(plugins: Record<string, unknown>) {
+	return new ObsidianPeriodicNotesAdapter(makeApp(plugins)).readActiveCalendarSet();
+}
+
+describe("ObsidianPeriodicNotesAdapter.readActiveCalendarSet", () => {
+	it("AC-MIG-04.1: reports the active calendar set's enabled flag, format, folder and template per granularity", () => {
+		const result = readSet({ "periodic-notes": periodicNotesWithSets("Default") });
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.id).toBe("Default");
+		// DEC-18: the prefix-match flag is one of the five fields that come across.
+		expect(result.value.granularities.week).toEqual({
+			enabled: true,
+			format: "gggg-[W]ww",
+			folder: "Journal/Weekly",
+			templatePath: "",
+			allowPrefixMatch: true,
+		});
+	});
+
+	// `ctime` is a number and `id` a string, so neither can pass for an entry.
+	it("AC-MIG-04.1: reads only the set's granularity entries, not its own bookkeeping fields", () => {
+		const result = readSet({ "periodic-notes": periodicNotesWithSets("Default") });
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(Object.keys(result.value.granularities)).toEqual(["day", "week"]);
+	});
+
+	it("AC-MIG-04.2: takes the folder and template from the active calendar set, never from the stale top-level keys beside it", () => {
+		const result = readSet({ "periodic-notes": periodicNotesWithSets("Default") });
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.granularities.day).toEqual({
+			enabled: true,
+			format: "YYYY-MM-DD",
+			folder: "Journal/Daily",
+			templatePath: "Templates/Day.md",
+			allowPrefixMatch: false,
+		});
+		// Nothing from the disagreeing top-level keys reaches the caller at all.
+		expect(JSON.stringify(result.value)).not.toContain("Stale");
+	});
+
+	it("AC-MIG-04.3: reports the active set alone and merges no other set into it", () => {
+		const result = readSet({ "periodic-notes": periodicNotesWithSets("Work") });
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(result.value.id).toBe("Work");
+		expect(result.value.granularities.day?.folder).toBe("Kurs/Daily");
+		// The other set enables week; this one does not, so week stays absent.
+		expect(result.value.granularities.week).toBeUndefined();
+		expect(JSON.stringify(result.value)).not.toContain("Journal");
+	});
+
+	it("names the problem when the build publishes no calendar set manager", () => {
+		const result = readSet({ "periodic-notes": { settings: {} } });
+
+		expect(result).toEqual({
+			ok: false,
+			reason: "mismatch",
+			problem: "The Periodic Notes plugin exposes no calendar set manager.",
+		});
+	});
+
+	it("names the problem when the manager publishes no 'getActiveSet'", () => {
+		const result = readSet({ "periodic-notes": { calendarSetManager: { getActiveGranularities: () => [] } } });
+
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("mismatch");
+		expect(result.problem).toContain("getActiveSet");
+	});
+
+	// The real manager throws when the stored active id names a set that is gone.
+	it("reports a throwing getActiveSet as unreadable instead of letting it escape", () => {
+		const plugins = { "periodic-notes": periodicNotesWithSets("Gone") };
+
+		expect(() => readSet(plugins)).not.toThrow();
+		const result = readSet(plugins);
+		expect(result.ok).toBe(false);
+		if (result.ok) return;
+		expect(result.reason).toBe("mismatch");
+		expect(result.problem).toContain("No active calendar set found");
+	});
+
+	it("stays quiet when the plugin is not installed", () => {
+		expect(readSet({})).toEqual({
+			ok: false,
+			reason: "absent",
+			problem: "The Periodic Notes plugin is not installed.",
+		});
+	});
+});
