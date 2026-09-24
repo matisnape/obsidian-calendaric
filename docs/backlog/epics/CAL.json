@@ -1127,7 +1127,7 @@
       "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is, so that I do not have to decode the filename to know where I am.",
       "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "pn:timeline-complication-label",
         "pn:timeline-lifecycle-per-leaf",
@@ -1153,8 +1153,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/periodLabel.test.ts 'AC-CAL-13.1' at 868d6ba: humanizePeriod names Today/Last week/counts from the note's own date via computeNoteDate; a minute tick redraws past midnight; mutations (diff from now instead of the note date; drop the 60s interval) turn it red"
         },
         {
           "id": "AC-CAL-13.2",
@@ -1166,8 +1166,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-13.2' at 868d6ba: a non-periodic file gets no label; the label is a div in the view's contentEl, never file content",
           "failure_path": true
         },
         {
@@ -1179,8 +1179,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-13.3' at 868d6ba: with showPeriodLabel off a newly opened periodic note has no label; the setting defaults on and a stored false survives reload; mutation (ignore enabled) turns it red",
           "failure_path": true
         },
         {
@@ -1193,8 +1193,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-13.4' at 868d6ba: a prefixMatch identity adds the inexact marker, an exact one does not; mutation (never draw the marker) turns it red"
         },
         {
           "id": "AC-CAL-13.5",
@@ -1206,8 +1206,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-13.5' at 868d6ba: toggling the setting adds/removes the label in an already-open pane through the plugin's settings-change sync; mutation (ignore enabled) turns it red"
         },
         {
           "id": "AC-CAL-13.6",
@@ -1219,8 +1219,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-13.6' at 868d6ba: closing one pane removes only its label; layout-change and file-open resync; mutations (skip stale removal; drop the layout-change listener) turn it red",
           "failure_path": true
         }
       ],
