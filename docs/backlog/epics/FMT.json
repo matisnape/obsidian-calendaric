@@ -10,7 +10,7 @@
       "story": "As someone naming weekly notes with per-weekday tokens, I want {{monday:DD.MM}} and its six siblings to resolve to the date that falls in my own configured week rather than a fixed Monday-first week, so that the filename always names the days of the week I actually see everywhere else in the plugin.",
       "rationale": "The current implementation is documented as respecting the week-start setting but hard-codes ISO Monday-first weeks instead, so filenames can silently name the wrong day.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calendaric:template-token-weekday-format",
         "dni:get-day-of-week-numerical-value"

@@ -1164,7 +1164,7 @@
       "story": "As someone naming weekly notes with per-weekday tokens, I want {{monday:DD.MM}} and its six siblings to resolve to the date that falls in my own configured week rather than a fixed Monday-first week, so that the filename always names the days of the week I actually see everywhere else in the plugin.",
       "rationale": "The current implementation is documented as respecting the week-start setting but hard-codes ISO Monday-first weeks instead, so filenames can silently name the wrong day.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "calendaric:template-token-weekday-format",
         "dni:get-day-of-week-numerical-value"
@@ -1188,8 +1188,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/fmt/weekdayTokens.test.ts 'AC-FMT-01.1' at 42f8eb5: on a Sunday-dated weekly note under a Monday start, {{monday:fmt}} resolves six days earlier (behaviour from US-FMT-03, now tested by criterion); mutation (treat every span as literal) turns it red"
         },
         {
           "id": "AC-FMT-01.2",
@@ -1201,8 +1201,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-01.2' at 42f8eb5: the same note under a Sunday start resolves one day later, seven days after the Monday-start date; mutation (treat every span as literal) turns it red"
         },
         {
           "id": "AC-FMT-01.3",
@@ -1214,8 +1214,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-01.3' at 42f8eb5: all seven names resolve within the configured week, mixed case; mutation (drop the /i flag on WEEK_TOKEN_RE) turns it red"
         },
         {
           "id": "AC-FMT-01.4",
@@ -1226,8 +1226,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-01.4' at 42f8eb5: day, month and year formats write a weekday span as literal text and parse it back; granularity is threaded to every production computeNotePath/parseFilename caller (optional only for a three-argument legacy call, which defaults to week); mutations (ignore granularity; skip escaping; skip literalWeekTokens in the parser) turn it red",
           "failure_path": true
         },
         {
@@ -1239,8 +1239,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-01.5' at 42f8eb5: {{funday:DD.MM}} is written exactly as typed in day and week formats and reads back, and its letters move neither the week start nor the note's week; mutation (skip escaping) turns it red",
           "failure_path": true
         },
         {
@@ -1253,8 +1253,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-01.6' at 42f8eb5: validateFormat returns one warning naming funday alongside the ':' error, so the save stays blocked, per the AC text updated on master d395384; mutation (drop warnings when an error exists) turns it red",
           "failure_path": true
         }
       ],
