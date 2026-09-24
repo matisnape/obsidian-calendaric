@@ -24,6 +24,7 @@ export interface GlobalSettings {
 	confirmBeforeCreate: boolean;
 	overrideLocale: string;
 	hasMigratedDailyNoteSettings: boolean;
+	showPeriodLabel: boolean;
 }
 
 export type GranularityConfigs = Record<Granularity, PeriodicConfig>;
@@ -58,6 +59,7 @@ const DEFAULT_GLOBALS: GlobalSettings = {
 	confirmBeforeCreate: true,
 	overrideLocale: "",
 	hasMigratedDailyNoteSettings: false,
+	showPeriodLabel: true,
 };
 
 /** Day and week are the two granularities a new vault starts with. */
@@ -142,6 +144,7 @@ function pickGlobals(source: unknown): GlobalSettings {
 			raw.hasMigratedDailyNoteSettings,
 			DEFAULT_GLOBALS.hasMigratedDailyNoteSettings,
 		),
+		showPeriodLabel: asBoolean(raw.showPeriodLabel, DEFAULT_GLOBALS.showPeriodLabel),
 	};
 }
 

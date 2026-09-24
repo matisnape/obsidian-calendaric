@@ -196,6 +196,17 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 					await this.save();
 				});
 			});
+
+		new Setting(containerEl)
+			.setName("Show period label")
+			.setDesc("Label each open periodic note with the period it belongs to.")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.showPeriodLabel);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.showPeriodLabel = value;
+					await this.save();
+				});
+			});
 	}
 
 	// -------------------------------------------------------------------------

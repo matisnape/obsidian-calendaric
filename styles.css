@@ -347,3 +347,21 @@
 .calendaric-weeknum.is-active .calendaric-dot--words {
   opacity: 0.6;
 }
+
+/* ===== Period label (US-CAL-13) ===== */
+/* Drawn into the markdown view's content element; the leaf container is the positioned ancestor. */
+.calendaric-period-label {
+  position: absolute;
+  top: calc(var(--header-height) + 8px);
+  right: 16px;
+  z-index: var(--layer-cover);
+  padding: 2px 8px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.calendaric-period-label-inexact {
+  margin-left: 4px;
+}
