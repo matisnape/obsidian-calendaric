@@ -8,7 +8,6 @@ import { openOrCreatePeriodNote, startUp } from "./notes/periodNoteOpen";
 import type { PeriodNotePorts } from "./notes/periodNoteOpen";
 import { RELEASE_GRANULARITIES } from "./types";
 import type { ReleaseGranularity } from "./types";
-import { openNoteIn } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
@@ -24,6 +23,7 @@ import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
 import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
 import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
+import { jumpToClosestNote } from "./commands/jumpCommands";
 import { resolveEffectiveConfig } from "./settings/model";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
@@ -164,9 +164,16 @@ export default class CalendaricPlugin extends Plugin {
 		// Registered during load, not on layout: the palette must already list
 		// them when the user opens it, and a command that fires before the index
 		// exists still opens or creates the period's note.
-		this.commands = new GranularityCommands(this, (granularity, action) => {
-			void this.runGranularityCommand(granularity, action);
-		});
+		this.commands = new GranularityCommands(
+			this,
+			(granularity, action) => {
+				void this.runGranularityCommand(granularity, action);
+			},
+			() => {
+				const path = this.activeNotePath();
+				return path === null ? null : (this.index?.granularityOf(path) ?? null);
+			},
+		);
 		this.commands.sync(this.settings);
 	}
 
@@ -258,9 +265,9 @@ export default class CalendaricPlugin extends Plugin {
 			case "open-previous":
 				return this.openPeriodNote(granularity, today.clone().subtract(1, granularity));
 			case "jump-forward":
-				return this.jumpToExistingNote(granularity, today, "forward");
+				return this.jumpToExistingNote(granularity, "forward");
 			case "jump-backward":
-				return this.jumpToExistingNote(granularity, today, "backward");
+				return this.jumpToExistingNote(granularity, "backward");
 		}
 	}
 
@@ -282,20 +289,14 @@ export default class CalendaricPlugin extends Plugin {
 		};
 	}
 
-	/** Open the closest existing note in one direction, or say there is none. */
-	private async jumpToExistingNote(
-		granularity: ReleaseGranularity,
-		date: Moment,
-		direction: JumpDirection,
-	): Promise<void> {
-		const target = this.index?.closest(granularity, date, direction) ?? null;
-		if (!target) {
-			const side = direction === "forward" ? "later" : "earlier";
-			new Notice(`Calendaric: no ${side} ${granularity} note exists.`);
-			return;
-		}
+	/** Open the closest existing note either side of the active one, or say there is none. */
+	private async jumpToExistingNote(granularity: ReleaseGranularity, direction: JumpDirection): Promise<void> {
+		await jumpToClosestNote(granularity, direction, this.activeNotePath(), this.index, new ObsidianWorkspaceAdapter(this.app));
+	}
 
-		await openNoteIn(target, "reuse", new ObsidianWorkspaceAdapter(this.app), target.path);
+	/** The note in the active pane, when that pane is a markdown editor. */
+	private activeNotePath(): string | null {
+		return this.app.workspace.getActiveViewOfType(MarkdownView)?.file?.path ?? null;
 	}
 
 	async loadSettings() {
