@@ -28,6 +28,8 @@ function makePredecessors() {
 		periodic: [] as string[],
 		sticky: false,
 		unsaved: false,
+		/** Plugins switched off or removed since: the registry no longer has them. */
+		gone: [] as string[],
 		disableCalls: [] as string[],
 	};
 
@@ -49,7 +51,7 @@ function makePredecessors() {
 			},
 		},
 		calendar: {
-			readCalendarWeeklyNotes: () => (state.calendarWeekly ? read(true) : absent()),
+			readCalendarWeeklyNotes: () => (state.gone.includes("calendar") ? absent() : read(state.calendarWeekly)),
 			disableCalendarWeeklyNotes: async () => {
 				state.disableCalls.push("calendar");
 				if (!state.sticky) state.calendarWeekly = false;
@@ -57,7 +59,7 @@ function makePredecessors() {
 			},
 		} satisfies CalendarPluginPort,
 		periodicNotes: {
-			readActiveGranularities: () => read([...state.periodic]),
+			readActiveGranularities: () => (state.gone.includes("periodic-notes") ? absent() : read([...state.periodic])),
 			disableGranularity: async (name: string) => {
 				state.disableCalls.push(`periodic-notes:${name}`);
 				if (!state.sticky) state.periodic = state.periodic.filter((entry) => entry !== name);
@@ -396,6 +398,32 @@ describe("PredecessorGuard: handing a granularity to Calendaric", () => {
 		expect(messages).toContain("saving data.json failed");
 		expect(messages).not.toContain("now manages");
 		expect(guard.refuse("day")).toBe(true);
+	});
+
+	it("AC-MIG-06.4: an unsaved hand-over stops refusing once its plugin is switched off", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+		state.unsaved = true;
+		guard.refuse("day");
+		await shown[0]!.action!.run();
+
+		state.gone = ["periodic-notes"];
+
+		expect(guard.refuse("day")).toBe(false);
+	});
+
+	it("AC-MIG-06.6: an unsaved Calendar hand-over keeps refusing while the plugin is still on", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.calendarWeekly = true;
+		state.unsaved = true;
+		guard.refuse("week");
+		await shown[0]!.action!.run();
+
+		expect(state.calendarWeekly).toBe(false);
+		expect(guard.refuse("week")).toBe(true);
+
+		state.gone = ["calendar"];
+		expect(guard.refuse("week")).toBe(false);
 	});
 
 	it("AC-MIG-06.5: a later hand-over that saves lifts a refusal an unsaved one left", async () => {

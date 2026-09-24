@@ -115,6 +115,16 @@ describe("startUp", () => {
 		expect(ports.workspace.notices).toHaveLength(1);
 	});
 
+	it("says what is in the way when the startup note cannot be written", async () => {
+		const ports = setUp([]);
+		ports.vault.seedFolder(PATH);
+
+		await startUp(settings(config({ openAtStartup: true })), date(), ports);
+
+		expect(ports.workspace.opened).toEqual([]);
+		expect(ports.workspace.notices).toEqual([expect.stringContaining(PATH)]);
+	});
+
 	it("AC-MIG-06.1: startup still opens an owned startup note that already exists", async () => {
 		const ports = setUp(["day"]);
 		ports.vault.seedFile(PATH, "written by Periodic Notes");

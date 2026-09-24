@@ -90,10 +90,16 @@ export async function startUp(
 	if (!file) {
 		if (creationRefused(ports.vault, key, true)) return;
 		// Created without asking: confirmBeforeCreate does not apply at startup.
-		const creation = await createPeriodicNote(path, date, key, config, ports.vault, (message) =>
-			ports.workspace.showNotice(message),
-		);
-		file = creation.file;
+		try {
+			const creation = await createPeriodicNote(path, date, key, config, ports.vault, (message) =>
+				ports.workspace.showNotice(message),
+			);
+			file = creation.file;
+		} catch (error) {
+			// Same reason as the command path: say what is in the way.
+			ports.workspace.showNotice(error instanceof Error ? error.message : String(error));
+			return;
+		}
 	}
 
 	await openNoteIn(file, "tab", ports.workspace, path);

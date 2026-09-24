@@ -82,7 +82,13 @@ export class PredecessorGuard {
 		if (!this.calendaricEnables(granularity)) return [];
 		const live = PREDECESSORS.filter((predecessor) => this.owns(predecessor, granularity));
 		const pending = this.unconfirmed.get(granularity);
-		return pending && !live.includes(pending) ? [...live, pending] : live;
+		if (!pending || live.includes(pending)) return live;
+		// A predecessor switched off or removed writes nothing, saved or not.
+		if (!this.running(pending)) {
+			this.unconfirmed.delete(granularity);
+			return live;
+		}
+		return [...live, pending];
 	}
 
 	/**
@@ -185,6 +191,27 @@ export class PredecessorGuard {
 				case "periodic-notes": {
 					const read = this.ports.periodicNotes.readActiveGranularities();
 					return read.ok && read.value.includes(granularity);
+				}
+			}
+		} catch {
+			return false;
+		}
+	}
+
+	/** Whether the plugin is still installed and on, whatever it reports for a granularity (AC-MIG-06.4 for a throw). */
+	private running(predecessor: Predecessor): boolean {
+		try {
+			switch (predecessor) {
+				// Daily Notes is on exactly when it owns the day.
+				case "daily-notes":
+					return this.owns(predecessor, "day");
+				case "calendar": {
+					const read = this.ports.calendar.readCalendarWeeklyNotes();
+					return read.ok || read.reason !== "absent";
+				}
+				case "periodic-notes": {
+					const read = this.ports.periodicNotes.readActiveGranularities();
+					return read.ok || read.reason !== "absent";
 				}
 			}
 		} catch {
