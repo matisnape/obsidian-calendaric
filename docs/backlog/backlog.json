@@ -3017,7 +3017,7 @@
       "story": "As someone managing my notes from the calendar, I want to right-click a day or week that already has a note to get its usual file actions, so that I do not have to locate the file elsewhere to rename or delete it.",
       "rationale": "The context menu is the calendar's entry point into standard file management, including whatever other installed plugins add to it.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:day-week-context-menu",
         "cal:file-context-menu"
@@ -3040,8 +3040,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarRender.contextMenu.test.ts 'AC-CAL-06.1: right-clicking a day or week cell that has a note asks for that note's file menu at the click', 'the adapter shows the note's file menu at the right-click event', 'the menu has a Delete item that runs Obsidian's own delete prompt on the vault's file'; red when either cell's contextmenu listener is removed and when Delete no longer calls promptForDeletion (orchestrator mutations)"
         },
         {
           "id": "AC-CAL-06.2",
@@ -3052,8 +3052,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarRender.contextMenu.test.ts 'AC-CAL-06.2: right-clicking a day or week cell with no note opens no menu'; red when the missing-file guard is removed (orchestrator mutation)",
           "failure_path": true
         },
         {
@@ -3065,8 +3065,8 @@
           ],
           "verifies": "compat",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarRender.contextMenu.test.ts 'AC-CAL-06.3: the menu is built through Obsidian's file-menu event, carrying the vault's own file' — file-menu fires on the same Menu before it is shown; red when the trigger is removed and when it moves after showAtMouseEvent (orchestrator mutations). Other plugins' items rendering is Obsidian's side of that event, not checked in a real vault"
         },
         {
           "id": "AC-CAL-06.4",
@@ -3078,8 +3078,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarRender.contextMenu.test.ts 'AC-CAL-06.4: deleting the note from its cell's menu removes that cell's dot once the delete lands'"
         }
       ]
     },

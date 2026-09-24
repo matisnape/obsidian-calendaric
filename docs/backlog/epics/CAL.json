@@ -537,7 +537,7 @@
       "story": "As someone managing my notes from the calendar, I want to right-click a day or week that already has a note to get its usual file actions, so that I do not have to locate the file elsewhere to rename or delete it.",
       "rationale": "The context menu is the calendar's entry point into standard file management, including whatever other installed plugins add to it.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:day-week-context-menu",
         "cal:file-context-menu"
