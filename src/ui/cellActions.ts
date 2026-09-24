@@ -64,7 +64,7 @@ export interface CellClick {
  */
 export async function openOrCreateNote(click: CellClick): Promise<void> {
 	const { date, granularity, config, ports } = click;
-	const path = computeNotePath(date, config, ports.vaultConfig);
+	const path = computeNotePath(date, granularity, config, ports.vaultConfig);
 
 	const existing = ports.vault.getFile(path);
 	if (existing) {

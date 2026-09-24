@@ -53,7 +53,7 @@ function roundTrips(
 	probes: Moment[],
 ): boolean {
 	return probes.every((date) => {
-		const parsed = parseFilename(name(date), format, false);
+		const parsed = parseFilename(name(date), format, false, granularity);
 		return (
 			parsed !== null &&
 			computeNoteDate(parsed.date, granularity, format) === computeNoteDate(date, granularity, format)
@@ -73,7 +73,7 @@ export function validateFormat(
 		return { errors: [`The format is empty. Enter one, for example ${DEFAULT_FORMATS[granularity]}.`], warnings: [] };
 	}
 
-	const written = (date: Moment) => formatWithWeekTokens(format, date);
+	const written = (date: Moment) => formatWithWeekTokens(format, date, granularity);
 
 	const probes = probeDates(today, granularity);
 

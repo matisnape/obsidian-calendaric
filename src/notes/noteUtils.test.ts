@@ -125,11 +125,11 @@ describe("formatWithWeekTokens", () => {
 
 	it("produces correct filename for full week range format", () => {
 		const fmt = "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}";
-		expect(formatWithWeekTokens(fmt, MONDAY)).toBe("2026-W16, 13.04 – 19.04");
+		expect(formatWithWeekTokens(fmt, MONDAY, "week")).toBe("2026-W16, 13.04 – 19.04");
 	});
 
 	it("works for pure moment format without week tokens", () => {
-		expect(formatWithWeekTokens("YYYY-MM-DD", MONDAY)).toBe("2026-04-13");
+		expect(formatWithWeekTokens("YYYY-MM-DD", MONDAY, "day")).toBe("2026-04-13");
 	});
 });
 
@@ -141,12 +141,12 @@ describe("computeNotePath", () => {
 
 	it("builds path with folder", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" });
-		expect(computeNotePath(dailyDate, config, vaultConfig)).toBe("journal/daily/2026-04-13.md");
+		expect(computeNotePath(dailyDate, "day", config, vaultConfig)).toBe("journal/daily/2026-04-13.md");
 	});
 
 	it("builds path without folder (vault root)", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, config, vaultConfig)).toBe("2026-04-13.md");
+		expect(computeNotePath(dailyDate, "day", config, vaultConfig)).toBe("2026-04-13.md");
 	});
 
 	it("applies week tokens for weekly format", () => {
@@ -154,19 +154,19 @@ describe("computeNotePath", () => {
 			format: "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}",
 			folder: "journal/weekly",
 		});
-		expect(computeNotePath(MONDAY, config, vaultConfig)).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
+		expect(computeNotePath(MONDAY, "week", config, vaultConfig)).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
 	});
 
 	it("uses Obsidian default folder when config folder is empty and newFileLocation=folder", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("Inbox/2026-04-13.md");
+		expect(computeNotePath(dailyDate, "day", config, configWithDefault)).toBe("Inbox/2026-04-13.md");
 	});
 
 	it("builds a vault-root path for an explicit \"/\" folder, ignoring the default folder", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "/" });
-		expect(computeNotePath(dailyDate, config, configWithDefault)).toBe("2026-04-13.md");
+		expect(computeNotePath(dailyDate, "day", config, configWithDefault)).toBe("2026-04-13.md");
 	});
 });
 
@@ -342,7 +342,7 @@ describe("getWeekNumber", () => {
 	it("agrees with the number formatWithWeekTokens writes into the filename", () => {
 		for (const fmt of ["gggg-[W]ww", "GGGG-[W]WW"]) {
 			const padded = String(getWeekNumber(DIVERGENT, fmt)).padStart(2, "0");
-			expect(formatWithWeekTokens(fmt, DIVERGENT)).toContain(`W${padded}`);
+			expect(formatWithWeekTokens(fmt, DIVERGENT, "week")).toContain(`W${padded}`);
 		}
 	});
 });
@@ -355,7 +355,7 @@ describe("getWeekNumber with awkward formats", () => {
 		// moment, which renders the WW inside it as an ISO week number. Stripping
 		// the span would hide a week number the filename really carries.
 		const fmt = "gggg-[W]ww, {{notaday:WW}}";
-		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE)).toContain("53");
+		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE, "week")).toContain("53");
 		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
 	});
 
@@ -389,7 +389,7 @@ describe("getWeekNumber for nested-only formats", () => {
 
 	it("numbers a nested-only ISO format by the weekday the token resolves to", () => {
 		const fmt = "{{monday:GGGG-[W]WW}}";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-W52");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("2026-W52");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(52);
 	});
 
@@ -397,7 +397,7 @@ describe("getWeekNumber for nested-only formats", () => {
 		const fmt = "{{monday:gggg-[W]ww}}";
 		const expected = SUNDAY.clone().isoWeekday(1).week();
 		expect(expected).not.toBe(SUNDAY.week());
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toContain(`W${String(expected).padStart(2, "0")}`);
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toContain(`W${String(expected).padStart(2, "0")}`);
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(expected);
 	});
 
@@ -430,19 +430,19 @@ describe("getWeekNumber with moment escapes", () => {
 		// moment renders this as "2026-WWW 01": the escaped WW is literal text and
 		// the only week number in the name is the locale 01.
 		const fmt = "GGGG-[W]\\WW ww";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-WWW 01");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("2026-WWW 01");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
 	});
 
 	it("falls back when every week token in the format is escaped", () => {
 		const fmt = "YYYY-MM-DD \\WW";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2026-12-27 WW");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("2026-12-27 WW");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
 	});
 
 	it("ignores a week token inside a bracket span", () => {
 		const fmt = "[WW]ww";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("WW01");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("WW01");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.week());
 	});
 
@@ -450,13 +450,13 @@ describe("getWeekNumber with moment escapes", () => {
 		// moment does not swallow the rest of the format; it prints the "[" and
 		// carries on, rendering "2027-[5201" — so the ISO 52 is really in the name.
 		const fmt = "gggg-[Www";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("2027-[5201");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("2027-[5201");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
 	});
 
 	it("treats a doubled backslash as escaping the backslash, not the token", () => {
 		const fmt = "\\\\W";
-		expect(formatWithWeekTokens(fmt, SUNDAY)).toBe("52");
+		expect(formatWithWeekTokens(fmt, SUNDAY, "week")).toBe("52");
 		expect(getWeekNumber(SUNDAY, fmt)).toBe(SUNDAY.isoWeek());
 	});
 
@@ -466,7 +466,7 @@ describe("getWeekNumber with moment escapes", () => {
 		// and whose locale week is 1 — the escaped WW must not win.
 		const date = moment("2027-01-03");
 		const fmt = "{{monday:\\WW ww}}";
-		expect(formatWithWeekTokens(fmt, date)).toBe("WW 01");
+		expect(formatWithWeekTokens(fmt, date, "week")).toBe("WW 01");
 		expect(getWeekNumber(date, fmt)).toBe(date.clone().isoWeekday(1).week());
 	});
 });
@@ -498,7 +498,7 @@ describe("getWeekNumber escape permutations", () => {
 
 	for (const { format, writes, weekNumber } of CASES) {
 		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
-			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(formatWithWeekTokens(format, DATE, "week")).toBe(writes);
 			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
 		});
 	}
@@ -520,7 +520,7 @@ describe("getWeekNumber escape permutations inside a weekday span", () => {
 
 	for (const { format, writes, weekNumber } of CASES) {
 		it(`${JSON.stringify(format)} writes ${JSON.stringify(writes)}, numbered ${weekNumber}`, () => {
-			expect(formatWithWeekTokens(format, DATE)).toBe(writes);
+			expect(formatWithWeekTokens(format, DATE, "week")).toBe(writes);
 			expect(getWeekNumber(DATE, format)).toBe(weekNumber);
 		});
 	}

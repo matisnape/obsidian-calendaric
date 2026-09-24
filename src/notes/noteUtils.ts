@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
+import type { Granularity, PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { VaultPort } from "../adapters/vaultPort";
 
@@ -77,6 +77,18 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
 }
 
 /**
+ * The format with every `{{weekday:fmt}}` span escaped to literal text, unless
+ * the note is a week (AC-FMT-01.4): a weekday within the week means nothing for
+ * any other period. Each character gets moment's backslash escape, which the
+ * parser reads the same way, so the writer and the parser agree on the literal.
+ * A bracket escape would not do: the span's own format may hold `[` or `]`.
+ */
+export function literalWeekTokens(fmt: string, granularity: Granularity): string {
+	if (granularity === "week") return fmt;
+	return fmt.replace(WEEK_TOKEN_RE, (match) => match.replace(/./g, "\\$&"));
+}
+
+/**
  * Compute the full vault path (folder + filename + .md) for a periodic note.
  *
  * Strategy: week tokens like `{{monday:DD.MM}}` contain moment format chars
@@ -84,9 +96,14 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
  * extracting them first, replacing with safe placeholders, running moment.format(),
  * then substituting the resolved weekday dates back in.
  */
-export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfig: VaultConfigPort): string {
+export function computeNotePath(
+	date: Moment,
+	granularity: Granularity,
+	config: PeriodicConfig,
+	vaultConfig: VaultConfigPort,
+): string {
 	const folder = resolveNoteFolder(config.folder, vaultConfig);
-	const filename = formatWithWeekTokens(config.format, date);
+	const filename = formatWithWeekTokens(config.format, date, granularity);
 	return folder ? `${folder}/${filename}.md` : `${filename}.md`;
 }
 
@@ -98,7 +115,8 @@ export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfi
  * moment-escaped literals `[value]`, then run moment.format(). The escaped
  * literals pass through moment unchanged.
  */
-export function formatWithWeekTokens(fmt: string, date: Moment): string {
+export function formatWithWeekTokens(format: string, date: Moment, granularity: Granularity): string {
+	const fmt = literalWeekTokens(format, granularity);
 	// A moment keeps the locale it was made under. Re-reading the global one is
 	// what makes a date held across a settings change write with the new locale
 	// and week start (AC-FMT-03.3).

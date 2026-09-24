@@ -200,7 +200,7 @@ export class CalendarWidget implements HoverParent {
 
 				// Dot: weekly note exists for the week this row shows
 				const anchor = getWeekAnchor(week.days);
-				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig);
+				const weekPath = computeNotePath(anchor, "week", this.settings.week, this.deps.vaultConfig);
 				if (weekPaths.has(weekPath)) {
 					wDotContainer.appendChild(makeDotSvg());
 					wordDotSlots.push([weekPath, wDotContainer]);
@@ -232,7 +232,7 @@ export class CalendarWidget implements HoverParent {
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				// Dot: daily note exists for this date
-				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig);
+				const dayPath = computeNotePath(day.date, "day", this.settings.day, this.deps.vaultConfig);
 				if (dayPaths.has(dayPath)) {
 					dayDotContainer.appendChild(makeDotSvg());
 					wordDotSlots.push([dayPath, dayDotContainer]);
@@ -305,7 +305,7 @@ export class CalendarWidget implements HoverParent {
 	 * Obsidian's own "Open in new tab" / "Delete" — populates this menu too.
 	 */
 	private handleMonthHeaderContextMenu(event: MouseEvent): void {
-		const path = computeNotePath(this.nav.month, this.settings.month, this.deps.vaultConfig);
+		const path = computeNotePath(this.nav.month, "month", this.settings.month, this.deps.vaultConfig);
 		const file = this.deps.vault.getFile(path);
 		if (!file) return;
 

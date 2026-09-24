@@ -81,7 +81,7 @@ export function substituteTemplateTokens(
 		if (duration === undefined) return match;
 
 		const shifted = date.clone().add(Number(amount), duration);
-		return fmt === undefined ? formatWithWeekTokens(config.format, shifted) : shifted.format(fmt);
+		return fmt === undefined ? formatWithWeekTokens(config.format, shifted, granularity) : shifted.format(fmt);
 	});
 
 	// {{date:custom}} — must be replaced before {{date}} to avoid double-match.
@@ -90,7 +90,7 @@ export function substituteTemplateTokens(
 	out = out.replace(/\{\{date:([^{}]+)\}\}/g, (_m, fmt: string) => date.format(fmt));
 
 	// {{date}} — uses the granularity's configured format (with week tokens)
-	const dateStr = formatWithWeekTokens(config.format, date);
+	const dateStr = formatWithWeekTokens(config.format, date, granularity);
 	out = out.replace(/\{\{date\}\}/g, dateStr);
 
 	// {{time}} — the clock, never the note's own date. A date the user clicked in
@@ -104,8 +104,8 @@ export function substituteTemplateTokens(
 	if (granularity === "day") {
 		// These tokens exist to link to the adjacent notes, and computeNotePath() names
 		// those files with formatWithWeekTokens(). Plain format() would diverge from it.
-		const yesterday = formatWithWeekTokens(config.format, date.clone().subtract(1, "day"));
-		const tomorrow = formatWithWeekTokens(config.format, date.clone().add(1, "day"));
+		const yesterday = formatWithWeekTokens(config.format, date.clone().subtract(1, "day"), granularity);
+		const tomorrow = formatWithWeekTokens(config.format, date.clone().add(1, "day"), granularity);
 		out = out.replace(/\{\{yesterday\}\}/g, yesterday);
 		out = out.replace(/\{\{tomorrow\}\}/g, tomorrow);
 	}

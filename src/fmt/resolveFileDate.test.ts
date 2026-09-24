@@ -289,11 +289,11 @@ describe("resolveFileDate — AC-FMT-08.2 the configured format beats its basena
 	it("AC-FMT-08.2: uses the date the full configured format produces, not the basename-only one", () => {
 		// Written by the writer rather than typed here, so the two sides cannot
 		// drift apart behind a hardcoded string.
-		const written = computeNotePath(moment("2020-03-04T12:00:00"), configs.week, NO_DEFAULT_FOLDER);
+		const written = computeNotePath(moment("2020-03-04T12:00:00"), "week", configs.week, NO_DEFAULT_FOLDER);
 		const basename = written.slice(written.lastIndexOf("/") + 1).replace(/\.md$/, "");
 		const derivedFormat = weekFormat.slice(weekFormat.lastIndexOf("/") + 1);
 
-		const basenameOnly = parseFilename(basename, derivedFormat, false)?.date.format("YYYY-MM-DD");
+		const basenameOnly = parseFilename(basename, derivedFormat, false, "week")?.date.format("YYYY-MM-DD");
 		const resolved = resolveFileDate(written, configs, NO_DEFAULT_FOLDER);
 
 		// The test proves nothing if the two readings happen to coincide.
@@ -311,7 +311,7 @@ describe("resolvePeriodNote — AC-FMT-08.1 an exact and a prefix match for the 
 		week: config("GGGG-[W]WW", "Weekly"),
 	};
 	const date = moment("2026-04-13T09:00:00");
-	const exact = computeNotePath(date, configs.day, NO_DEFAULT_FOLDER);
+	const exact = computeNotePath(date, "day", configs.day, NO_DEFAULT_FOLDER);
 	const prefixed = `${exact.replace(/\.md$/, "")} standup.md`;
 	const noteDate = computeNoteDate(date, "day", configs.week.format);
 

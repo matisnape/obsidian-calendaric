@@ -22,7 +22,7 @@ afterEach(() => restoreLocale());
 
 describe("parseFilename — AC-FMT-04.1 nested folder, exact full-path match", () => {
 	it("recognises a file whose full relative path matches a nested format", () => {
-		const result = parseFilename("2024/2024-03-05.md", "YYYY/YYYY-MM-DD", false);
+		const result = parseFilename("2024/2024-03-05.md", "YYYY/YYYY-MM-DD", false, "day");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-03-05");
 		expect(result?.prefixMatch).toBe(false);
@@ -32,7 +32,7 @@ describe("parseFilename — AC-FMT-04.1 nested folder, exact full-path match", (
 describe("parseFilename — AC-FMT-04.1 a weekday token must match the date it names", () => {
 	it("rejects a filename whose weekday name does not belong to the parsed date", () => {
 		// 2024-01-01 is a real Monday — no date ever formats to "..., Tuesday".
-		const result = parseFilename("2024-01-01, Tuesday.md", "YYYY-MM-DD, dddd", false);
+		const result = parseFilename("2024-01-01, Tuesday.md", "YYYY-MM-DD, dddd", false, "day");
 		expect(result).toBeNull();
 	});
 });
@@ -41,14 +41,14 @@ describe("parseFilename — AC-FMT-04.1 out-of-range week values are rejected", 
 	it("does not accept a week number no real date could produce", () => {
 		// moment normalises isoWeek(99) into some other real week instead of
 		// failing outright — the round-trip check must catch that.
-		const result = parseFilename("2027-W99", "GGGG-[W]WW", false);
+		const result = parseFilename("2027-W99", "GGGG-[W]WW", false, "week");
 		expect(result).toBeNull();
 	});
 });
 
 describe("parseFilename — AC-FMT-04.1/.7 matching is case-sensitive", () => {
 	it("rejects a lowercase literal that differs only in case from the format", () => {
-		const result = parseFilename("2024-01 January - work.md", "YYYY-MM MMMM - [Work]", false);
+		const result = parseFilename("2024-01 January - work.md", "YYYY-MM MMMM - [Work]", false, "month");
 		expect(result).toBeNull();
 	});
 });
@@ -58,7 +58,7 @@ describe("parseFilename — AC-FMT-04.2 an inconsistent full path falls back to 
 		// No real date produces "2024/2025-01-01" — the folder says 2024, the
 		// filename says 2025. The full-path candidate must be rejected so the
 		// basename-only fallback (matching "2025-01-01" alone) can still work.
-		const result = parseFilename("2024/2025-01-01.md", "YYYY/YYYY-MM-DD", false);
+		const result = parseFilename("2024/2025-01-01.md", "YYYY/YYYY-MM-DD", false, "day");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2025-01-01");
 	});
@@ -70,13 +70,13 @@ describe("parseFilename — locale week tokens use locale week semantics, not IS
 		// 2027 is Sun 2026-12-27 .. Sat 2027-01-02, whose Monday is 2026-12-28
 		// — an 8-day gap from the ISO answer. Only the locale-week API finds
 		// the right week for a gggg/ww format.
-		const result = parseFilename("2027-W01", "gggg-[W]ww", false);
+		const result = parseFilename("2027-W01", "gggg-[W]ww", false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2026-12-28");
 	});
 
 	it("resolves GGGG/WW against the ISO week year boundary", () => {
-		const result = parseFilename("2027-W01", "GGGG-[W]WW", false);
+		const result = parseFilename("2027-W01", "GGGG-[W]WW", false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2027-01-04");
 	});
@@ -90,16 +90,16 @@ describe("parseFilename — a nested weekday token names a different day of the 
 	const monday = moment("2024-01-01");
 
 	it("recognises an exact match", () => {
-		const filename = formatWithWeekTokens(format, monday) + ".md";
-		const result = parseFilename(filename, format, false);
+		const filename = formatWithWeekTokens(format, monday, "week") + ".md";
+		const result = parseFilename(filename, format, false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
 		expect(result?.prefixMatch).toBe(false);
 	});
 
 	it("recognises a prefix match", () => {
-		const filename = formatWithWeekTokens(format, monday) + " extra.md";
-		const result = parseFilename(filename, format, true);
+		const filename = formatWithWeekTokens(format, monday, "week") + " extra.md";
+		const result = parseFilename(filename, format, true, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
 		expect(result?.prefixMatch).toBe(true);
@@ -123,6 +123,7 @@ describe("parseFilename — a nested weekday token's own year may cross the week
 			"2020/W53, 2020-12-28 - 2021-01-03.md",
 			format,
 			false,
+			"week",
 		);
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2020-12-28");
@@ -137,6 +138,7 @@ describe("parseFilename — a nested weekday token's own year may cross the week
 			"2021-W01, 2020-12-28 - 2021-01-03.md",
 			format,
 			false,
+			"week",
 		);
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2020-12-28");
@@ -152,13 +154,13 @@ describe("parseFilename — a nested date fragment is still checked when no week
 	const format = "YYYY/MM-DD, {{monday:YYYY-MM-DD}}";
 
 	it("rejects a nested fragment that could never format from any date", () => {
-		const result = parseFilename("2024/01-10, 1900-99-99.md", format, false);
+		const result = parseFilename("2024/01-10, 1900-99-99.md", format, false, "week");
 		expect(result).toBeNull();
 	});
 
 	it("accepts a nested fragment that correctly names the date's real Monday", () => {
 		// 2024-01-10 is a Wednesday; the Monday of its ISO week is 2024-01-08.
-		const result = parseFilename("2024/01-10, 2024-01-08.md", format, false);
+		const result = parseFilename("2024/01-10, 2024-01-08.md", format, false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-10");
 	});
@@ -168,7 +170,7 @@ describe("parseFilename — a nested date fragment is still checked when no week
 		// same real year — a filename with two different years there could
 		// never come from any date.
 		const withMismatch = "YYYY-MM-DD, {{monday:YYYY/YYYY-MM-DD}}";
-		const result = parseFilename("2024-01-10, 1900/2024-01-08.md", withMismatch, false);
+		const result = parseFilename("2024-01-10, 1900/2024-01-08.md", withMismatch, false, "week");
 		expect(result).toBeNull();
 	});
 
@@ -177,7 +179,7 @@ describe("parseFilename — a nested date fragment is still checked when no week
 		// invariant that catches every other wrong nested fragment catches
 		// this one too, with no dedicated week-number-nesting logic needed.
 		const withNestedWeek = "YYYY-MM-DD, {{monday:GGGG-[W]WW}}";
-		const result = parseFilename("2024-01-10, 9999-W99.md", withNestedWeek, false);
+		const result = parseFilename("2024-01-10, 9999-W99.md", withNestedWeek, false, "week");
 		expect(result).toBeNull();
 	});
 });
@@ -189,24 +191,24 @@ describe("parseFilename — AC-FMT-04.5's tolerance is scoped to month/day fragm
 	// must still reproduce exactly.
 	it("rejects a non-padded week number written with a leading zero (exact match)", () => {
 		// Real week 2 formats as "W2" under a bare "W" token — never "W02".
-		const result = parseFilename("2024-W02", "GGGG-[W]W", false);
+		const result = parseFilename("2024-W02", "GGGG-[W]W", false, "week");
 		expect(result).toBeNull();
 	});
 
 	it("rejects a non-padded week number written with a leading zero (prefix match)", () => {
-		const result = parseFilename("2024-W02 extra", "GGGG-[W]W", true);
+		const result = parseFilename("2024-W02 extra", "GGGG-[W]W", true, "week");
 		expect(result).toBeNull();
 	});
 
 	it("rejects a conflicting nested week/year field even though a top-level week number decides the date (exact match)", () => {
 		const format = "GGGG-[W]WW, {{monday:GGGG-[W]WW}}";
-		const result = parseFilename("2024-W02, 9999-W99.md", format, false);
+		const result = parseFilename("2024-W02, 9999-W99.md", format, false, "week");
 		expect(result).toBeNull();
 	});
 
 	it("rejects a conflicting nested week/year field even though a top-level week number decides the date (prefix match)", () => {
 		const format = "GGGG-[W]WW, {{monday:GGGG-[W]WW}}";
-		const result = parseFilename("2024-W02, 9999-W99 extra.md", format, true);
+		const result = parseFilename("2024-W02, 9999-W99 extra.md", format, true, "week");
 		expect(result).toBeNull();
 	});
 
@@ -214,14 +216,14 @@ describe("parseFilename — AC-FMT-04.5's tolerance is scoped to month/day fragm
 	// "a month or day token" alongside a week-number token is tolerated
 	// either way. ISO week 2 of 2024 starts Monday 2024-01-08.
 	it("tolerates a conflicting month/day fragment that is not nested at all (exact match)", () => {
-		const result = parseFilename("2024-W02, 99.99.md", "GGGG-[W]WW, DD.MM", false);
+		const result = parseFilename("2024-W02, 99.99.md", "GGGG-[W]WW, DD.MM", false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-08");
 		expect(result?.prefixMatch).toBe(false);
 	});
 
 	it("tolerates a conflicting month/day fragment that is not nested at all (prefix match)", () => {
-		const result = parseFilename("2024-W02, 99.99 extra.md", "GGGG-[W]WW, DD.MM", true);
+		const result = parseFilename("2024-W02, 99.99 extra.md", "GGGG-[W]WW, DD.MM", true, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-08");
 		expect(result?.prefixMatch).toBe(true);
@@ -232,8 +234,8 @@ describe("parseFilename — the core invariant: a match must reproduce its own t
 	it("round-trips an arbitrary date through an arbitrary format and back", () => {
 		const format = "YYYY/MM/YYYY-MM-DD, dddd";
 		const date = moment("2025-06-17"); // a Tuesday
-		const filename = formatWithWeekTokens(format, date) + ".md";
-		const result = parseFilename(filename, format, false);
+		const filename = formatWithWeekTokens(format, date, "week") + ".md";
+		const result = parseFilename(filename, format, false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2025-06-17");
 		expect(result?.prefixMatch).toBe(false);
@@ -261,7 +263,7 @@ describe("parseFilename — locale week Monday selection holds for every week-st
 			const oracle = moment().weekYear(2027).week(3).startOf("week");
 			while (oracle.isoWeekday() !== 1) oracle.add(1, "day");
 
-			const result = parseFilename(filename, format, false);
+			const result = parseFilename(filename, format, false, "week");
 			expect(result).not.toBeNull();
 			expect(result?.date.format("YYYY-MM-DD")).toBe(oracle.format("YYYY-MM-DD"));
 		},
@@ -270,7 +272,7 @@ describe("parseFilename — locale week Monday selection holds for every week-st
 
 describe("parseFilename — AC-FMT-04.2 moved out of its nested folder", () => {
 	it("still recognises the file by its filename alone", () => {
-		const result = parseFilename("2024-03-05.md", "YYYY/YYYY-MM-DD", false);
+		const result = parseFilename("2024-03-05.md", "YYYY/YYYY-MM-DD", false, "day");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-03-05");
 		expect(result?.prefixMatch).toBe(false);
@@ -279,14 +281,14 @@ describe("parseFilename — AC-FMT-04.2 moved out of its nested folder", () => {
 
 describe("parseFilename — AC-FMT-04.3 prefix matching disabled (default)", () => {
 	it("does not recognise a filename that only starts with the formatted date", () => {
-		const result = parseFilename("2024-03-05 meeting notes.md", "YYYY-MM-DD", false);
+		const result = parseFilename("2024-03-05 meeting notes.md", "YYYY-MM-DD", false, "day");
 		expect(result).toBeNull();
 	});
 });
 
 describe("parseFilename — AC-FMT-04.4 prefix matching enabled", () => {
 	it("recognises the same filename as an inexact prefix match", () => {
-		const result = parseFilename("2024-03-05 meeting notes.md", "YYYY-MM-DD", true);
+		const result = parseFilename("2024-03-05 meeting notes.md", "YYYY-MM-DD", true, "day");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-03-05");
 		expect(result?.prefixMatch).toBe(true);
@@ -299,13 +301,13 @@ describe("parseFilename — AC-FMT-04.5 week number beats a conflicting month/da
 	it("uses the week number when the weekday-token fragment disagrees (exact match)", () => {
 		// ISO week 1 of 2024 is Mon 2024-01-01 .. Sun 2024-01-07. The fragment
 		// below is deliberately bogus so only the week-number path can win.
-		const result = parseFilename("2024-W01, 99.99 - 07.01.md", format, false);
+		const result = parseFilename("2024-W01, 99.99 - 07.01.md", format, false, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
 	});
 
 	it("uses the week number when the weekday-token fragment disagrees (prefix match)", () => {
-		const result = parseFilename("2024-W01, 99.99 - 07.01 extra.md", format, true);
+		const result = parseFilename("2024-W01, 99.99 - 07.01 extra.md", format, true, "week");
 		expect(result).not.toBeNull();
 		expect(result?.date.format("YYYY-MM-DD")).toBe("2024-01-01");
 		expect(result?.prefixMatch).toBe(true);
@@ -317,8 +319,8 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 		const format = "YYYY-MM-DD, dddd";
 		let day = moment("2024-01-01");
 		for (let i = 0; i < 211; i++) {
-			const filename = formatWithWeekTokens(format, day) + ".md";
-			const result = parseFilename(filename, format, false);
+			const filename = formatWithWeekTokens(format, day, "week") + ".md";
+			const result = parseFilename(filename, format, false, "week");
 			expect(result?.date.format("YYYY-MM-DD")).toBe(day.format("YYYY-MM-DD"));
 			day = day.clone().add(1, "day");
 		}
@@ -332,10 +334,10 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 		const format = "gggg-[W]ww";
 		let monday = moment("2024-01-01"); // Monday, ISO week 1 of 2024
 		for (let i = 0; i < 60; i++) {
-			const weekLabel = formatWithWeekTokens(format, monday);
+			const weekLabel = formatWithWeekTokens(format, monday, "week");
 			const sunday = monday.clone().add(6, "days");
 			const filename = `${weekLabel}, ${monday.format("DD.MM")} - ${sunday.format("DD.MM")}.md`;
-			const result = parseFilename(filename, format, true);
+			const result = parseFilename(filename, format, true, "week");
 			expect(result).not.toBeNull();
 			expect(result?.date.format("YYYY-MM-DD")).toBe(monday.format("YYYY-MM-DD"));
 			expect(result?.prefixMatch).toBe(true);
@@ -348,7 +350,7 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 		for (let m = 0; m < 21; m++) {
 			const date = moment("2024-01-01").add(m, "month");
 			const filename = date.format(format) + ".md";
-			const result = parseFilename(filename, format, false);
+			const result = parseFilename(filename, format, false, "week");
 			expect(result?.date.format("YYYY-MM")).toBe(date.format("YYYY-MM"));
 		}
 	});
@@ -358,7 +360,7 @@ describe("parseFilename — AC-FMT-04.6 real-vault regression: every existing no
 		for (let m = 0; m < 25; m++) {
 			const date = moment("2024-01-01").add(m, "month");
 			const filename = date.format(format) + ".md";
-			const result = parseFilename(filename, format, false);
+			const result = parseFilename(filename, format, false, "week");
 			expect(result?.date.format("YYYY-MM")).toBe(date.format("YYYY-MM"));
 		}
 	});
@@ -374,13 +376,13 @@ describe("parseFilename — AC-FMT-04.7 real-vault regression: old shapes stay u
 	it.each(["2024-03-05.md", "2022-07-19.md", "2023-12-31.md"])(
 		"does not recognise the older bare 'YYYY-MM-DD.md' shape (%s)",
 		(filename) => {
-			const result = parseFilename(filename, format, false);
+			const result = parseFilename(filename, format, false, "week");
 			expect(result).toBeNull();
 		},
 	);
 
 	it("does not recognise a filename using an en dash instead of a hyphen between month and day", () => {
-		const result = parseFilename("2024-03–05, Tuesday.md", format, false);
+		const result = parseFilename("2024-03–05, Tuesday.md", format, false, "week");
 		expect(result).toBeNull();
 	});
 });
@@ -393,27 +395,27 @@ describe("parseFilename — a format that names its date only through {{weekday:
 	// writes must parse back, or the note it just created is unrecognisable.
 	it("reads back an ISO nested-only weekly format", () => {
 		const format = "{{monday:GGGG-[W]WW}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-W16");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("reads back a locale nested-only weekly format", () => {
 		const format = "{{monday:gggg-[W]ww}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("maps a wrapper naming another weekday back to that week's Monday", () => {
 		// The wrapper renders the Friday, but the note is the week's, so the
 		// date this returns must be the Monday every other weekly match returns.
 		const format = "[Week ending ]{{friday:YYYY-MM-DD}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("Week ending 2026-04-17");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("round-trips every day of a week to the one name that week is written under", () => {
@@ -421,9 +423,9 @@ describe("parseFilename — a format that names its date only through {{weekday:
 		const names = new Set<string>();
 		for (let offset = 0; offset < 7; offset++) {
 			const day = moment("2026-04-13").add(offset, "days");
-			const written = formatWithWeekTokens(format, day);
+			const written = formatWithWeekTokens(format, day, "week");
 			names.add(written);
-			expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+			expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 		}
 		expect(names.size).toBe(1);
 	});
@@ -433,14 +435,14 @@ describe("parseFilename — a format that names its date only through {{weekday:
 		// wrappers naming different days. Top-level construction owns this one,
 		// and the wrapper fallback must not disturb it.
 		const format = "GGGG-[W]WW[, ]{{monday:DD.MM}}[ - ]{{sunday:DD.MM}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-W16, 13.04 - 19.04");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("returns nothing when no wrapper carries enough to build a date", () => {
-		expect(parseFilename("Monday", "{{monday:dddd}}", false)).toBeNull();
+		expect(parseFilename("Monday", "{{monday:dddd}}", false, "week")).toBeNull();
 	});
 });
 
@@ -458,10 +460,10 @@ describe("parseFilename — a wrapper names a weekday, and the inversion must re
 		// the day that opens the source's week (AC-FMT-03.2). The name must still
 		// read back as the Monday inside that week, not as the Sunday itself.
 		const format = "{{sunday:gggg-[W]ww}}";
-		const written = formatWithWeekTokens(format, moment(SOURCE));
+		const written = formatWithWeekTokens(format, moment(SOURCE), "week");
 
 		expect(written).toBe("2026-W16");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
 	});
 
 	for (const locale of ["en", "en-gb"]) {
@@ -471,8 +473,8 @@ describe("parseFilename — a wrapper names a weekday, and the inversion must re
 			for (const weekday of WEEKDAYS) {
 				for (const inner of ["GGGG-[W]WW", "gggg-[W]ww", "YYYY-MM-DD"]) {
 					const format = `{{${weekday}:${inner}}}`;
-					const written = formatWithWeekTokens(format, moment(SOURCE));
-					const parsed = parseFilename(written, format, false);
+					const written = formatWithWeekTokens(format, moment(SOURCE), "week");
+					const parsed = parseFilename(written, format, false, "week");
 
 					expect(`${format} ${written} -> ${parsed?.date.format("YYYY-MM-DD") ?? "null"}`)
 						.toBe(`${format} ${written} -> ${ISO_MONDAY}`);
@@ -483,38 +485,38 @@ describe("parseFilename — a wrapper names a weekday, and the inversion must re
 
 	it("reads back two wrappers that number their weeks in different systems", () => {
 		const format = "{{sunday:gggg-[W]ww}}[-]{{monday:GGGG-[W]WW}}";
-		const written = formatWithWeekTokens(format, moment(SOURCE));
+		const written = formatWithWeekTokens(format, moment(SOURCE), "week");
 
 		expect(written).toBe("2026-W16-2026-W16");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
 	});
 });
 
 describe("parseFilename — backslash escapes, as moment renders them", () => {
 	it("reads back a literal W written with a backslash escape", () => {
 		const format = "GGGG-\\WWW";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		// The escape consumes exactly one token: "\WW" is the literal "WW" and
 		// the third W is a real ISO week token.
 		expect(written).toBe("2026-WW16");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("reads back a single escaped token character", () => {
 		const format = "YYYY-MM-DD\\D";
-		const written = formatWithWeekTokens(format, moment("2026-01-05"));
+		const written = formatWithWeekTokens(format, moment("2026-01-05"), "week");
 
 		expect(written).toBe("2026-01-05D");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
 	});
 
 	it("reads back an escaped run that moment takes as one whole token", () => {
 		const format = "\\YYYY[ ]YYYY-MM-DD";
-		const written = formatWithWeekTokens(format, moment("2026-01-05"));
+		const written = formatWithWeekTokens(format, moment("2026-01-05"), "week");
 
 		expect(written).toBe("YYYY 2026-01-05");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-01-05");
 	});
 });
 
@@ -525,26 +527,26 @@ describe("parseFilename — every candidate is tried, not only the first that bu
 		// {{monday:YYYY-MM}} builds a date — the 1st of the month — but cannot
 		// reproduce the name; the Sunday wrapper carries the full date.
 		const format = "{{monday:YYYY-MM}}[-]{{sunday:YYYY-MM-DD}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-04-2026-04-19");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("falls through a top-level fragment too vague to explain the name", () => {
 		const format = "YYYY-MM[-]{{sunday:GGGG-[W]WW}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-04-2026-W16");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("still prefers the top-level date when it does explain the name", () => {
 		const format = "YYYY-MM-DD[ ]{{sunday:dddd}}";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-04-15 Sunday");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 });
 
@@ -566,8 +568,8 @@ describe("parseFilename — a locale whose week starts mid-week", () => {
 			for (const inner of ["GGGG-[W]WW", "gggg-[W]ww", "YYYY-MM-DD"]) {
 				for (const source of ["2026-04-15", "2026-12-31", "2027-01-01"]) {
 					const format = `{{${weekday}:${inner}}}`;
-					const written = formatWithWeekTokens(format, moment(source));
-					const parsed = parseFilename(written, format, false);
+					const written = formatWithWeekTokens(format, moment(source), "week");
+					const parsed = parseFilename(written, format, false, "week");
 					// The Monday inside the source's Tuesday-opened week (AC-FMT-03.2).
 					const opened = moment(source).subtract((moment(source).day() + 5) % 7, "day");
 					const expected = opened.add(6, "day").format("YYYY-MM-DD");
@@ -596,10 +598,10 @@ describe("parseFilename — month and weekday names follow the active locale", (
 	] as const) {
 		it(`round-trips "${format}" under the pl locale`, () => {
 			moment.locale("pl");
-			const written = formatWithWeekTokens(format, moment("2026-04-15"));
+			const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 			expect(written).toBe(expected);
-			expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+			expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
 		});
 	}
 
@@ -610,16 +612,16 @@ describe("parseFilename — month and weekday names follow the active locale", (
 		// separator here is a real space, not a [ ] escape.
 		moment.locale("pl");
 		const format = "D MMMM YYYY";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("15 kwietnia 2026");
-		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(parseFilename(written, format, false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 
 	it("still rejects an English month name once the locale is Polish", () => {
 		moment.locale("pl");
 
-		expect(parseFilename("2026-April-15", "YYYY-MMMM-DD", false)).toBeNull();
+		expect(parseFilename("2026-April-15", "YYYY-MMMM-DD", false, "day")).toBeNull();
 	});
 });
 
@@ -634,19 +636,19 @@ describe("parseFilename — digits and punctuation the locale rewrites on output
 	it("round-trips a daily name written in the locale's own digits", () => {
 		moment.locale("ar");
 		const format = "YYYY-MM-DD";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("٢٠٢٦-٠٤-١٥");
-		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(parseFilename(written, format, false, "week")?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 
 	it("round-trips a weekly name written in the locale's own digits", () => {
 		moment.locale("ar");
 		const format = "GGGG-[W]WW";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("٢٠٢٦-W١٦");
-		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-13");
+		expect(parseFilename(written, format, false, "week")?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-13");
 	});
 
 	it("round-trips a name whose punctuation the locale rewrites", () => {
@@ -654,18 +656,18 @@ describe("parseFilename — digits and punctuation the locale rewrites on output
 		// alone is enough to break a parser that matches the raw format text.
 		moment.locale("ar-dz");
 		const format = "YYYY-MM-DD[, ]dddd";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("2026-04-15، الأربعاء");
-		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(parseFilename(written, format, false, "week")?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 
 	it("round-trips digits and rewritten punctuation together", () => {
 		moment.locale("ar");
 		const format = "YYYY-MM-DD[, ]dddd";
-		const written = formatWithWeekTokens(format, moment("2026-04-15"));
+		const written = formatWithWeekTokens(format, moment("2026-04-15"), "week");
 
 		expect(written).toBe("٢٠٢٦-٠٤-١٥، الأربعاء");
-		expect(parseFilename(written, format, false)?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
+		expect(parseFilename(written, format, false, "week")?.date.locale("en").format("YYYY-MM-DD")).toBe("2026-04-15");
 	});
 });

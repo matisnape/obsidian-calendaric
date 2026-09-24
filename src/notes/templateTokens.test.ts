@@ -133,16 +133,14 @@ describe("substituteTemplateTokens — date arithmetic", () => {
 		expect(result).toBe("2025-12-31|2026-02-01");
 	});
 
-	it("AC-TPL-01.5: resolves week tokens in the configured format, as the filename writer does", () => {
-		// computeNotePath() names files with formatWithWeekTokens(). An offset token
-		// rendered with plain format() would leave `{{monday:DD.MM}}` in the note.
-		//
-		// The offset carries the week anchor with it: +7d lands in the following
-		// week, so the Monday is that week's (20.04), not the note's own (13.04).
+	it("AC-TPL-01.5: renders week tokens in the configured format, as the filename writer does", () => {
+		// computeNotePath() names files with formatWithWeekTokens(). Plain format()
+		// would corrupt `{{monday:DD.MM}}` into moment tokens; the writer keeps it
+		// literal in a daily format (AC-FMT-01.4), so the offset token does too.
 		// This is the string computeNotePath() writes for 2026-04-20.
 		const config = makeConfig({ format: "{{monday:DD.MM}}-YYYY-MM-DD" });
 		const result = substituteTemplateTokens("{{date+7d}}", DAILY_DATE, "day", config, "t");
-		expect(result).toBe("20.04-2026-04-20");
+		expect(result).toBe("{{monday:DD.MM}}-2026-04-20");
 	});
 
 	it("AC-TPL-01.5: substitutes offset tokens for weekly granularity too", () => {
@@ -206,12 +204,12 @@ describe("substituteTemplateTokens — daily", () => {
 		expect(result).toBe("2025-12-31|2026-01-02");
 	});
 
-	it("resolves week tokens in the daily format, so the value matches the adjacent note's filename", () => {
+	it("renders week tokens in the daily format, so the value matches the adjacent note's filename", () => {
 		// computeNotePath() names files with formatWithWeekTokens(). {{yesterday}} has to
 		// render the same string, or the link it produces points at a file that does not exist.
 		const config = makeConfig({ format: "{{monday:DD.MM}}-YYYY-MM-DD" });
 		const result = substituteTemplateTokens("{{yesterday}}|{{tomorrow}}", DAILY_DATE, "day", config, "t");
-		expect(result).toBe("06.04-2026-04-12|13.04-2026-04-14");
+		expect(result).toBe("{{monday:DD.MM}}-2026-04-12|{{monday:DD.MM}}-2026-04-14");
 	});
 
 	it("does not mutate the date it was given", () => {
