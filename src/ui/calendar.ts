@@ -230,6 +230,7 @@ export class CalendarWidget implements HoverParent {
 
 	/** Lightweight refresh — re-renders grid with current settings (e.g. on minute tick). */
 	refresh(): void {
+		this.nav.followClock();
 		this.renderGrid();
 	}
 

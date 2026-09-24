@@ -19,12 +19,29 @@ import type { Moment } from "moment";
  */
 export class MonthNavigation {
 	private displayed: Moment;
+	/** The current month as of the last `followClock()`, or of construction before the first one. */
+	private clockMonth: Moment;
 
 	constructor(
 		private readonly now: () => Moment,
 		private readonly onChange: () => void,
 	) {
 		this.displayed = now().startOf("month");
+		this.clockMonth = this.displayed.clone();
+	}
+
+	/**
+	 * The minute tick: carries the grid into a new month when the clock crosses
+	 * into one (AC-CAL-11.2), unless the user is looking at another month
+	 * (AC-CAL-11.3). "Another month" is the displayed month against the current
+	 * month at the previous tick, not a record of which controls were pressed:
+	 * a user who stepped away and back is on today's month, and follows it.
+	 * Asks for no re-render; the tick re-renders anyway.
+	 */
+	followClock(): void {
+		const current = this.now().startOf("month");
+		if (this.displayed.isSame(this.clockMonth, "month")) this.displayed = current.clone();
+		this.clockMonth = current;
 	}
 
 	/** The month the grid draws. A copy: a caller cannot move the grid by mutating it. */
