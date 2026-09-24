@@ -609,7 +609,7 @@
       "story": "As someone who prefers a mouse click over the command palette, I want one ribbon icon that opens my most prominent granularity's note, with a right-click menu covering the other active granularities, so that I have one predictable spot in the sidebar for periodic notes.",
       "rationale": "A single icon avoids cluttering the ribbon with one item per granularity while still keeping every active granularity reachable.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:ribbon-icon-single-granularity",
         "pn:context-menu-open-note"
@@ -634,8 +634,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.1: exactly one icon appears, for the first active granularity in day, week, month, year order' plus two more 08.1 tests; main.ts wiring (registerRibbonIcon in onload, ribbon.sync on settings change, mode passed to openPeriodNote) read by the orchestrator; it is glue with no test of its own"
         },
         {
           "id": "AC-CMD-08.2",
@@ -646,8 +646,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.2: a plain click opens the current note of the icon's granularity in the active pane' and 'AC-CMD-08.2: with no mode given, a missing note is created and opened in the active pane'; main.ts wiring (registerRibbonIcon in onload, ribbon.sync on settings change, mode passed to openPeriodNote) read by the orchestrator; it is glue with no test of its own"
         },
         {
           "id": "AC-CMD-08.3",
@@ -658,8 +658,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.3: cmd-click on macOS opens it in a new split', 'ctrl-click elsewhere', and two openOrCreatePeriodNote split tests; red when the modifier check always returns reuse and when periodNoteOpen ignores the mode (orchestrator mutations)"
         },
         {
           "id": "AC-CMD-08.4",
@@ -671,8 +671,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.4: lists one entry per active granularity, each opening that granularity's current note'; red when entries all open the first granularity and when the menu shows for a single granularity (orchestrator mutations). Menu rendering in main.ts showMenu is glue, read by the orchestrator"
         },
         {
           "id": "AC-CMD-08.5",
@@ -683,8 +683,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.5: no ribbon icon is shown'; red when the empty-list guard is removed (orchestrator mutation)",
           "failure_path": true
         },
         {
@@ -697,8 +697,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/commands/ribbonIcon.test.ts 'AC-CMD-08.6: an active quarter gets no ribbon icon', 'neither takes the icon nor gets a menu entry', 'gets no command'; red when the isReleaseGranularity filter is removed (orchestrator mutation)",
           "failure_path": true
         }
       ]
