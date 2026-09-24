@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import moment from "moment";
-import { DotScanner } from "./calendarDots";
+import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, countWords, wordCountSegments } from "./calendarDots";
 import { getMonthGrid, getWeekAnchor } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -61,5 +61,102 @@ describe("DotScanner.getWeekNotePaths", () => {
 
 		expect(scanner.getWeekNotePaths(grid, { ...weekConfig, enabled: false }).size).toBe(0);
 		expect(scanner.getWeekNotePaths(grid, { ...weekConfig, format: "" }).size).toBe(0);
+	});
+});
+
+describe("wordCountSegments", () => {
+	it("AC-CAL-07.3: at a threshold of 250, fills one segment per 250 words, at least one, at most five", () => {
+		const cases: [number, number][] = [
+			[1, 1], [249, 1], [250, 1], [499, 1], [500, 2], [1250, 5], [5000, 5],
+		];
+		for (const [words, segments] of cases) {
+			expect(wordCountSegments(words, 250), `${words} words`).toBe(segments);
+		}
+	});
+
+	it("AC-CAL-07.3: a threshold that is not a positive whole number falls back to 250", () => {
+		for (const bad of [0, -3, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+			expect(wordCountSegments(499, bad), `threshold ${bad}`).toBe(1);
+			expect(wordCountSegments(500, bad), `threshold ${bad}`).toBe(2);
+		}
+		expect(DEFAULT_WORDS_PER_SEGMENT).toBe(250);
+	});
+
+	it("AC-CAL-07.3: honours a valid threshold other than the default", () => {
+		expect(wordCountSegments(100, 50)).toBe(2);
+	});
+
+	it("fills nothing for a note with no words", () => {
+		expect(wordCountSegments(0, 250)).toBe(0);
+	});
+});
+
+describe("countWords", () => {
+	it("counts letter and digit runs, across scripts, and ignores punctuation", () => {
+		expect(countWords("")).toBe(0);
+		expect(countWords("  \n# \n- [ ]  ")).toBe(0);
+		expect(countWords("Hello, world! It's 2026.")).toBe(4);
+		expect(countWords("zażółć gęślą jaźń")).toBe(3);
+	});
+
+	it("leaves out the frontmatter block, which the user did not write as content", () => {
+		expect(countWords("---\ntags: [daily, journal]\n---\n")).toBe(0);
+		expect(countWords("---\ntags: daily\n---\nOne two")).toBe(2);
+	});
+});
+
+describe("DotScanner.getWordCounts", () => {
+	function scannerWith(path: string, content: string) {
+		const vault = new FakeVaultPort();
+		vault.seedFile(path, content);
+		const deps: CalendarDeps = { vault, vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() };
+		return { vault, scanner: new DotScanner(deps, () => undefined), read: vi.spyOn(vault, "readFile") };
+	}
+
+	it("reads an unchanged note once across renders", async () => {
+		const { scanner, read } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 2]]));
+		expect(read).toHaveBeenCalledTimes(1);
+	});
+
+	it("reads a note again after the vault reports a change to it", async () => {
+		const { vault, scanner, read } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		vault.seedFile("Daily/a.md", "one two three");
+		vault.emitChange({ kind: "metadata", file: vault.getFile("Daily/a.md")! });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 3]]));
+		expect(read).toHaveBeenCalledTimes(2);
+	});
+
+	it("forgets a renamed note's count under its old path", async () => {
+		const { vault, scanner } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		vault.renameFile("Daily/a.md", "Daily/b.md");
+		vault.seedFile("Daily/a.md", "fresh");
+		vault.emitChange({ kind: "rename", file: vault.getFile("Daily/b.md")!, oldPath: "Daily/a.md" });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 1]]));
+	});
+
+	it("reads a note again after it is deleted and created anew", async () => {
+		const { vault, scanner } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		const old = vault.getFile("Daily/a.md")!;
+		vault.deleteFile("Daily/a.md");
+		vault.emitChange({ kind: "delete", file: old });
+		vault.seedFile("Daily/a.md", "one two three four");
+		vault.emitChange({ kind: "create", file: vault.getFile("Daily/a.md")! });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 4]]));
+	});
+
+	it("does not keep a count read before a change that landed during the read", async () => {
+		const { vault, scanner, read } = scannerWith("Daily/a.md", "one two");
+		read.mockImplementationOnce(async (file) => {
+			vault.seedFile("Daily/a.md", "one two three");
+			vault.emitChange({ kind: "metadata", file });
+			return "one two";
+		});
+		await scanner.getWordCounts(["Daily/a.md"]);
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 3]]));
 	});
 });

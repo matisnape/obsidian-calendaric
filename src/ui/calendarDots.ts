@@ -4,19 +4,57 @@ import { computeNotePath } from "../notes/noteUtils";
 import { getWeekAnchor } from "./calendarUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 
+/** Words per filled segment of the word-count dot, until a setting carries one. */
+export const DEFAULT_WORDS_PER_SEGMENT = 250;
+
+/** How many of the word-count dot's segments there are to fill. */
+export const WORD_DOT_SEGMENTS = 5;
+
+/**
+ * Segments of the word-count dot a note of `words` words fills: one per
+ * `threshold` words, never fewer than one for a note with any word in it and
+ * never more than five. A threshold that is not a positive whole number is
+ * ignored in favour of the default (AC-CAL-07.3).
+ */
+export function wordCountSegments(words: number, threshold: number): number {
+	if (words <= 0) return 0;
+	const perSegment = Number.isInteger(threshold) && threshold > 0 ? threshold : DEFAULT_WORDS_PER_SEGMENT;
+	return Math.min(WORD_DOT_SEGMENTS, Math.max(1, Math.floor(words / perSegment)));
+}
+
+/**
+ * Words in a note's content: runs of letters or digits in any script, an
+ * inner apostrophe kept ("it's" is one word). The frontmatter block is left
+ * out, since a template writes it and the user does not.
+ */
+export function countWords(content: string): number {
+	const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
+	return body.match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+}
+
 /**
  * Scans vault files to determine which days/weeks in the visible month have
- * existing periodic notes, and watches the vault so dots update live without a
- * separate cache.
+ * existing periodic notes, and watches the vault so dots update live. Only word
+ * counts are kept between renders, per path.
  *
  * Every vault question here goes through the injected ports (AC-ARCH-11.2), so
  * the scanner runs against fakes with no Obsidian in the process.
  */
 export class DotScanner {
 	private unsubscribe: () => void;
+	/** Word count per note path, so a routine render reads no unchanged note again. */
+	private wordCounts = new Map<string, number>();
+	/** Bumped on every vault change, so a read that a change overtook is not kept. */
+	private changes = 0;
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
+			// Every change kind may mean new content at the path, so its count is
+			// read again on the next render. A metadata change is also how the
+			// host reports an edit, which moves no dot until then.
+			this.changes++;
+			this.wordCounts.delete(change.file.path);
+			if (change.oldPath !== undefined) this.wordCounts.delete(change.oldPath);
 			// A metadata change is the host finishing its parse of a file it has
 			// already reported as created, so it moves no dot. Create, delete and
 			// rename are the three that do — the same three this scanner watched
@@ -70,6 +108,35 @@ export class DotScanner {
 		}
 
 		return paths;
+	}
+
+	/**
+	 * Word count of each note in `paths`, read through the vault port. A path
+	 * whose note is gone or cannot be read is left out, so its cell draws no
+	 * word-count dot rather than a wrong one. A count is kept until the vault
+	 * reports a change at its path.
+	 */
+	async getWordCounts(paths: Iterable<string>): Promise<Map<string, number>> {
+		const counts = new Map<string, number>();
+		await Promise.all(
+			[...new Set(paths)].map(async (path) => {
+				const cached = this.wordCounts.get(path);
+				if (cached !== undefined) return void counts.set(path, cached);
+				const file = this.deps.vault.getFile(path);
+				if (!file) return;
+				try {
+					const changesBefore = this.changes;
+					const words = countWords(await this.deps.vault.readFile(file));
+					// ponytail: any change skips the cache, not just one at this path;
+					// count per path if routine renders show re-reads.
+					if (this.changes === changesBefore) this.wordCounts.set(path, words);
+					counts.set(path, words);
+				} catch {
+					// ponytail: an unreadable note just shows no word-count dot
+				}
+			}),
+		);
+		return counts;
 	}
 
 	/**
