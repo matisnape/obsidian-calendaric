@@ -295,7 +295,7 @@
       "story": "As someone typing a filename format, folder or template path into settings, I want to see immediately whether it is valid, so that I catch a mistake before it silently affects note creation.",
       "rationale": "A field that only fails much later, when a note is actually created, wastes the time between making the mistake and discovering it.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "pn:settings-per-granularity-format-editor",
         "pn:settings-per-granularity-folder-editor",

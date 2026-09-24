@@ -4076,7 +4076,7 @@
       "story": "As someone typing a filename format, folder or template path into settings, I want to see immediately whether it is valid, so that I catch a mistake before it silently affects note creation.",
       "rationale": "A field that only fails much later, when a note is actually created, wastes the time between making the mistake and discovering it.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:settings-per-granularity-format-editor",
         "pn:settings-per-granularity-folder-editor",
@@ -4105,8 +4105,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.1: an invalid format shows an inline message and marks the field invalid'; red when the format field's aria-invalid marking is removed (orchestrator mutation)",
           "failure_path": true
         },
         {
@@ -4119,8 +4119,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.2: a folder that does not exist warns on blur and is still saved' plus two more 04.2 tests; red when the blur check, the not-yet-created warning, or the folder save is removed (orchestrator mutations)",
           "failure_path": true
         },
         {
@@ -4133,8 +4133,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.3: a missing template errors on blur and is still saved'; red when the blur check is removed (orchestrator mutation)",
           "failure_path": true
         },
         {
@@ -4147,8 +4147,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.4: each field shows what was typed and the same warning after a reopen'; red when the folder check no longer runs on display (orchestrator mutation). Scope per the criterion as reworded in fe8cea1: saved values only, since an error-level format is never saved (AC-FMT-05.1)"
         },
         {
           "id": "AC-SET-04.5",
@@ -4160,8 +4160,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.5: the guide link opens the published guide in the browser, not through the desktop shell'; red when the href is not the guide URL (orchestrator mutation). The guide now opens as https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md because an installed plugin folder has no docs/guide.md (orchestrator decision)"
         },
         {
           "id": "AC-SET-04.6",
@@ -4173,8 +4173,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.fieldValidity.test.ts 'AC-SET-04.6: manifest.json declares the plugin desktop-only'; red when isDesktopOnly is false (orchestrator mutation)"
         }
       ],
       "decisions": [
