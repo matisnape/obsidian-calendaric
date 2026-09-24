@@ -34,7 +34,7 @@ export function commandId(granularity: ReleaseGranularity, action: CommandAction
 }
 
 /** What each granularity's notes are called, for the palette to read naturally. */
-const ADJECTIVE: Record<ReleaseGranularity, string> = {
+export const ADJECTIVE: Record<ReleaseGranularity, string> = {
 	day: "daily",
 	week: "weekly",
 	month: "monthly",
@@ -44,8 +44,8 @@ const ADJECTIVE: Record<ReleaseGranularity, string> = {
 /** The palette wording of each action. Free to change: no id reads it. */
 const PHRASE: Record<CommandAction, string> = {
 	"open-current": "Open current",
-	"jump-forward": "Jump to next existing",
-	"jump-backward": "Jump to previous existing",
+	"jump-forward": "Jump forward to next existing",
+	"jump-backward": "Jump backward to previous existing",
 	"open-next": "Open next",
 	"open-previous": "Open previous",
 };
@@ -71,6 +71,12 @@ export interface CommandHost {
 /** Runs one command. Supplied by the plugin, so this module stays free of the vault. */
 export type RunCommand = (granularity: ReleaseGranularity, action: CommandAction) => void;
 
+/** The granularity of the periodic note in the active pane, or null when it holds none. */
+export type ActiveNoteGranularity = () => ReleaseGranularity | null;
+
+/** The actions that count from the note in the active pane, and need one there. */
+const JUMP_ACTIONS: ReadonlySet<CommandAction> = new Set(["jump-forward", "jump-backward"]);
+
 /**
  * The command palette's view of the active granularities, kept in step with the
  * configuration.
@@ -89,6 +95,7 @@ export class GranularityCommands {
 	constructor(
 		private host: CommandHost,
 		private run: RunCommand,
+		private activeGranularity?: ActiveNoteGranularity,
 	) {}
 
 	/** Register what the configuration now wants, and drop what it no longer wants. */
@@ -117,8 +124,27 @@ export class GranularityCommands {
 				id,
 				name: commandName(granularity, action),
 				callback: () => this.run(granularity, action),
+				...this.availability(granularity, action),
 			});
 			this.registered.set(id, filed.id);
 		}
+	}
+
+	/**
+	 * A jump is listed only while the active pane holds a note of its own
+	 * granularity (AC-CMD-06.4). Obsidian runs `checkCallback` in place of
+	 * `callback` when a command has both.
+	 */
+	private availability(granularity: ReleaseGranularity, action: CommandAction): Pick<Command, "checkCallback"> {
+		const active = this.activeGranularity;
+		if (!active || !JUMP_ACTIONS.has(action)) return {};
+
+		return {
+			checkCallback: (checking) => {
+				if (active() !== granularity) return false;
+				if (!checking) this.run(granularity, action);
+				return true;
+			},
+		};
 	}
 }

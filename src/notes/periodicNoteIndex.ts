@@ -100,8 +100,28 @@ export class PeriodicNoteIndex {
 	 * period" is a command of its own.
 	 */
 	closest(granularity: FileGranularity, date: Moment, direction: JumpDirection): NoteFile | null {
-		const prefix = `${granularity}:`;
-		const from = Number(this.noteDateFor(granularity, date).slice(prefix.length));
+		return this.closestFrom(this.noteDateFor(granularity, date), direction);
+	}
+
+	/**
+	 * The nearest note before or after the note at `path`, of that note's own
+	 * granularity. Null when `path` is no periodic note, or none lies that way.
+	 */
+	closestTo(path: string, direction: JumpDirection): NoteFile | null {
+		const noteDate = this.noteDateByPath.get(path);
+		return noteDate === undefined ? null : this.closestFrom(noteDate, direction);
+	}
+
+	/** The granularity the note at `path` is filed under, or null when it is no periodic note. */
+	granularityOf(path: string): FileGranularity | null {
+		const noteDate = this.noteDateByPath.get(path);
+		return noteDate === undefined ? null : (noteDate.slice(0, noteDate.indexOf(":")) as FileGranularity);
+	}
+
+	/** The nearest note either side of the noteDate `origin`, within its granularity. */
+	private closestFrom(origin: string, direction: JumpDirection): NoteFile | null {
+		const prefix = origin.slice(0, origin.indexOf(":") + 1);
+		const from = Number(origin.slice(prefix.length));
 		let best: { at: number; file: NoteFile } | null = null;
 
 		// ponytail: a linear pass over the index. This runs on a keypress, over a
