@@ -86,7 +86,7 @@ export class DotScanner {
 		const cursor = start.clone();
 
 		while (cursor.isSameOrBefore(end, "day")) {
-			const path = computeNotePath(cursor, "day", config, this.deps.vaultConfig);
+			const path = computeNotePath(cursor, config, this.deps.vaultConfig, "day");
 			if (this.deps.vault.pathExists(path)) {
 				paths.add(path);
 			}
@@ -109,7 +109,7 @@ export class DotScanner {
 		if (!config.enabled || !config.format) return paths;
 
 		for (const week of grid) {
-			const path = computeNotePath(getWeekAnchor(week.days), "week", config, this.deps.vaultConfig);
+			const path = computeNotePath(getWeekAnchor(week.days), config, this.deps.vaultConfig, "week");
 			if (this.deps.vault.pathExists(path)) {
 				paths.add(path);
 			}

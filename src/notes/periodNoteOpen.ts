@@ -44,7 +44,7 @@ export async function openOrCreatePeriodNote(
 	// The refusal has already said which plugin still writes these notes.
 	if (creationRefused(ports.vault, granularity)) return;
 
-	const path = computeNotePath(date, granularity, config, ports.vaultConfig);
+	const path = computeNotePath(date, config, ports.vaultConfig, granularity);
 	let file: NoteFile;
 	try {
 		const creation = await createPeriodicNote(path, date, granularity, config, ports.vault, (message) =>
@@ -85,7 +85,7 @@ export async function startUp(
 	if (!key) return;
 	const config = settings[key];
 
-	const path = computeNotePath(date, key, config, ports.vaultConfig);
+	const path = computeNotePath(date, config, ports.vaultConfig, key);
 	let file = ports.vault.getFile(path);
 	if (!file) {
 		if (creationRefused(ports.vault, key, true)) return;

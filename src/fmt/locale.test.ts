@@ -60,7 +60,7 @@ describe("applyLocale", () => {
 		const config = { ...DEFAULT_SETTINGS.day, format: "dddd D MMMM", folder: "" };
 
 		expect(formatWithWeekTokens("dddd D MMMM", date, "day")).toBe("sobota 11 kwietnia");
-		expect(computeNotePath(date, "day", config, noFolder)).toBe("sobota 11 kwietnia.md");
+		expect(computeNotePath(date, config, noFolder, "day")).toBe("sobota 11 kwietnia.md");
 		expect(substituteTemplateTokens("{{date:dddd MMMM}}", date, "day", config, "t")).toBe("sobota kwiecień");
 	});
 
@@ -81,7 +81,7 @@ describe("applyLocale", () => {
 		expect(getWeekNumber(saturday, "gggg-[W]ww")).toBe(14);
 		expect(computeNoteDate(saturday, "week", "gggg-[W]ww")).toBe(`week:${m("2026-04-05").valueOf()}`);
 		expect(parseFilename("2026-W14", "gggg-[W]ww", false, "week")?.date.format("YYYY-MM-DD")).toBe("2026-04-06");
-		expect(computeNotePath(saturday, "week", weekConfig, noFolder)).toBe("2026-W14.md");
+		expect(computeNotePath(saturday, weekConfig, noFolder, "week")).toBe("2026-W14.md");
 		// A template weekday token reaches into the Sunday-opened week without being told the setting.
 		expect(substituteTemplateTokens("{{sunday:DD}}", saturday, "week", weekConfig, "t")).toBe("05");
 	});
@@ -133,7 +133,7 @@ describe("{{weekday:fmt}} filename tokens", () => {
 		applyLocale("en", "sunday", "en");
 		const format = "{{monday:GGGG-[W]WW}}";
 		const row = sundayRow();
-		const paths = row.map((day) => computeNotePath(day, "week", weekConfig(format), noFolder));
+		const paths = row.map((day) => computeNotePath(day, weekConfig(format), noFolder, "week"));
 		expect(new Set(paths)).toEqual(new Set(["2026-W10.md"]));
 		expect(new Set(row.map((day) => getWeekNumber(day, format)))).toEqual(new Set([10]));
 		expect(new Set(row.map((day) => computeNoteDate(day, "week", format))).size).toBe(1);

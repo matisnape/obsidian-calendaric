@@ -40,7 +40,7 @@ function eventOnlyApp(): App {
 
 function dayPath(dayOfMonth: number): string {
 	const date = window.moment().startOf("month").add(dayOfMonth - 1, "day");
-	return computeNotePath(date, "day", DAILY.day, new FakeVaultConfigPort());
+	return computeNotePath(date, DAILY.day, new FakeVaultConfigPort(), "day");
 }
 
 function dotsIn(host: HTMLElement): number {

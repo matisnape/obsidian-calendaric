@@ -234,7 +234,7 @@ describe("AC-CAL-01.4: the week number agrees with the weekly note name", () => 
 		// which the ISO week calls W53 and the locale week calls W01.
 		const grid = getMonthGrid(moment("2026-12-15"), 1, WEEK_FORMAT);
 		grid.forEach((week) => {
-			const path = computeNotePath(at(week.days, 0).date, "week", weekConfig, vaultConfig);
+			const path = computeNotePath(at(week.days, 0).date, weekConfig, vaultConfig, "week");
 			expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
 		});
 	});
@@ -322,7 +322,7 @@ describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => 
 			it(`row anchor matches the displayed number for weekStart=${weekStart}, ${month}`, () => {
 				const grid = getMonthGrid(moment(month), weekStart, WEEK_FORMAT);
 				grid.forEach((week) => {
-					const path = computeNotePath(getWeekAnchor(week.days), "week", weekConfig, vaultConfig);
+					const path = computeNotePath(getWeekAnchor(week.days), weekConfig, vaultConfig, "week");
 					expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
 				});
 			});
@@ -334,7 +334,7 @@ describe("AC-CAL-01.4: one anchor for the number, the dot and the click", () => 
 		// 02-23, so an isoWeekday(1) anchor named the week before the row.
 		const grid = getMonthGrid(moment("2026-03-15"), 0, WEEK_FORMAT);
 		const row = grid.find((w) => at(w.days, 0).date.format("YYYY-MM-DD") === "2026-03-01");
-		const path = computeNotePath(getWeekAnchor(row!.days), "week", weekConfig, vaultConfig);
+		const path = computeNotePath(getWeekAnchor(row!.days), weekConfig, vaultConfig, "week");
 		expect(row?.weekNumber).toBe(moment("2026-03-01").week());
 		expect(path).toContain(`W${String(row!.weekNumber).padStart(2, "0")}`);
 	});
@@ -358,9 +358,9 @@ describe("AC-CAL-01.4: nested-only weekly formats", () => {
 		grid.forEach((week) => {
 			const path = computeNotePath(
 				getWeekAnchor(week.days),
-				"week",
 				nestedConfig,
 				new FakeVaultConfigPort(),
+				"week",
 			);
 			expect(path).toContain(`W${String(week.weekNumber).padStart(2, "0")}`);
 		});

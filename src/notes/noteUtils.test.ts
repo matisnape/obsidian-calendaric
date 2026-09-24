@@ -141,12 +141,12 @@ describe("computeNotePath", () => {
 
 	it("builds path with folder", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" });
-		expect(computeNotePath(dailyDate, "day", config, vaultConfig)).toBe("journal/daily/2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, vaultConfig, "day")).toBe("journal/daily/2026-04-13.md");
 	});
 
 	it("builds path without folder (vault root)", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, "day", config, vaultConfig)).toBe("2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, vaultConfig, "day")).toBe("2026-04-13.md");
 	});
 
 	it("applies week tokens for weekly format", () => {
@@ -154,19 +154,26 @@ describe("computeNotePath", () => {
 			format: "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}",
 			folder: "journal/weekly",
 		});
-		expect(computeNotePath(MONDAY, "week", config, vaultConfig)).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
+		expect(computeNotePath(MONDAY, config, vaultConfig, "week")).toBe("journal/weekly/2026-W16, 13.04 – 19.04.md");
 	});
 
 	it("uses Obsidian default folder when config folder is empty and newFileLocation=folder", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "" });
-		expect(computeNotePath(dailyDate, "day", config, configWithDefault)).toBe("Inbox/2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, configWithDefault, "day")).toBe("Inbox/2026-04-13.md");
 	});
 
 	it("builds a vault-root path for an explicit \"/\" folder, ignoring the default folder", () => {
 		const configWithDefault = new FakeVaultConfigPort("Inbox");
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "/" });
-		expect(computeNotePath(dailyDate, "day", config, configWithDefault)).toBe("2026-04-13.md");
+		expect(computeNotePath(dailyDate, config, configWithDefault, "day")).toBe("2026-04-13.md");
+	});
+
+	it("left without a granularity, writes the path it wrote before US-FMT-01", () => {
+		const daily = makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" });
+		expect(computeNotePath(dailyDate, daily, vaultConfig)).toBe("journal/daily/2026-04-13.md");
+		const weekly = makeConfig({ format: "gggg-[W]ww, {{monday:DD.MM}}", folder: "" });
+		expect(computeNotePath(MONDAY, weekly, vaultConfig)).toBe("2026-W16, 13.04.md");
 	});
 });
 

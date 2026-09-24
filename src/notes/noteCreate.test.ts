@@ -459,7 +459,7 @@ const RELEASE_CONFIGS: Record<ReleaseGranularity, PeriodicConfig> = {
 
 /** The path the release config for `granularity` resolves to for `DATE`. */
 function pathFor(granularity: ReleaseGranularity): string {
-	return computeNotePath(DATE, granularity, RELEASE_CONFIGS[granularity], new FakeVaultConfigPort());
+	return computeNotePath(DATE, RELEASE_CONFIGS[granularity], new FakeVaultConfigPort(), granularity);
 }
 
 /** Runs `check` once per granularity of the release set, on a vault of its own. */

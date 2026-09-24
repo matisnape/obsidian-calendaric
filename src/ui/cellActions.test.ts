@@ -83,7 +83,7 @@ function stubConfirm(answer: boolean, spy?: (request: CreateRequest) => void) {
 }
 
 function pathFor(date: string): string {
-	return computeNotePath(moment(date), "day", dayConfig, new FakeVaultConfigPort());
+	return computeNotePath(moment(date), dayConfig, new FakeVaultConfigPort(), "day");
 }
 
 /**
@@ -515,7 +515,7 @@ describe("openOrCreateNote", () => {
 	// that names the kind of note, and the subject that names the period.
 	it("AC-CAL-05.1: asks for a monthly note by its month, then creates and opens it", async () => {
 		const month = moment("2026-04-01");
-		const path = computeNotePath(month, "month", monthConfig, new FakeVaultConfigPort());
+		const path = computeNotePath(month, monthConfig, new FakeVaultConfigPort(), "month");
 		const ports = makePorts();
 		const confirm = stubConfirm(true);
 
@@ -544,7 +544,7 @@ describe("openOrCreateNote", () => {
 	// that names the kind of note, and the subject that names the period.
 	it("AC-CAL-04.2: asks for a weekly note by its week, then creates and opens it", async () => {
 		const anchor = moment("2026-04-13");
-		const path = computeNotePath(anchor, "week", weekConfig, new FakeVaultConfigPort());
+		const path = computeNotePath(anchor, weekConfig, new FakeVaultConfigPort(), "week");
 		const ports = makePorts();
 		const confirm = stubConfirm(true);
 

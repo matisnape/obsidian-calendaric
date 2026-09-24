@@ -114,9 +114,10 @@ export function unknownTokenNames(fmt: string): string[] {
  */
 export function computeNotePath(
 	date: Moment,
-	granularity: Granularity,
 	config: PeriodicConfig,
 	vaultConfig: VaultConfigPort,
+	// Production callers must pass it; left out, weekday tokens resolve as before US-FMT-01.
+	granularity: Granularity = "week",
 ): string {
 	const folder = resolveNoteFolder(config.folder, vaultConfig);
 	const filename = formatWithWeekTokens(config.format, date, granularity);
