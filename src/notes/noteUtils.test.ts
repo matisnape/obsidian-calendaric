@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import moment from "moment";
 import {
 	applyWeekTokens,
@@ -13,6 +13,17 @@ import {
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
+import { applyLocale, restoreLocale } from "../fmt/locale";
+
+/**
+ * The plugin's default week start. {{weekday:fmt}} resolves within the
+ * configured week (AC-FMT-03.2), and the weekday-span cases below were written
+ * for a Monday one; the rest keep moment's own Sunday-start "en".
+ */
+const mondayStart = (): void => {
+	applyLocale("en", "monday", "en");
+};
+afterEach(() => restoreLocale());
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {
@@ -110,6 +121,8 @@ describe("applyWeekTokens", () => {
 });
 
 describe("formatWithWeekTokens", () => {
+	beforeEach(mondayStart);
+
 	it("produces correct filename for full week range format", () => {
 		const fmt = "gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}";
 		expect(formatWithWeekTokens(fmt, MONDAY)).toBe("2026-W16, 13.04 – 19.04");
@@ -121,6 +134,8 @@ describe("formatWithWeekTokens", () => {
 });
 
 describe("computeNotePath", () => {
+	beforeEach(mondayStart);
+
 	const vaultConfig = new FakeVaultConfigPort();
 	const dailyDate = moment("2026-04-13");
 
@@ -366,6 +381,8 @@ describe("getWeekNumber with awkward formats", () => {
 });
 
 describe("getWeekNumber for nested-only formats", () => {
+	beforeEach(mondayStart);
+
 	// 2026-12-27 is a Sunday. The Monday its week token resolves to is 12-21, in
 	// ISO week 52, while the date's own locale week is 1 — the review's case.
 	const SUNDAY = moment("2026-12-27");
@@ -444,6 +461,7 @@ describe("getWeekNumber with moment escapes", () => {
 	});
 
 	it("applies the same escape rules inside a weekday span", () => {
+		mondayStart();
 		// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53
 		// and whose locale week is 1 — the escaped WW must not win.
 		const date = moment("2027-01-03");
@@ -487,6 +505,8 @@ describe("getWeekNumber escape permutations", () => {
 });
 
 describe("getWeekNumber escape permutations inside a weekday span", () => {
+	beforeEach(mondayStart);
+
 	// 2027-01-03 resolves {{monday:...}} to 2026-12-28, whose ISO week is 53 and
 	// whose locale week is 1, while the date's own locale week is 2.
 	const DATE = moment("2027-01-03");

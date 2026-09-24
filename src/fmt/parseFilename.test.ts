@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import moment from "moment";
 // Importing a locale makes it active, so pin the default back for every
 // test that does not ask for another one.
@@ -8,6 +8,17 @@ import "moment/locale/ar-dz";
 moment.locale("en");
 import { parseFilename } from "./parseFilename";
 import { formatWithWeekTokens } from "../notes/noteUtils";
+import { applyLocale, restoreLocale } from "./locale";
+
+/**
+ * The plugin's default week start. {{weekday:fmt}} resolves within the
+ * configured week (AC-FMT-03.2), and the wrapper cases marked with it were
+ * written for a Monday one; the rest keep moment's own Sunday-start "en".
+ */
+const mondayStart = (): void => {
+	applyLocale("en", "monday", "en");
+};
+afterEach(() => restoreLocale());
 
 describe("parseFilename — AC-FMT-04.1 nested folder, exact full-path match", () => {
 	it("recognises a file whose full relative path matches a nested format", () => {
@@ -96,6 +107,8 @@ describe("parseFilename — a nested weekday token names a different day of the 
 });
 
 describe("parseFilename — a nested weekday token's own year may cross the week's year boundary", () => {
+	beforeEach(mondayStart);
+
 	// ISO week 53 of 2020 is Mon 2020-12-28 .. Sun 2021-01-03 — the week's own
 	// year (2020) and the nested {{sunday:..}}'s year (2021) legitimately
 	// disagree. That must not be treated as an inconsistent capture.
@@ -373,6 +386,8 @@ describe("parseFilename — AC-FMT-04.7 real-vault regression: old shapes stay u
 });
 
 describe("parseFilename — a format that names its date only through {{weekday:fmt}}", () => {
+	beforeEach(mondayStart);
+
 	// formatWithWeekTokens turns the whole format into the wrapper's rendering,
 	// so these are complete weekly formats on their own. A name the plugin
 	// writes must parse back, or the note it just created is unrecognisable.
@@ -439,13 +454,13 @@ describe("parseFilename — a wrapper names a weekday, and the inversion must re
 	});
 
 	it("reads back a Sunday wrapper numbering its own locale week", () => {
-		// Under en the locale week starts on Sunday, so the wrapped Sunday
-		// 2026-04-19 opens locale week 17 while belonging to ISO week 16. Taking
-		// the numbered week's start would land on Monday 04-20, a week late.
+		// Under en the week starts on Sunday, so the wrapped Sunday is 2026-04-12,
+		// the day that opens the source's week (AC-FMT-03.2). The name must still
+		// read back as the Monday inside that week, not as the Sunday itself.
 		const format = "{{sunday:gggg-[W]ww}}";
 		const written = formatWithWeekTokens(format, moment(SOURCE));
 
-		expect(written).toBe("2026-W17");
+		expect(written).toBe("2026-W16");
 		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
 	});
 
@@ -470,7 +485,7 @@ describe("parseFilename — a wrapper names a weekday, and the inversion must re
 		const format = "{{sunday:gggg-[W]ww}}[-]{{monday:GGGG-[W]WW}}";
 		const written = formatWithWeekTokens(format, moment(SOURCE));
 
-		expect(written).toBe("2026-W17-2026-W16");
+		expect(written).toBe("2026-W16-2026-W16");
 		expect(parseFilename(written, format, false)?.date.format("YYYY-MM-DD")).toBe(ISO_MONDAY);
 	});
 });
@@ -504,6 +519,8 @@ describe("parseFilename — backslash escapes, as moment renders them", () => {
 });
 
 describe("parseFilename — every candidate is tried, not only the first that builds", () => {
+	beforeEach(mondayStart);
+
 	it("falls through a wrapper too vague to explain the name to one that can", () => {
 		// {{monday:YYYY-MM}} builds a date — the 1st of the month — but cannot
 		// reproduce the name; the Sunday wrapper carries the full date.
@@ -551,7 +568,9 @@ describe("parseFilename — a locale whose week starts mid-week", () => {
 					const format = `{{${weekday}:${inner}}}`;
 					const written = formatWithWeekTokens(format, moment(source));
 					const parsed = parseFilename(written, format, false);
-					const expected = moment(source).isoWeekday(1).format("YYYY-MM-DD");
+					// The Monday inside the source's Tuesday-opened week (AC-FMT-03.2).
+					const opened = moment(source).subtract((moment(source).day() + 5) % 7, "day");
+					const expected = opened.add(6, "day").format("YYYY-MM-DD");
 
 					expect(`${source} ${format} ${written} -> ${parsed?.date.format("YYYY-MM-DD") ?? "null"}`)
 						.toBe(`${source} ${format} ${written} -> ${expected}`);

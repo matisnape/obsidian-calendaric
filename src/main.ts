@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from "obsidian";
+import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
 import type { CalendaricSettings, StoredConfig } from "./settings/model";
@@ -25,6 +25,7 @@ import { resolveEffectiveConfig } from "./settings/model";
 import type { NoteFile } from "./adapters/vaultPort";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
+import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 
 /**
  * The date type, taken from the clock this plugin actually reads.
@@ -63,6 +64,7 @@ export default class CalendaricPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		applyLocaleSettings(this.settings, getLanguage());
 
 		// The calendar pane's whole host surface, built here and handed inward
 		// (AC-ARCH-11.3). The view and the widget below it name no adapter.
@@ -90,12 +92,6 @@ export default class CalendaricPlugin extends Plugin {
 			display: "Calendaric",
 			defaultMod: true,
 		});
-
-		// Apply saved locale override
-		if (this.settings.overrideLocale) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(window as any).moment?.locale(this.settings.overrideLocale);
-		}
 
 		const calendarLeaves = new ObsidianCalendarLeafAdapter(this.app);
 		// One coordinator for the whole plugin. Startup and the palette command
@@ -134,9 +130,15 @@ export default class CalendaricPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
 		this.index?.destroy();
 		this.index = null;
+		restoreLocale();
 	}
 
 	onSettingsChange(): void {
+		applyLocaleSettings(this.settings, getLanguage(), () => this.rebuildFromSettings());
+	}
+
+	/** Everything that formats with the settings, rebuilt after the locale is applied. */
+	private rebuildFromSettings(): void {
 		// Which files count as periodic notes, and which commands exist, are both
 		// decided by the settings that just changed — so both are rebuilt here
 		// rather than at the next restart (AC-CMD-05.2, AC-CMD-05.3).

@@ -159,7 +159,8 @@ export class CalendarWidget implements HoverParent {
 
 	/** Re-render just the grid body + title (on navigation). */
 	private renderGrid(): void {
-		const displayedMonth = this.nav.month;
+		// Re-read the global locale: the held month keeps the one it was made under (AC-FMT-03.3).
+		const displayedMonth = this.nav.month.clone().locale(window.moment.locale());
 
 		// Update title
 		this.titleEl.empty();

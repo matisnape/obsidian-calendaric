@@ -49,6 +49,20 @@ export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): 
 }
 
 /**
+ * The first day of the week a filename format's `{{weekday:fmt}}` spans resolve
+ * within, as moment's `day()` number.
+ *
+ * The configured week (AC-FMT-03.2), unless the format names an ISO week or ISO
+ * year at top level: ISO tokens stay Monday-based, and a span must fall in the
+ * week the format itself names, or one ISO week would be written under two
+ * filenames and two weeks under one.
+ */
+export function spanWeekStart(format: string): number {
+	if (/[GW]/.test(tokenChars(format.replace(WEEK_TOKEN_RE, "")))) return 1;
+	return window.moment.localeData().firstDayOfWeek();
+}
+
+/**
  * Second-pass substitution of `{{weekday:fmt}}` tokens in a format string.
  * Runs after moment.format() — safe because moment never outputs `{{...}}`.
  *
@@ -85,15 +99,22 @@ export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfi
  * literals pass through moment unchanged.
  */
 export function formatWithWeekTokens(fmt: string, date: Moment): string {
+	// A moment keeps the locale it was made under. Re-reading the global one is
+	// what makes a date held across a settings change write with the new locale
+	// and week start (AC-FMT-03.3).
+	const local = date.clone().locale(window.moment.locale());
+	const weekStart = spanWeekStart(fmt);
 	const sanitised = fmt.replace(WEEK_TOKEN_RE, (_match, weekday: string, tokenFmt: string) => {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) return _match;
-		const resolved = date.clone().isoWeekday(isoDay).format(tokenFmt);
+		// Within the configured week, so every day of one calendar row writes
+		// the same weekly file (AC-FMT-03.2); within the ISO week for an ISO format.
+		const resolved = weekdayWithin(local, isoDay, weekStart).format(tokenFmt);
 		// Wrap in moment escape brackets so moment.format() treats it as a literal
 		return `[${resolved}]`;
 	});
 
-	return date.format(sanitised);
+	return local.format(sanitised);
 }
 
 /**
@@ -248,8 +269,8 @@ function weekNumberFor(date: Moment, tokens: string): number | null {
  * A top-level token wins, because moment resolves it against this date. Failing
  * that, the number comes from the first `{{weekday:fmt}}` span that names a
  * week, resolved against its own weekday exactly as `formatWithWeekTokens`
- * resolves it — `{{monday:GGGG-[W]WW}}` writes 2026-W52 for Sun 2026-12-27,
- * whose own locale week is 1.
+ * resolves it — under a Monday start `{{monday:GGGG-[W]WW}}` writes 2026-W52
+ * for Sun 2026-12-27, whose own locale week is 1.
  *
  * When no token anywhere names a week the filename carries no week number to
  * agree with, and the locale week is shown. The column still has to show
@@ -262,7 +283,7 @@ export function getWeekNumber(date: Moment, weekFormat: string): number {
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) continue;
-		const nested = weekNumberFor(date.clone().isoWeekday(isoDay), tokenChars(tokenFmt));
+		const nested = weekNumberFor(weekdayWithin(date, isoDay, spanWeekStart(weekFormat)), tokenChars(tokenFmt));
 		if (nested !== null) return nested;
 	}
 

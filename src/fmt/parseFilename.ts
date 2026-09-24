@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import { formatWithWeekTokens, WEEKDAY_ISO } from "../notes/noteUtils";
+import { formatWithWeekTokens, spanWeekStart, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
 
 export interface ParseFilenameResult {
 	date: Moment;
@@ -260,8 +260,8 @@ export type WeekSemantics = "iso" | "locale";
  * wrapper's own day, never the format's week.
  *
  * Only top-level tokens count. A week token inside {{weekday:fmt}} is rendered
- * off a day that isoWeekday() already pinned to the source date's ISO week, so
- * such a format partitions dates by ISO week whatever numbering it prints.
+ * off a day already pinned inside the source date's configured week, so such a
+ * format partitions dates by that week whatever numbering it prints.
  *
  * US-CAL-01's getWeekNumber(date, weekFormat) reads the same format strings but
  * answers a different question — which number to display, not how to partition
@@ -273,6 +273,11 @@ export function weekSemantics(format: string): WeekSemantics | null {
 	if (topLevel.some((group) => group.kind === "isoWeek")) return "iso";
 	if (topLevel.some((group) => group.kind === "localeWeek")) return "locale";
 	return null;
+}
+
+/** Whether the format carries a {{weekday:fmt}} span formatWithWeekTokens substitutes. */
+export function hasWeekdayWrapper(format: string): boolean {
+	return tokenize(format).groups.some((group) => group.wrapper !== undefined);
 }
 
 function pad2(n: number): string {
@@ -305,13 +310,18 @@ interface BuiltDate {
  * When a format names its date ONLY through wrappers — `{{monday:GGGG-[W]WW}}`
  * is a whole weekly format on its own — there is no top-level date to build,
  * and discarding the nested fields would make a name the plugin itself writes
- * unreadable. Every wrapper resolves through isoWeekday(), so whichever day it
- * names lies in the source date's own ISO week: mapping the wrapped date back
- * with isoWeekday(1) recovers that week's Monday, which is the date this
- * module gives every weekly match. matchOne's re-render check then rejects the
+ * unreadable. Every wrapper resolves inside the configured week, so whichever
+ * day it names lies in the source date's own week: mapping the wrapped date to
+ * the Monday inside that week gives the date this module returns for every
+ * weekly match. matchOne's re-render check then rejects the
  * candidate if it does not reproduce the name.
  */
-function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], tables: LocaleTables): BuiltDate[] {
+function buildCandidates(
+	match: RegExpExecArray,
+	groups: TokenGroup[],
+	tables: LocaleTables,
+	weekStart: number,
+): BuiltDate[] {
 	const candidates: BuiltDate[] = [];
 
 	const topLevel = buildFrom(match, groups, (group) => !group.nested, tables);
@@ -322,10 +332,10 @@ function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], tables: L
 	);
 	for (const [wrapper, sample] of wrappers) {
 		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, tables, sample.wrapperIsoDay);
-		// Every wrapper renders through isoWeekday(), so the day it names lies
-		// in the format's own ISO week; that week's Monday is the date every
-		// weekly match returns.
-		if (built) candidates.push({ date: built.date.clone().isoWeekday(1), usedWeekPath: built.usedWeekPath });
+		// Every wrapper renders inside spanWeekStart's week (AC-FMT-03.2), so the
+		// day it names lies in the format's own week; that week's Monday is the
+		// date every weekly match returns.
+		if (built) candidates.push({ date: weekdayWithin(built.date, 1, weekStart), usedWeekPath: built.usedWeekPath });
 	}
 	return candidates;
 }
@@ -430,7 +440,7 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	// fragment (nested in {{weekday:fmt}} or not — the AC names no such
 	// restriction) once a week number decides the date; every other field,
 	// year/week/weekday alike, must still match exactly.
-	for (const built of buildCandidates(match, groups, tables)) {
+	for (const built of buildCandidates(match, groups, tables, spanWeekStart(format))) {
 		const rendered = formatWithWeekTokens(format, built.date);
 		const renderedMatch = regex.exec(rendered);
 		if (!renderedMatch) continue;

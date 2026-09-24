@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import moment from "moment";
 // Importing a locale makes it active, so pin the default back for every
 // test that does not ask for another one.
@@ -12,6 +12,17 @@ import { computeNotePath } from "../notes/noteUtils";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { applyLocale, restoreLocale } from "./locale";
+
+/**
+ * The plugin's default week start. {{weekday:fmt}} resolves within the
+ * configured week (AC-FMT-03.2), and the wrapper cases marked with it were
+ * written for a Monday one; the rest keep moment's own Sunday-start "en".
+ */
+const mondayStart = (): void => {
+	applyLocale("en", "monday", "en");
+};
+afterEach(() => restoreLocale());
 
 function config(format: string, folder: string): PeriodicConfig {
 	return { ...DEFAULT_PERIODIC_CONFIG, enabled: true, format, folder };
@@ -95,6 +106,8 @@ describe("resolveFileDate — AC-FMT-07.2 a weekly filename that is no valid dai
 });
 
 describe("resolveFileDate — AC-FMT-07.2 a weekly format written only with a {{weekday:fmt}} wrapper", () => {
+	beforeEach(mondayStart);
+
 	const WRAPPED = {
 		day: config("YYYY-MM-DD", "Daily"),
 		week: config("{{monday:GGGG-[W]WW}}", "Weekly"),
