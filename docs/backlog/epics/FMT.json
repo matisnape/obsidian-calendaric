@@ -95,7 +95,7 @@
           "when": "the user saves the format",
           "then": [
             "the editor shows a warning naming \"funday\" as the token it did not recognise",
-            "the format still saves, and the save is not blocked by the warning"
+            "the unrecognised token adds only that warning; whether the format saves is decided by the other format rules, so this format is rejected, because its literal text contains \":\", which AC-FMT-05.1 forbids"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
