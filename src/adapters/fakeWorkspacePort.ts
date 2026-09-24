@@ -6,6 +6,7 @@ export class FakeWorkspacePort implements WorkspacePort {
 	opened: { file: NoteFile; mode: LeafMode }[] = [];
 	foundPaths: string[] = [];
 	notices: string[] = [];
+	fileMenus: { file: NoteFile; event: MouseEvent }[] = [];
 	isMacOS = false;
 	/** Runs inside openInLeaf, to stand in for the vault changing mid-open. */
 	onOpen: (() => void) | null = null;
@@ -40,5 +41,9 @@ export class FakeWorkspacePort implements WorkspacePort {
 
 	showNotice(message: string): void {
 		this.notices.push(message);
+	}
+
+	showFileMenu(file: NoteFile, event: MouseEvent): void {
+		this.fileMenus.push({ file, event });
 	}
 }

@@ -91,6 +91,18 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 }
 
 /**
+ * Show the file menu of the note at `path`, if there is one (AC-CAL-06.1,
+ * AC-CAL-06.2). The browser's own menu is suppressed only when a file menu
+ * takes its place, so an empty cell keeps it.
+ */
+export function showNoteFileMenu(path: string, event: MouseEvent, ports: Pick<CellPorts, "vault" | "workspace">): void {
+	const file = ports.vault.getFile(path);
+	if (!file || !ports.workspace.showFileMenu) return;
+	event.preventDefault();
+	ports.workspace.showFileMenu(file, event);
+}
+
+/**
  * Create the note, or open the one that appeared while this click was working.
  *
  * Every route from the look to the write crosses an await — the confirmation

@@ -31,4 +31,12 @@ export interface WorkspacePort {
 	 * flow that reports to the user, and one method does not earn three more files.
 	 */
 	showNotice(message: string): void;
+	/**
+	 * Shows the note's own file menu at the event's position: the one a file
+	 * explorer row shows, with whatever Obsidian and other plugins add to it.
+	 *
+	 * Optional so a host without file menus, and every hand-built port, still
+	 * type-checks; a caller treats its absence as "no menu here".
+	 */
+	showFileMenu?(file: NoteFile, event: MouseEvent): void;
 }

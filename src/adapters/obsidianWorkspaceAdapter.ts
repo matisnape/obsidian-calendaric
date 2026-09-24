@@ -1,7 +1,8 @@
-import { Notice, Platform, TFile } from "obsidian";
+import { Menu, Notice, Platform, TFile } from "obsidian";
 import type { App, WorkspaceLeaf } from "obsidian";
 import type { NoteFile } from "./vaultPort";
 import type { LeafMode, OpenResult, WorkspacePort } from "./workspacePort";
+import { HOVER_LINK_SOURCE } from "../ui/cellActions";
 
 /** Wires WorkspacePort to the real Obsidian Workspace API. */
 export class ObsidianWorkspaceAdapter implements WorkspacePort {
@@ -25,6 +26,15 @@ export class ObsidianWorkspaceAdapter implements WorkspacePort {
 
 	showNotice(message: string): void {
 		new Notice(message);
+	}
+
+	showFileMenu(file: NoteFile, event: MouseEvent): void {
+		// `file-menu` hands the menu to Obsidian and every plugin to fill, and
+		// they act on a TFile; anything else has no menu to show.
+		if (!(file instanceof TFile)) return;
+		const menu = new Menu();
+		this.app.workspace.trigger("file-menu", menu, file, HOVER_LINK_SOURCE);
+		menu.showAtMouseEvent(event);
 	}
 
 	private leafFor(mode: LeafMode): WorkspaceLeaf {
