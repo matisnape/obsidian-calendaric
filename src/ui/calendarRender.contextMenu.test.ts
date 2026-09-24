@@ -76,6 +76,8 @@ function withRealAdapters(paths: string[]) {
 		files.set(path, file);
 	}
 	const triggered: unknown[][] = [];
+	// Whether each triggered menu was already on screen when `file-menu` fired.
+	const shownAtTrigger: boolean[] = [];
 	const deletePrompts: TFile[] = [];
 	const app = {
 		workspace: {
@@ -83,6 +85,7 @@ function withRealAdapters(paths: string[]) {
 			offref: (): undefined => undefined,
 			trigger: (...args: unknown[]): void => {
 				triggered.push(args);
+				shownAtTrigger.push((args[1] as { shownAtEvent: MouseEvent | null } | undefined)?.shownAtEvent != null);
 			},
 		},
 		metadataCache: { on: (): object => ({}), offref: (): undefined => undefined, getFileCache: (): null => null },
@@ -106,7 +109,7 @@ function withRealAdapters(paths: string[]) {
 		workspace: new ObsidianWorkspaceAdapter(app),
 	});
 	const fileMenus = () => triggered.filter((args) => args[0] === "file-menu");
-	return { files, host, fileMenus, deletePrompts };
+	return { files, host, fileMenus, deletePrompts, shownAtTrigger };
 }
 
 describe("US-CAL-06: right-click a day or week cell for file actions", () => {
@@ -169,9 +172,9 @@ describe("US-CAL-06: right-click a day or week cell for file actions", () => {
 	});
 
 	it("AC-CAL-06.3: the menu is built through Obsidian's file-menu event, carrying the vault's own file", () => {
-		const { files, host, fileMenus } = withRealAdapters([dayPath(5)]);
+		const { files, host, fileMenus, shownAtTrigger } = withRealAdapters([dayPath(5)]);
 
-		rightClick(dayCell(host, 5));
+		const event = rightClick(dayCell(host, 5));
 
 		// `file-menu` is how other plugins add their file actions; the vault's
 		// object, not a copy, is what they act on.
@@ -179,6 +182,9 @@ describe("US-CAL-06: right-click a day or week cell for file actions", () => {
 		expect(menu?.[0]).toBe("file-menu");
 		expect(menu?.[2]).toBe(files.get(dayPath(5)));
 		expect(menu?.[3]).toBe("calendaric");
+		// Other plugins fill the menu before it is shown, and the menu they filled is the one shown.
+		expect(shownAtTrigger).toEqual([false]);
+		expect((menu?.[1] as { shownAtEvent: MouseEvent | null }).shownAtEvent).toBe(event);
 	});
 
 	it("AC-CAL-06.4: deleting the note from its cell's menu removes that cell's dot once the delete lands", async () => {
