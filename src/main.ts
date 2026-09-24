@@ -24,6 +24,7 @@ import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
 import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { jumpToClosestNote } from "./commands/jumpCommands";
+import { openNeighbourNote } from "./commands/openNeighbourCommands";
 import { RibbonIcon } from "./commands/ribbonIcon";
 import type { MenuEntry } from "./commands/ribbonIcon";
 import { resolveEffectiveConfig } from "./settings/model";
@@ -290,9 +291,9 @@ export default class CalendaricPlugin extends Plugin {
 			case "open-current":
 				return this.openPeriodNote(granularity, today);
 			case "open-next":
-				return this.openPeriodNote(granularity, today.clone().add(1, granularity));
+				return this.openNeighbour(granularity, "forward");
 			case "open-previous":
-				return this.openPeriodNote(granularity, today.clone().subtract(1, granularity));
+				return this.openNeighbour(granularity, "backward");
 			case "jump-forward":
 				return this.jumpToExistingNote(granularity, "forward");
 			case "jump-backward":
@@ -316,6 +317,11 @@ export default class CalendaricPlugin extends Plugin {
 			vaultConfig: new ObsidianVaultConfigAdapter(this.app),
 			workspace: new ObsidianWorkspaceAdapter(this.app),
 		};
+	}
+
+	private async openNeighbour(granularity: ReleaseGranularity, direction: JumpDirection): Promise<void> {
+		const config = resolveEffectiveConfig(this.settings, granularity);
+		await openNeighbourNote(granularity, direction, this.activeNotePath(), this.index, config, this.notePorts());
 	}
 
 	private async jumpToExistingNote(granularity: ReleaseGranularity, direction: JumpDirection): Promise<void> {

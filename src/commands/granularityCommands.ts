@@ -75,7 +75,7 @@ export type RunCommand = (granularity: ReleaseGranularity, action: CommandAction
 export type ActiveNoteGranularity = () => ReleaseGranularity | null;
 
 /** The actions that count from the note in the active pane, and need one there. */
-const JUMP_ACTIONS: ReadonlySet<CommandAction> = new Set(["jump-forward", "jump-backward"]);
+const FROM_ACTIVE_NOTE: ReadonlySet<CommandAction> = new Set(["jump-forward", "jump-backward", "open-next", "open-previous"]);
 
 /**
  * The command palette's view of the active granularities, kept in step with the
@@ -131,13 +131,14 @@ export class GranularityCommands {
 	}
 
 	/**
-	 * A jump is listed only while the active pane holds a note of its own
-	 * granularity (AC-CMD-06.4). Obsidian runs `checkCallback` in place of
-	 * `callback` when a command has both.
+	 * A jump, Open next and Open previous are listed only while the active pane
+	 * holds a note of their own granularity (AC-CMD-06.4, AC-CMD-07.4).
+	 * Obsidian runs `checkCallback` in place of `callback` when a command has
+	 * both.
 	 */
 	private availability(granularity: ReleaseGranularity, action: CommandAction): Pick<Command, "checkCallback"> {
 		const active = this.activeGranularity;
-		if (!active || !JUMP_ACTIONS.has(action)) return {};
+		if (!active || !FROM_ACTIVE_NOTE.has(action)) return {};
 
 		return {
 			checkCallback: (checking) => {

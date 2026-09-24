@@ -139,12 +139,8 @@ describe("AC-CMD-06.4: the jumps are offered only from a periodic note of their 
 		expect(host.shown("week-jump-backward")).toBe(true);
 	});
 
-	it("AC-CMD-06.4: leaves the open commands in the palette wherever the user is", () => {
-		const host = commandsWith(null);
-
-		for (const action of ["open-current", "open-next", "open-previous"]) {
-			expect(host.shown(`day-${action}`)).toBe(true);
-		}
+	it("AC-CMD-06.4: leaves Open current in the palette wherever the user is", () => {
+		expect(commandsWith(null).shown("day-open-current")).toBe(true);
 	});
 
 	it("AC-CMD-06.4: a shown jump runs its own action; a hidden one runs nothing", () => {
