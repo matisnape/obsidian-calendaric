@@ -48,4 +48,8 @@ export class CalendarView extends ItemView {
 	refresh(): void {
 		this.calendar?.refreshSettings(this.plugin.settings);
 	}
+
+	revealActiveNote(): void {
+		this.calendar?.revealActiveNote();
+	}
 }

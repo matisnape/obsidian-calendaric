@@ -898,7 +898,7 @@
       "story": "As someone editing a periodic note in another pane, I want the calendar to show me which cell that note belongs to, and to be able to jump the view to it, so that I always know where I am in the calendar without hunting for it.",
       "rationale": "The highlight is the calendar's answer to 'where am I', and it must track the active pane, not just clicks made inside the view itself.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "cal:track-active-file-for-highlight",
         "calendaric:calendar-active-file-highlight",
@@ -921,8 +921,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarRender.activeNote.test.ts 'AC-CAL-10.1' at 9215b2e: day and week cells get is-active from file-open in any pane, matched by resolveFileDate identity; mutation (day/week compare forced false) turns it red"
         },
         {
           "id": "AC-CAL-10.2",
@@ -933,8 +933,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-10.2' at 9215b2e: a non-periodic file or an empty pane clears is-active; mutation (keep previous path on null file) turns it red",
           "failure_path": true
         },
         {
@@ -947,8 +947,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-10.3' at 9215b2e: revealActiveNote navigates via MonthNavigation.show to the note's month and highlights; month notes are ignored; mutations (never navigate; accept any granularity) turn it red"
         },
         {
           "id": "AC-CAL-10.4",
@@ -959,8 +959,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-CAL-10.4' at 9215b2e: a note inside the shown month, including a week row reaching into it, highlights without navigating; mutation (navigate unless the row start is in the month) turns it red"
         }
       ]
     },

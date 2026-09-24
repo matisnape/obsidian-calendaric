@@ -68,6 +68,10 @@ export class MonthNavigation {
 		this.moveTo(this.now());
 	}
 
+	show(date: Moment): void {
+		this.moveTo(date.clone());
+	}
+
 	private moveTo(month: Moment): void {
 		this.displayed = month.startOf("month");
 		this.onChange();
