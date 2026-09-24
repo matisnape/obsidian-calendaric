@@ -52,12 +52,13 @@ export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): 
  * The first day of the week a filename format's `{{weekday:fmt}}` spans resolve
  * within, as moment's `day()` number.
  *
- * The configured week (AC-FMT-03.2), unless the format numbers ISO weeks at top
- * level: ISO tokens stay Monday-based, and a span must fall in the week the
- * format itself names, or one ISO week would be written under two filenames.
+ * The configured week (AC-FMT-03.2), unless the format names an ISO week or ISO
+ * year at top level: ISO tokens stay Monday-based, and a span must fall in the
+ * week the format itself names, or one ISO week would be written under two
+ * filenames and two weeks under one.
  */
 export function spanWeekStart(format: string): number {
-	if (tokenChars(format.replace(WEEK_TOKEN_RE, "")).includes("W")) return 1;
+	if (/[GW]/.test(tokenChars(format.replace(WEEK_TOKEN_RE, "")))) return 1;
 	return window.moment.localeData().firstDayOfWeek();
 }
 
@@ -282,8 +283,7 @@ export function getWeekNumber(date: Moment, weekFormat: string): number {
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) continue;
-		const weekStart = window.moment.localeData().firstDayOfWeek();
-		const nested = weekNumberFor(weekdayWithin(date, isoDay, weekStart), tokenChars(tokenFmt));
+		const nested = weekNumberFor(weekdayWithin(date, isoDay, spanWeekStart(weekFormat)), tokenChars(tokenFmt));
 		if (nested !== null) return nested;
 	}
 

@@ -173,6 +173,15 @@ describe("{{weekday:fmt}} filename tokens", () => {
 		}
 	});
 
+	it("AC-FMT-03.2: a top-level ISO year keeps a span's week number in that ISO week", () => {
+		applyLocale("en", "sunday", "en");
+		const format = "GGGG {{monday:[W]WW}}";
+		// Sun 2027-01-03 closes ISO 2026-W53; its Sunday-opened week would give the year 2026 and W01.
+		expect(formatWithWeekTokens(format, m("2027-01-03"))).toBe("2026 W53");
+		expect(getWeekNumber(m("2027-01-03"), format)).toBe(53);
+		expect(formatWithWeekTokens(format, m("2025-12-28"))).toBe("2025 W52");
+	});
+
 	it("AC-FMT-03.2: a weekly template body names the same ISO week as its ISO-week filename", () => {
 		applyLocale("en", "sunday", "en");
 		const config = weekConfig("GGGG-[W]WW ({{monday:DD.MM}}-{{sunday:DD.MM}})");
