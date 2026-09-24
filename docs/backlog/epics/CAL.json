@@ -971,7 +971,7 @@
       "story": "As someone who leaves the calendar open across midnight, I want today's cell to advance on its own, so that the view never quietly shows yesterday as today.",
       "rationale": "The view has no reason to be reopened during normal use, so it must roll itself over rather than relying on the user to refresh it.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "cal:calendar-heartbeat-tick",
         "calendaric:calendar-minute-refresh"
