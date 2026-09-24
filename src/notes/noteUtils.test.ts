@@ -168,13 +168,6 @@ describe("computeNotePath", () => {
 		const config = makeConfig({ format: "YYYY-MM-DD", folder: "/" });
 		expect(computeNotePath(dailyDate, config, configWithDefault, "day")).toBe("2026-04-13.md");
 	});
-
-	it("left without a granularity, writes the path it wrote before US-FMT-01", () => {
-		const daily = makeConfig({ format: "YYYY-MM-DD", folder: "journal/daily" });
-		expect(computeNotePath(dailyDate, daily, vaultConfig)).toBe("journal/daily/2026-04-13.md");
-		const weekly = makeConfig({ format: "gggg-[W]ww, {{monday:DD.MM}}", folder: "" });
-		expect(computeNotePath(MONDAY, weekly, vaultConfig)).toBe("2026-W16, 13.04.md");
-	});
 });
 
 describe("resolveNoteFolder", () => {

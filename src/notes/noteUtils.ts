@@ -21,6 +21,9 @@ const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|su
  */
 const SPAN_RE = /\{\{([^{}:]+):([^{}]+)\}\}/g;
 
+/** A moment `[literal]` or a span, leftmost first: a span's own `[W]` stays inside the span match. */
+const BRACKET_OR_SPAN_RE = new RegExp(`\\[[^\\]]*\\]|${SPAN_RE.source}`, "g");
+
 /** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
 export const WEEKDAY_ISO: Record<string, number> = {
 	monday: 1,
@@ -89,11 +92,14 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
  * than read by moment as tokens (AC-FMT-01.5). Each character gets moment's
  * backslash escape, which the parser reads the same way, so the writer and the
  * parser agree on the literal. A bracket escape would not do: the span's own
- * format may hold `[` or `]`.
+ * format may hold `[` or `]`. A span already inside a `[literal]` is left alone,
+ * since moment prints a backslash there as typed.
  */
 export function literalWeekTokens(fmt: string, granularity: Granularity): string {
-	return fmt.replace(SPAN_RE, (match, name: string) =>
-		granularity === "week" && WEEKDAY_ISO[name.toLowerCase()] !== undefined ? match : match.replace(/./g, "\\$&"),
+	return fmt.replace(BRACKET_OR_SPAN_RE, (match, name?: string) =>
+		name === undefined || (granularity === "week" && WEEKDAY_ISO[name.toLowerCase()] !== undefined)
+			? match
+			: match.replace(/./g, "\\$&"),
 	);
 }
 

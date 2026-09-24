@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { ReleaseGranularity } from "../types";
-import { formatWithWeekTokens, getWeekNumber } from "../notes/noteUtils";
+import type { PeriodicConfig, ReleaseGranularity } from "../types";
+import { computeNotePath, formatWithWeekTokens, getWeekNumber } from "../notes/noteUtils";
+import { openOrCreatePeriodNote, startUp } from "../notes/periodNoteOpen";
+import { substituteTemplateTokens } from "../notes/templateTokens";
+import { FakeVaultPort } from "../adapters/fakeVaultPort";
+import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
+import { resolveFileDate } from "./resolveFileDate";
 import { parseFilename } from "./parseFilename";
 import { computeNoteDate } from "./noteDate";
 import { applyLocale, restoreLocale } from "./locale";
@@ -15,6 +21,18 @@ afterEach(() => restoreLocale());
 // first day of the Sunday-start week 12–18 April. Made after applyLocale, since
 // a moment keeps the week rules of the locale it was made under.
 const sunday = () => window.moment("2026-04-12");
+
+const config = (overrides: Partial<PeriodicConfig>): PeriodicConfig => ({
+	enabled: true,
+	format: "YYYY-MM-DD",
+	folder: "Daily",
+	templatePath: "",
+	allowPrefixMatch: false,
+	openAtStartup: false,
+	...overrides,
+});
+
+const ports = () => ({ vault: new FakeVaultPort(), vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() });
 
 /** The written name, and whether the parser reads it back as the same note. */
 function roundTrip(format: string, date: Moment, granularity: ReleaseGranularity) {
@@ -92,5 +110,60 @@ describe("US-FMT-01 weekday tokens in the filename format", () => {
 	it("AC-FMT-01.6: a real weekday name raises no unrecognised-token warning", () => {
 		const { warnings } = validateFormat("gggg-[W]ww {{Monday:DD}}", "week", window.moment("2026-09-24"));
 		expect(warnings).toEqual([]);
+	});
+
+	describe("AC-FMT-01.4 through the production callers", () => {
+		const daily = config({ format: "YYYY-MM-DD {{monday:DD.MM}}" });
+		const literalPath = "Daily/2026-04-12 {{monday:DD.MM}}.md";
+
+		it("a daily command writes the weekday token as literal text", async () => {
+			applyLocale("en", "monday", "en");
+			const p = ports();
+			await openOrCreatePeriodNote("day", sunday(), daily, null, p);
+			expect(p.vault.getFile(literalPath)).not.toBeNull();
+		});
+
+		it("the daily startup note is written under the same literal name", async () => {
+			applyLocale("en", "monday", "en");
+			const p = ports();
+			const off = config({ enabled: false });
+			await startUp({ day: { ...daily, openAtStartup: true }, week: off, month: off, year: off }, sunday(), p);
+			expect(p.vault.getFile(literalPath)).not.toBeNull();
+		});
+
+		// The subfolder case reaches only the basename retry, the nested format only the first parse.
+		it.each([
+			["the configured folder", "YYYY-MM-DD {{monday:DD.MM}}", literalPath],
+			["a subfolder", "YYYY-MM-DD {{monday:DD.MM}}", "Daily/2026/2026-04-12 {{monday:DD.MM}}.md"],
+			["a nested format", "YYYY/YYYY-MM-DD {{monday:DD.MM}}", "Daily/2026/2026-04-12 {{monday:DD.MM}}.md"],
+		])("that literal name, in %s, resolves as the day's daily note", (_where, format, path) => {
+			applyLocale("en", "monday", "en");
+			const identity = resolveFileDate(path, { day: config({ format }) }, new FakeVaultConfigPort());
+			expect(identity?.granularity).toBe("day");
+			expect(identity?.date.format("YYYY-MM-DD")).toBe("2026-04-12");
+		});
+	});
+
+	it("AC-FMT-01.1: {{date+7d}} in a weekly template names the next week's Monday", () => {
+		applyLocale("en", "monday", "en");
+		const weekly = config({ format: "gggg-[W]ww {{monday:DD.MM}}" });
+		expect(substituteTemplateTokens("{{date+7d}}", window.moment("2026-04-13"), "week", weekly, "t")).toBe(
+			"2026-W17 20.04",
+		);
+	});
+
+	it("AC-FMT-01.5: a span inside a [literal] is written as typed, without escapes, and reads back", () => {
+		applyLocale("en", "monday", "en");
+		const { written, sameNote } = roundTrip("YYYY-MM-DD [{{funday:DD}}]", sunday(), "day");
+		expect(written).toBe("2026-04-12 {{funday:DD}}");
+		expect(sameNote).toBe(true);
+	});
+
+	it("computeNotePath left without a granularity writes the path it wrote before US-FMT-01", () => {
+		applyLocale("en", "monday", "en");
+		const vaultConfig = new FakeVaultConfigPort();
+		expect(computeNotePath(sunday(), config({}), vaultConfig)).toBe("Daily/2026-04-12.md");
+		const weekly = config({ format: "gggg-[W]ww, {{monday:DD.MM}}", folder: "" });
+		expect(computeNotePath(sunday(), weekly, vaultConfig)).toBe("2026-W15, 06.04.md");
 	});
 });
