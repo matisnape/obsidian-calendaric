@@ -304,17 +304,18 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// US-FMT-05: errors keep the previous format saved, warnings save anyway.
 		const formatProblem = formatDesc.createDiv({ cls: "calendaric-setting-problem" });
-		const showFormatProblems = (fmt: string) => {
+		const showFormatProblems = (fmt: string, errorOutcome = "Not saved:") => {
 			const problems = validateFormat(fmt, granularity);
 			formatProblem.empty();
 			// Both share the error colour, so the words say which outcome it was.
 			const messages = [...problems.errors, ...problems.warnings];
-			const outcome = problems.errors.length > 0 ? "Not saved:" : "Saved, but:";
+			const outcome = problems.errors.length > 0 ? errorOutcome : "Saved, but:";
 			if (messages.length > 0) formatProblem.appendText([outcome, ...messages].join(" "));
 			return problems;
 		};
 		// A stored format that warns says so when the tab reopens, not only on edit.
-		showFormatProblems(config.format || DEFAULT_FORMATS[granularity]);
+		// One with an error was stored before this check or by hand, and is in use.
+		showFormatProblems(config.format || DEFAULT_FORMATS[granularity], "In use, but:");
 
 		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
 		const formatInput = formatControl.createEl("input", {

@@ -52,6 +52,12 @@ describe("validateFormat", () => {
 		expect(errors[0]).toMatch(/"COM[1-9]" is a reserved filename/);
 	});
 
+	it("AC-FMT-05.1: rejects a week-number name reserved in weeks 1-9, in a year no other check date reaches week 1", () => {
+		// 1 January 2027 falls in ISO week 53 of 2026, so only week 1 itself writes COM1.
+		const { errors } = validateFormat("GGGG/[COM]W", "week", window.moment("2027-09-24"));
+		expect(errors).toEqual(['"COM1" is a reserved filename on Windows.']);
+	});
+
 	it("AC-FMT-05.4: rejects an empty format instead of falling back to a default", () => {
 		for (const format of ["", "   "]) {
 			const { errors } = validateFormat(format, "day", TODAY);
@@ -180,6 +186,12 @@ describe("the format field on the settings screen", () => {
 		expect(saves).toBe(1);
 		expect(problems).toHaveLength(1);
 		expect(problems[0]).toMatch(/^Saved, but: .*cannot uniquely identify a note/);
+	});
+
+	it("AC-FMT-05.1: a saved format with an error says it is in use, not that it was not saved", () => {
+		const { problems } = renderDayFormat("YYYY-MM-DD[.]").read();
+		expect(problems).toHaveLength(1);
+		expect(problems[0]).toMatch(/^In use, but: .*cannot be a file or folder name/);
 	});
 
 	it("AC-FMT-05.2: a saved format that warns shows the warning when the tab opens", () => {

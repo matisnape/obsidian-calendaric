@@ -79,10 +79,12 @@ export function validateFormat(
 
 	// Checked on what the format writes, not on its source: a `[?]` literal is
 	// harmless text in the format and an illegal character in the filename. The
-	// first of January adds the one-digit day and month, so `[COM]D` is caught.
-	// The first date that fails is reported, once, rather than every date.
+	// first of January and week 1 add the one-digit day, month and week numbers,
+	// so `[COM]D` and `[COM]W` are caught whatever today is. The first date that
+	// fails is reported, once, rather than every date.
+	const oneDigit = [today.clone().startOf("year"), today.clone().isoWeek(1), today.clone().week(1)];
 	const errors: string[] = [];
-	for (const date of [...probes, today.clone().startOf("year")]) {
+	for (const date of [...probes, ...oneDigit]) {
 		if (errors.length > 0) break;
 		for (const segment of written(date).split("/")) {
 			const illegal = ILLEGAL_CHARACTERS.exec(segment);
