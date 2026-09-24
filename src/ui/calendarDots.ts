@@ -34,17 +34,24 @@ export function countWords(content: string): number {
 
 /**
  * Scans vault files to determine which days/weeks in the visible month have
- * existing periodic notes, and watches the vault so dots update live without a
- * separate cache.
+ * existing periodic notes, and watches the vault so dots update live. Only word
+ * counts are kept between renders, per path.
  *
  * Every vault question here goes through the injected ports (AC-ARCH-11.2), so
  * the scanner runs against fakes with no Obsidian in the process.
  */
 export class DotScanner {
 	private unsubscribe: () => void;
+	/** Word count per note path, so a routine render reads no unchanged note again. */
+	private wordCounts = new Map<string, number>();
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
+			// Every change kind may mean new content at the path, so its count is
+			// read again on the next render. A metadata change is also how the
+			// host reports an edit, which moves no dot until then.
+			this.wordCounts.delete(change.file.path);
+			if (change.oldPath !== undefined) this.wordCounts.delete(change.oldPath);
 			// A metadata change is the host finishing its parse of a file it has
 			// already reported as created, so it moves no dot. Create, delete and
 			// rename are the three that do — the same three this scanner watched
@@ -103,16 +110,21 @@ export class DotScanner {
 	/**
 	 * Word count of each note in `paths`, read through the vault port. A path
 	 * whose note is gone or cannot be read is left out, so its cell draws no
-	 * word-count dot rather than a wrong one.
+	 * word-count dot rather than a wrong one. A count is kept until the vault
+	 * reports a change at its path.
 	 */
 	async getWordCounts(paths: Iterable<string>): Promise<Map<string, number>> {
 		const counts = new Map<string, number>();
 		await Promise.all(
 			[...new Set(paths)].map(async (path) => {
+				const cached = this.wordCounts.get(path);
+				if (cached !== undefined) return void counts.set(path, cached);
 				const file = this.deps.vault.getFile(path);
 				if (!file) return;
 				try {
-					counts.set(path, countWords(await this.deps.vault.readFile(file)));
+					const words = countWords(await this.deps.vault.readFile(file));
+					this.wordCounts.set(path, words);
+					counts.set(path, words);
 				} catch {
 					// ponytail: an unreadable note just shows no word-count dot
 				}

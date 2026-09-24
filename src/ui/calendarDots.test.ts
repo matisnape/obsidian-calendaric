@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import moment from "moment";
 import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, countWords, wordCountSegments } from "./calendarDots";
 import { getMonthGrid, getWeekAnchor } from "./calendarUtils";
@@ -102,5 +102,39 @@ describe("countWords", () => {
 	it("leaves out the frontmatter block, which the user did not write as content", () => {
 		expect(countWords("---\ntags: [daily, journal]\n---\n")).toBe(0);
 		expect(countWords("---\ntags: daily\n---\nOne two")).toBe(2);
+	});
+});
+
+describe("DotScanner.getWordCounts", () => {
+	function scannerWith(path: string, content: string) {
+		const vault = new FakeVaultPort();
+		vault.seedFile(path, content);
+		const deps: CalendarDeps = { vault, vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() };
+		return { vault, scanner: new DotScanner(deps, () => undefined), read: vi.spyOn(vault, "readFile") };
+	}
+
+	it("reads an unchanged note once across renders", async () => {
+		const { scanner, read } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 2]]));
+		expect(read).toHaveBeenCalledTimes(1);
+	});
+
+	it("reads a note again after the vault reports a change to it", async () => {
+		const { vault, scanner, read } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		vault.seedFile("Daily/a.md", "one two three");
+		vault.emitChange({ kind: "metadata", file: vault.getFile("Daily/a.md")! });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 3]]));
+		expect(read).toHaveBeenCalledTimes(2);
+	});
+
+	it("forgets a renamed note's count under its old path", async () => {
+		const { vault, scanner } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		vault.renameFile("Daily/a.md", "Daily/b.md");
+		vault.seedFile("Daily/a.md", "fresh");
+		vault.emitChange({ kind: "rename", file: vault.getFile("Daily/b.md")!, oldPath: "Daily/a.md" });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 1]]));
 	});
 });
