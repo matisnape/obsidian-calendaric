@@ -13,6 +13,7 @@ import { resolveFileDate, type FileConfigs, type FileDateIdentity } from "../fmt
 import { computeNoteDate } from "../fmt/noteDate";
 import { resolveEffectiveConfig } from "../settings/model";
 import { RELEASE_GRANULARITIES } from "../types";
+import type { CellGranularity } from "../types";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
@@ -374,7 +375,7 @@ export class CalendarWidget implements HoverParent {
 
 	private async handleNoteClick(
 		date: Moment,
-		granularity: "day" | "week" | "month",
+		granularity: CellGranularity,
 		event: MouseEvent,
 	): Promise<void> {
 		try {

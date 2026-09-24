@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as ts from "typescript";
 import { describe, it, expect, expectTypeOf, vi } from "vitest";
 import { isReleaseGranularity, RELEASE_GRANULARITIES } from "./types";
 import type { Granularity, PeriodicConfig, ReleaseGranularity } from "./types";
@@ -32,11 +33,41 @@ vi.mock("./notes/templateTokens", async (original) => {
 
 const root = (path: string): string => fileURLToPath(new URL(`../${path}`, import.meta.url));
 
-/** Source with comments removed, so prose that names a surface never counts as code. */
-const code = (path: string): string =>
-	readFileSync(root(path), "utf8")
-		.replace(/\/\*[\s\S]*?\*\//g, "")
-		.replace(/(^|[^:\\])\/\/.*$/gm, "$1");
+/**
+ * Source with comments removed, so prose that names a surface never counts as
+ * code. The ranges come from the TypeScript parser, so a `/*` or `//` inside a
+ * string or a regex literal stays code.
+ */
+const stripComments = (text: string): string => {
+	const file = ts.createSourceFile("source.ts", text, ts.ScriptTarget.Latest, true);
+	const comments = new Map<number, number>();
+	const visit = (node: ts.Node): void => {
+		const around = [
+			...(ts.getLeadingCommentRanges(text, node.getFullStart()) ?? []),
+			...(ts.getTrailingCommentRanges(text, node.getEnd()) ?? []),
+		];
+		for (const range of around) comments.set(range.pos, range.end);
+		node.getChildren(file).forEach(visit);
+	};
+	visit(file);
+
+	let kept = "";
+	let at = 0;
+	for (const [pos, end] of [...comments].sort(([a], [b]) => a - b)) {
+		kept += text.slice(at, pos);
+		at = end;
+	}
+	return kept + text.slice(at);
+};
+
+const stripped = new Map<string, string>();
+const code = (path: string): string => {
+	const known = stripped.get(path);
+	if (known !== undefined) return known;
+	const text = stripComments(readFileSync(root(path), "utf8"));
+	stripped.set(path, text);
+	return text;
+};
 
 const SHIPPED = readdirSync(root("src"), { recursive: true, encoding: "utf8" })
 	.map((entry) => `src/${entry.split(sep).join("/")}`)
@@ -46,24 +77,29 @@ const SHIPPED = readdirSync(root("src"), { recursive: true, encoding: "utf8" })
 const occurrences = (pattern: RegExp): string[] =>
 	SHIPPED.flatMap((path) => [...code(path).matchAll(pattern)].map((m) => `${path}: ${m[0]}`));
 
-const GRANULARITY_NAMES = new Set(["day", "week", "month", "quarter", "year"]);
+const NAME = `["'](?:day|week|month|quarter|year)["']`;
 
-/** `type X = "day" | "week"` — an alias whose whole right-hand side is granularity names. */
-const LITERAL_UNION_ALIAS = /\btype\s+(\w+)\s*=\s*((?:\|?\s*["'][^"']*["']\s*)+);/g;
+/**
+ * Two or more granularity names in a row, joined by `|` or `,`: the set, or part
+ * of it, spelled out as a union or an array. A subset handed to `Extract` or
+ * `Exclude` narrows the one declaration instead of restating it, so it is not one.
+ */
+const SPELLED_OUT = new RegExp(`((?:Extract|Exclude)<\\s*\\w+\\s*,\\s*)?(?:${NAME}\\s*[|,]\\s*)+${NAME}`, "g");
 
-const granularityAliases = (source: string): string[] =>
-	[...source.matchAll(LITERAL_UNION_ALIAS)]
-		.filter((m) => {
-			const names = [...(m[2] ?? "").matchAll(/["']([^"']*)["']/g)].map((n) => n[1] ?? "");
-			return names.length >= 2 && names.every((name) => GRANULARITY_NAMES.has(name));
-		})
-		.map((m) => m[1] ?? "");
+const spelledOut = (source: string): string[] =>
+	[...source.matchAll(SPELLED_OUT)].filter((m) => m[1] === undefined).map((m) => m[0]);
 
 describe("AC-ARCH-02.1: one module declares the granularity set", () => {
+	// settings.ts loops over the two granularities it migrates. That is logic, not a
+	// declaration of the set, and stays out of this ticket's scope.
 	it("AC-ARCH-02.1: src/types.ts is the only module spelling the set out as literals", () => {
-		const declared = SHIPPED.flatMap((path) => granularityAliases(code(path)).map((name) => `${path}: ${name}`));
+		const spelled = SHIPPED.flatMap((path) => spelledOut(code(path)).map((names) => `${path}: ${names}`));
 
-		expect(declared).toEqual(["src/types.ts: Granularity"]);
+		expect(spelled).toEqual([
+			'src/settings.ts: "day", "week"',
+			'src/types.ts: "day", "week", "month", "quarter", "year"',
+			'src/types.ts: "day", "week", "month", "year"',
+		]);
 	});
 
 	it("AC-ARCH-02.1: no other module declares a type under the canonical names", () => {
@@ -80,11 +116,45 @@ describe("AC-ARCH-02.1: one module declares the granularity set", () => {
 
 	// The check is text over source, so it is only worth having while it still
 	// recognises the shapes it exists to catch.
-	it("AC-ARCH-02.5: the alias check tells a redeclaration from a derived subset", () => {
-		expect(granularityAliases('type ActiveGranularity = "day" | "week";')).toEqual(["ActiveGranularity"]);
-		expect(granularityAliases("type G =\n\t| 'day'\n\t| 'month';")).toEqual(["G"]);
-		expect(granularityAliases('type A = Extract<Granularity, "day" | "week">;')).toEqual([]);
-		expect(granularityAliases('type Kind = "day" | "night";')).toEqual([]);
+	it("AC-ARCH-02.5: the spelling check tells a restated set from a derived subset", () => {
+		expect(spelledOut('type ActiveGranularity = "day" | "week";')).toEqual(['"day" | "week"']);
+		expect(spelledOut("type G =\n\t| 'day'\n\t| 'month';")).toEqual(["'day'\n\t| 'month'"]);
+		expect(spelledOut('granularity: "day" | "week" | "month",')).toEqual(['"day" | "week" | "month"']);
+		expect(spelledOut('const G = ["day", "week", "month"];')).toEqual(['"day", "week", "month"']);
+		expect(spelledOut('type A = Extract<Granularity, "day" | "week">;')).toEqual([]);
+		expect(spelledOut('type Kind = "day" | "night";')).toEqual([]);
+	});
+
+	it("AC-ARCH-02.5: comment stripping leaves strings and regex literals intact", () => {
+		const source = 'const glob = "notes/*.md";\nconst url = "a://b";\nconst re = /\\/*x/;\n// gone\n/* gone */ const kept = "*/";';
+
+		expect(stripComments(source)).toBe('const glob = "notes/*.md";\nconst url = "a://b";\nconst re = /\\/*x/;\n\n const kept = "*/";');
+	});
+});
+
+/** `moment(input, format…)`, the `utc` and `parseZone` spellings included. */
+const MOMENT_PARSE = /\bmoment(?:\.(?:utc|parseZone))?\((?:[^(),]|\([^()]*\))+,/g;
+
+/** `{{date`, `{{time`, … with the braces escaped any number of times, as a regex or a string spells them. */
+const TEMPLATE_TOKEN = /(?:\\*\{){2}\s*(?:date|time|title|yesterday|tomorrow)\b/g;
+
+describe("AC-ARCH-02.5: the parser and token checks recognise the shapes they exist to catch", () => {
+	const hits = (pattern: RegExp, source: string): number => [...source.matchAll(pattern)].length;
+
+	it("AC-ARCH-02.5: the parser check sees plain, utc and parseZone parses, not other moment calls", () => {
+		expect(hits(MOMENT_PARSE, 'window.moment(name, "YYYY-MM-DD", true)')).toBe(1);
+		expect(hits(MOMENT_PARSE, "window.moment.utc(name, fmt, true)")).toBe(1);
+		expect(hits(MOMENT_PARSE, "moment.parseZone(`${a}`, fmt)")).toBe(1);
+		expect(hits(MOMENT_PARSE, "moment.updateLocale(locale, { week })")).toBe(0);
+		expect(hits(MOMENT_PARSE, "window.moment(Number(x.split(\":\")[1]))")).toBe(0);
+	});
+
+	it("AC-ARCH-02.5: the token check sees a token however its braces are escaped", () => {
+		expect(hits(TEMPLATE_TOKEN, "out.replace(/{{date}}/g, d)")).toBe(1);
+		expect(hits(TEMPLATE_TOKEN, "out.replace(/\\{\\{title\\}\\}/g, t)")).toBe(1);
+		expect(hits(TEMPLATE_TOKEN, 'new RegExp("\\\\{\\\\{date")')).toBe(1);
+		expect(hits(TEMPLATE_TOKEN, 'out.split("{{time}}")')).toBe(1);
+		expect(hits(TEMPLATE_TOKEN, 'const css = "{{ width }}"')).toBe(0);
 	});
 });
 
@@ -114,7 +184,7 @@ describe("AC-ARCH-02.2: one routine parses a filename into a date", () => {
 	// moment's own string parser is what a second filename parser would be built
 	// on. The index parses a frontmatter value with it, which is not a filename.
 	it("AC-ARCH-02.5: no other module parses a string against a moment format", () => {
-		const parsers = occurrences(/\bmoment\((?:[^(),]|\([^()]*\))+,/g).map((hit) => hit.split(":")[0]);
+		const parsers = occurrences(MOMENT_PARSE).map((hit) => hit.split(":")[0]);
 
 		expect([...new Set(parsers)].sort()).toEqual(["src/fmt/parseFilename.ts", "src/notes/periodicNoteIndex.ts"]);
 	});
@@ -143,9 +213,9 @@ describe("AC-ARCH-02.3: one function resolves template tokens", () => {
 	});
 
 	it("AC-ARCH-02.5: no other module substitutes a date, time or title token", () => {
-		const TOKEN = /\\\{\\\{(?:date|time|title|yesterday|tomorrow)\b|["'`]\{\{(?:date|time|title|yesterday|tomorrow)\b/g;
-
-		expect([...new Set(occurrences(TOKEN).map((hit) => hit.split(":")[0]))]).toEqual(["src/notes/templateTokens.ts"]);
+		expect([...new Set(occurrences(TEMPLATE_TOKEN).map((hit) => hit.split(":")[0]))]).toEqual([
+			"src/notes/templateTokens.ts",
+		]);
 	});
 });
 
@@ -169,6 +239,20 @@ describe("AC-ARCH-02.4: one function probes each plugin registry", () => {
 		expect(occurrences(/["'](?:periodic-notes-anks|calendar-anks)["']/g)).toEqual([
 			'src/adapters/obsidianCalendarPluginAdapter.ts: "calendar-anks"',
 			'src/adapters/obsidianPeriodicNotesAdapter.ts: "periodic-notes-anks"',
+		]);
+	});
+
+	// A second probe naming the production ids needs a registry read, which the
+	// checks above catch, or a call to findCommunityPlugin, which this one does.
+	it("AC-ARCH-02.4: every community probe passes its adapter's one id list", () => {
+		const probes = occurrences(/(?<!function\s+)\bfindCommunityPlugin\(\s*[^,]+,\s*[^,]+,/g).map((hit) =>
+			hit.replace(/findCommunityPlugin\(\s*[^,]+,\s*([^,]+),/, "$1"),
+		);
+
+		expect(probes).toEqual([
+			"src/adapters/obsidianCalendarPluginAdapter.ts: CALENDAR_IDS",
+			"src/adapters/obsidianCalendarPluginAdapter.ts: CALENDAR_IDS",
+			"src/adapters/obsidianPeriodicNotesAdapter.ts: PERIODIC_NOTES_IDS",
 		]);
 	});
 });

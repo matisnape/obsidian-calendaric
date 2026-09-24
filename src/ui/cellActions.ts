@@ -1,6 +1,6 @@
 import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
-import type { PeriodicConfig, ReleaseGranularity } from "../types";
+import type { CellGranularity, PeriodicConfig } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { WorkspacePort } from "../adapters/workspacePort";
@@ -19,9 +19,6 @@ import { creationRefused } from "../notes/predecessorGuard";
  * two clicks racing for the same new note — is settled by a test against the
  * ports.
  */
-
-/** The granularities a calendar cell stands for: the release set minus year. */
-type CellGranularity = Exclude<ReleaseGranularity, "year">;
 
 const GRANULARITY_LABEL: Record<CellGranularity, string> = {
 	day: "daily",

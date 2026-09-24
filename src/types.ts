@@ -1,7 +1,10 @@
 import type { Moment } from "moment";
 
+/** Every granularity, in the order the UI and the commands use. */
+export const ALL_GRANULARITIES = ["day", "week", "month", "quarter", "year"] as const;
+
 /** Quarter is reserved (DEC-23): the type names it, no release-1 behavior uses it. */
-export type Granularity = "day" | "week" | "month" | "quarter" | "year";
+export type Granularity = (typeof ALL_GRANULARITIES)[number];
 
 /**
  * The granularities the first release actually creates notes for (DEC-23).
@@ -15,6 +18,8 @@ export type Granularity = "day" | "week" | "month" | "quarter" | "year";
 export const RELEASE_GRANULARITIES = ["day", "week", "month", "year"] as const;
 
 export type ReleaseGranularity = (typeof RELEASE_GRANULARITIES)[number];
+
+export type CellGranularity = Exclude<ReleaseGranularity, "year">;
 
 /** Narrows a configured granularity to the set this release creates notes for. */
 export function isReleaseGranularity(granularity: Granularity): granularity is ReleaseGranularity {

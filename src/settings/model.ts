@@ -1,8 +1,8 @@
-import { DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "../types";
+import { ALL_GRANULARITIES, DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "../types";
 import type { Granularity } from "../types";
 
 /** Every granularity Calendaric knows, in the order the UI and the commands use. */
-export const GRANULARITIES: readonly Granularity[] = ["day", "week", "month", "quarter", "year"];
+export const GRANULARITIES: readonly Granularity[] = ALL_GRANULARITIES;
 
 export const WEEK_START_OPTIONS = [
 	"locale",
