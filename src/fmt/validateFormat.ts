@@ -2,7 +2,7 @@
 type Moment = ReturnType<typeof window.moment>;
 import type { ReleaseGranularity } from "../types";
 import { DEFAULT_FORMATS } from "../settings/model";
-import { formatWithWeekTokens } from "../notes/noteUtils";
+import { formatWithWeekTokens, unknownTokenNames } from "../notes/noteUtils";
 import { parseFilename, weekSemantics } from "./parseFilename";
 import { computeNoteDate } from "./noteDate";
 
@@ -53,7 +53,7 @@ function roundTrips(
 	probes: Moment[],
 ): boolean {
 	return probes.every((date) => {
-		const parsed = parseFilename(name(date), format, false);
+		const parsed = parseFilename(name(date), format, false, granularity);
 		return (
 			parsed !== null &&
 			computeNoteDate(parsed.date, granularity, format) === computeNoteDate(date, granularity, format)
@@ -73,7 +73,13 @@ export function validateFormat(
 		return { errors: [`The format is empty. Enter one, for example ${DEFAULT_FORMATS[granularity]}.`], warnings: [] };
 	}
 
-	const written = (date: Moment) => formatWithWeekTokens(format, date);
+	const written = (date: Moment) => formatWithWeekTokens(format, date, granularity);
+
+	// Written as typed, so only a warning (DEC-21). It rides along with every
+	// outcome below: whether the format saves is the other rules' decision.
+	const unknown = unknownTokenNames(format).map(
+		(name) => `"${name}" is not a token this format recognises, so {{${name}:…}} is written as typed.`,
+	);
 
 	const probes = probeDates(today, granularity);
 
@@ -94,12 +100,13 @@ export function validateFormat(
 				errors.push(`"${segment}" cannot be a file or folder name: it is empty, or ends in a dot or a space.`);
 		}
 	}
-	if (errors.length > 0) return { errors, warnings: [] };
+	if (errors.length > 0) return { errors, warnings: unknown };
 
 	if (!roundTrips(written, format, granularity, probes)) {
 		return {
 			errors: [],
 			warnings: [
+				...unknown,
 				"This format cannot uniquely identify a note: different dates would share one filename, or a filename would not read back as its own date.",
 			],
 		};
@@ -116,10 +123,11 @@ export function validateFormat(
 		return {
 			errors: [],
 			warnings: [
+				...unknown,
 				`A note moved out of its dated folder would no longer be recognised: the part after the last "/" does not identify the date on its own. Workaround: repeat the whole date in the filename, for example ${format.slice(0, lastSlash)}/${dated}.`,
 			],
 		};
 	}
 
-	return { errors: [], warnings: [] };
+	return { errors: [], warnings: unknown };
 }

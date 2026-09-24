@@ -41,12 +41,12 @@ const firstOfMonth = () => window.moment().startOf("month");
 const words = (n: number) => Array.from({ length: n }, () => "word").join(" ");
 
 function dayPath(dayOfMonth: number, config: PeriodicConfig = SETTINGS.day): string {
-	return computeNotePath(firstOfMonth().add(dayOfMonth - 1, "day"), config, new FakeVaultConfigPort());
+	return computeNotePath(firstOfMonth().add(dayOfMonth - 1, "day"), config, new FakeVaultConfigPort(), "day");
 }
 
 function rowWeekPath(row: number): string {
 	const grid = getMonthGrid(firstOfMonth(), 1, SETTINGS.week.format);
-	return computeNotePath(getWeekAnchor(grid[row]!.days), SETTINGS.week, new FakeVaultConfigPort());
+	return computeNotePath(getWeekAnchor(grid[row]!.days), SETTINGS.week, new FakeVaultConfigPort(), "week");
 }
 const secondRowWeekPath = () => rowWeekPath(1);
 

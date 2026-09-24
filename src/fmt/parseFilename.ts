@@ -1,5 +1,6 @@
 import type { Moment } from "moment";
-import { formatWithWeekTokens, spanWeekStart, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
+import type { Granularity } from "../types";
+import { formatWithWeekTokens, literalWeekTokens, spanWeekStart, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
 
 export interface ParseFilenameResult {
 	date: Moment;
@@ -261,7 +262,8 @@ export type WeekSemantics = "iso" | "locale";
  *
  * Only top-level tokens count. A week token inside {{weekday:fmt}} is rendered
  * off a day already pinned inside the source date's configured week, so such a
- * format partitions dates by that week whatever numbering it prints.
+ * format partitions dates by that week whatever numbering it prints. A span
+ * with any other name is written as typed (AC-FMT-01.5), so it counts for nothing.
  *
  * US-CAL-01's getWeekNumber(date, weekFormat) reads the same format strings but
  * answers a different question — which number to display, not how to partition
@@ -269,7 +271,7 @@ export type WeekSemantics = "iso" | "locale";
  * shared once both branches are on master.
  */
 export function weekSemantics(format: string): WeekSemantics | null {
-	const topLevel = tokenize(format).groups.filter((group) => !group.nested);
+	const topLevel = tokenize(literalWeekTokens(format, "week")).groups.filter((group) => !group.nested);
 	if (topLevel.some((group) => group.kind === "isoWeek")) return "iso";
 	if (topLevel.some((group) => group.kind === "localeWeek")) return "locale";
 	return null;
@@ -277,7 +279,7 @@ export function weekSemantics(format: string): WeekSemantics | null {
 
 /** Whether the format carries a {{weekday:fmt}} span formatWithWeekTokens substitutes. */
 export function hasWeekdayWrapper(format: string): boolean {
-	return tokenize(format).groups.some((group) => group.wrapper !== undefined);
+	return tokenize(literalWeekTokens(format, "week")).groups.some((group) => group.wrapper !== undefined);
 }
 
 function pad2(n: number): string {
@@ -420,7 +422,12 @@ function stripMdExtension(path: string): string {
 	return /\.md$/i.test(path) ? path.slice(0, -3) : path;
 }
 
-function matchOne(input: string, format: string, allowPrefixMatch: boolean): ParseFilenameResult | null {
+function matchOne(
+	input: string,
+	format: string,
+	allowPrefixMatch: boolean,
+	granularity: Granularity,
+): ParseFilenameResult | null {
 	const { pattern, groups, tables } = tokenize(format);
 	// Case-sensitive: a filename's characters must match the format exactly
 	// (AC-FMT-04.1, AC-FMT-04.7) — moment's own output (month/weekday names,
@@ -441,7 +448,7 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	// restriction) once a week number decides the date; every other field,
 	// year/week/weekday alike, must still match exactly.
 	for (const built of buildCandidates(match, groups, tables, spanWeekStart(format))) {
-		const rendered = formatWithWeekTokens(format, built.date);
+		const rendered = formatWithWeekTokens(format, built.date, granularity);
 		const renderedMatch = regex.exec(rendered);
 		if (!renderedMatch) continue;
 
@@ -459,15 +466,20 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
  * format string configured for one granularity. Falls back to matching just
  * the filename against the format's last path segment (AC-FMT-04.2) because
  * a note can be moved out of the nested folder it was originally created in.
+ *
+ * `granularity` is the one the format is configured for: outside a week, a
+ * `{{weekday:fmt}}` span is literal text here exactly as it is to the writer.
  */
 export function parseFilename(
 	path: string,
-	format: string,
+	configuredFormat: string,
 	allowPrefixMatch: boolean,
+	granularity: Granularity,
 ): ParseFilenameResult | null {
+	const format = literalWeekTokens(configuredFormat, granularity);
 	const stripped = stripMdExtension(path);
 
-	const full = matchOne(stripped, format, allowPrefixMatch);
+	const full = matchOne(stripped, format, allowPrefixMatch, granularity);
 	if (full) return full;
 
 	const lastSlash = format.lastIndexOf("/");
@@ -477,5 +489,5 @@ export function parseFilename(
 	const basenameSlash = stripped.lastIndexOf("/");
 	const basename = basenameSlash === -1 ? stripped : stripped.slice(basenameSlash + 1);
 
-	return matchOne(basename, lastSegment, allowPrefixMatch);
+	return matchOne(basename, lastSegment, allowPrefixMatch, granularity);
 }

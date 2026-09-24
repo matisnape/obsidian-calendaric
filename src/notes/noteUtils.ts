@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import type { PeriodicConfig } from "../types";
+import type { Granularity, PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { VaultPort } from "../adapters/vaultPort";
 
@@ -14,6 +14,18 @@ import type { VaultPort } from "../adapters/vaultPort";
  * excluded here.
  */
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^{}]+)\}\}/gi;
+
+/**
+ * Any `{{name:fmt}}` span, whether or not the name is a weekday. Every span is
+ * written either resolved or as typed, so none of them is ever a top-level token.
+ */
+const SPAN_RE = /\{\{([^{}:]+):([^{}]+)\}\}/g;
+
+/**
+ * A moment escape, a `[literal]` or a span, leftmost first: `\\[` opens no literal,
+ * and a span's own `[W]` stays inside the span match.
+ */
+const BRACKET_OR_SPAN_RE = new RegExp(`\\\\.|\\[[^\\]]*\\]|${SPAN_RE.source}`, "g");
 
 /** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
 export const WEEKDAY_ISO: Record<string, number> = {
@@ -58,7 +70,7 @@ export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): 
  * filenames and two weeks under one.
  */
 export function spanWeekStart(format: string): number {
-	if (/[GW]/.test(tokenChars(format.replace(WEEK_TOKEN_RE, "")))) return 1;
+	if (/[GW]/.test(tokenChars(format.replace(SPAN_RE, "")))) return 1;
 	return window.moment.localeData().firstDayOfWeek();
 }
 
@@ -77,6 +89,31 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
 }
 
 /**
+ * The format with every `{{name:fmt}}` span escaped to literal text, except a
+ * weekday span in a weekly format. A weekday within the week means nothing for
+ * any other period (AC-FMT-01.4), and an unknown name is kept as typed rather
+ * than read by moment as tokens (AC-FMT-01.5). Each character gets moment's
+ * backslash escape, which the parser reads the same way, so the writer and the
+ * parser agree on the literal. A bracket escape would not do: the span's own
+ * format may hold `[` or `]`. A span already inside a `[literal]` is left alone,
+ * since moment prints a backslash there as typed.
+ */
+export function literalWeekTokens(fmt: string, granularity: Granularity): string {
+	return fmt.replace(BRACKET_OR_SPAN_RE, (match, name?: string) =>
+		name === undefined || (granularity === "week" && WEEKDAY_ISO[name.toLowerCase()] !== undefined)
+			? match
+			: match.replace(/./g, "\\$&"),
+	);
+}
+
+/** The names of the `{{name:fmt}}` spans that are not weekdays, in order (AC-FMT-01.6). */
+export function unknownTokenNames(fmt: string): string[] {
+	return [...fmt.matchAll(SPAN_RE)]
+		.map(([, name = ""]) => name)
+		.filter((name) => WEEKDAY_ISO[name.toLowerCase()] === undefined);
+}
+
+/**
  * Compute the full vault path (folder + filename + .md) for a periodic note.
  *
  * Strategy: week tokens like `{{monday:DD.MM}}` contain moment format chars
@@ -84,9 +121,15 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
  * extracting them first, replacing with safe placeholders, running moment.format(),
  * then substituting the resolved weekday dates back in.
  */
-export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfig: VaultConfigPort): string {
+export function computeNotePath(
+	date: Moment,
+	config: PeriodicConfig,
+	vaultConfig: VaultConfigPort,
+	// Production callers must pass it; left out, weekday tokens resolve as before US-FMT-01.
+	granularity: Granularity = "week",
+): string {
 	const folder = resolveNoteFolder(config.folder, vaultConfig);
-	const filename = formatWithWeekTokens(config.format, date);
+	const filename = formatWithWeekTokens(config.format, date, granularity);
 	return folder ? `${folder}/${filename}.md` : `${filename}.md`;
 }
 
@@ -98,7 +141,8 @@ export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfi
  * moment-escaped literals `[value]`, then run moment.format(). The escaped
  * literals pass through moment unchanged.
  */
-export function formatWithWeekTokens(fmt: string, date: Moment): string {
+export function formatWithWeekTokens(format: string, date: Moment, granularity: Granularity): string {
+	const fmt = literalWeekTokens(format, granularity);
 	// A moment keeps the locale it was made under. Re-reading the global one is
 	// what makes a date held across a settings change write with the new locale
 	// and week start (AC-FMT-03.3).
@@ -277,7 +321,7 @@ function weekNumberFor(date: Moment, tokens: string): number | null {
  * something: AC-CAL-01.4 asks for a week-number cell on every row.
  */
 export function getWeekNumber(date: Moment, weekFormat: string): number {
-	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(WEEK_TOKEN_RE, "")));
+	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(SPAN_RE, "")));
 	if (topLevel !== null) return topLevel;
 
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {

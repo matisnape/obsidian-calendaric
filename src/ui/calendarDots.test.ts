@@ -29,14 +29,14 @@ function makeDeps(existingPaths: string[]): CalendarDeps {
 }
 
 function pathFor(date: string): string {
-	return computeNotePath(moment(date), weekConfig, new FakeVaultConfigPort());
+	return computeNotePath(moment(date), weekConfig, new FakeVaultConfigPort(), "week");
 }
 
 describe("DotScanner.getWeekNotePaths", () => {
 	it("scans exactly the rows the grid draws, one anchor per row", () => {
 		const grid = getMonthGrid(moment("2026-12-15"), 1, WEEK_FORMAT);
 		const rowPaths = grid.map((week) =>
-			computeNotePath(getWeekAnchor(week.days), weekConfig, new FakeVaultConfigPort()),
+			computeNotePath(getWeekAnchor(week.days), weekConfig, new FakeVaultConfigPort(), "week"),
 		);
 		const scanner = new DotScanner(makeDeps(rowPaths), () => undefined);
 

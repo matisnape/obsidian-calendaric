@@ -68,13 +68,13 @@ function matchGranularity(
 	if (relative === null) return null;
 
 	// Prefix matching is the granularity's own opt-in (US-SET-01), off by default.
-	let parsed = parseFilename(relative, config.format, config.allowPrefixMatch);
+	let parsed = parseFilename(relative, config.format, config.allowPrefixMatch, granularity);
 	// A note may sit in a subfolder under the configured folder: the folder
 	// scopes the search, it does not fix the depth (AC-FMT-07.1). parseFilename
 	// already falls back to the filename when the FORMAT is nested; a
 	// slash-free format needs that same fallback applied to the path.
 	if (!parsed && !config.format.includes("/")) {
-		parsed = parseFilename(basename(relative), config.format, config.allowPrefixMatch);
+		parsed = parseFilename(basename(relative), config.format, config.allowPrefixMatch, granularity);
 	}
 	if (!parsed) return null;
 

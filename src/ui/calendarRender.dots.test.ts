@@ -43,13 +43,13 @@ function words(n: number): string {
 const firstOfMonth = () => window.moment().startOf("month");
 
 function dayPath(dayOfMonth: number): string {
-	return computeNotePath(firstOfMonth().add(dayOfMonth - 1, "day"), SETTINGS.day, new FakeVaultConfigPort());
+	return computeNotePath(firstOfMonth().add(dayOfMonth - 1, "day"), SETTINGS.day, new FakeVaultConfigPort(), "day");
 }
 
 /** The path of the week note the second grid row stands for. */
 function secondRowWeekPath(): string {
 	const grid = getMonthGrid(firstOfMonth(), 1, SETTINGS.week.format);
-	return computeNotePath(getWeekAnchor(grid[1]!.days), SETTINGS.week, new FakeVaultConfigPort());
+	return computeNotePath(getWeekAnchor(grid[1]!.days), SETTINGS.week, new FakeVaultConfigPort(), "week");
 }
 
 async function render(notes: Record<string, string>): Promise<HTMLElement> {
