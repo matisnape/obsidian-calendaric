@@ -4976,7 +4976,7 @@
       "story": "As someone maintaining an unbroken sequence of periodic notes, I want a command that always takes me to the next or previous period's note, creating it if it does not exist yet, so that I never hit a dead end while moving through time.",
       "rationale": "This is the command that keeps a daily or weekly logging habit moving forward even into periods with no note yet.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:open-adjacent-note-command"
       ],
@@ -4999,8 +4999,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/openNeighbourCommands.test.ts 'AC-CMD-07.1: opens the note of the period after the active note's, in the active pane' and 'finds the next note by what the index knows'; red when the index lookup is replaced by null (orchestrator mutation)"
         },
         {
           "id": "AC-CMD-07.2",
@@ -5012,8 +5012,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/openNeighbourCommands.test.ts 'AC-CMD-07.2: creates the next day's note and opens it in the active pane', frontmatter-dated and year-boundary cases, and 'the plugin's Open next and Open previous count from the active note, not from today' (through main.ts); red when dateOf returns today (orchestrator mutation)"
         },
         {
           "id": "AC-CMD-07.3",
@@ -5025,8 +5025,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/openNeighbourCommands.test.ts 'AC-CMD-07.3: creates the previous day's note and opens it in the active pane' and the week/month year-boundary case; red when backward steps forward (orchestrator mutation)"
         },
         {
           "id": "AC-CMD-07.4",
@@ -5037,8 +5037,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/commands/openNeighbourCommands.test.ts 'AC-CMD-07.4: hides both when the active pane holds no periodic note' plus four more 07.4 tests; red when open-next/open-previous leave the checkCallback set and when the granularity guard is removed (orchestrator mutations)",
           "failure_path": true
         }
       ]
