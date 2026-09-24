@@ -610,7 +610,7 @@
       "story": "As someone scanning the month for how much I've written, I want each day and week to show a small dot when a note exists, filled in proportion to how much is in it, so that I can spot thin or empty periods at a glance without opening anything.",
       "rationale": "This is the one indicator the vault actually uses today, and the extension point behind it must stay open to other indicators later.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:resolve-day-metadata",
         "calui:render-dots",
