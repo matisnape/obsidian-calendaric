@@ -46,7 +46,6 @@ function setUp(isMacOS = false) {
 	return { ribbon, opened, menus, icon };
 }
 
-/** A configuration with exactly these granularities switched on. */
 function active(...on: Granularity[]): Partial<Record<Granularity, { enabled: boolean }>> {
 	const configs: Partial<Record<Granularity, { enabled: boolean }>> = {};
 	for (const granularity of ["day", "week", "month", "quarter", "year"] as const) {

@@ -65,7 +65,6 @@ function showNotice(message: string, action?: NoticeAction, sticky = false): voi
 	});
 }
 
-/** The ribbon icon's right-click menu, one item per entry. */
 function showMenu(entries: MenuEntry[], evt: MouseEvent): void {
 	const menu = new Menu();
 	for (const entry of entries) menu.addItem((item) => item.setTitle(entry.title).onClick(entry.open));
@@ -96,7 +95,6 @@ export default class CalendaricPlugin extends Plugin {
 	/** The five navigation commands per active granularity (US-CMD-05). */
 	private commands: GranularityCommands | null = null;
 
-	/** The ribbon icon for the first active granularity (US-CMD-08). */
 	private ribbon: RibbonIcon | null = null;
 
 	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
