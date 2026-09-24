@@ -2,7 +2,7 @@ import { RELEASE_GRANULARITIES } from "../types";
 import type { PeriodicConfig, ReleaseGranularity } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
-import type { WorkspacePort } from "../adapters/workspacePort";
+import type { LeafMode, WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "./noteUtils";
 import { createPeriodicNote } from "./noteCreate";
 import { openNoteIn } from "./noteOpen";
@@ -27,7 +27,8 @@ export interface PeriodNotePorts {
 /**
  * A command's "open this period's note". `existing` is what the index found:
  * a prefix-matched name or a frontmatter date can be the period's note without
- * sitting at the path the format would write.
+ * sitting at the path the format would write. `mode` is where it lands; the
+ * ribbon icon's Cmd/Ctrl-click asks for a split (AC-CMD-08.3).
  */
 export async function openOrCreatePeriodNote(
 	granularity: ReleaseGranularity,
@@ -35,9 +36,10 @@ export async function openOrCreatePeriodNote(
 	config: PeriodicConfig,
 	existing: NoteFile | null,
 	ports: PeriodNotePorts,
+	mode: LeafMode = "reuse",
 ): Promise<void> {
 	if (existing) {
-		await openNoteIn(existing, "reuse", ports.workspace, existing.path);
+		await openNoteIn(existing, mode, ports.workspace, existing.path);
 		return;
 	}
 
@@ -59,7 +61,7 @@ export async function openOrCreatePeriodNote(
 		return;
 	}
 
-	await openNoteIn(file, "reuse", ports.workspace, path);
+	await openNoteIn(file, mode, ports.workspace, path);
 }
 
 /**

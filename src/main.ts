@@ -1,4 +1,4 @@
-import { getLanguage, MarkdownView, Notice, Plugin } from "obsidian";
+import { getLanguage, MarkdownView, Menu, Notice, Plugin, setTooltip } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
 import type { CalendaricSettings, StoredConfig } from "./settings/model";
@@ -24,8 +24,11 @@ import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
 import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { jumpToClosestNote } from "./commands/jumpCommands";
+import { RibbonIcon } from "./commands/ribbonIcon";
+import type { MenuEntry } from "./commands/ribbonIcon";
 import { resolveEffectiveConfig } from "./settings/model";
 import type { CalendarDeps } from "./adapters/calendarDeps";
+import type { LeafMode } from "./adapters/workspacePort";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 import { resolveFileDate } from "./fmt/resolveFileDate";
@@ -62,6 +65,13 @@ function showNotice(message: string, action?: NoticeAction, sticky = false): voi
 	});
 }
 
+/** The ribbon icon's right-click menu, one item per entry. */
+function showMenu(entries: MenuEntry[], evt: MouseEvent): void {
+	const menu = new Menu();
+	for (const entry of entries) menu.addItem((item) => item.setTitle(entry.title).onClick(entry.open));
+	menu.showAtMouseEvent(evt);
+}
+
 export default class CalendaricPlugin extends Plugin {
 	/**
 	 * Everything that was on disk, groups this version cannot reach included.
@@ -85,6 +95,9 @@ export default class CalendaricPlugin extends Plugin {
 
 	/** The five navigation commands per active granularity (US-CMD-05). */
 	private commands: GranularityCommands | null = null;
+
+	/** The ribbon icon for the first active granularity (US-CMD-08). */
+	private ribbon: RibbonIcon | null = null;
 
 	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
 	private guard: PredecessorGuard | null = null;
@@ -165,6 +178,19 @@ export default class CalendaricPlugin extends Plugin {
 		// them when the user opens it, and a command that fires before the index
 		// exists still opens or creates the period's note.
 		this.registerGranularityCommands();
+		this.registerRibbonIcon();
+	}
+
+	private registerRibbonIcon(): void {
+		this.ribbon = new RibbonIcon(
+			{ addRibbonIcon: (icon, title, callback) => this.addRibbonIcon(icon, title, callback), setTooltip },
+			new ObsidianWorkspaceAdapter(this.app).isMacOS,
+			(granularity, mode) => {
+				void this.openPeriodNote(granularity, window.moment(), mode);
+			},
+			showMenu,
+		);
+		this.ribbon.sync(this.settings);
 	}
 
 	private registerGranularityCommands(): void {
@@ -203,6 +229,7 @@ export default class CalendaricPlugin extends Plugin {
 		// rather than at the next restart (AC-CMD-05.2, AC-CMD-05.3).
 		this.index?.applySettings(this.indexConfigs());
 		this.commands?.sync(this.settings);
+		this.ribbon?.sync(this.settings);
 		this.periodLabels?.sync();
 
 		const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
@@ -276,13 +303,13 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	/** Open that period's note, writing it first when the vault holds none. */
-	private async openPeriodNote(granularity: ReleaseGranularity, date: Moment): Promise<void> {
+	private async openPeriodNote(granularity: ReleaseGranularity, date: Moment, mode: LeafMode = "reuse"): Promise<void> {
 		// The index knows which file IS that period's note, and that is not
 		// always the path the format would write: a prefix-matched name and a
 		// frontmatter date both count. Asking it first is what keeps this command
 		// from writing a second note beside one that is already there.
 		const existing = this.index?.get(granularity, date) ?? null;
-		await openOrCreatePeriodNote(granularity, date, resolveEffectiveConfig(this.settings, granularity), existing, this.notePorts());
+		await openOrCreatePeriodNote(granularity, date, resolveEffectiveConfig(this.settings, granularity), existing, this.notePorts(), mode);
 	}
 
 	private notePorts(): PeriodNotePorts {
