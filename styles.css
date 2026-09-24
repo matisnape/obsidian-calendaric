@@ -340,3 +340,10 @@
 .calendaric-dot--words .calendaric-dot-segment:not(.is-filled) {
   fill-opacity: 0.25;
 }
+
+/* On the active cell both dots take the on-accent colour, so the word-count
+   dot is dimmed there to stay apart from the note-exists dot (AC-CAL-07.4). */
+.calendaric-day.is-active .calendaric-dot--words,
+.calendaric-weeknum.is-active .calendaric-dot--words {
+  opacity: 0.6;
+}

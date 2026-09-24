@@ -44,12 +44,15 @@ export class DotScanner {
 	private unsubscribe: () => void;
 	/** Word count per note path, so a routine render reads no unchanged note again. */
 	private wordCounts = new Map<string, number>();
+	/** Bumped on every vault change, so a read that a change overtook is not kept. */
+	private changes = 0;
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
 			// Every change kind may mean new content at the path, so its count is
 			// read again on the next render. A metadata change is also how the
 			// host reports an edit, which moves no dot until then.
+			this.changes++;
 			this.wordCounts.delete(change.file.path);
 			if (change.oldPath !== undefined) this.wordCounts.delete(change.oldPath);
 			// A metadata change is the host finishing its parse of a file it has
@@ -122,8 +125,11 @@ export class DotScanner {
 				const file = this.deps.vault.getFile(path);
 				if (!file) return;
 				try {
+					const changesBefore = this.changes;
 					const words = countWords(await this.deps.vault.readFile(file));
-					this.wordCounts.set(path, words);
+					// ponytail: any change skips the cache, not just one at this path;
+					// count per path if routine renders show re-reads.
+					if (this.changes === changesBefore) this.wordCounts.set(path, words);
 					counts.set(path, words);
 				} catch {
 					// ponytail: an unreadable note just shows no word-count dot

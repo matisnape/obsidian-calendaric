@@ -127,6 +127,25 @@ describe("CalendarWidget indicator dots", () => {
 		expect(fillOf(".calendaric-dot--words")).not.toBe(fillOf(".calendaric-dot"));
 	});
 
+	it("AC-CAL-07.4: on the active day or week cell the two dots still differ", () => {
+		const css = readFileSync("styles.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+		// Declarations of the rule whose selector list names `selector` exactly.
+		const declarationsOf = (selector: string) => {
+			for (const [, selectors = "", body = ""] of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+				if (!selectors.split(",").some((s) => s.trim() === selector)) continue;
+				return new Map([...body.matchAll(/([\w-]+)\s*:\s*([^;]+);/g)].map(([, k = "", v = ""]) => [k, v.trim()]));
+			}
+			return undefined;
+		};
+		for (const cell of [".calendaric-day", ".calendaric-weeknum"]) {
+			const exists = declarationsOf(`${cell}.is-active .calendaric-dot`);
+			const words = declarationsOf(`${cell}.is-active .calendaric-dot--words`);
+			expect(exists).toBeDefined();
+			expect(words).toBeDefined();
+			expect([...words!].some(([property, value]) => exists!.get(property) !== value)).toBe(true);
+		}
+	});
+
 	it("AC-CAL-07.5: an empty note keeps its note-exists dot and shows no word-count dot", async () => {
 		const host = await render({ [dayPath(3)]: "---\ntags: daily\n---\n", [secondRowWeekPath()]: "" });
 

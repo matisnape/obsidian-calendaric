@@ -137,4 +137,26 @@ describe("DotScanner.getWordCounts", () => {
 		vault.emitChange({ kind: "rename", file: vault.getFile("Daily/b.md")!, oldPath: "Daily/a.md" });
 		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 1]]));
 	});
+
+	it("reads a note again after it is deleted and created anew", async () => {
+		const { vault, scanner } = scannerWith("Daily/a.md", "one two");
+		await scanner.getWordCounts(["Daily/a.md"]);
+		const old = vault.getFile("Daily/a.md")!;
+		vault.deleteFile("Daily/a.md");
+		vault.emitChange({ kind: "delete", file: old });
+		vault.seedFile("Daily/a.md", "one two three four");
+		vault.emitChange({ kind: "create", file: vault.getFile("Daily/a.md")! });
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 4]]));
+	});
+
+	it("does not keep a count read before a change that landed during the read", async () => {
+		const { vault, scanner, read } = scannerWith("Daily/a.md", "one two");
+		read.mockImplementationOnce(async (file) => {
+			vault.seedFile("Daily/a.md", "one two three");
+			vault.emitChange({ kind: "metadata", file });
+			return "one two";
+		});
+		await scanner.getWordCounts(["Daily/a.md"]);
+		expect(await scanner.getWordCounts(["Daily/a.md"])).toEqual(new Map([["Daily/a.md", 3]]));
+	});
 });
