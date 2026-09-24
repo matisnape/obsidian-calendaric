@@ -5,7 +5,9 @@ import type {
 	CompanionPluginRead,
 	DailyNotesPluginState,
 } from "./companionPluginPort";
+import type { App } from "obsidian";
 import { FakeVaultPort } from "./fakeVaultPort";
+import { ObsidianCalendarPluginAdapter } from "./obsidianCalendarPluginAdapter";
 import { FakeVaultConfigPort } from "./fakeVaultConfigPort";
 import { FakeWorkspacePort } from "./fakeWorkspacePort";
 import { guardCreation, PredecessorGuard } from "../notes/predecessorGuard";
@@ -30,11 +32,14 @@ function makePredecessors() {
 		unsaved: false,
 		/** Plugins switched off or removed since: the registry no longer has them. */
 		gone: [] as string[],
+		/** Plugins whose registry answer can no longer be read, as the real adapters report it. */
+		unreadable: [] as string[],
 		disableCalls: [] as string[],
 	};
 
 	const read = <T>(value: T): CompanionPluginRead<T> => ({ ok: true, value });
 	const absent = <T>(): CompanionPluginRead<T> => ({ ok: false, reason: "absent", problem: "not installed" });
+	const mismatch = <T>(): CompanionPluginRead<T> => ({ ok: false, reason: "mismatch", problem: "registry exploded" });
 	const outcome = (): CompanionPluginAction =>
 		state.unsaved ? { ok: false, problem: "saving data.json failed" } : { ok: true };
 
@@ -59,7 +64,12 @@ function makePredecessors() {
 			},
 		} satisfies CalendarPluginPort,
 		periodicNotes: {
-			readActiveGranularities: () => (state.gone.includes("periodic-notes") ? absent() : read([...state.periodic])),
+			readActiveGranularities: () =>
+				state.gone.includes("periodic-notes")
+					? absent()
+					: state.unreadable.includes("periodic-notes")
+						? mismatch()
+						: read([...state.periodic]),
 			disableGranularity: async (name: string) => {
 				state.disableCalls.push(`periodic-notes:${name}`);
 				if (!state.sticky) state.periodic = state.periodic.filter((entry) => entry !== name);
@@ -410,6 +420,54 @@ describe("PredecessorGuard: handing a granularity to Calendaric", () => {
 		state.gone = ["periodic-notes"];
 
 		expect(guard.refuse("day")).toBe(false);
+	});
+
+	it("AC-MIG-06.4: an unsaved hand-over stops refusing once its plugin can no longer be read", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+		state.unsaved = true;
+		guard.refuse("day");
+		await shown[0]!.action!.run();
+
+		state.unreadable = ["periodic-notes"];
+
+		expect(guard.refuse("day")).toBe(false);
+	});
+
+	it("AC-MIG-06.4: an unsaved Calendar hand-over stops refusing once the real registry cannot be queried", async () => {
+		// The real adapter, over a Calendar plugin whose save never reaches data.json.
+		let options: Record<string, unknown> = { showWeeklyNote: true };
+		const calendar = {
+			get options() {
+				return options;
+			},
+			async writeOptions(change: () => Record<string, unknown>) {
+				options = { ...options, ...change() };
+			},
+			async loadData() {
+				return { showWeeklyNote: true };
+			},
+		};
+		const registry: { getPlugin: (id: string) => unknown } = { getPlugin: (id) => (id === "calendar" ? calendar : null) };
+		const shown: Shown[] = [];
+		const guard = new PredecessorGuard(
+			{
+				companion: { readDailyNotes: () => ({ ok: true, value: { enabled: false } }), disableDailyNotes: () => ({ ok: true }) },
+				calendar: new ObsidianCalendarPluginAdapter({ plugins: registry } as unknown as App),
+				periodicNotes: { readActiveGranularities: () => ({ ok: true, value: [] }), disableGranularity: async () => ({ ok: true }) },
+			},
+			() => true,
+			(message, action) => shown.push({ message, action }),
+		);
+		guard.refuse("week");
+		await shown[0]!.action!.run();
+		expect(guard.refuse("week")).toBe(true);
+
+		registry.getPlugin = () => {
+			throw new Error("registry exploded");
+		};
+
+		expect(guard.refuse("week")).toBe(false);
 	});
 
 	it("AC-MIG-06.6: an unsaved Calendar hand-over keeps refusing while the plugin is still on", async () => {

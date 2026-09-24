@@ -198,21 +198,21 @@ export class PredecessorGuard {
 		}
 	}
 
-	/** Whether the plugin is still installed and on, whatever it reports for a granularity (AC-MIG-06.4 for a throw). */
+	/**
+	 * Whether the plugin is still installed and on, whatever it reports for a
+	 * granularity. A read that fails for any reason -- absent, unreadable, a
+	 * throw -- is "not enabled" here too (AC-MIG-06.4).
+	 */
 	private running(predecessor: Predecessor): boolean {
 		try {
 			switch (predecessor) {
 				// Daily Notes is on exactly when it owns the day.
 				case "daily-notes":
 					return this.owns(predecessor, "day");
-				case "calendar": {
-					const read = this.ports.calendar.readCalendarWeeklyNotes();
-					return read.ok || read.reason !== "absent";
-				}
-				case "periodic-notes": {
-					const read = this.ports.periodicNotes.readActiveGranularities();
-					return read.ok || read.reason !== "absent";
-				}
+				case "calendar":
+					return this.ports.calendar.readCalendarWeeklyNotes().ok;
+				case "periodic-notes":
+					return this.ports.periodicNotes.readActiveGranularities().ok;
 			}
 		} catch {
 			return false;
