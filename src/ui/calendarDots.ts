@@ -46,6 +46,8 @@ export class DotScanner {
 	private wordCounts = new Map<string, number>();
 	/** Bumped on every vault change, so a read that a change overtook is not kept. */
 	private changes = 0;
+	/** Notes whose word-count dot the last render drew, so an edit to one redraws it. */
+	private shown = new Set<string>();
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
@@ -55,11 +57,11 @@ export class DotScanner {
 			this.changes++;
 			this.wordCounts.delete(change.file.path);
 			if (change.oldPath !== undefined) this.wordCounts.delete(change.oldPath);
-			// A metadata change is the host finishing its parse of a file it has
-			// already reported as created, so it moves no dot. Create, delete and
-			// rename are the three that do — the same three this scanner watched
-			// before the port carried them.
-			if (change.kind === "metadata") return;
+			// A metadata change is how the host reports a finished edit, and its
+			// parse of a file it already reported as created. Neither moves a
+			// note-exists dot, so only a note the grid shows is redrawn, for its
+			// word count. Create, delete and rename can move any dot.
+			if (change.kind === "metadata" && !this.shown.has(change.file.path)) return;
 			onUpdate();
 		});
 	}
@@ -118,8 +120,9 @@ export class DotScanner {
 	 */
 	async getWordCounts(paths: Iterable<string>): Promise<Map<string, number>> {
 		const counts = new Map<string, number>();
+		this.shown = new Set(paths);
 		await Promise.all(
-			[...new Set(paths)].map(async (path) => {
+			[...this.shown].map(async (path) => {
 				const cached = this.wordCounts.get(path);
 				if (cached !== undefined) return void counts.set(path, cached);
 				const file = this.deps.vault.getFile(path);
