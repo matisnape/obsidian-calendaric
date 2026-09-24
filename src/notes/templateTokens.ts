@@ -59,11 +59,8 @@ const DATE_OFFSET_RE = /\{\{date([+-]\d+)([A-Za-z])(?::([^{}]+))?\}\}/g;
  * `resolveWeekStart` hands out. It decides which seven days a weekday token is
  * allowed to reach into (DEC-01).
  *
- * ponytail: the default matches `DEFAULT_GLOBALS.weekStart` ("monday") in
- * settings/model.ts, so the callers that have no settings to hand keep the
- * shipped default instead of a second convention. Carrying the live setting
- * from the settings screen down to here is US-FMT-03, which owns the week-start
- * plumbing for every feature at once; drop the default when that lands.
+ * The default is the week start `applyLocale` set on moment (US-FMT-03), so a
+ * caller with no settings to hand still uses the configured one.
  */
 export function substituteTemplateTokens(
 	content: string,
@@ -71,7 +68,7 @@ export function substituteTemplateTokens(
 	granularity: ReleaseGranularity,
 	config: PeriodicConfig,
 	title: string,
-	weekStart = 1,
+	weekStart = window.moment.localeData().firstDayOfWeek(),
 ): string {
 	let out = content;
 

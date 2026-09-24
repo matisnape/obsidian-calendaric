@@ -2,19 +2,16 @@ import type { Moment } from "moment";
 import type { WeekStartOption } from "../settings";
 import type { ICalendarDay, ICalendarMonth } from "../types";
 import { getWeekNumber } from "../notes/noteUtils";
+import { weekStartDay } from "../fmt/locale";
 
 /**
  * Convert a WeekStartOption to a numeric weekday (0=Sun, 1=Mon, ..., 6=Sat).
+ *
+ * The same answer `applyLocale` sets as moment's week start, so the grid and
+ * every locale-week token agree (AC-FMT-03.2).
  */
 export function resolveWeekStart(option: WeekStartOption): number {
-	if (option === "locale") {
-		return window.moment.localeData().firstDayOfWeek();
-	}
-	const map: Record<string, number> = {
-		sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-		thursday: 4, friday: 5, saturday: 6,
-	};
-	return map[option] ?? 1;
+	return weekStartDay(option, window.moment.localeData().firstDayOfWeek());
 }
 
 /**

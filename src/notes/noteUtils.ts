@@ -85,15 +85,19 @@ export function computeNotePath(date: Moment, config: PeriodicConfig, vaultConfi
  * literals pass through moment unchanged.
  */
 export function formatWithWeekTokens(fmt: string, date: Moment): string {
+	// A moment keeps the locale it was made under. Re-reading the global one is
+	// what makes a date held across a settings change write with the new locale
+	// and week start (AC-FMT-03.3).
+	const local = date.clone().locale(window.moment.locale());
 	const sanitised = fmt.replace(WEEK_TOKEN_RE, (_match, weekday: string, tokenFmt: string) => {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) return _match;
-		const resolved = date.clone().isoWeekday(isoDay).format(tokenFmt);
+		const resolved = local.clone().isoWeekday(isoDay).format(tokenFmt);
 		// Wrap in moment escape brackets so moment.format() treats it as a literal
 		return `[${resolved}]`;
 	});
 
-	return date.format(sanitised);
+	return local.format(sanitised);
 }
 
 /**

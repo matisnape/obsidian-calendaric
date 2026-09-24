@@ -405,14 +405,12 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "Advanced" });
 
 		const m = getMoment();
-		const systemLocale = m ? m.locale() : "";
-		const autoLabel = systemLocale ? `Same as system (${systemLocale})` : "Same as system (auto)";
 
 		new Setting(containerEl)
 			.setName("Override locale")
-			.setDesc("Override the locale used for date formatting. Defaults to the system locale.")
+			.setDesc("Override the locale used for date formatting. Defaults to Obsidian's language.")
 			.addDropdown((dd) => {
-				dd.addOption("", autoLabel);
+				dd.addOption("", "Same as Obsidian");
 				if (m) {
 					for (const locale of (m.locales() as string[]).sort()) {
 						dd.addOption(locale, locale);
@@ -420,10 +418,8 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				}
 				dd.setValue(this.plugin.settings.overrideLocale);
 				dd.onChange(async (value) => {
+					// Saving applies it: the plugin resolves and sets the locale in one place.
 					this.plugin.settings.overrideLocale = value;
-					if (m) {
-						m.locale(value || systemLocale);
-					}
 					await this.save();
 				});
 			});
