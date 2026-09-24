@@ -7,6 +7,7 @@ import type { WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "../notes/noteUtils";
 import { createPeriodicNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
+import { creationRefused } from "../notes/predecessorGuard";
 
 /**
  * What a day or week cell does when the user clicks or hovers it.
@@ -72,6 +73,11 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 		await openNote(existing, click.event, ports.workspace, path);
 		return;
 	}
+
+	// Before the confirmation: a note Calendaric will not write is not worth
+	// asking about. The refusal has already told the user which plugin still
+	// writes this granularity (AC-MIG-06.1).
+	if (creationRefused(ports.vault, granularity)) return;
 
 	if (click.confirmBeforeCreate) {
 		const accepted = await click.confirmCreate(describeCreate(date, granularity, path));

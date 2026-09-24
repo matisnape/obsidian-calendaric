@@ -15,6 +15,9 @@ import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapte
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import { ObsidianPeriodicNotesAdapter } from "./adapters/obsidianPeriodicNotesAdapter";
+import { ObsidianCalendarPluginAdapter } from "./adapters/obsidianCalendarPluginAdapter";
+import { guardCreation, PredecessorGuard } from "./notes/predecessorGuard";
+import type { NoticeAction } from "./notes/predecessorGuard";
 import { ElectronDesktopShellAdapter } from "./adapters/electronDesktopShellAdapter";
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
@@ -37,6 +40,21 @@ import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
  */
 type Moment = ReturnType<typeof window.moment>;
 
+/**
+ * A notice, with a button when there is something to do about it. One that
+ * carries a button stays until it is dismissed, so the button can be reached.
+ */
+function showNotice(message: string, action?: NoticeAction): void {
+	if (!action) {
+		new Notice(message);
+		return;
+	}
+	const notice = new Notice(message, 0);
+	notice.messageEl.createEl("button", { text: action.label }).addEventListener("click", () => {
+		notice.hide();
+		void action.run();
+	});
+}
 
 export default class CalendaricPlugin extends Plugin {
 	/**
@@ -62,6 +80,9 @@ export default class CalendaricPlugin extends Plugin {
 	/** The five navigation commands per active granularity (US-CMD-05). */
 	private commands: GranularityCommands | null = null;
 
+	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
+	private guard: PredecessorGuard | null = null;
+
 	async onload() {
 		await this.loadSettings();
 		applyLocaleSettings(this.settings, getLanguage());
@@ -75,13 +96,24 @@ export default class CalendaricPlugin extends Plugin {
 		};
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this, calendarDeps));
 
+		const companion = new ObsidianCompanionPluginAdapter(this.app);
+		const periodicNotes = new ObsidianPeriodicNotesAdapter(this.app);
+		this.guard = new PredecessorGuard(
+			{ companion, calendar: new ObsidianCalendarPluginAdapter(this.app), periodicNotes },
+			(granularity) => this.settings[granularity].enabled,
+			showNotice,
+		);
+		// The grid's clicks reach note creation with the pane's ports only, and
+		// find the guard through the vault those ports wrap.
+		guardCreation(this.app.vault, this.guard);
+
 		// Both host capabilities the settings screen needs are constructed here
 		// and handed over as ports. The screen names neither implementation,
 		// which is what keeps the view off the adapter layer (AC-ARCH-01.1).
 		this.addSettingTab(
 			new CalendaricSettingsTab(this.app, this, {
-				companion: new ObsidianCompanionPluginAdapter(this.app),
-				periodicNotes: new ObsidianPeriodicNotesAdapter(this.app),
+				companion,
+				periodicNotes,
 				desktop: new ElectronDesktopShellAdapter(this.app),
 				vault: new ObsidianVaultAdapter(this.app),
 			}),
@@ -110,6 +142,9 @@ export default class CalendaricPlugin extends Plugin {
 				this.indexConfigs(),
 			);
 
+			// Every plugin has loaded by now, so this is when an overlap is known.
+			this.guard?.announce();
+
 			// Startup parks the leaf without revealing or focusing it.
 			void calendar.ensure();
 			void this.openStartupNote();
@@ -130,6 +165,8 @@ export default class CalendaricPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
 		this.index?.destroy();
 		this.index = null;
+		guardCreation(this.app.vault, null);
+		this.guard = null;
 		restoreLocale();
 	}
 
@@ -200,6 +237,9 @@ export default class CalendaricPlugin extends Plugin {
 			return;
 		}
 
+		// AC-MIG-06.1: a predecessor still writes these notes; the refusal says which.
+		if (this.guard?.refuse(granularity)) return;
+
 		const config = resolveEffectiveConfig(this.settings, granularity);
 		const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
 
@@ -257,6 +297,9 @@ export default class CalendaricPlugin extends Plugin {
 			let file: NoteFile;
 			if (existing instanceof TFile) {
 				file = existing;
+			} else if (this.guard?.owner(key)) {
+				// The startup notice has already named the plugin that owns it.
+				return;
 			} else {
 				// Create silently — bypass confirmBeforeCreate on startup.
 				const creation = await createPeriodicNote(
