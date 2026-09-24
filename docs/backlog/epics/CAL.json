@@ -1127,7 +1127,7 @@
       "story": "As someone reading a note from three weeks ago, I want the note itself to tell me which day it is, so that I do not have to decode the filename to know where I am.",
       "rationale": "This is on in the live vault and renders in every open periodic note today. An earlier icebox entry deferred it on the claim that it was unused; the claim was wrong.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:timeline-complication-label",
         "pn:timeline-lifecycle-per-leaf",
