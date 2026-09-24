@@ -111,7 +111,7 @@
       "story": "As a maintainer, I want each date-parsing rule, filename-matching rule, and shared type defined exactly once in the codebase, so that fixing or extending a rule requires exactly one change instead of several coordinated ones.",
       "rationale": "The map's most repeated finding is duplication: a date/time template-token pattern copy-pasted across five note-creation functions, two independently-diverging prefix-match implementations across the source repositories, a dev-plugin-id detection probe duplicated at six call sites across four functions in two repos, and (inside the target repository itself) a period-granularity type declared three times independently.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -132,8 +132,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/arch.duplication.test.ts 'AC-ARCH-02.1' at ff2ebe9: src/types.ts alone spells the granularity set (ALL_GRANULARITIES -> Granularity, RELEASE_GRANULARITIES -> ReleaseGranularity, derived CellGranularity), quarter reserved out of the release set; settings.ts, model.ts, calendar.ts and cellActions.ts now derive from it; mutations (re-spell the union in settings.ts, the list in model.ts, the inline union in calendar.ts) each turn it red"
         },
         {
           "id": "AC-ARCH-02.2",
@@ -145,8 +145,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-ARCH-02.2' at ff2ebe9: strict and prefix matching for two granularities and two call sites all go through parseFilename, and no other module parses a string against a moment format; mutation (a second window.moment(value, format) in settings.ts) turns it red"
         },
         {
           "id": "AC-ARCH-02.3",
@@ -158,8 +158,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-ARCH-02.3' at ff2ebe9: every release granularity resolves its template through substituteTemplateTokens, and no other module substitutes a date/time/title token (already one implementation on master, now guarded)"
         },
         {
           "id": "AC-ARCH-02.4",
@@ -171,8 +171,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-ARCH-02.4' at ff2ebe9: the community registry is read once by findCommunityPlugin, the core registry once by the companion adapter, and each companion plugin's id list (dev id included) is declared once (already one implementation on master, now guarded)"
         },
         {
           "id": "AC-ARCH-02.5",
@@ -183,8 +183,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/arch.duplication.test.ts 'AC-ARCH-02.5' checks run in npm test, so CI runs them, and fail on a second declaration, parser, token substitution or registry probe; proven by the four orchestrator mutations above plus the worker's ten planted duplicates, all red",
           "failure_path": true
         }
       ],
