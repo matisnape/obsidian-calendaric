@@ -28,7 +28,7 @@ const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 };
 
 /** The granularities whose settings the screen can edit today. */
-type ActiveGranularity = "day" | "week";
+type ActiveGranularity = Extract<Granularity, "day" | "week">;
 
 /** The format and template guide, shipped inside the plugin's own folder. */
 const FORMAT_GUIDE_PATH = "docs/guide.md";

@@ -1,6 +1,6 @@
 import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
-import type { PeriodicConfig } from "../types";
+import type { CellGranularity, PeriodicConfig } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { WorkspacePort } from "../adapters/workspacePort";
@@ -20,9 +20,7 @@ import { creationRefused } from "../notes/predecessorGuard";
  * ports.
  */
 
-type Granularity = "day" | "week" | "month";
-
-const GRANULARITY_LABEL: Record<Granularity, string> = {
+const GRANULARITY_LABEL: Record<CellGranularity, string> = {
 	day: "daily",
 	week: "weekly",
 	month: "monthly",
@@ -48,7 +46,7 @@ export type ConfirmCreate = (request: CreateRequest) => Promise<boolean>;
 
 export interface CellClick {
 	date: Moment;
-	granularity: Granularity;
+	granularity: CellGranularity;
 	config: PeriodicConfig;
 	confirmBeforeCreate: boolean;
 	event: MouseEvent;
@@ -105,7 +103,7 @@ export async function openOrCreateNote(click: CellClick): Promise<void> {
 async function createNoteOrJoinTheWinner(
 	path: string,
 	date: Moment,
-	granularity: Granularity,
+	granularity: CellGranularity,
 	config: PeriodicConfig,
 	vault: VaultPort,
 	warn: (message: string) => void,
@@ -181,7 +179,7 @@ async function createNoteInTurn(
  * nested folder makes the name hard to read back as a date, and the user is
  * agreeing to a day rather than to a string.
  */
-function describeCreate(date: Moment, granularity: Granularity, path: string): CreateRequest {
+function describeCreate(date: Moment, granularity: CellGranularity, path: string): CreateRequest {
 	const label = GRANULARITY_LABEL[granularity];
 	const filename = path.split("/").pop() ?? path;
 	const subject = subjectFor(granularity, date);
@@ -199,7 +197,7 @@ function describeCreate(date: Moment, granularity: Granularity, path: string): C
  * future granularity lands here without a case, which is what keeps this in
  * step with `GRANULARITY_LABEL` above.
  */
-function subjectFor(granularity: Granularity, date: Moment): string {
+function subjectFor(granularity: CellGranularity, date: Moment): string {
 	switch (granularity) {
 		case "week":
 			return `The week of ${date.format("LL")}`;
