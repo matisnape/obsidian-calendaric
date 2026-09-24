@@ -30,7 +30,9 @@ describe("getMonthGrid: configured week start", () => {
 		expect(rows(sunday).map((row) => row[0])).toEqual([
 			"2026-04-26", "2026-05-03", "2026-05-10", "2026-05-17", "2026-05-24", "2026-05-31",
 		]);
-		expect(rows(sunday)[0]).not.toEqual(rows(monday)[0]);
+		expect(sunday.map((week) => week.days[0]!.date.valueOf())).toEqual(
+			monday.map((week) => week.days[0]!.date.clone().subtract(1, "day").valueOf()),
+		);
 	});
 
 	it("AC-FMT-02.3: a month opening on the week-start day still gets 6 rows, the last one all next month", () => {
