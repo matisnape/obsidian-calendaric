@@ -5982,7 +5982,7 @@
       "story": "As someone who has not yet removed my old periodic-notes plugins, I want Calendaric to tell me when one of them is still switched on, so that I do not end up with two plugins both trying to create or manage the same notes without my knowledge.",
       "rationale": "This vault currently has the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin all enabled at once, so this coexistence risk exists from the moment Calendaric is installed, not only in edge cases.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "forks:dev-plugin-id-fallback"
       ],
@@ -6006,8 +6006,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/adapters/companionPluginPort.predecessorGuard.test.ts \"AC-MIG-06.1: a calendar click on an owned granularity creates nothing, asks nothing, and says why\" and \"... still opens the note that already exists\"; src/notes/periodNoteOpen.test.ts \"AC-MIG-06.1: a command for an owned granularity creates nothing and says which plugin owns it\"; red when the calendar click is not gated and when refuse() never refuses (mutations)",
           "failure_path": true
         },
         {
@@ -6019,8 +6019,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/adapters/companionPluginPort.predecessorGuard.test.ts \"AC-MIG-06.2: shows no notice when no predecessor is enabled\" and \"... shows one notice per predecessor that overlaps Calendaric\"; red when the startup check shows nothing (mutation)",
           "failure_path": true
         },
         {
@@ -6033,8 +6033,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/adapters/obsidianCalendarPluginAdapter.test.ts \"AC-MIG-06.3: detects the Calendar plugin under its development-build id\" and \"... under its published id\" (ids calendar-anks / periodic-notes-anks from docs/mapping); red when the development-build id is dropped (mutation)"
         },
         {
           "id": "AC-MIG-06.4",
@@ -6045,8 +6045,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/adapters/companionPluginPort.predecessorGuard.test.ts \"AC-MIG-06.4: treats an unreadable registry answer as a plugin that is not enabled\", \"... does not throw when the registry itself throws\" and \"... reports absence when the host exposes no plugin registry\"; red when an unreadable read counts as enabled (mutation)",
           "failure_path": true
         },
         {
@@ -6060,8 +6060,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/adapters/companionPluginPort.predecessorGuard.test.ts \"AC-MIG-06.5: turns the granularity off in the predecessor and resumes once the re-read says off\" and \"... a click after the hand-over creates the note\"; red when the hand-over claims success without writing (mutation)"
         },
         {
           "id": "AC-MIG-06.6",
@@ -6073,8 +6073,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/adapters/companionPluginPort.predecessorGuard.test.ts \"AC-MIG-06.6: keeps refusing when the re-read still says the predecessor has the granularity on\" and \"... keeps refusing when the setting changed in memory but the save failed\"; red when an unconfirmed hand-over stops counting as an owner (mutation)",
           "failure_path": true
         }
       ],

@@ -596,7 +596,7 @@
       "story": "As someone who has not yet removed my old periodic-notes plugins, I want Calendaric to tell me when one of them is still switched on, so that I do not end up with two plugins both trying to create or manage the same notes without my knowledge.",
       "rationale": "This vault currently has the core Daily Notes plugin, the Calendar plugin and the Periodic Notes plugin all enabled at once, so this coexistence risk exists from the moment Calendaric is installed, not only in edge cases.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "forks:dev-plugin-id-fallback"
       ],
