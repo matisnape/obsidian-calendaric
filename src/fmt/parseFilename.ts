@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import { formatWithWeekTokens, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
+import { formatWithWeekTokens, spanWeekStart, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
 
 export interface ParseFilenameResult {
 	date: Moment;
@@ -316,7 +316,12 @@ interface BuiltDate {
  * weekly match. matchOne's re-render check then rejects the
  * candidate if it does not reproduce the name.
  */
-function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], tables: LocaleTables): BuiltDate[] {
+function buildCandidates(
+	match: RegExpExecArray,
+	groups: TokenGroup[],
+	tables: LocaleTables,
+	weekStart: number,
+): BuiltDate[] {
 	const candidates: BuiltDate[] = [];
 
 	const topLevel = buildFrom(match, groups, (group) => !group.nested, tables);
@@ -327,10 +332,9 @@ function buildCandidates(match: RegExpExecArray, groups: TokenGroup[], tables: L
 	);
 	for (const [wrapper, sample] of wrappers) {
 		const built = buildFrom(match, groups, (group) => group.wrapper === wrapper, tables, sample.wrapperIsoDay);
-		// Every wrapper renders inside the configured week (AC-FMT-03.2), so the
+		// Every wrapper renders inside spanWeekStart's week (AC-FMT-03.2), so the
 		// day it names lies in the format's own week; that week's Monday is the
 		// date every weekly match returns.
-		const weekStart = window.moment.localeData().firstDayOfWeek();
 		if (built) candidates.push({ date: weekdayWithin(built.date, 1, weekStart), usedWeekPath: built.usedWeekPath });
 	}
 	return candidates;
@@ -436,7 +440,7 @@ function matchOne(input: string, format: string, allowPrefixMatch: boolean): Par
 	// fragment (nested in {{weekday:fmt}} or not — the AC names no such
 	// restriction) once a week number decides the date; every other field,
 	// year/week/weekday alike, must still match exactly.
-	for (const built of buildCandidates(match, groups, tables)) {
+	for (const built of buildCandidates(match, groups, tables, spanWeekStart(format))) {
 		const rendered = formatWithWeekTokens(format, built.date);
 		const renderedMatch = regex.exec(rendered);
 		if (!renderedMatch) continue;

@@ -154,6 +154,25 @@ describe("{{weekday:fmt}} filename tokens", () => {
 		}
 	});
 
+	it("AC-FMT-03.2: a format numbering ISO weeks resolves its weekday tokens in that ISO week, whatever the week start", () => {
+		applyLocale("en", "sunday", "en");
+		// Mon 2026-02-23 .. Sun 2026-03-01: one ISO week, so one period and one file.
+		const isoWeek = Array.from({ length: 7 }, (_, i) => m("2026-02-23").add(i, "day"));
+		// The second format carries no top-level year, so only its span can give the parser a date.
+		const cases = [
+			["GGGG-[W]WW ({{monday:DD.MM}}-{{sunday:DD.MM}})", "2026-W09 (23.02-01.03)"],
+			["[W]WW, {{sunday:YYYY-MM-DD}}", "W09, 2026-03-01"],
+		] as const;
+		for (const [format, name] of cases) {
+			expect(new Set(isoWeek.map((day) => formatWithWeekTokens(format, day)))).toEqual(new Set([name]));
+			const parsed = parseFilename(name, format, false);
+			expect(parsed, format).not.toBeNull();
+			for (const day of isoWeek) {
+				expect(computeNoteDate(parsed!.date, "week", format)).toBe(computeNoteDate(day, "week", format));
+			}
+		}
+	});
+
 	it("AC-FMT-03.2: a Monday start writes the same weekday-token filenames as the ISO week did", () => {
 		applyLocale("en", "monday", "en");
 		const format = "{{monday:GGGG-[W]WW}} {{sunday:DD.MM}}";

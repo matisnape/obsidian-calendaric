@@ -49,6 +49,19 @@ export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): 
 }
 
 /**
+ * The first day of the week a filename format's `{{weekday:fmt}}` spans resolve
+ * within, as moment's `day()` number.
+ *
+ * The configured week (AC-FMT-03.2), unless the format numbers ISO weeks at top
+ * level: ISO tokens stay Monday-based, and a span must fall in the week the
+ * format itself names, or one ISO week would be written under two filenames.
+ */
+export function spanWeekStart(format: string): number {
+	if (tokenChars(format.replace(WEEK_TOKEN_RE, "")).includes("W")) return 1;
+	return window.moment.localeData().firstDayOfWeek();
+}
+
+/**
  * Second-pass substitution of `{{weekday:fmt}}` tokens in a format string.
  * Runs after moment.format() — safe because moment never outputs `{{...}}`.
  *
@@ -89,12 +102,12 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
 	// what makes a date held across a settings change write with the new locale
 	// and week start (AC-FMT-03.3).
 	const local = date.clone().locale(window.moment.locale());
-	const weekStart = local.localeData().firstDayOfWeek();
+	const weekStart = spanWeekStart(fmt);
 	const sanitised = fmt.replace(WEEK_TOKEN_RE, (_match, weekday: string, tokenFmt: string) => {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) return _match;
 		// Within the configured week, so every day of one calendar row writes
-		// the same weekly file (AC-FMT-03.2).
+		// the same weekly file (AC-FMT-03.2); within the ISO week for an ISO format.
 		const resolved = weekdayWithin(local, isoDay, weekStart).format(tokenFmt);
 		// Wrap in moment escape brackets so moment.format() treats it as a literal
 		return `[${resolved}]`;
@@ -255,8 +268,8 @@ function weekNumberFor(date: Moment, tokens: string): number | null {
  * A top-level token wins, because moment resolves it against this date. Failing
  * that, the number comes from the first `{{weekday:fmt}}` span that names a
  * week, resolved against its own weekday exactly as `formatWithWeekTokens`
- * resolves it — `{{monday:GGGG-[W]WW}}` writes 2026-W52 for Sun 2026-12-27,
- * whose own locale week is 1.
+ * resolves it — under a Monday start `{{monday:GGGG-[W]WW}}` writes 2026-W52
+ * for Sun 2026-12-27, whose own locale week is 1.
  *
  * When no token anywhere names a week the filename carries no week number to
  * agree with, and the locale week is shown. The column still has to show
