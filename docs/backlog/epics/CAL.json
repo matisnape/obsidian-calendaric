@@ -610,7 +610,7 @@
       "story": "As someone scanning the month for how much I've written, I want each day and week to show a small dot when a note exists, filled in proportion to how much is in it, so that I can spot thin or empty periods at a glance without opening anything.",
       "rationale": "This is the one indicator the vault actually uses today, and the extension point behind it must stay open to other indicators later.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "calui:resolve-day-metadata",
         "calui:render-dots",
@@ -637,8 +637,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.dots.test.ts \"AC-CAL-07.1: a day or week with no note shows no dot of either kind\"; red when a day cell draws its dot without a note (mutation)",
           "failure_path": true
         },
         {
@@ -650,8 +650,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.dots.test.ts \"AC-CAL-07.2: a note with words shows a word-count dot with a segment filled, on day and week cells\"; red when the word dot loses its class (mutation)"
         },
         {
           "id": "AC-CAL-07.3",
@@ -665,8 +665,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarDots.test.ts \"AC-CAL-07.3: at a threshold of 250, fills one segment per 250 words, at least one, at most five\" and \"... a threshold that is not a positive whole number falls back to 250\"; red under floor->ceil and under a weakened threshold guard (mutations). The threshold is a parameter defaulting to 250; no setting carries it yet",
           "failure_path": true
         },
         {
@@ -679,8 +679,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.dots.test.ts \"AC-CAL-07.4: a note with words shows both dots, told apart by class and colour\" incl. the is-active cells; red when the word dot takes the exists class (mutation)"
         },
         {
           "id": "AC-CAL-07.5",
@@ -691,8 +691,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.dots.test.ts \"AC-CAL-07.5: an empty note keeps its note-exists dot and shows no word-count dot\"; red when a zero-segment word dot is drawn (mutation)",
           "failure_path": true
         }
       ],
