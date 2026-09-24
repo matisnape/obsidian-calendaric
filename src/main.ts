@@ -202,7 +202,8 @@ export default class CalendaricPlugin extends Plugin {
 
 	/**
 	 * One label per open markdown pane, redrawn whenever a pane opens, closes or
-	 * switches file (AC-CAL-13.6), and after a settings change (AC-CAL-13.5).
+	 * switches file (AC-CAL-13.6), after a settings change (AC-CAL-13.5), and
+	 * every minute so a day rolling over renames it.
 	 */
 	private startPeriodLabels(): void {
 		const vaultConfig = new ObsidianVaultConfigAdapter(this.app);
@@ -216,6 +217,7 @@ export default class CalendaricPlugin extends Plugin {
 			enabled: () => this.settings.showPeriodLabel,
 			resolve: (path) => resolveFileDate(path, this.indexConfigs(), vaultConfig),
 			now: () => window.moment(),
+			weekFormat: () => this.indexConfigs().week?.format ?? "",
 		});
 		this.periodLabels = labels;
 
@@ -224,6 +226,7 @@ export default class CalendaricPlugin extends Plugin {
 		this.registerEvent(this.app.workspace.on("file-open", sync));
 		// A rename can turn a file into a periodic note, or out of one, without a layout change.
 		this.registerEvent(this.app.vault.on("rename", sync));
+		this.registerInterval(window.setInterval(sync, 60_000));
 	}
 
 	/**

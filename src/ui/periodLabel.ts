@@ -1,4 +1,5 @@
 import type { ReleaseGranularity } from "../types";
+import { hasWeekdayWrapper, weekSemantics } from "../fmt/parseFilename";
 
 /** Read off `window.moment` rather than imported, like main.ts: the bundle carries no moment of its own. */
 type Moment = ReturnType<typeof window.moment>;
@@ -9,15 +10,25 @@ const UNIT_NAMES: Record<ReleaseGranularity, string> = { day: "day", week: "week
 const COUNT_KEYS = { day: "dd", week: "ww", month: "MM", year: "yy" } as const;
 
 /**
+ * Where a period starts. A week starts where the weekly format's own numbering
+ * puts it, the same rule as `startUnit` in fmt/noteDate.ts, so "This week" is
+ * the week whose note the format writes for today.
+ */
+function periodStart(granularity: ReleaseGranularity, weekFormat: string): ReleaseGranularity | "isoWeek" {
+	if (granularity !== "week") return granularity;
+	const semantics = weekSemantics(weekFormat);
+	if (semantics === "locale" || (semantics === null && hasWeekdayWrapper(weekFormat))) return "week";
+	return "isoWeek";
+}
+
+/**
  * The period a note belongs to, in words, measured from `now`: Today, Last
  * week, 3 months ago. Adjacent periods get a name; farther ones a count.
- *
- * ponytail: the week offset uses moment's locale week (`startOf("week")`), which
- * `applyLocaleSettings` sets from the week-start setting. A weekly format on a
- * different week system than that setting can be one week off on the boundary day.
  */
-export function humanizePeriod(granularity: ReleaseGranularity, date: Moment, now: Moment): string {
-	const offset = date.clone().startOf(granularity).diff(now.clone().startOf(granularity), granularity);
+export function humanizePeriod(granularity: ReleaseGranularity, date: Moment, now: Moment, weekFormat = ""): string {
+	const start = periodStart(granularity, weekFormat);
+	// Both ends start a period of the same length, so diff in "week" is exact for an ISO week too.
+	const offset = date.clone().startOf(start).diff(now.clone().startOf(start), granularity);
 
 	if (granularity === "day") {
 		if (offset === 0) return "Today";
@@ -54,6 +65,7 @@ export interface PeriodLabelHost {
 	/** Null for a file that is not a periodic note. */
 	resolve(path: string): LabelledFile | null;
 	now(): Moment;
+	weekFormat(): string;
 }
 
 /**
@@ -97,7 +109,7 @@ export class PeriodLabels {
 		}
 
 		label.empty();
-		label.createSpan({ text: humanizePeriod(file.granularity, file.date, this.host.now()) });
+		label.createSpan({ text: humanizePeriod(file.granularity, file.date, this.host.now(), this.host.weekFormat()) });
 		if (file.prefixMatch) {
 			label.createSpan({
 				cls: "calendaric-period-label-inexact",
