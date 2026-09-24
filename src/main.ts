@@ -89,7 +89,6 @@ export default class CalendaricPlugin extends Plugin {
 	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
 	private guard: PredecessorGuard | null = null;
 
-	/** The period label in each open periodic note (US-CAL-13). */
 	private periodLabels: PeriodLabels | null = null;
 
 	async onload() {

@@ -35,7 +35,6 @@ export function humanizePeriod(granularity: ReleaseGranularity, date: Moment, no
 	return locale.pastFuture(offset, locale.relativeTime(count, false, COUNT_KEYS[granularity], offset > 0));
 }
 
-/** What the label needs to know about an open file that is a periodic note. */
 export interface LabelledFile {
 	granularity: ReleaseGranularity;
 	date: Moment;

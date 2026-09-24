@@ -28,14 +28,12 @@ describe("humanizePeriod", () => {
 	});
 });
 
-/** A markdown pane as the manager sees it: which file it shows, and where to draw. */
 function leaf(path: string | null): LabelLeaf {
 	const contentEl = document.createElement("div");
 	contentEl.createDiv({ cls: "markdown-source-view", text: "# The note's own text" });
 	return { file: path === null ? null : { path }, contentEl };
 }
 
-/** Periodic files by path; anything else is not a periodic note. */
 const FILES: Record<string, LabelledFile> = {
 	"2026-09-24.md": { granularity: "day", date: at("2026-09-24"), prefixMatch: false },
 	"2026-09-23 standup.md": { granularity: "day", date: at("2026-09-23"), prefixMatch: true },

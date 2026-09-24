@@ -24,7 +24,6 @@ export interface GlobalSettings {
 	confirmBeforeCreate: boolean;
 	overrideLocale: string;
 	hasMigratedDailyNoteSettings: boolean;
-	/** A label in each open periodic note naming its period, such as Today (US-CAL-13). */
 	showPeriodLabel: boolean;
 }
 
