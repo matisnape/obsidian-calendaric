@@ -142,7 +142,9 @@ describe("CalendarWidget indicator dots", () => {
 			const words = declarationsOf(`${cell}.is-active .calendaric-dot--words`);
 			expect(exists).toBeDefined();
 			expect(words).toBeDefined();
-			expect([...words!].some(([property, value]) => exists!.get(property) !== value)).toBe(true);
+			// Both take the same on-accent fill there, so only the dimmed word dot tells them apart.
+			expect(Number(words!.get("opacity"))).toBeLessThan(1);
+			expect(exists!.get("opacity")).toBeUndefined();
 		}
 	});
 
