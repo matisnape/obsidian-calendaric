@@ -8,6 +8,7 @@ import type { CompanionPluginPort, PeriodicNotesPort } from "./adapters/companio
 import type { DesktopShellPort } from "./adapters/desktopShellPort";
 import type { VaultPort } from "./adapters/vaultPort";
 import { validateTemplatePath } from "./notes/validateTemplatePath";
+import { validateFormat } from "./fmt/validateFormat";
 import type CalendaricPlugin from "./main";
 
 // The configuration model lives in ./settings/model, which knows nothing about
@@ -291,12 +292,24 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {
 			const m = getMoment();
-			const formatted = m ? m().format(fmt || DEFAULT_FORMATS[granularity]) : "";
+			const formatted = m && fmt ? m().format(fmt) : "";
 			formatExample.empty();
 			formatExample.appendText("Your current syntax looks like this: ");
 			formatExample.createEl("b", { text: formatted, cls: "u-pop" });
 		};
-		updateFormatExample(config.format);
+		// An unset stored format is the documented built-in default (AC-SET-03.1),
+		// and the placeholder says which. What the user types is shown as typed,
+		// so an emptied field previews nothing instead of a hidden default.
+		updateFormatExample(config.format || DEFAULT_FORMATS[granularity]);
+
+		// US-FMT-05: errors keep the previous format saved, warnings save anyway.
+		const formatProblem = formatDesc.createDiv({ cls: "calendaric-setting-problem" });
+		const showFormatProblems = (fmt: string) => {
+			const problems = validateFormat(fmt, granularity);
+			formatProblem.empty();
+			formatProblem.appendText([...problems.errors, ...problems.warnings].join(" "));
+			return problems;
+		};
 
 		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
 		const formatInput = formatControl.createEl("input", {
@@ -304,8 +317,12 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			attr: { placeholder: DEFAULT_FORMATS[granularity], spellcheck: "false" },
 		});
 		formatInput.value = config.format;
-		formatInput.addEventListener("input", () => updateFormatExample(formatInput.value));
+		formatInput.addEventListener("input", () => {
+			updateFormatExample(formatInput.value);
+			showFormatProblems(formatInput.value);
+		});
 		formatInput.addEventListener("change", async () => {
+			if (showFormatProblems(formatInput.value).errors.length > 0) return;
 			config.format = formatInput.value;
 			await this.save();
 		});
