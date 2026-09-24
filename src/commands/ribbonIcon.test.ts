@@ -4,7 +4,7 @@ import type { Command } from "obsidian";
 import type { LeafMode } from "../adapters/workspacePort";
 import type { Granularity, PeriodicConfig, ReleaseGranularity } from "../types";
 import type { MenuEntry, RibbonHost } from "./ribbonIcon";
-import { RIBBON_ICON, RibbonIcon } from "./ribbonIcon";
+import { RIBBON_ICON, RIBBON_TITLE, RibbonIcon } from "./ribbonIcon";
 import { GranularityCommands } from "./granularityCommands";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -66,7 +66,18 @@ describe("AC-CMD-08.1: one ribbon icon for the first active granularity", () => 
 		icon.sync(active("year", "month", "week"));
 
 		expect(ribbon.icons).toHaveLength(1);
-		expect(ribbon.icons[0]).toMatchObject({ icon: RIBBON_ICON, title: "Open current weekly note" });
+		expect(ribbon.icons[0]).toMatchObject({ icon: RIBBON_ICON, title: RIBBON_TITLE });
+		expect(ribbon.tooltips).toEqual(["Open current weekly note"]);
+	});
+
+	it("AC-CMD-08.1: the ribbon title stays the same whichever granularity comes first, so a hidden icon stays hidden", () => {
+		const titles = (["day", "month"] as const).map((granularity) => {
+			const { ribbon, icon } = setUp();
+			icon.sync(active(granularity));
+			return ribbon.icons[0]!.title;
+		});
+
+		expect(titles).toEqual([RIBBON_TITLE, RIBBON_TITLE]);
 	});
 
 	it("AC-CMD-08.1: a settings change moves the icon to the new first granularity without adding a second one", () => {
@@ -75,7 +86,7 @@ describe("AC-CMD-08.1: one ribbon icon for the first active granularity", () => 
 		icon.sync(active("day", "week", "month"));
 
 		expect(ribbon.icons).toHaveLength(1);
-		expect(ribbon.tooltips).toEqual(["Open current daily note"]);
+		expect(ribbon.tooltips).toEqual(["Open current weekly note", "Open current daily note"]);
 		click(ribbon.icons[0]!.el);
 		expect(opened).toEqual([{ granularity: "day", mode: "reuse" }]);
 	});
@@ -188,7 +199,8 @@ describe("AC-CMD-08.5: no granularity active", () => {
 		icon.sync(active());
 		icon.sync(active("month"));
 
-		expect(ribbon.icons.map((i) => i.title)).toEqual(["Open current monthly note"]);
+		expect(ribbon.icons).toHaveLength(1);
+		expect(ribbon.tooltips).toEqual(["Open current monthly note"]);
 	});
 });
 
@@ -205,7 +217,7 @@ describe("AC-CMD-08.6: a reserved granularity stays out of the ribbon", () => {
 		icon.sync(active("quarter", "month", "year"));
 		rightClick(ribbon.icons[0]!.el);
 
-		expect(ribbon.icons.map((i) => i.title)).toEqual(["Open current monthly note"]);
+		expect(ribbon.tooltips).toEqual(["Open current monthly note"]);
 		expect(menus[0]!.map((entry) => entry.title)).toEqual(["Open current monthly note", "Open current yearly note"]);
 	});
 

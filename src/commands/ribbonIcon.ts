@@ -10,6 +10,12 @@ import { commandName } from "./granularityCommands";
 export const RIBBON_ICON = "calendar-days";
 
 /**
+ * Obsidian keys a ribbon item, and the user's hide and reorder choice for it,
+ * by its title, so the title never follows the granularity. The tooltip does.
+ */
+export const RIBBON_TITLE = "Open current periodic note";
+
+/**
  * Whatever the icon is added to. The plugin satisfies it with its own
  * `addRibbonIcon`, which also removes the icon on unload, and Obsidian's
  * `setTooltip`.
@@ -57,13 +63,11 @@ export class RibbonIcon {
 		// ribbon re-adds a detached element on its next redraw.
 		if (!first) return;
 
-		const title = commandName(first, "open-current");
-		if (this.el) {
-			this.host.setTooltip(this.el, title);
-			return;
+		if (!this.el) {
+			this.el = this.host.addRibbonIcon(RIBBON_ICON, RIBBON_TITLE, (evt) => this.onClick(evt));
+			this.el.addEventListener("contextmenu", (evt) => this.onContextMenu(evt));
 		}
-		this.el = this.host.addRibbonIcon(RIBBON_ICON, title, (evt) => this.onClick(evt));
-		this.el.addEventListener("contextmenu", (evt) => this.onContextMenu(evt));
+		this.host.setTooltip(this.el, commandName(first, "open-current"));
 	}
 
 	private onClick(evt: MouseEvent): void {
