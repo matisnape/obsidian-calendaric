@@ -58,6 +58,20 @@ describe("validateFormat", () => {
 		expect(errors).toEqual(['"COM1" is a reserved filename on Windows.']);
 	});
 
+	it("AC-FMT-05.1: rejects a locale week-number name reserved in weeks 1-9, when locale week 1 starts after 1 January", () => {
+		// pl's rule (week 1 holds 4 January) moved to a Wednesday start, as
+		// locale.ts does for the week-start setting. In 2029 neither 1 January
+		// nor ISO week 1 lands in locale week 1, so only week 1 itself writes COM1.
+		window.moment.updateLocale("fmt05-test-wednesday", { week: { dow: 3, doy: 6 } });
+		window.moment.locale("fmt05-test-wednesday");
+		try {
+			const { errors } = validateFormat("gggg/[COM]w", "week", window.moment("2029-09-24"));
+			expect(errors).toEqual(['"COM1" is a reserved filename on Windows.']);
+		} finally {
+			window.moment.locale("en");
+		}
+	});
+
 	it("AC-FMT-05.4: rejects an empty format instead of falling back to a default", () => {
 		for (const format of ["", "   "]) {
 			const { errors } = validateFormat(format, "day", TODAY);
