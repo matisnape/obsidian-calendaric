@@ -1,6 +1,6 @@
 import type { Moment, unitOfTime } from "moment";
 import type { PeriodicConfig, ReleaseGranularity } from "../types";
-import { formatWithWeekTokens, applyWeekTokens } from "./noteUtils";
+import { formatWithWeekTokens, applyWeekTokens, spanWeekStart } from "./noteUtils";
 
 /**
  * The units a `{{date±N<unit>}}` offset accepts, and the moment duration each
@@ -59,8 +59,9 @@ const DATE_OFFSET_RE = /\{\{date([+-]\d+)([A-Za-z])(?::([^{}]+))?\}\}/g;
  * `resolveWeekStart` hands out. It decides which seven days a weekday token is
  * allowed to reach into (DEC-01).
  *
- * The default is the week start `applyLocale` set on moment (US-FMT-03), so a
- * caller with no settings to hand still uses the configured one.
+ * The default is the week start the filename's own spans resolve in
+ * (`spanWeekStart`, US-FMT-03): the configured one, or the ISO week when the
+ * format numbers ISO weeks, so the body never names a different week than the file.
  */
 export function substituteTemplateTokens(
 	content: string,
@@ -68,7 +69,7 @@ export function substituteTemplateTokens(
 	granularity: ReleaseGranularity,
 	config: PeriodicConfig,
 	title: string,
-	weekStart = window.moment.localeData().firstDayOfWeek(),
+	weekStart = spanWeekStart(config.format),
 ): string {
 	let out = content;
 

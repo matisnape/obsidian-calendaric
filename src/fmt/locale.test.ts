@@ -173,6 +173,14 @@ describe("{{weekday:fmt}} filename tokens", () => {
 		}
 	});
 
+	it("AC-FMT-03.2: a weekly template body names the same ISO week as its ISO-week filename", () => {
+		applyLocale("en", "sunday", "en");
+		const config = weekConfig("GGGG-[W]WW ({{monday:DD.MM}}-{{sunday:DD.MM}})");
+		const isoWeek = Array.from({ length: 7 }, (_, i) => m("2026-02-23").add(i, "day"));
+		const bodies = isoWeek.map((day) => substituteTemplateTokens("{{monday:DD.MM}}-{{sunday:DD.MM}}", day, "week", config, "t"));
+		expect(new Set(bodies)).toEqual(new Set(["23.02-01.03"]));
+	});
+
 	it("AC-FMT-03.2: a Monday start writes the same weekday-token filenames as the ISO week did", () => {
 		applyLocale("en", "monday", "en");
 		const format = "{{monday:GGGG-[W]WW}} {{sunday:DD.MM}}";
