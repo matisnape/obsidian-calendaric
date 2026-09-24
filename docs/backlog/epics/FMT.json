@@ -225,7 +225,7 @@
       "story": "As someone who works in Polish and starts the week on Monday, I want every weekday name and week number the plugin shows or writes into a filename to follow my configured locale and week-start day consistently, so that I never have to translate or recompute dates by hand.",
       "rationale": "The old implementation mutates locale globally once at load, loses changes until a full reload, and has a live setting-UI bug that writes the locale choice to the wrong key; this story defines the correct, live-updating, user-visible contract instead.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:configure-locale-and-week-start",
         "pn:localization-week-start-override",
