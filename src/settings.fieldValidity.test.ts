@@ -124,6 +124,20 @@ describe("folder field validity", () => {
 
 		expect(folder.problem()).toContain("Journal/Daily");
 		expect(folder.problem()).toContain("does not exist");
+		// Created with the first note, so a warning, not an invalid field.
+		expect(folder.input.getAttribute("aria-invalid")).toBeNull();
+		expect(saveSettings).toHaveBeenCalled();
+	});
+
+	it("AC-SET-04.2: a folder path that runs into a file is marked invalid and still saved", () => {
+		const vault = new FakeVaultPort();
+		vault.seedFile("Journal", "");
+		const { tab, saveSettings } = renderTab(toSettings(defaultStoredConfig()), { vault });
+		const folder = field(tab, "Note Folder");
+
+		type(folder.input, "Journal/Daily");
+
+		expect(folder.problem()).toContain("cannot be used as a folder");
 		expect(folder.input.getAttribute("aria-invalid")).toBe("true");
 		expect(saveSettings).toHaveBeenCalled();
 	});
@@ -147,7 +161,11 @@ describe("template field validity", () => {
 		const { tab, saveSettings } = renderTab(settings);
 		const template = field(tab, "Daily Note Template");
 
-		type(template.input, "Templates/missing.md");
+		template.input.value = "Templates/missing.md";
+		template.input.dispatchEvent(new Event("input"));
+		expect(template.problem()).toBe("");
+
+		template.input.dispatchEvent(new Event("blur"));
 
 		expect(template.problem()).toContain("Templates/missing.md");
 		expect(template.problem()).toContain("not found");
@@ -175,7 +193,7 @@ describe("reopening the settings screen", () => {
 		for (const [name, value] of Object.entries(typed)) {
 			expect(field(reopened, name).input.value).toBe(value);
 			expect(field(reopened, name).problem()).toBe(shown[name]);
-			expect(field(reopened, name).input.getAttribute("aria-invalid")).toBe("true");
+			expect(field(reopened, name).input.getAttribute("aria-invalid")).toBe(name === "Note Folder" ? null : "true");
 		}
 	});
 });

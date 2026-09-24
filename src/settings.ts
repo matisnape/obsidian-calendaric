@@ -360,9 +360,10 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			.setDesc(`New ${periodicity} notes will be placed here`);
 		// AC-SET-04.2: a missing folder is reported, never refused -- note
 		// creation builds the chain on demand. Checked on blur and on display,
-		// not per keystroke, so a half-typed path does not warn.
+		// not per keystroke, so a half-typed path does not warn. A folder not yet
+		// created is valid, so only an unusable one marks the field invalid.
 		const folderProblem = folderSetting.descEl.createDiv({ cls: "calendaric-setting-problem" });
-		const showFolderProblem = (value: string): void => {
+		const showFolderProblem = (value: string): boolean => {
 			// An empty folder is Obsidian's default location, not something typed, so it is left unchecked.
 			const check = checkNoteFolder(value, { getDefaultNewFileFolder: () => "" }, this.ports.vault);
 			folderProblem.empty();
@@ -370,14 +371,14 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			else if (check.notYetCreated) {
 				folderProblem.appendText(`Saved, but ${value} does not exist yet. It is created with the first note.`);
 			}
+			return !check.valid;
 		};
-		showFolderProblem(config.folder);
+		const folderInvalid = showFolderProblem(config.folder);
 		folderSetting.addText((text) => {
 			text.setPlaceholder("e.g. folder 1/folder 2").setValue(config.folder);
-			markInvalid(text.inputEl, folderProblem.textContent !== "");
+			markInvalid(text.inputEl, folderInvalid);
 			text.inputEl.addEventListener("blur", () => {
-				showFolderProblem(text.inputEl.value);
-				markInvalid(text.inputEl, folderProblem.textContent !== "");
+				markInvalid(text.inputEl, showFolderProblem(text.inputEl.value));
 			});
 			text.onChange(async (value) => {
 				config.folder = value;
@@ -406,10 +407,13 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		templateSetting.addText((text) => {
 			text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
 			markInvalid(text.inputEl, templateProblem.textContent !== "");
+			// AC-SET-04.3: checked on blur, like the folder, so a half-typed path does not error.
+			text.inputEl.addEventListener("blur", () => {
+				showTemplateProblem(text.inputEl.value);
+				markInvalid(text.inputEl, templateProblem.textContent !== "");
+			});
 			text.onChange(async (value) => {
 				config.templatePath = value;
-				showTemplateProblem(value);
-				markInvalid(text.inputEl, templateProblem.textContent !== "");
 				await this.save();
 			});
 		});
