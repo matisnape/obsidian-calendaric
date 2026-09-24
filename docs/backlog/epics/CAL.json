@@ -812,7 +812,7 @@
       "story": "As someone editing notes from outside the calendar, I want the grid to update itself when a note appears, disappears, is renamed, or a relevant setting changes, so that what I see never goes stale while the view is open.",
       "rationale": "The grid is read constantly but the notes behind it are created and edited elsewhere; staleness would make it actively misleading.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:auto-refresh-on-vault-events",
         "calendaric:calendar-live-refresh-on-vault-change",

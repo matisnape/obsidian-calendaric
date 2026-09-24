@@ -3292,7 +3292,7 @@
       "story": "As someone editing notes from outside the calendar, I want the grid to update itself when a note appears, disappears, is renamed, or a relevant setting changes, so that what I see never goes stale while the view is open.",
       "rationale": "The grid is read constantly but the notes behind it are created and edited elsewhere; staleness would make it actively misleading.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:auto-refresh-on-vault-events",
         "calendaric:calendar-live-refresh-on-vault-change",
@@ -3316,8 +3316,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.liveRefresh.test.ts \"AC-CAL-09.1: a day or week note created elsewhere gains its cell's dot with no interaction\"; red when create/delete/rename stop triggering a redraw (mutation)"
         },
         {
           "id": "AC-CAL-09.2",
@@ -3328,8 +3328,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.liveRefresh.test.ts \"AC-CAL-09.2: a day or week note deleted elsewhere loses its cell's dot with no interaction\"; red under the same mutation"
         },
         {
           "id": "AC-CAL-09.3",
@@ -3341,8 +3341,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.liveRefresh.test.ts \"AC-CAL-09.3: a rename moves the dot from the old date's cell to the new one\", the week-row case and \"... a rename to a name that matches no date removes the dot and adds none\"; red under the same mutation",
           "failure_path": true
         },
         {
@@ -3354,8 +3354,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.liveRefresh.test.ts \"AC-CAL-09.4: a saved display setting re-renders the grid at once\" (CalendarWidget.refreshSettings, which main.ts onSettingsChange reaches through CalendarView.refresh); red when refreshSettings stops re-rendering (mutation)"
         },
         {
           "id": "AC-CAL-09.5",
@@ -3366,8 +3366,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.liveRefresh.test.ts \"AC-CAL-09.5: a changed format or folder re-scans the notes and redraws the dots\" and \"... a granularity switched off drops its dots\"; red under the same mutation"
         }
       ]
     },
