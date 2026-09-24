@@ -164,6 +164,10 @@ export default class CalendaricPlugin extends Plugin {
 		// Registered during load, not on layout: the palette must already list
 		// them when the user opens it, and a command that fires before the index
 		// exists still opens or creates the period's note.
+		this.registerGranularityCommands();
+	}
+
+	private registerGranularityCommands(): void {
 		this.commands = new GranularityCommands(
 			this,
 			(granularity, action) => {

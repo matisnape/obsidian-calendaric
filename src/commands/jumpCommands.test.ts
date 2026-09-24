@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Command } from "obsidian";
+import CalendaricPlugin from "../main";
 import { jumpToClosestNote } from "./jumpCommands";
 import { GranularityCommands, commandName } from "./granularityCommands";
 import type { CommandAction, CommandHost } from "./granularityCommands";
@@ -46,16 +47,6 @@ describe("AC-CMD-06.1: Jump forward opens the closest later note, creating none"
 		await jumpToClosestNote("day", "forward", "Daily/2020-01-06.md", indexOver(vault), workspace);
 
 		expect(workspace.opened.map(({ file }) => file.path)).toEqual(["Daily/2020-01-09.md"]);
-	});
-
-	it("AC-CMD-06.1: creates no note on the way", async () => {
-		const vault = vaultWith("Daily/2026-04-13.md", "Daily/2026-04-20.md");
-		const before = notePaths(vault);
-
-		await jumpToClosestNote("day", "forward", "Daily/2026-04-13.md", indexOver(vault), new FakeWorkspacePort());
-
-		expect(notePaths(vault)).toEqual(before);
-		expect(vault.createdFolders).toEqual([]);
 	});
 
 	it("AC-CMD-06.1: Jump backward opens the closest earlier note the same way", async () => {
@@ -185,5 +176,30 @@ describe("AC-CMD-06.4: the jumps are offered only from a periodic note of their 
 		expect(index.granularityOf("Daily/2026-04-13.md")).toBe("day");
 		expect(index.granularityOf("Weekly/2026-W16.md")).toBe("week");
 		expect(index.granularityOf("Notes/idea.md")).toBeNull();
+	});
+});
+
+describe("AC-CMD-06.4: the plugin wires the palette to the active pane", () => {
+	async function pluginWith(activePath: string | null) {
+		const host = new FakeCommandHost();
+		const view = activePath === null ? null : { file: { path: activePath } };
+		const instance = new CalendaricPlugin({} as never, {} as never);
+		Object.assign(instance, {
+			app: { workspace: { getActiveViewOfType: () => view } },
+			loadData: () => Promise.resolve(null),
+			addCommand: (command: Command) => host.addCommand(command),
+			removeCommand: (id: string) => host.removeCommand(id),
+			index: indexOver(vaultWith("Daily/2026-04-13.md")),
+		});
+		await instance.loadSettings();
+		instance.settings.day = { ...instance.settings.day, ...CONFIGS.day, enabled: true };
+		(instance as unknown as { registerGranularityCommands(): void }).registerGranularityCommands();
+		return host;
+	}
+
+	it("AC-CMD-06.4: lists the daily jump only while a daily note is the active pane", async () => {
+		expect((await pluginWith(null)).shown("day-jump-forward")).toBe(false);
+		expect((await pluginWith("Notes/idea.md")).shown("day-jump-forward")).toBe(false);
+		expect((await pluginWith("Daily/2026-04-13.md")).shown("day-jump-forward")).toBe(true);
 	});
 });

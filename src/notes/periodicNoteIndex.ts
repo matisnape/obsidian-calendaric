@@ -118,10 +118,10 @@ export class PeriodicNoteIndex {
 		return noteDate === undefined ? null : (noteDate.slice(0, noteDate.indexOf(":")) as FileGranularity);
 	}
 
-	/** The nearest note either side of one noteDate, within that noteDate's granularity. */
-	private closestFrom(noteDate: string, direction: JumpDirection): NoteFile | null {
-		const prefix = noteDate.slice(0, noteDate.indexOf(":") + 1);
-		const from = Number(noteDate.slice(prefix.length));
+	/** The nearest note either side of the noteDate `origin`, within its granularity. */
+	private closestFrom(origin: string, direction: JumpDirection): NoteFile | null {
+		const prefix = origin.slice(0, origin.indexOf(":") + 1);
+		const from = Number(origin.slice(prefix.length));
 		let best: { at: number; file: NoteFile } | null = null;
 
 		// ponytail: a linear pass over the index. This runs on a keypress, over a
