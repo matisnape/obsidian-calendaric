@@ -4139,7 +4139,7 @@
         },
         {
           "id": "AC-SET-04.4",
-          "given": "any of the format, folder or template fields currently shows an invalid-value warning",
+          "given": "any of the format, folder or template fields currently shows a warning for a value that was saved (an error-level format is never saved, per AC-FMT-05.1, so reopening shows the last saved format instead)",
           "when": "the settings screen is closed and reopened",
           "then": [
             "the field still shows exactly what the user typed, unmodified",
