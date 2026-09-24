@@ -99,7 +99,7 @@ export function showNoteFileMenu(path: string, event: MouseEvent, ports: Pick<Ce
 	const file = ports.vault.getFile(path);
 	if (!file || !ports.workspace.showFileMenu) return;
 	event.preventDefault();
-	ports.workspace.showFileMenu(file, event);
+	ports.workspace.showFileMenu(file, event, HOVER_LINK_SOURCE);
 }
 
 /**

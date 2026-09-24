@@ -3,7 +3,8 @@
 // Right-clicking a day or week cell (US-CAL-06). Two hosts: the fake workspace
 // port, which records what the widget asked for, and the real workspace adapter
 // over a fake `App`, which shows the ask reaching Obsidian's `file-menu` event —
-// the event other plugins and Obsidian's own Delete item hook into.
+// the event other plugins add their items through — and the Delete item the
+// adapter adds itself, since Obsidian's own lives in the file explorer's code.
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
@@ -75,6 +76,7 @@ function withRealAdapters(paths: string[]) {
 		files.set(path, file);
 	}
 	const triggered: unknown[][] = [];
+	const deletePrompts: TFile[] = [];
 	const app = {
 		workspace: {
 			on: (): object => ({}),
@@ -91,6 +93,11 @@ function withRealAdapters(paths: string[]) {
 			getAbstractFileByPath: (path: string): TFile | null => files.get(path) ?? null,
 			getMarkdownFiles: (): TFile[] => [...files.values()],
 		},
+		fileManager: {
+			promptForDeletion: async (file: TFile): Promise<void> => {
+				deletePrompts.push(file);
+			},
+		},
 	} as unknown as App;
 	const host = document.createElement("div");
 	new CalendarWidget(host, app, SETTINGS, {
@@ -99,7 +106,7 @@ function withRealAdapters(paths: string[]) {
 		workspace: new ObsidianWorkspaceAdapter(app),
 	});
 	const fileMenus = () => triggered.filter((args) => args[0] === "file-menu");
-	return { files, host, fileMenus };
+	return { files, host, fileMenus, deletePrompts };
 }
 
 describe("US-CAL-06: right-click a day or week cell for file actions", () => {
@@ -131,6 +138,21 @@ describe("US-CAL-06: right-click a day or week cell for file actions", () => {
 		]);
 	});
 
+	it("AC-CAL-06.1: the menu has a Delete item that runs Obsidian's own delete prompt on the vault's file", () => {
+		const { files, host, fileMenus, deletePrompts } = withRealAdapters([dayPath(5)]);
+
+		rightClick(dayCell(host, 5));
+
+		// The fake Menu records the items added to it; `click()` is the user selecting one.
+		const menu = fileMenus()[0]?.[1] as { items: { title: string; icon: string; click(): void }[] };
+		const deleteItem = menu.items.find((item) => item.title === "Delete");
+		expect(deleteItem?.icon).toBe("trash");
+		expect(deletePrompts).toEqual([]);
+		deleteItem?.click();
+		expect(deletePrompts).toHaveLength(1);
+		expect(deletePrompts[0]).toBe(files.get(dayPath(5)));
+	});
+
 	it("AC-CAL-06.2: right-clicking a day or week cell with no note opens no menu", () => {
 		const fakes = withFakes([]);
 		const onDay = rightClick(dayCell(fakes.host, 5));
@@ -151,8 +173,8 @@ describe("US-CAL-06: right-click a day or week cell for file actions", () => {
 
 		rightClick(dayCell(host, 5));
 
-		// `file-menu` is the event every plugin's file actions and Obsidian's own
-		// Delete hook into; the vault's object, not a copy, is what they act on.
+		// `file-menu` is how other plugins add their file actions; the vault's
+		// object, not a copy, is what they act on.
 		const [menu] = fileMenus();
 		expect(menu?.[0]).toBe("file-menu");
 		expect(menu?.[2]).toBe(files.get(dayPath(5)));
@@ -167,7 +189,7 @@ describe("US-CAL-06: right-click a day or week cell for file actions", () => {
 
 		rightClick(dayCell(host, 5));
 		rightClick(weekCell(host, 1));
-		// Obsidian's Delete item removes the file and the vault reports it.
+		// The menu's Delete item removes the file and the vault reports it.
 		for (const { file } of workspace.fileMenus) {
 			vault.deleteFile(file.path);
 			vault.emitChange({ kind: "delete", file });

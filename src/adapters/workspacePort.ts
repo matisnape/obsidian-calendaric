@@ -32,11 +32,11 @@ export interface WorkspacePort {
 	 */
 	showNotice(message: string): void;
 	/**
-	 * Shows the note's own file menu at the event's position: the one a file
-	 * explorer row shows, with whatever Obsidian and other plugins add to it.
+	 * Shows the note's own file menu at the event's position: Delete, plus
+	 * whatever other plugins add to a file menu opened from `source`.
 	 *
 	 * Optional so a host without file menus, and every hand-built port, still
 	 * type-checks; a caller treats its absence as "no menu here".
 	 */
-	showFileMenu?(file: NoteFile, event: MouseEvent): void;
+	showFileMenu?(file: NoteFile, event: MouseEvent, source: string): void;
 }

@@ -2,7 +2,6 @@ import { Menu, Notice, Platform, TFile } from "obsidian";
 import type { App, WorkspaceLeaf } from "obsidian";
 import type { NoteFile } from "./vaultPort";
 import type { LeafMode, OpenResult, WorkspacePort } from "./workspacePort";
-import { HOVER_LINK_SOURCE } from "../ui/cellActions";
 
 /** Wires WorkspacePort to the real Obsidian Workspace API. */
 export class ObsidianWorkspaceAdapter implements WorkspacePort {
@@ -28,12 +27,20 @@ export class ObsidianWorkspaceAdapter implements WorkspacePort {
 		new Notice(message);
 	}
 
-	showFileMenu(file: NoteFile, event: MouseEvent): void {
-		// `file-menu` hands the menu to Obsidian and every plugin to fill, and
-		// they act on a TFile; anything else has no menu to show.
+	showFileMenu(file: NoteFile, event: MouseEvent, source: string): void {
+		// Every item acts on a TFile; anything else has no menu to show.
 		if (!(file instanceof TFile)) return;
 		const menu = new Menu();
-		this.app.workspace.trigger("file-menu", menu, file, HOVER_LINK_SOURCE);
+		// `file-menu` brings only other plugins' items: the file explorer adds
+		// Obsidian's own Delete in its own code. promptForDeletion is that same
+		// delete, with the user's confirm and trash settings.
+		menu.addItem((item) =>
+			item
+				.setTitle("Delete")
+				.setIcon("trash")
+				.onClick(() => void this.app.fileManager.promptForDeletion(file)),
+		);
+		this.app.workspace.trigger("file-menu", menu, file, source);
 		menu.showAtMouseEvent(event);
 	}
 
