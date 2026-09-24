@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 //
-// US-CMD-02: the calendar view appears by itself once the workspace layout is
+// US-CMD-02: a calendar leaf is attached by itself once the workspace layout is
 // ready. These tests run the real onload() against a stub workspace, so they
-// prove the reveal is wired to onLayoutReady, not only that the coordinator
-// could do it if someone called it.
+// prove the attach is wired to onLayoutReady, not only that the coordinator
+// could do it if someone called it. The leaf is parked inactive, not revealed:
+// a collapsed sidebar stays collapsed.
 import { describe, it, expect, vi } from "vitest";
 import type { Command } from "obsidian";
 import CalendaricPlugin from "../main";
@@ -26,7 +27,6 @@ interface StubLeaf {
 
 async function load(options: { layoutReady: boolean; restoredLeaf?: boolean }) {
 	const calendarLeaves: StubLeaf[] = [];
-	const rightSplit = { collapsed: false };
 	let pendingLayoutReady: (() => void) | null = null;
 	const commands: Command[] = [];
 	let rightLeavesRequested = 0;
@@ -35,8 +35,6 @@ async function load(options: { layoutReady: boolean; restoredLeaf?: boolean }) {
 		const leaf = {
 			viewType: null as string | null,
 			revealed: 0,
-			view: { containerEl: { isShown: () => true } },
-			getRoot: () => rightSplit,
 			setViewState: async (state: { type: string }) => {
 				leaf.viewType = state.type;
 				if (state.type === VIEW_TYPE_CALENDAR) calendarLeaves.push(leaf);
@@ -72,7 +70,6 @@ async function load(options: { layoutReady: boolean; restoredLeaf?: boolean }) {
 				leaf.revealed += 1;
 			},
 			setActiveLeaf: () => undefined,
-			rightSplit,
 			on,
 		},
 		vault: {
