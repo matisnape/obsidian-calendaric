@@ -1,5 +1,5 @@
 import type { ReleaseGranularity } from "../types";
-import { hasWeekdayWrapper, weekSemantics } from "../fmt/parseFilename";
+import { computeNoteDate } from "../fmt/noteDate";
 
 /** Read off `window.moment` rather than imported, like main.ts: the bundle carries no moment of its own. */
 type Moment = ReturnType<typeof window.moment>;
@@ -10,15 +10,11 @@ const UNIT_NAMES: Record<ReleaseGranularity, string> = { day: "day", week: "week
 const COUNT_KEYS = { day: "dd", week: "ww", month: "MM", year: "yy" } as const;
 
 /**
- * Where a period starts. A week starts where the weekly format's own numbering
- * puts it, the same rule as `startUnit` in fmt/noteDate.ts, so "This week" is
- * the week whose note the format writes for today.
+ * The start of the period `date` falls in, read off the note identity itself
+ * (`granularity:<epoch ms>`), so a week starts wherever the index says it does.
  */
-function periodStart(granularity: ReleaseGranularity, weekFormat: string): ReleaseGranularity | "isoWeek" {
-	if (granularity !== "week") return granularity;
-	const semantics = weekSemantics(weekFormat);
-	if (semantics === "locale" || (semantics === null && hasWeekdayWrapper(weekFormat))) return "week";
-	return "isoWeek";
+function periodStart(date: Moment, granularity: ReleaseGranularity, weekFormat: string): Moment {
+	return window.moment(Number(computeNoteDate(date, granularity, weekFormat).split(":")[1]));
 }
 
 /**
@@ -26,9 +22,8 @@ function periodStart(granularity: ReleaseGranularity, weekFormat: string): Relea
  * week, 3 months ago. Adjacent periods get a name; farther ones a count.
  */
 export function humanizePeriod(granularity: ReleaseGranularity, date: Moment, now: Moment, weekFormat = ""): string {
-	const start = periodStart(granularity, weekFormat);
 	// Both ends start a period of the same length, so diff in "week" is exact for an ISO week too.
-	const offset = date.clone().startOf(start).diff(now.clone().startOf(start), granularity);
+	const offset = periodStart(date, granularity, weekFormat).diff(periodStart(now, granularity, weekFormat), granularity);
 
 	if (granularity === "day") {
 		if (offset === 0) return "Today";
