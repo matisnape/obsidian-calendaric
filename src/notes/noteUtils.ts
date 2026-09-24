@@ -21,8 +21,11 @@ const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|su
  */
 const SPAN_RE = /\{\{([^{}:]+):([^{}]+)\}\}/g;
 
-/** A moment `[literal]` or a span, leftmost first: a span's own `[W]` stays inside the span match. */
-const BRACKET_OR_SPAN_RE = new RegExp(`\\[[^\\]]*\\]|${SPAN_RE.source}`, "g");
+/**
+ * A moment escape, a `[literal]` or a span, leftmost first: `\\[` opens no literal,
+ * and a span's own `[W]` stays inside the span match.
+ */
+const BRACKET_OR_SPAN_RE = new RegExp(`\\\\.|\\[[^\\]]*\\]|${SPAN_RE.source}`, "g");
 
 /** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
 export const WEEKDAY_ISO: Record<string, number> = {

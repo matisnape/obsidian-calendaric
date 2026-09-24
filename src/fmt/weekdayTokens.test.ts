@@ -3,6 +3,8 @@ import type { PeriodicConfig, ReleaseGranularity } from "../types";
 import { computeNotePath, formatWithWeekTokens, getWeekNumber } from "../notes/noteUtils";
 import { openOrCreatePeriodNote, startUp } from "../notes/periodNoteOpen";
 import { substituteTemplateTokens } from "../notes/templateTokens";
+import { openOrCreateNote } from "../ui/cellActions";
+import { DotScanner } from "../ui/calendarDots";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
@@ -131,6 +133,29 @@ describe("US-FMT-01 weekday tokens in the filename format", () => {
 			expect(p.vault.getFile(literalPath)).not.toBeNull();
 		});
 
+		it("a click on the day cell creates the note under the literal name", async () => {
+			applyLocale("en", "monday", "en");
+			const p = ports();
+			const event = { metaKey: false, ctrlKey: false } as MouseEvent;
+			await openOrCreateNote({
+				date: sunday(),
+				granularity: "day",
+				config: daily,
+				confirmBeforeCreate: false,
+				event,
+				ports: p,
+				confirmCreate: async () => true,
+			});
+			expect(p.vault.getFile(literalPath)).not.toBeNull();
+		});
+
+		it("the day dot looks the note up under the literal name", () => {
+			applyLocale("en", "monday", "en");
+			const p = ports();
+			p.vault.seedFile(literalPath, "");
+			expect([...new DotScanner(p, () => undefined).getDayNotePaths(sunday(), daily)]).toEqual([literalPath]);
+		});
+
 		// The subfolder case reaches only the basename retry, the nested format only the first parse.
 		it.each([
 			["the configured folder", "YYYY-MM-DD {{monday:DD.MM}}", literalPath],
@@ -156,6 +181,13 @@ describe("US-FMT-01 weekday tokens in the filename format", () => {
 		applyLocale("en", "monday", "en");
 		const { written, sameNote } = roundTrip("YYYY-MM-DD [{{funday:DD}}]", sunday(), "day");
 		expect(written).toBe("2026-04-12 {{funday:DD}}");
+		expect(sameNote).toBe(true);
+	});
+
+	it("AC-FMT-01.5: an escaped \\[ opens no [literal], so the span after it is still written as typed", () => {
+		applyLocale("en", "monday", "en");
+		const { written, sameNote } = roundTrip("YYYY-MM-DD \\[{{funday:DD}}\\]", sunday(), "day");
+		expect(written).toBe("2026-04-12 [{{funday:DD}}]");
 		expect(sameNote).toBe(true);
 	});
 
