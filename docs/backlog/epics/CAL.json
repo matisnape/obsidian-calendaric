@@ -971,7 +971,7 @@
       "story": "As someone who leaves the calendar open across midnight, I want today's cell to advance on its own, so that the view never quietly shows yesterday as today.",
       "rationale": "The view has no reason to be reopened during normal use, so it must roll itself over rather than relying on the user to refresh it.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "cal:calendar-heartbeat-tick",
         "calendaric:calendar-minute-refresh"
@@ -993,8 +993,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.today.test.ts \"AC-CAL-11.1: a tick after midnight marks the new day as today\" — drives CalendarWidget.refresh(), the call CalendarView's 60 s registerInterval makes; red when refresh() stops re-rendering (mutation)"
         },
         {
           "id": "AC-CAL-11.2",
@@ -1005,8 +1005,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.today.test.ts \"AC-CAL-11.2: a tick after midnight into a new month shows the new month\" plus the stepped-away-and-back, stepped-ahead and December-to-January cases; red when refresh() drops nav.followClock() (mutation)"
         },
         {
           "id": "AC-CAL-11.3",
@@ -1018,8 +1018,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/ui/calendarRender.today.test.ts \"AC-CAL-11.3: a tick into a new month leaves an earlier month on screen\" plus the later-month and plain-day-rollover cases; red when followClock() follows the clock unconditionally (mutation)",
           "failure_path": true
         }
       ]
