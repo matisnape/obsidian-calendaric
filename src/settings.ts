@@ -31,8 +31,12 @@ const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 /** The granularities whose settings the screen can edit today. */
 type ActiveGranularity = Extract<Granularity, "day" | "week">;
 
-/** The format and template guide, shipped inside the plugin's own folder. */
-const FORMAT_GUIDE_PATH = "docs/guide.md";
+/**
+ * The format and template guide, published with the source. An installed
+ * plugin folder holds only main.js, manifest.json and styles.css, so a local
+ * copy of the guide is not there to open (AC-SET-04.5).
+ */
+const FORMAT_GUIDE_URL = "https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md";
 
 const GRANULARITY_LABELS: Record<Granularity, string> = {
 	day: "Daily Notes",
@@ -301,10 +305,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		syntaxLink.setAttr("target", "_blank");
 		syntaxLink.setAttr("rel", "noopener");
 		formatDesc.appendText(" · ");
-		const guideLink = formatDesc.createEl("a", { text: "Format & template guide", href: "#" });
-		guideLink.addEventListener("click", (e) => {
-			e.preventDefault();
-			this.ports.desktop.openPluginFile(FORMAT_GUIDE_PATH);
+		formatDesc.createEl("a", {
+			text: "Format & template guide",
+			attr: { href: FORMAT_GUIDE_URL, target: "_blank", rel: "noopener" },
 		});
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {

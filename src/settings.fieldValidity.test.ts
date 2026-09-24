@@ -181,15 +181,22 @@ describe("reopening the settings screen", () => {
 });
 
 describe("format guide link", () => {
-	it("AC-SET-04.5: activating the guide link opens the guide without throwing", () => {
+	it("AC-SET-04.5: the guide link opens the published guide in the browser, not through the desktop shell", () => {
 		const openPluginFile = vi.fn();
 		const { tab } = renderTab(toSettings(defaultStoredConfig()), { desktop: { openPluginFile } });
 		const link = Array.from(tab.containerEl.querySelectorAll("a")).find(
 			(a) => a.textContent === "Format & template guide",
 		);
 
-		expect(() => link?.dispatchEvent(new MouseEvent("click", { cancelable: true }))).not.toThrow();
-		expect(openPluginFile).toHaveBeenCalledWith("docs/guide.md");
+		expect(link?.getAttribute("href")).toBe(
+			"https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md",
+		);
+		expect(link?.getAttribute("target")).toBe("_blank");
+		const click = new MouseEvent("click", { cancelable: true });
+		// Stop happy-dom's own navigation; what is under test is that nothing else handles the click.
+		link?.addEventListener("click", (e) => e.preventDefault());
+		expect(() => link?.dispatchEvent(click)).not.toThrow();
+		expect(openPluginFile).not.toHaveBeenCalled();
 	});
 });
 
