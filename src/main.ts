@@ -1,4 +1,4 @@
-import { getLanguage, Notice, Plugin } from "obsidian";
+import { getLanguage, MarkdownView, Notice, Plugin } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
 import type { CalendaricSettings, StoredConfig } from "./settings/model";
@@ -28,6 +28,9 @@ import { resolveEffectiveConfig } from "./settings/model";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
+import { resolveFileDate } from "./fmt/resolveFileDate";
+import { PeriodLabels } from "./ui/periodLabel";
+import type { LabelLeaf } from "./ui/periodLabel";
 
 /**
  * The date type, taken from the clock this plugin actually reads.
@@ -85,6 +88,9 @@ export default class CalendaricPlugin extends Plugin {
 
 	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
 	private guard: PredecessorGuard | null = null;
+
+	/** The period label in each open periodic note (US-CAL-13). */
+	private periodLabels: PeriodLabels | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -149,7 +155,10 @@ export default class CalendaricPlugin extends Plugin {
 			void calendar.ensure();
 			// Every plugin has loaded by now, so this is when an overlap is known.
 			void startUp(this.settings, window.moment(), this.notePorts());
+			this.periodLabels?.sync();
 		});
+
+		this.startPeriodLabels();
 
 		this.addCommand(calendarViewCommand(calendarLeaves, calendar.open));
 
@@ -168,6 +177,8 @@ export default class CalendaricPlugin extends Plugin {
 		this.index = null;
 		guardCreation(this.app.vault, null);
 		this.guard = null;
+		this.periodLabels?.destroy();
+		this.periodLabels = null;
 		restoreLocale();
 	}
 
@@ -182,11 +193,38 @@ export default class CalendaricPlugin extends Plugin {
 		// rather than at the next restart (AC-CMD-05.2, AC-CMD-05.3).
 		this.index?.applySettings(this.indexConfigs());
 		this.commands?.sync(this.settings);
+		this.periodLabels?.sync();
 
 		const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
 		if (leaf?.view instanceof CalendarView) {
 			leaf.view.refresh();
 		}
+	}
+
+	/**
+	 * One label per open markdown pane, redrawn whenever a pane opens, closes or
+	 * switches file (AC-CAL-13.6), and after a settings change (AC-CAL-13.5).
+	 */
+	private startPeriodLabels(): void {
+		const vaultConfig = new ObsidianVaultConfigAdapter(this.app);
+		const labels = new PeriodLabels({
+			leaves: () =>
+				this.app.workspace
+					.getLeavesOfType("markdown")
+					.map((leaf) => leaf.view)
+					.filter((view): view is MarkdownView => view instanceof MarkdownView)
+					.map((view): LabelLeaf => ({ file: view.file, contentEl: view.contentEl })),
+			enabled: () => this.settings.showPeriodLabel,
+			resolve: (path) => resolveFileDate(path, this.indexConfigs(), vaultConfig),
+			now: () => window.moment(),
+		});
+		this.periodLabels = labels;
+
+		const sync = () => labels.sync();
+		this.registerEvent(this.app.workspace.on("layout-change", sync));
+		this.registerEvent(this.app.workspace.on("file-open", sync));
+		// A rename can turn a file into a periodic note, or out of one, without a layout change.
+		this.registerEvent(this.app.vault.on("rename", sync));
 	}
 
 	/**
