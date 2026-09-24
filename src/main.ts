@@ -289,7 +289,6 @@ export default class CalendaricPlugin extends Plugin {
 		};
 	}
 
-	/** Open the closest existing note either side of the active one, or say there is none. */
 	private async jumpToExistingNote(granularity: ReleaseGranularity, direction: JumpDirection): Promise<void> {
 		await jumpToClosestNote(granularity, direction, this.activeNotePath(), this.index, new ObsidianWorkspaceAdapter(this.app));
 	}

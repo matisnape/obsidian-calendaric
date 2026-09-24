@@ -4,7 +4,6 @@ import type { JumpDirection, PeriodicNoteIndex } from "../notes/periodicNoteInde
 import type { ReleaseGranularity } from "../types";
 import { ADJECTIVE } from "./granularityCommands";
 
-/** The part of the index a jump reads. */
 export type JumpIndex = Pick<PeriodicNoteIndex, "granularityOf" | "closestTo">;
 
 /**

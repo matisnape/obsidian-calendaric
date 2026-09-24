@@ -115,7 +115,6 @@ class FakeCommandHost implements CommandHost {
 		this.palette.delete(id);
 	}
 
-	/** Whether the palette would list this command right now. */
 	shown(id: string): boolean {
 		const command = this.palette.get(`calendaric:${id}`);
 		if (!command) return false;
