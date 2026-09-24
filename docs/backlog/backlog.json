@@ -4205,7 +4205,7 @@
       "story": "As someone who wants exactly one note to greet them when Obsidian opens, I want turning on 'Open on startup' for one granularity to turn it off for every other granularity, so that I never end up with two notes racing to open at once.",
       "rationale": "Two granularities both trying to auto-open at startup is a contradiction the settings screen has to resolve for the user, not leave as an ambiguous stored state.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:settings-per-granularity-open-at-startup-toggle"
       ],
@@ -4231,8 +4231,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.startupExclusive.test.ts 'AC-SET-05.1: switching B on switches A off and the redrawn screen shows A off' drives the real toggles and reads the redrawn screen; red when clearStartupNote is removed from settings.ts and red when the display() redraw is removed (orchestrator mutations)"
         },
         {
           "id": "AC-SET-05.2",
@@ -4243,8 +4243,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.startupExclusive.test.ts 'AC-SET-05.2: switching one on with none on leaves only that one on'"
         },
         {
           "id": "AC-SET-05.3",
@@ -4255,8 +4255,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/settings.startupExclusive.test.ts 'AC-SET-05.3: switching one off changes no other granularity'"
         },
         {
           "id": "AC-SET-05.4",
@@ -4268,8 +4268,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest src/settings.startupExclusive.test.ts 'AC-SET-05.4: a stored config with two flags on loads and displays both, rewriting nothing' (through plugin.loadSettings; red when loadSettings clears a flag, orchestrator mutation) and 'AC-SET-05.4: from two flags on, the next switch-on leaves only that one on'",
           "failure_path": true
         }
       ]

@@ -424,7 +424,7 @@
       "story": "As someone who wants exactly one note to greet them when Obsidian opens, I want turning on 'Open on startup' for one granularity to turn it off for every other granularity, so that I never end up with two notes racing to open at once.",
       "rationale": "Two granularities both trying to auto-open at startup is a contradiction the settings screen has to resolve for the user, not leave as an ambiguous stored state.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "pn:settings-per-granularity-open-at-startup-toggle"
       ],
