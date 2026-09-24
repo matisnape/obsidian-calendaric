@@ -111,7 +111,7 @@
       "story": "As a maintainer, I want each date-parsing rule, filename-matching rule, and shared type defined exactly once in the codebase, so that fixing or extending a rule requires exactly one change instead of several coordinated ones.",
       "rationale": "The map's most repeated finding is duplication: a date/time template-token pattern copy-pasted across five note-creation functions, two independently-diverging prefix-match implementations across the source repositories, a dev-plugin-id detection probe duplicated at six call sites across four functions in two repos, and (inside the target repository itself) a period-granularity type declared three times independently.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
