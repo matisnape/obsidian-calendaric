@@ -9,6 +9,10 @@ import { ConfirmationModal } from "./modal";
 import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, WORD_DOT_SEGMENTS, wordCountSegments } from "./calendarDots";
 import { MonthNavigation } from "./calendarNav";
 import { HOVER_LINK_SOURCE, hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
+import { resolveFileDate, type FileConfigs, type FileDateIdentity } from "../fmt/resolveFileDate";
+import { computeNoteDate } from "../fmt/noteDate";
+import { resolveEffectiveConfig } from "../settings/model";
+import { RELEASE_GRANULARITIES } from "../types";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
@@ -81,6 +85,8 @@ export class CalendarWidget implements HoverParent {
 		);
 		this.dots = new DotScanner(deps, () => this.renderGrid());
 
+		// `file-open` also fires when focus moves between leaves already open,
+		// so it alone tracks the active pane (AC-CAL-10.1).
 		this.fileOpenRef = app.workspace.on("file-open", (file) => {
 			this.activeFilePath = file?.path ?? null;
 			this.renderGrid();
@@ -189,6 +195,8 @@ export class CalendarWidget implements HoverParent {
 		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
 		// Filled in once the notes are read; see drawWordDots.
 		const wordDotSlots: [string, HTMLElement][] = [];
+		const active = this.activeNote();
+		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
 
 		for (const week of grid) {
 			const tr = this.gridBodyEl.createEl("tr");
@@ -205,7 +213,7 @@ export class CalendarWidget implements HoverParent {
 					wDotContainer.appendChild(makeDotSvg());
 					wordDotSlots.push([weekPath, wDotContainer]);
 				}
-				if (weekPath === this.activeFilePath) {
+				if (active?.noteDate === computeNoteDate(anchor, "week", weekFormat)) {
 					wDiv.addClass("is-active");
 				}
 
@@ -237,7 +245,7 @@ export class CalendarWidget implements HoverParent {
 					dayDotContainer.appendChild(makeDotSvg());
 					wordDotSlots.push([dayPath, dayDotContainer]);
 				}
-				if (dayPath === this.activeFilePath) {
+				if (active?.noteDate === computeNoteDate(day.date, "day", weekFormat)) {
 					dayDiv.addClass("is-active");
 				}
 
@@ -269,6 +277,55 @@ export class CalendarWidget implements HoverParent {
 			const filled = wordCountSegments(counts.get(path) ?? 0, DEFAULT_WORDS_PER_SEGMENT);
 			if (filled > 0) container.appendChild(makeWordDotSvg(filled));
 		}
+	}
+
+	/**
+	 * The active file as a day or week note, matched the way the note index
+	 * matches it, so a note in a subfolder or under a prefix match counts too.
+	 * Month and year notes resolve to null: only day and week cells highlight.
+	 */
+	private activeNote(): FileDateIdentity | null {
+		if (this.activeFilePath === null) return null;
+		const configs: FileConfigs = {};
+		for (const granularity of RELEASE_GRANULARITIES) {
+			if (this.settings[granularity].enabled) configs[granularity] = resolveEffectiveConfig(this.settings, granularity);
+		}
+		const identity = resolveFileDate(this.activeFilePath, configs, this.deps.vaultConfig);
+		return identity?.granularity === "day" || identity?.granularity === "week" ? identity : null;
+	}
+
+	/**
+	 * Highlights the active note's cell, moving to its month only when no day
+	 * of that cell falls in the displayed month (AC-CAL-10.3, AC-CAL-10.4). A
+	 * week row that reaches into the displayed month counts as inside it.
+	 */
+	revealActiveNote(): void {
+		this.activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
+		const note = this.activeNote();
+		if (note) {
+			const first = note.granularity === "week" ? this.weekRowStart(note) : note.date;
+			const last = note.granularity === "week" ? first.clone().add(6, "day") : first;
+			const month = this.nav.month;
+			if (!first.isSame(month, "month") && !last.isSame(month, "month")) {
+				this.nav.show(first);
+				return;
+			}
+		}
+		this.renderGrid();
+	}
+
+	/**
+	 * The first day of the grid row that draws this week note: the one day of
+	 * the note's week that falls on the configured week start (see getWeekAnchor).
+	 */
+	private weekRowStart(note: FileDateIdentity): Moment {
+		const weekStart = resolveWeekStart(this.settings.weekStart);
+		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
+		for (let offset = -6; offset <= 6; offset++) {
+			const day = note.date.clone().add(offset, "day");
+			if (day.day() === weekStart && computeNoteDate(day, "week", weekFormat) === note.noteDate) return day;
+		}
+		return note.date;
 	}
 
 	/** Lightweight refresh — re-renders grid with current settings (e.g. on minute tick). */

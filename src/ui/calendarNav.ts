@@ -68,6 +68,11 @@ export class MonthNavigation {
 		this.moveTo(this.now());
 	}
 
+	/** Moves the grid to the month holding `date`. */
+	show(date: Moment): void {
+		this.moveTo(date.clone());
+	}
+
 	private moveTo(month: Moment): void {
 		this.displayed = month.startOf("month");
 		this.onChange();
