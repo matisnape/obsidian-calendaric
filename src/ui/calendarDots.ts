@@ -42,25 +42,33 @@ export function countWords(content: string): number {
  */
 export class DotScanner {
 	private unsubscribe: () => void;
-	/** Word count per note path, so a routine render reads no unchanged note again. */
-	private wordCounts = new Map<string, number>();
+	/**
+	 * Word count per note path, so a routine render reads no unchanged note
+	 * again. The read itself is kept, so an edit's redraw check and the render
+	 * it triggers share one read. `undefined` for a note that could not be read.
+	 */
+	private wordCounts = new Map<string, Promise<number | undefined>>();
 	/** Bumped on every vault change, so a read that a change overtook is not kept. */
 	private changes = 0;
+	/**
+	 * Word count each note's dot was last drawn from, so an edit redraws only a
+	 * dot it changes. `undefined` while that render is still reading the note.
+	 */
+	private shown = new Map<string, number | undefined>();
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
 			// Every change kind may mean new content at the path, so its count is
-			// read again on the next render. A metadata change is also how the
-			// host reports an edit, which moves no dot until then.
+			// read again on the next render.
 			this.changes++;
 			this.wordCounts.delete(change.file.path);
 			if (change.oldPath !== undefined) this.wordCounts.delete(change.oldPath);
-			// A metadata change is the host finishing its parse of a file it has
-			// already reported as created, so it moves no dot. Create, delete and
-			// rename are the three that do — the same three this scanner watched
-			// before the port carried them.
-			if (change.kind === "metadata") return;
-			onUpdate();
+			// Create, delete and rename can move any dot. A metadata change is how
+			// the host reports a saved edit, and its parse of a file it already
+			// reported as created; neither moves a note-exists dot, so only a
+			// shown note's word-count dot can change.
+			if (change.kind !== "metadata") return onUpdate();
+			if (this.shown.has(change.file.path)) void this.redrawIfWordDotMoved(change.file.path, onUpdate);
 		});
 	}
 
@@ -118,25 +126,51 @@ export class DotScanner {
 	 */
 	async getWordCounts(paths: Iterable<string>): Promise<Map<string, number>> {
 		const counts = new Map<string, number>();
+		const shown = new Map<string, number | undefined>([...paths].map((path) => [path, undefined]));
+		this.shown = shown;
 		await Promise.all(
-			[...new Set(paths)].map(async (path) => {
-				const cached = this.wordCounts.get(path);
-				if (cached !== undefined) return void counts.set(path, cached);
-				const file = this.deps.vault.getFile(path);
-				if (!file) return;
-				try {
-					const changesBefore = this.changes;
-					const words = countWords(await this.deps.vault.readFile(file));
-					// ponytail: any change skips the cache, not just one at this path;
-					// count per path if routine renders show re-reads.
-					if (this.changes === changesBefore) this.wordCounts.set(path, words);
-					counts.set(path, words);
-				} catch {
-					// ponytail: an unreadable note just shows no word-count dot
-				}
+			[...shown.keys()].map(async (path) => {
+				const words = await this.readWordCount(path);
+				if (words !== undefined) counts.set(path, words);
 			}),
 		);
+		// A later render has replaced `shown` meanwhile; it records its own.
+		if (this.shown === shown) for (const path of shown.keys()) shown.set(path, counts.get(path) ?? 0);
 		return counts;
+	}
+
+	/**
+	 * Re-read one shown note after an edit and redraw the grid only when its
+	 * word-count dot fills a different number of segments. The host reports
+	 * every autosave, so a redraw per report would rebuild the grid every few
+	 * seconds while the user types in today's note.
+	 */
+	private async redrawIfWordDotMoved(path: string, onUpdate: () => void): Promise<void> {
+		const drawn = this.shown.get(path);
+		// Still being read by the render that shows it: its count is unknown.
+		if (drawn === undefined) return onUpdate();
+		const words = (await this.readWordCount(path)) ?? 0;
+		// ponytail: threshold is the default until a setting carries one, as in the widget
+		if (wordCountSegments(words, DEFAULT_WORDS_PER_SEGMENT) !== wordCountSegments(drawn, DEFAULT_WORDS_PER_SEGMENT)) {
+			onUpdate();
+		}
+	}
+
+	/** One note's word count, from the kept read or a new one; `undefined` when unreadable. */
+	private readWordCount(path: string): Promise<number | undefined> {
+		const kept = this.wordCounts.get(path);
+		if (kept) return kept;
+		const file = this.deps.vault.getFile(path);
+		if (!file) return Promise.resolve(undefined);
+		const changesBefore = this.changes;
+		const read: Promise<number | undefined> = this.deps.vault.readFile(file).then(countWords, () => {
+			// ponytail: an unreadable note shows no word-count dot, and is tried again next render
+			if (this.wordCounts.get(path) === read) this.wordCounts.delete(path);
+			return undefined;
+		});
+		// A change after this point drops the kept read in the change handler.
+		if (this.changes === changesBefore) this.wordCounts.set(path, read);
+		return read;
 	}
 
 	/**

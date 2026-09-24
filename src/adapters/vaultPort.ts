@@ -5,9 +5,10 @@ export interface NoteFile {
 /**
  * What happened to one file in the vault.
  *
- * `metadata` is not a file change at all: it is the host finishing its read of
- * a file's frontmatter, which lands after the create that produced the file.
- * A consumer that only watched create would miss every frontmatter date.
+ * `metadata` is not a file change of its own: it is the host finishing its
+ * parse of a file, which lands after the create that produced the file and
+ * again after every saved edit. A consumer that only watched create would miss
+ * every frontmatter date.
  */
 export type VaultChangeKind = "create" | "delete" | "rename" | "metadata";
 
