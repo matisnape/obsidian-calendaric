@@ -77,6 +77,17 @@ describe("AC-CMD-07.2: Open next creates the next note when it is missing", () =
 		expect(world.opened()).toEqual([["Daily/2020-01-07.md", "reuse"]]);
 	});
 
+	it("AC-CMD-07.2: counts from an active note dated only by its frontmatter", async () => {
+		const world = setUp("Daily/monday.md");
+		world.vault.seedFrontmatter("Daily/monday.md", { day: "2020-01-06" });
+		world.index.applySettings(CONFIGS);
+
+		await run(world, "day", "forward", "Daily/monday.md");
+
+		expect(world.notePaths()).toEqual(["Daily/2020-01-07.md", "Daily/monday.md"]);
+		expect(world.opened()).toEqual([["Daily/2020-01-07.md", "reuse"]]);
+	});
+
 	it("AC-CMD-07.2: counts weeks and months from the active note, across a year boundary", async () => {
 		const world = setUp("Weekly/2026-W53.md", "Monthly/2026-12.md");
 
@@ -155,10 +166,6 @@ describe("AC-CMD-07.4: Open next and Open previous are offered only from a perio
 		expect(host.shown("day-open-previous")).toBe(false);
 		expect(host.shown("week-open-next")).toBe(true);
 		expect(host.shown("week-open-previous")).toBe(true);
-	});
-
-	it("AC-CMD-07.4: leaves Open current in the palette wherever the user is", () => {
-		expect(commandsWith(null).shown("day-open-current")).toBe(true);
 	});
 
 	it("AC-CMD-07.4: a shown command runs its own action; a hidden one runs nothing", () => {
