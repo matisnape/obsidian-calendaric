@@ -99,7 +99,7 @@
       "story": "As someone who keeps the calendar visible at all times, I want the calendar view to open by itself once the vault finishes loading, so that I never have to run a command every session.",
       "rationale": "This turns the calendar into a default part of the workspace layout instead of an opt-in view.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:auto-reveal-view-on-layout-ready"
       ],
