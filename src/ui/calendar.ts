@@ -8,7 +8,13 @@ import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
 import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, WORD_DOT_SEGMENTS, wordCountSegments } from "./calendarDots";
 import { MonthNavigation } from "./calendarNav";
-import { HOVER_LINK_SOURCE, hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
+import {
+	HOVER_LINK_SOURCE,
+	hoverPreviewRequest,
+	openOrCreateNote,
+	showNoteFileMenu,
+	type CreateRequest,
+} from "./cellActions";
 import { resolveFileDate, type FileConfigs, type FileDateIdentity } from "../fmt/resolveFileDate";
 import { computeNoteDate } from "../fmt/noteDate";
 import { resolveEffectiveConfig } from "../settings/model";
@@ -229,6 +235,7 @@ export class CalendarWidget implements HoverParent {
 					wDiv.addEventListener("mouseover", (e) => {
 						this.handleNoteHover(e, wDiv, weekPath);
 					});
+					wDiv.addEventListener("contextmenu", (e) => showNoteFileMenu(weekPath, e, this.deps));
 				}
 			}
 
@@ -258,6 +265,7 @@ export class CalendarWidget implements HoverParent {
 					dayDiv.addEventListener("mouseover", (e) => {
 						this.handleNoteHover(e, dayDiv, dayPath);
 					});
+					dayDiv.addEventListener("contextmenu", (e) => showNoteFileMenu(dayPath, e, this.deps));
 				}
 			}
 		}

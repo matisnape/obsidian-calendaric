@@ -31,4 +31,12 @@ export interface WorkspacePort {
 	 * flow that reports to the user, and one method does not earn three more files.
 	 */
 	showNotice(message: string): void;
+	/**
+	 * Shows the note's own file menu at the event's position: Delete, plus
+	 * whatever other plugins add to a file menu opened from `source`.
+	 *
+	 * Optional so a host without file menus, and every hand-built port, still
+	 * type-checks; a caller treats its absence as "no menu here".
+	 */
+	showFileMenu?(file: NoteFile, event: MouseEvent, source: string): void;
 }

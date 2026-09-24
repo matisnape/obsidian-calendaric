@@ -85,14 +85,48 @@ export class TFile {
 	path = "";
 }
 
+/** Records what an item was built with; `click()` stands in for the user selecting it. */
+export class MenuItem {
+	title = "";
+	icon = "";
+	private handler: (() => unknown) | null = null;
+
+	setTitle(title: string): this {
+		this.title = title;
+		return this;
+	}
+
+	setIcon(icon: string): this {
+		this.icon = icon;
+		return this;
+	}
+
+	onClick(handler: () => unknown): this {
+		this.handler = handler;
+		return this;
+	}
+
+	click(): void {
+		this.handler?.();
+	}
+}
+
 /**
- * Minimal stand-in so `new Menu()` and `menu.showAtMouseEvent(...)` resolve
- * under test. Calendaric only builds the menu and hands it to the real
- * "file-menu" workspace event — populating it is the running Obsidian's job,
- * not this plugin's, so the fake tracks nothing beyond "it was shown".
+ * Minimal stand-in so `new Menu()`, `menu.addItem(...)` and
+ * `menu.showAtMouseEvent(...)` resolve under test. It records the items
+ * Calendaric adds itself and the event it was shown at; what other plugins add
+ * through "file-menu" is the running Obsidian's business.
  */
 export class Menu {
 	shownAtEvent: MouseEvent | null = null;
+	items: MenuItem[] = [];
+
+	addItem(build: (item: MenuItem) => unknown): this {
+		const item = new MenuItem();
+		build(item);
+		this.items.push(item);
+		return this;
+	}
 
 	showAtMouseEvent(evt: MouseEvent): this {
 		this.shownAtEvent = evt;
