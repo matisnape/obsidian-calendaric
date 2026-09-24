@@ -118,6 +118,16 @@ export class PeriodicNoteIndex {
 		return noteDate === undefined ? null : (noteDate.slice(0, noteDate.indexOf(":")) as FileGranularity);
 	}
 
+	/**
+	 * The start of the period the note at `path` is filed under, or null when it
+	 * is no periodic note. Known for every note `granularityOf` names, a
+	 * frontmatter-dated one included.
+	 */
+	dateOf(path: string): Moment | null {
+		const noteDate = this.noteDateByPath.get(path);
+		return noteDate === undefined ? null : window.moment(Number(noteDate.slice(noteDate.indexOf(":") + 1)));
+	}
+
 	/** The nearest note either side of the noteDate `origin`, within its granularity. */
 	private closestFrom(origin: string, direction: JumpDirection): NoteFile | null {
 		const prefix = origin.slice(0, origin.indexOf(":") + 1);
