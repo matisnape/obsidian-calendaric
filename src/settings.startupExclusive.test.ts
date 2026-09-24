@@ -6,9 +6,9 @@
 import { describe, it, expect, vi } from "vitest";
 import type { App, ToggleComponent } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
-import { DEFAULT_SETTINGS, GRANULARITIES, loadStoredConfig, toSettings, type CalendaricSettings } from "./settings/model";
+import { DEFAULT_SETTINGS, GRANULARITIES, type CalendaricSettings } from "./settings/model";
 import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
-import type CalendaricPlugin from "./main";
+import CalendaricPlugin from "./main";
 
 // The shared mock leaves `addToggle` unbuilt. This file needs the control, so it
 // draws a checkbox and keeps its change handler to call when a test flips it.
@@ -97,9 +97,14 @@ describe("US-SET-05: Open on startup is exclusive", () => {
 		expect(startupToggles(tab).day.checked).toBe(true);
 	});
 
-	it("AC-SET-05.4: a stored config with two flags on loads and displays both, rewriting nothing", () => {
+	it("AC-SET-05.4: a stored config with two flags on loads and displays both, rewriting nothing", async () => {
 		const group = { id: "Default", day: { openAtStartup: true }, week: { openAtStartup: true } };
-		const settings = toSettings(loadStoredConfig({ calendarSets: [group], activeCalendarSet: "Default" }));
+		const plugin = new CalendaricPlugin({} as never, {} as never);
+		plugin.loadData = () => Promise.resolve({ calendarSets: [group], activeCalendarSet: "Default" });
+		const saveData = vi.fn(() => Promise.resolve());
+		plugin.saveData = saveData;
+		await plugin.loadSettings();
+		const settings = plugin.settings;
 		const { tab, saveSettings } = makeTab(settings);
 
 		expect(flagsOn(settings)).toEqual(["day", "week"]);
@@ -107,6 +112,7 @@ describe("US-SET-05: Open on startup is exclusive", () => {
 		expect(startupToggles(tab).week.checked).toBe(true);
 		expect(badges(tab)).toEqual(["Daily Notes", "Weekly Notes"]);
 		expect(saveSettings).not.toHaveBeenCalled();
+		expect(saveData).not.toHaveBeenCalled();
 	});
 
 	it("AC-SET-05.4: from two flags on, the next switch-on leaves only that one on", async () => {
