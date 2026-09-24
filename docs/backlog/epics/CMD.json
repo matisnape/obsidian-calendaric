@@ -458,7 +458,7 @@
       "story": "As someone browsing notes I have already written, I want a command that jumps to the nearest existing note before or after the one I am viewing, so that I can move through my history without accidentally creating empty notes.",
       "rationale": "Pure navigation and note creation are different intents, and conflating them would create unwanted files just from browsing.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "pn:jump-to-adjacent-note-command"
       ],
@@ -482,8 +482,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/commands/jumpCommands.test.ts 'AC-CMD-06.1' at d00582e: Jump forward/backward open the closest later/earlier note of the active note's granularity in the active pane, counting from that note, creating none; mutation (always jump forward) turns the backward case red"
         },
         {
           "id": "AC-CMD-06.2",
@@ -495,8 +495,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CMD-06.2' at d00582e: with no later note the user gets 'No next <daily> note.' and nothing opens or is created; mutation (drop the notice) turns it red",
           "failure_path": true
         },
         {
@@ -509,8 +509,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CMD-06.3' at d00582e: with no earlier note the user gets 'No previous ...' and nothing opens or is created; mutations (drop the notice; always jump forward) turn it red",
           "failure_path": true
         },
         {
@@ -522,8 +522,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-CMD-06.4' at d00582e: both jumps use checkCallback and are hidden unless the active pane holds a note of their granularity, wired from main.ts through PeriodicNoteIndex.granularityOf; a hotkey from elsewhere opens nothing; mutations (drop the checkCallback guard; drop the granularity check in jumpToClosestNote) turn it red",
           "failure_path": true
         }
       ]
