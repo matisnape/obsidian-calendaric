@@ -449,7 +449,7 @@
       "story": "As someone editing the filename format for a granularity, I want to be warned before saving a format that is illegal, cannot be told apart from other dates, or cannot survive being moved out of its folder, so that I do not silently lose the ability to find my own notes.",
       "rationale": "A format that looks reasonable can still be unusable for its granularity; catching this at save time is cheaper than discovering it once notes already exist under it.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:format-validation",
         "pn:fragile-basename-detection"
