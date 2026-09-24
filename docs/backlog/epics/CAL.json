@@ -898,7 +898,7 @@
       "story": "As someone editing a periodic note in another pane, I want the calendar to show me which cell that note belongs to, and to be able to jump the view to it, so that I always know where I am in the calendar without hunting for it.",
       "rationale": "The highlight is the calendar's answer to 'where am I', and it must track the active pane, not just clicks made inside the view itself.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "cal:track-active-file-for-highlight",
         "calendaric:calendar-active-file-highlight",
