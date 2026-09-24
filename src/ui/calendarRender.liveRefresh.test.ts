@@ -50,8 +50,7 @@ function rowWeekPath(row: number): string {
 }
 const secondRowWeekPath = () => rowWeekPath(1);
 
-async function open(notes: Record<string, string> = {}) {
-	const vault = new FakeVaultPort();
+async function open(notes: Record<string, string> = {}, vault = new FakeVaultPort()) {
 	for (const [path, content] of Object.entries(notes)) vault.seedFile(path, content);
 	const host = document.createElement("div");
 	const widget = new CalendarWidget(host, eventOnlyApp(), SETTINGS, {
@@ -151,6 +150,26 @@ describe("US-CAL-09: vault changes reach the open grid", () => {
 		vault.emitChange({ kind: "metadata", file: { path: "inbox.md" } });
 
 		expect(scans).not.toHaveBeenCalled();
+	});
+
+	it("an edit saved while the render is still reading that note redraws its word-count dot", async () => {
+		const vault = new FakeVaultPort();
+		const realRead = vault.readFile.bind(vault);
+		let release!: () => void;
+		const held = new Promise<void>((resolve) => (release = resolve));
+		vi.spyOn(vault, "readFile").mockImplementationOnce(async (file) => {
+			const text = await realRead(file);
+			await held;
+			return text;
+		});
+		const { host } = await open({ [dayPath(5)]: words(250) }, vault);
+
+		vault.seedFile(dayPath(5), words(1250));
+		vault.emitChange({ kind: "metadata", file: { path: dayPath(5) } });
+		release();
+		await settle();
+
+		expect(filledSegments(dayCell(host, 5))).toBe(5);
 	});
 
 	it("an edit that leaves a shown note's word-count dot as it was does not re-scan the month", async () => {
