@@ -262,7 +262,8 @@ export type WeekSemantics = "iso" | "locale";
  *
  * Only top-level tokens count. A week token inside {{weekday:fmt}} is rendered
  * off a day already pinned inside the source date's configured week, so such a
- * format partitions dates by that week whatever numbering it prints.
+ * format partitions dates by that week whatever numbering it prints. A span
+ * with any other name is written as typed (AC-FMT-01.5), so it counts for nothing.
  *
  * US-CAL-01's getWeekNumber(date, weekFormat) reads the same format strings but
  * answers a different question — which number to display, not how to partition
@@ -270,7 +271,7 @@ export type WeekSemantics = "iso" | "locale";
  * shared once both branches are on master.
  */
 export function weekSemantics(format: string): WeekSemantics | null {
-	const topLevel = tokenize(format).groups.filter((group) => !group.nested);
+	const topLevel = tokenize(literalWeekTokens(format, "week")).groups.filter((group) => !group.nested);
 	if (topLevel.some((group) => group.kind === "isoWeek")) return "iso";
 	if (topLevel.some((group) => group.kind === "localeWeek")) return "locale";
 	return null;
@@ -278,7 +279,7 @@ export function weekSemantics(format: string): WeekSemantics | null {
 
 /** Whether the format carries a {{weekday:fmt}} span formatWithWeekTokens substitutes. */
 export function hasWeekdayWrapper(format: string): boolean {
-	return tokenize(format).groups.some((group) => group.wrapper !== undefined);
+	return tokenize(literalWeekTokens(format, "week")).groups.some((group) => group.wrapper !== undefined);
 }
 
 function pad2(n: number): string {

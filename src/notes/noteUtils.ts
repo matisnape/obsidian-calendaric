@@ -15,6 +15,12 @@ import type { VaultPort } from "../adapters/vaultPort";
  */
 const WEEK_TOKEN_RE = /\{\{(monday|tuesday|wednesday|thursday|friday|saturday|sunday):([^{}]+)\}\}/gi;
 
+/**
+ * Any `{{name:fmt}}` span, whether or not the name is a weekday. Every span is
+ * written either resolved or as typed, so none of them is ever a top-level token.
+ */
+const SPAN_RE = /\{\{([^{}:]+):([^{}]+)\}\}/g;
+
 /** The seven names `{{weekday:fmt}}` accepts, and the ISO weekday each resolves to. */
 export const WEEKDAY_ISO: Record<string, number> = {
 	monday: 1,
@@ -58,7 +64,7 @@ export function weekdayWithin(date: Moment, isoDay: number, weekStart: number): 
  * filenames and two weeks under one.
  */
 export function spanWeekStart(format: string): number {
-	if (/[GW]/.test(tokenChars(format.replace(WEEK_TOKEN_RE, "")))) return 1;
+	if (/[GW]/.test(tokenChars(format.replace(SPAN_RE, "")))) return 1;
 	return window.moment.localeData().firstDayOfWeek();
 }
 
@@ -77,15 +83,25 @@ export function applyWeekTokens(fmt: string, date: Moment, weekStart: number): s
 }
 
 /**
- * The format with every `{{weekday:fmt}}` span escaped to literal text, unless
- * the note is a week (AC-FMT-01.4): a weekday within the week means nothing for
- * any other period. Each character gets moment's backslash escape, which the
- * parser reads the same way, so the writer and the parser agree on the literal.
- * A bracket escape would not do: the span's own format may hold `[` or `]`.
+ * The format with every `{{name:fmt}}` span escaped to literal text, except a
+ * weekday span in a weekly format. A weekday within the week means nothing for
+ * any other period (AC-FMT-01.4), and an unknown name is kept as typed rather
+ * than read by moment as tokens (AC-FMT-01.5). Each character gets moment's
+ * backslash escape, which the parser reads the same way, so the writer and the
+ * parser agree on the literal. A bracket escape would not do: the span's own
+ * format may hold `[` or `]`.
  */
 export function literalWeekTokens(fmt: string, granularity: Granularity): string {
-	if (granularity === "week") return fmt;
-	return fmt.replace(WEEK_TOKEN_RE, (match) => match.replace(/./g, "\\$&"));
+	return fmt.replace(SPAN_RE, (match, name: string) =>
+		granularity === "week" && WEEKDAY_ISO[name.toLowerCase()] !== undefined ? match : match.replace(/./g, "\\$&"),
+	);
+}
+
+/** The names of the `{{name:fmt}}` spans that are not weekdays, in order (AC-FMT-01.6). */
+export function unknownTokenNames(fmt: string): string[] {
+	return [...fmt.matchAll(SPAN_RE)]
+		.map(([, name = ""]) => name)
+		.filter((name) => WEEKDAY_ISO[name.toLowerCase()] === undefined);
 }
 
 /**
@@ -295,7 +311,7 @@ function weekNumberFor(date: Moment, tokens: string): number | null {
  * something: AC-CAL-01.4 asks for a week-number cell on every row.
  */
 export function getWeekNumber(date: Moment, weekFormat: string): number {
-	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(WEEK_TOKEN_RE, "")));
+	const topLevel = weekNumberFor(date, tokenChars(weekFormat.replace(SPAN_RE, "")));
 	if (topLevel !== null) return topLevel;
 
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {

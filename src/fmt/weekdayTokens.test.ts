@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { ReleaseGranularity } from "../types";
-import { formatWithWeekTokens } from "../notes/noteUtils";
+import { formatWithWeekTokens, getWeekNumber } from "../notes/noteUtils";
 import { parseFilename } from "./parseFilename";
 import { computeNoteDate } from "./noteDate";
 import { applyLocale, restoreLocale } from "./locale";
+import { validateFormat } from "./validateFormat";
 
 // Read off the window, never imported from the package (no-restricted-imports).
 type Moment = ReturnType<typeof window.moment>;
@@ -57,5 +58,39 @@ describe("US-FMT-01 weekday tokens in the filename format", () => {
 		const { written, sameNote } = roundTrip(format, sunday(), granularity);
 		expect(written).toBe(name);
 		expect(sameNote).toBe(true);
+	});
+
+	it.each<ReleaseGranularity>(["day", "week"])(
+		"AC-FMT-01.5: {{funday:DD.MM}} is written as typed in a %s format, and reads back",
+		(granularity) => {
+			applyLocale("en", "monday", "en");
+			const { written, sameNote } = roundTrip("YYYY-MM-DD {{funday:DD.MM}}", sunday(), granularity);
+			expect(written).toBe("2026-04-12 {{funday:DD.MM}}");
+			expect(sameNote).toBe(true);
+		},
+	);
+
+	it("AC-FMT-01.5: an unknown span's letters move neither the week start nor the note's week", () => {
+		// Its WW is literal text, not an ISO week, so the Sunday-start week stands.
+		applyLocale("en", "sunday", "en");
+		const format = "gggg-[W]ww {{monday:DD.MM}} {{funday:WW}}";
+		expect(formatWithWeekTokens(format, sunday(), "week")).toBe("2026-W16 13.04 {{funday:WW}}");
+		const saturday = window.moment("2026-04-18");
+		expect(computeNoteDate(saturday, "week", format)).toBe(computeNoteDate(sunday(), "week", format));
+		// The calendar reads the week number the filename writes: W16, not W15.
+		const nested = "{{monday:gggg-[W]ww}} {{funday:W}}";
+		expect(formatWithWeekTokens(nested, sunday(), "week")).toBe("2026-W16 {{funday:W}}");
+		expect(getWeekNumber(sunday(), nested)).toBe(16);
+	});
+
+	it("AC-FMT-01.6: {{funday:DD.MM}} adds one warning naming funday, and the \":\" error still blocks the save", () => {
+		const { errors, warnings } = validateFormat("gggg-[W]ww {{funday:DD.MM}}", "week", window.moment("2026-09-24"));
+		expect(warnings.filter((warning) => warning.includes("funday"))).toHaveLength(1);
+		expect(errors).toEqual([expect.stringContaining('":" cannot appear in a filename')]);
+	});
+
+	it("AC-FMT-01.6: a real weekday name raises no unrecognised-token warning", () => {
+		const { warnings } = validateFormat("gggg-[W]ww {{Monday:DD}}", "week", window.moment("2026-09-24"));
+		expect(warnings).toEqual([]);
 	});
 });

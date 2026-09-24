@@ -350,13 +350,12 @@ describe("getWeekNumber", () => {
 describe("getWeekNumber with awkward formats", () => {
 	const DIVERGENT_DATE = moment("2026-12-28");
 
-	it("keeps a double-brace span that formatWithWeekTokens does not recognise", () => {
-		// `notaday` is not a weekday, so formatWithWeekTokens hands the span to
-		// moment, which renders the WW inside it as an ISO week number. Stripping
-		// the span would hide a week number the filename really carries.
+	it("ignores the WW inside a double-brace span that formatWithWeekTokens does not recognise", () => {
+		// `notaday` is not a weekday, so the span is written as typed (AC-FMT-01.5)
+		// and its WW is no ISO week number. The filename carries the locale week.
 		const fmt = "gggg-[W]ww, {{notaday:WW}}";
-		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE, "week")).toContain("53");
-		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(53);
+		expect(formatWithWeekTokens(fmt, DIVERGENT_DATE, "week")).toBe("2027-W01, {{notaday:WW}}");
+		expect(getWeekNumber(DIVERGENT_DATE, fmt)).toBe(1);
 	});
 
 	it("keeps an unterminated double-brace span", () => {
@@ -411,9 +410,9 @@ describe("getWeekNumber for nested-only formats", () => {
 	});
 
 	it("skips an unrecognised weekday span when looking for a nested token", () => {
-		// `notaday` is left for moment, which renders its WW against the date
-		// itself — so the top-level pass already claims this format.
-		expect(getWeekNumber(SUNDAY, "{{notaday:WW}}")).toBe(SUNDAY.isoWeek());
+		// `notaday` is written as typed (AC-FMT-01.5), so its WW names no week and
+		// the format falls back to the locale week.
+		expect(getWeekNumber(SUNDAY, "{{notaday:WW}}")).toBe(SUNDAY.week());
 	});
 
 	it("falls back to the locale week when no token anywhere names a week", () => {
