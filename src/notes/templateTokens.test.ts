@@ -4,6 +4,12 @@ import { substituteTemplateTokens } from "./templateTokens";
 import { createNote } from "./noteCreate";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import type { PeriodicConfig } from "../types";
+import { applyLocale, restoreLocale } from "../fmt/locale";
+
+// {{weekday:fmt}} resolves within the configured week (AC-FMT-03.2); these
+// cases were written for the plugin's default Monday start.
+beforeEach(() => applyLocale("en", "monday", "en"));
+afterEach(() => restoreLocale());
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {

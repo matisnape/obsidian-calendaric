@@ -25,7 +25,7 @@ import { resolveEffectiveConfig } from "./settings/model";
 import type { NoteFile } from "./adapters/vaultPort";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
-import { applyLocale, restoreLocale } from "./fmt/locale";
+import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 
 /**
  * The date type, taken from the clock this plugin actually reads.
@@ -64,7 +64,7 @@ export default class CalendaricPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		this.applyLocale();
+		applyLocaleSettings(this.settings, getLanguage());
 
 		// The calendar pane's whole host surface, built here and handed inward
 		// (AC-ARCH-11.3). The view and the widget below it name no adapter.
@@ -134,10 +134,11 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	onSettingsChange(): void {
-		// First, so the rebuilt index and the refreshed calendar below already
-		// format with the new locale and week start (AC-FMT-03.3).
-		this.applyLocale();
+		applyLocaleSettings(this.settings, getLanguage(), () => this.rebuildFromSettings());
+	}
 
+	/** Everything that formats with the settings, rebuilt after the locale is applied. */
+	private rebuildFromSettings(): void {
 		// Which files count as periodic notes, and which commands exist, are both
 		// decided by the settings that just changed — so both are rebuilt here
 		// rather than at the next restart (AC-CMD-05.2, AC-CMD-05.3).
@@ -148,11 +149,6 @@ export default class CalendaricPlugin extends Plugin {
 		if (leaf?.view instanceof CalendarView) {
 			leaf.view.refresh();
 		}
-	}
-
-	/** The one place the locale and week-start settings reach moment (US-FMT-03). */
-	private applyLocale(): void {
-		applyLocale(this.settings.overrideLocale, this.settings.weekStart, getLanguage());
 	}
 
 	/**

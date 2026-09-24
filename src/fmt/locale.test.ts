@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import "moment/locale/pl";
-import { applyLocale, resolveLocale, restoreLocale, weekStartDay } from "./locale";
+import { applyLocale, applyLocaleSettings, resolveLocale, restoreLocale, weekStartDay } from "./locale";
 import { computeNotePath, formatWithWeekTokens, getWeekNumber } from "../notes/noteUtils";
 import { substituteTemplateTokens } from "../notes/templateTokens";
 import { computeNoteDate } from "./noteDate";
@@ -121,6 +121,57 @@ describe("applyLocale", () => {
 		expect(m.locale()).toBe("en");
 		expect(m.localeData("pl").firstDayOfWeek()).toBe(1);
 		expect(m.localeData("pl").firstDayOfYear()).toBe(4);
+	});
+});
+
+describe("{{weekday:fmt}} filename tokens", () => {
+	/** Sun 2026-03-01 .. Sat 2026-03-07: one calendar row under a Sunday start. Made after applyLocale, as the grid makes its days. */
+	const sundayRow = (): ReturnType<typeof m>[] => Array.from({ length: 7 }, (_, i) => m("2026-03-01").add(i, "day"));
+	const weekConfig = (format: string) => ({ ...DEFAULT_SETTINGS.week, format, folder: "" });
+
+	it("AC-FMT-03.2: every day of a Sunday-start row resolves to one weekly file", () => {
+		applyLocale("en", "sunday", "en");
+		const format = "{{monday:GGGG-[W]WW}}";
+		const row = sundayRow();
+		const paths = row.map((day) => computeNotePath(day, weekConfig(format), noFolder));
+		expect(new Set(paths)).toEqual(new Set(["2026-W10.md"]));
+		expect(new Set(row.map((day) => getWeekNumber(day, format)))).toEqual(new Set([10]));
+		expect(new Set(row.map((day) => computeNoteDate(day, "week", format))).size).toBe(1);
+	});
+
+	it("AC-FMT-03.2: a weekday-token filename written under a non-Monday start reads back as its own week", () => {
+		for (const weekStart of ["sunday", "tuesday"] as const) {
+			applyLocale("en", weekStart, "en");
+			for (const format of ["{{monday:GGGG-[W]WW}}", "{{sunday:YYYY-MM-DD}}"]) {
+				for (const day of sundayRow()) {
+					const written = formatWithWeekTokens(format, day);
+					const parsed = parseFilename(written, format, false);
+					expect(parsed, `${weekStart} ${format} ${written}`).not.toBeNull();
+					expect(computeNoteDate(parsed!.date, "week", format), `${weekStart} ${format} ${written}`)
+						.toBe(computeNoteDate(day, "week", format));
+				}
+			}
+		}
+	});
+
+	it("AC-FMT-03.2: a Monday start writes the same weekday-token filenames as the ISO week did", () => {
+		applyLocale("en", "monday", "en");
+		const format = "{{monday:GGGG-[W]WW}} {{sunday:DD.MM}}";
+		for (let i = 0; i < 14; i++) {
+			const day = m("2026-03-01").add(i, "day");
+			const iso = `${day.clone().isoWeekday(1).format("GGGG-[W]WW")} ${day.clone().isoWeekday(7).format("DD.MM")}`;
+			expect(formatWithWeekTokens(format, day)).toBe(iso);
+		}
+	});
+});
+
+describe("applyLocaleSettings", () => {
+	it("AC-FMT-03.3: a saved setting reaches moment before the re-render runs", () => {
+		let seen = "";
+		applyLocaleSettings({ overrideLocale: "pl", weekStart: "sunday" }, "en", () => {
+			seen = `${m.locale()} ${m.localeData().firstDayOfWeek()}`;
+		});
+		expect(seen).toBe("pl 0");
 	});
 });
 

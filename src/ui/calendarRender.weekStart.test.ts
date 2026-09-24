@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "moment/locale/pl";
 import type { App } from "obsidian";
 import { CalendarWidget } from "./calendar";
-import { applyLocale, restoreLocale } from "../fmt/locale";
+import { applyLocale, applyLocaleSettings, restoreLocale } from "../fmt/locale";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
@@ -28,10 +28,9 @@ function eventOnlyApp(): App {
 	} as unknown as App;
 }
 
-/** What the settings tab's save does: apply the new settings, then refresh the open calendar. */
+/** What the plugin's onSettingsChange does: the same function, with the open calendar's refresh. */
 function change(widget: CalendarWidget, settings: CalendaricSettings): void {
-	applyLocale(settings.overrideLocale, settings.weekStart, "en");
-	widget.refreshSettings(settings);
+	applyLocaleSettings(settings, "en", () => widget.refreshSettings(settings));
 }
 
 function build(settings: CalendaricSettings): { host: HTMLElement; widget: CalendarWidget } {

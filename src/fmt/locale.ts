@@ -1,4 +1,4 @@
-import type { WeekStartOption } from "../settings/model";
+import type { CalendaricSettings, WeekStartOption } from "../settings/model";
 
 /**
  * The locale and week start the whole plugin formats with (US-FMT-03).
@@ -58,6 +58,20 @@ export function applyLocale(override: string, weekStart: WeekStartOption, obsidi
 	moment.updateLocale(locale, { week: { dow, doy: own.doy + dow - own.dow } });
 	moment.locale(locale);
 	return locale;
+}
+
+/**
+ * What the plugin runs on load and on every settings change: the saved locale
+ * settings reach moment first, then whatever formats with them re-renders
+ * (AC-FMT-03.3).
+ */
+export function applyLocaleSettings(
+	settings: Pick<CalendaricSettings, "overrideLocale" | "weekStart">,
+	obsidianLanguage: string,
+	rerender: () => void = () => {},
+): void {
+	applyLocale(settings.overrideLocale, settings.weekStart, obsidianLanguage);
+	rerender();
 }
 
 /** Put back every week rule and the global locale the plugin found. */

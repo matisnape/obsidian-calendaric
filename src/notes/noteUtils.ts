@@ -89,10 +89,13 @@ export function formatWithWeekTokens(fmt: string, date: Moment): string {
 	// what makes a date held across a settings change write with the new locale
 	// and week start (AC-FMT-03.3).
 	const local = date.clone().locale(window.moment.locale());
+	const weekStart = local.localeData().firstDayOfWeek();
 	const sanitised = fmt.replace(WEEK_TOKEN_RE, (_match, weekday: string, tokenFmt: string) => {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) return _match;
-		const resolved = local.clone().isoWeekday(isoDay).format(tokenFmt);
+		// Within the configured week, so every day of one calendar row writes
+		// the same weekly file (AC-FMT-03.2).
+		const resolved = weekdayWithin(local, isoDay, weekStart).format(tokenFmt);
 		// Wrap in moment escape brackets so moment.format() treats it as a literal
 		return `[${resolved}]`;
 	});
@@ -266,7 +269,8 @@ export function getWeekNumber(date: Moment, weekFormat: string): number {
 	for (const [, weekday = "", tokenFmt = ""] of weekFormat.matchAll(WEEK_TOKEN_RE)) {
 		const isoDay = WEEKDAY_ISO[weekday.toLowerCase()];
 		if (isoDay === undefined) continue;
-		const nested = weekNumberFor(date.clone().isoWeekday(isoDay), tokenChars(tokenFmt));
+		const weekStart = window.moment.localeData().firstDayOfWeek();
+		const nested = weekNumberFor(weekdayWithin(date, isoDay, weekStart), tokenChars(tokenFmt));
 		if (nested !== null) return nested;
 	}
 
