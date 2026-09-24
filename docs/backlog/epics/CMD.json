@@ -535,7 +535,7 @@
       "story": "As someone maintaining an unbroken sequence of periodic notes, I want a command that always takes me to the next or previous period's note, creating it if it does not exist yet, so that I never hit a dead end while moving through time.",
       "rationale": "This is the command that keeps a daily or weekly logging habit moving forward even into periods with no note yet.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:open-adjacent-note-command"
       ],
