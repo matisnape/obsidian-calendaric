@@ -5,5 +5,5 @@
 	"minAppVersion": "1.13.7",
 	"description": "Unified calendar and periodic notes for Obsidian.",
 	"author": "Anna",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }

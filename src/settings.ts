@@ -9,6 +9,7 @@ import type { DesktopShellPort } from "./adapters/desktopShellPort";
 import type { VaultPort } from "./adapters/vaultPort";
 import { validateTemplatePath } from "./notes/validateTemplatePath";
 import { validateFormat } from "./fmt/validateFormat";
+import { checkNoteFolder } from "./notes/noteUtils";
 import type CalendaricPlugin from "./main";
 
 // The configuration model lives in ./settings/model, which knows nothing about
@@ -30,8 +31,12 @@ const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 /** The granularities whose settings the screen can edit today. */
 type ActiveGranularity = Extract<Granularity, "day" | "week">;
 
-/** The format and template guide, shipped inside the plugin's own folder. */
-const FORMAT_GUIDE_PATH = "docs/guide.md";
+/**
+ * The format and template guide, published with the source. An installed
+ * plugin folder holds only main.js, manifest.json and styles.css, so a local
+ * copy of the guide is not there to open (AC-SET-04.5).
+ */
+const FORMAT_GUIDE_URL = "https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md";
 
 const GRANULARITY_LABELS: Record<Granularity, string> = {
 	day: "Daily Notes",
@@ -58,6 +63,11 @@ const PREFIX_MATCH_EXAMPLE: Record<ActiveGranularity, string> = {
 function getMoment() {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return (window as any).moment as typeof import("moment") | undefined;
+}
+
+/** AC-SET-04.1: the invalid state a field carries while its problem line is showing. */
+function markInvalid(input: HTMLInputElement, invalid: boolean): void {
+	input.setAttr("aria-invalid", invalid ? "true" : null);
 }
 
 /**
@@ -295,10 +305,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		syntaxLink.setAttr("target", "_blank");
 		syntaxLink.setAttr("rel", "noopener");
 		formatDesc.appendText(" · ");
-		const guideLink = formatDesc.createEl("a", { text: "Format & template guide", href: "#" });
-		guideLink.addEventListener("click", (e) => {
-			e.preventDefault();
-			this.ports.desktop.openPluginFile(FORMAT_GUIDE_PATH);
+		formatDesc.createEl("a", {
+			text: "Format & template guide",
+			attr: { href: FORMAT_GUIDE_URL, target: "_blank", rel: "noopener" },
 		});
 		const formatExample = formatDesc.createEl("div");
 		const updateFormatExample = (fmt: string) => {
@@ -315,6 +324,12 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// US-FMT-05: errors keep the previous format saved, warnings save anyway.
 		const formatProblem = formatDesc.createDiv({ cls: "calendaric-setting-problem" });
+		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
+		const formatInput = formatControl.createEl("input", {
+			type: "text",
+			attr: { placeholder: DEFAULT_FORMATS[granularity], spellcheck: "false" },
+		});
+		formatInput.value = config.format;
 		const showFormatProblems = (fmt: string, errorOutcome = "Not saved:") => {
 			const problems = validateFormat(fmt, granularity);
 			formatProblem.empty();
@@ -322,18 +337,13 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			const messages = [...problems.errors, ...problems.warnings];
 			const outcome = problems.errors.length > 0 ? errorOutcome : "Saved, but:";
 			if (messages.length > 0) formatProblem.appendText([outcome, ...messages].join(" "));
+			markInvalid(formatInput, messages.length > 0);
 			return problems;
 		};
 		// A stored format that warns says so when the tab reopens, not only on edit.
 		// One with an error was stored before this check or by hand, and is in use.
 		showFormatProblems(config.format || DEFAULT_FORMATS[granularity], "In use, but:");
 
-		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
-		const formatInput = formatControl.createEl("input", {
-			type: "text",
-			attr: { placeholder: DEFAULT_FORMATS[granularity], spellcheck: "false" },
-		});
-		formatInput.value = config.format;
 		formatInput.addEventListener("input", () => {
 			updateFormatExample(formatInput.value);
 			showFormatProblems(formatInput.value);
@@ -345,16 +355,36 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		});
 
 		// Note Folder
-		new Setting(content)
+		const folderSetting = new Setting(content)
 			.setName("Note Folder")
-			.setDesc(`New ${periodicity} notes will be placed here`)
-			.addText((text) => {
-				text.setPlaceholder("e.g. folder 1/folder 2").setValue(config.folder);
-				text.onChange(async (value) => {
-					config.folder = value;
-					await this.save();
-				});
+			.setDesc(`New ${periodicity} notes will be placed here`);
+		// AC-SET-04.2: a missing folder is reported, never refused -- note
+		// creation builds the chain on demand. Checked on blur and on display,
+		// not per keystroke, so a half-typed path does not warn. A folder not yet
+		// created is valid, so only an unusable one marks the field invalid.
+		const folderProblem = folderSetting.descEl.createDiv({ cls: "calendaric-setting-problem" });
+		const showFolderProblem = (value: string): boolean => {
+			// An empty folder is Obsidian's default location, not something typed, so it is left unchecked.
+			const check = checkNoteFolder(value, { getDefaultNewFileFolder: () => "" }, this.ports.vault);
+			folderProblem.empty();
+			if (!check.valid) folderProblem.appendText(`Saved, but ${value} cannot be used as a folder.`);
+			else if (check.notYetCreated) {
+				folderProblem.appendText(`Saved, but ${value} does not exist yet. It is created with the first note.`);
+			}
+			return !check.valid;
+		};
+		const folderInvalid = showFolderProblem(config.folder);
+		folderSetting.addText((text) => {
+			text.setPlaceholder("e.g. folder 1/folder 2").setValue(config.folder);
+			markInvalid(text.inputEl, folderInvalid);
+			text.inputEl.addEventListener("blur", () => {
+				markInvalid(text.inputEl, showFolderProblem(text.inputEl.value));
 			});
+			text.onChange(async (value) => {
+				config.folder = value;
+				await this.save();
+			});
+		});
 
 		// Template
 		const capitalPeriodicity = periodicity.charAt(0).toUpperCase() + periodicity.slice(1);
@@ -376,9 +406,14 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		templateSetting.addText((text) => {
 			text.setPlaceholder("e.g. templates/template-file").setValue(config.templatePath);
+			markInvalid(text.inputEl, templateProblem.textContent !== "");
+			// AC-SET-04.3: checked on blur, like the folder, so a half-typed path does not error.
+			text.inputEl.addEventListener("blur", () => {
+				showTemplateProblem(text.inputEl.value);
+				markInvalid(text.inputEl, templateProblem.textContent !== "");
+			});
 			text.onChange(async (value) => {
 				config.templatePath = value;
-				showTemplateProblem(value);
 				await this.save();
 			});
 		});
