@@ -13,20 +13,29 @@ function makeApp(plugins: Record<string, unknown>): App {
 /**
  * A Calendar plugin shaped the way the surveyed one is (its src/main.ts):
  * `options` mirrors the settings store, and `writeOptions` patches the store
- * and then saves. `saved` records what reached its data.json.
+ * and then saves -- in that order, so a failed save leaves memory patched.
+ * `disk` is its data.json, which `loadData` reads back.
  */
-function calendarPlugin(showWeeklyNote: unknown) {
+function calendarPlugin(showWeeklyNote: unknown, save: "works" | "rejects" | "drops" = "works") {
 	type Options = Record<string, unknown>;
-	const saved: unknown[] = [];
-	const plugin: { options: Options; writeOptions(change: (current: Options) => Options): Promise<void> } = {
+	const disk = { data: { showWeeklyNote, weekStart: "monday" } as Options };
+	const plugin: {
+		options: Options;
+		writeOptions(change: (current: Options) => Options): Promise<void>;
+		loadData(): Promise<Options>;
+	} = {
 		options: { showWeeklyNote, weekStart: "monday" },
 		async writeOptions(change) {
 			if (this !== plugin) throw new Error("writeOptions called off its plugin");
 			this.options = { ...this.options, ...change(this.options) };
-			saved.push(this.options);
+			if (save === "rejects") throw new Error("disk full");
+			if (save === "works") disk.data = { ...this.options };
+		},
+		async loadData() {
+			return { ...disk.data };
 		},
 	};
-	return { plugin, saved };
+	return { plugin, disk };
 }
 
 describe("ObsidianCalendarPluginAdapter.readCalendarWeeklyNotes", () => {
@@ -103,13 +112,24 @@ describe("ObsidianCalendarPluginAdapter.readCalendarWeeklyNotes", () => {
 
 describe("ObsidianCalendarPluginAdapter.disableCalendarWeeklyNotes", () => {
 	it("AC-MIG-06.5: turns week numbers off through the plugin's writeOptions, which saves it", async () => {
-		const { plugin, saved } = calendarPlugin(true);
+		const { plugin, disk } = calendarPlugin(true);
 		const adapter = new ObsidianCalendarPluginAdapter(makeApp({ "calendar-anks": plugin }));
 
 		expect(await adapter.disableCalendarWeeklyNotes()).toEqual({ ok: true });
 
 		expect(adapter.readCalendarWeeklyNotes()).toEqual({ ok: true, value: false });
-		expect(saved).toEqual([{ showWeeklyNote: false, weekStart: "monday" }]);
+		expect(disk.data).toEqual({ showWeeklyNote: false, weekStart: "monday" });
+	});
+
+	it("AC-MIG-06.6: reports a save that never reached data.json as a failed write", async () => {
+		const { plugin } = calendarPlugin(true, "drops");
+		const adapter = new ObsidianCalendarPluginAdapter(makeApp({ calendar: plugin }));
+
+		const result = await adapter.disableCalendarWeeklyNotes();
+
+		// Memory says off, which is exactly what must not count.
+		expect(adapter.readCalendarWeeklyNotes()).toEqual({ ok: true, value: false });
+		expect(result.ok).toBe(false);
 	});
 
 	it("AC-MIG-06.6: reports a plugin with no writeOptions instead of claiming the write", async () => {
@@ -118,15 +138,13 @@ describe("ObsidianCalendarPluginAdapter.disableCalendarWeeklyNotes", () => {
 		expect((await adapter.disableCalendarWeeklyNotes()).ok).toBe(false);
 	});
 
-	it("AC-MIG-06.6: reports a writeOptions that rejects as a failed write, never a throw", async () => {
-		const plugin = {
-			options: { showWeeklyNote: true },
-			writeOptions: async () => {
-				throw new Error("disk full");
-			},
-		};
-		const result = await new ObsidianCalendarPluginAdapter(makeApp({ calendar: plugin })).disableCalendarWeeklyNotes();
+	it("AC-MIG-06.6: reports a writeOptions whose save rejects as a failed write, never a throw", async () => {
+		const { plugin } = calendarPlugin(true, "rejects");
+		const adapter = new ObsidianCalendarPluginAdapter(makeApp({ calendar: plugin }));
 
+		const result = await adapter.disableCalendarWeeklyNotes();
+
+		expect(adapter.readCalendarWeeklyNotes()).toEqual({ ok: true, value: false });
 		expect(result.ok).toBe(false);
 		if (result.ok) return;
 		expect(result.problem).toContain("disk full");

@@ -17,10 +17,12 @@ import type { ReleaseGranularity } from "../types";
  * other with different templates, so a granularity one of them still owns is
  * left to it, and the user is told which plugin that is.
  *
- * Every question is asked of the plugin at the moment it matters, never
- * remembered. That is what makes AC-MIG-06.5 and AC-MIG-06.6 one rule: after
- * the user hands a granularity over, the next note waits for the plugin itself
- * to report the granularity off, whatever the write said.
+ * Every question is asked of the plugin at the moment it matters. That is
+ * what makes AC-MIG-06.5 and AC-MIG-06.6 one rule: after the user hands a
+ * granularity over, the next note waits for the plugin itself to report the
+ * granularity off. The one thing remembered is a hand-over whose save was not
+ * confirmed: the plugin may read "off" from memory while its data.json still
+ * says on, so the granularity stays with it until a hand-over does confirm.
  */
 
 export type Predecessor = "daily-notes" | "calendar" | "periodic-notes";
@@ -53,9 +55,16 @@ export interface NoticeAction {
 	run: () => Promise<void>;
 }
 
-export type Notify = (message: string, action?: NoticeAction) => void;
+/**
+ * Shows a notice. A sticky one stays until dismissed; the others time out, so
+ * a refusal repeated on every click does not pile up on screen.
+ */
+export type Notify = (message: string, action?: NoticeAction, sticky?: boolean) => void;
 
 export class PredecessorGuard {
+	/** Hand-overs that were written but not confirmed saved, and who keeps each granularity meanwhile. */
+	private unconfirmed = new Map<ReleaseGranularity, Predecessor>();
+
 	constructor(
 		private ports: PredecessorPorts,
 		/** Whether Calendaric itself has the granularity on, read live from its settings. */
@@ -65,18 +74,27 @@ export class PredecessorGuard {
 
 	/** The predecessor that owns a granularity Calendaric also has on, or null. */
 	owner(granularity: ReleaseGranularity): Predecessor | null {
-		if (!this.calendaricEnables(granularity)) return null;
-		return PREDECESSORS.find((predecessor) => this.owns(predecessor, granularity)) ?? null;
+		return this.owners(granularity)[0] ?? null;
+	}
+
+	/** Every predecessor that owns a granularity Calendaric also has on, first owner first. */
+	private owners(granularity: ReleaseGranularity): Predecessor[] {
+		if (!this.calendaricEnables(granularity)) return [];
+		const live = PREDECESSORS.filter((predecessor) => this.owns(predecessor, granularity));
+		const pending = this.unconfirmed.get(granularity);
+		return pending && !live.includes(pending) ? [...live, pending] : live;
 	}
 
 	/**
 	 * True when the note must not be written. The user has already been told
 	 * why, with the offer to hand the granularity over, so the caller does
-	 * nothing more.
+	 * nothing more. `quietly` is for a path the startup notice already
+	 * explained, so the same news is not shown twice.
 	 */
-	refuse(granularity: ReleaseGranularity): boolean {
+	refuse(granularity: ReleaseGranularity, quietly = false): boolean {
 		const predecessor = this.owner(granularity);
 		if (!predecessor) return false;
+		if (quietly) return true;
 
 		this.notify(
 			`Calendaric: ${PREDECESSOR_NAME[predecessor]} still manages ${LABEL[granularity]} notes, so Calendaric did not create this one.`,
@@ -87,18 +105,31 @@ export class PredecessorGuard {
 
 	/** The startup check: one notice per predecessor that overlaps Calendaric, none otherwise (AC-MIG-06.2). */
 	announce(): void {
-		const owned = new Map<Predecessor, ReleaseGranularity[]>();
-		for (const granularity of RELEASE_GRANULARITIES) {
-			const predecessor = this.owner(granularity);
-			if (predecessor) owned.set(predecessor, [...(owned.get(predecessor) ?? []), granularity]);
+		for (const [predecessor, granularities] of this.overlaps(RELEASE_GRANULARITIES)) {
+			this.offerHandOver(predecessor, granularities);
 		}
+	}
 
-		for (const [predecessor, granularities] of owned) {
-			this.notify(
-				`Calendaric: ${PREDECESSOR_NAME[predecessor]} still manages ${labels(granularities)} notes. Calendaric will not create them while it does.`,
-				this.handOver(predecessor, granularities),
-			);
+	/**
+	 * Which predecessors own which of these granularities. A granularity two
+	 * plugins own is listed under both, so each one's hand-over is offered.
+	 */
+	private overlaps(granularities: readonly ReleaseGranularity[]): Map<Predecessor, ReleaseGranularity[]> {
+		const owned = new Map<Predecessor, ReleaseGranularity[]>();
+		for (const granularity of granularities) {
+			for (const predecessor of this.owners(granularity)) {
+				owned.set(predecessor, [...(owned.get(predecessor) ?? []), granularity]);
+			}
 		}
+		return owned;
+	}
+
+	private offerHandOver(predecessor: Predecessor, granularities: ReleaseGranularity[]): void {
+		this.notify(
+			`Calendaric: ${PREDECESSOR_NAME[predecessor]} still manages ${labels(granularities)} notes. Calendaric will not create them while it does.`,
+			this.handOver(predecessor, granularities),
+			true,
+		);
 	}
 
 	private handOver(predecessor: Predecessor, granularities: ReleaseGranularity[]): NoticeAction {
@@ -107,24 +138,34 @@ export class PredecessorGuard {
 
 	/**
 	 * AC-MIG-06.5: turns each granularity off in the predecessor's own
-	 * configuration, then asks the plugin again. Only its answer decides what
-	 * the user is told; a write that reported success but did not take leaves
-	 * the refusal in place (AC-MIG-06.6).
+	 * configuration, then asks every predecessor again. Only those answers
+	 * decide what the user is told: a write that did not take, or was not
+	 * saved, leaves the refusal in place (AC-MIG-06.6), and a granularity a
+	 * second predecessor also owns is offered for that one's hand-over next.
 	 */
 	private async release(predecessor: Predecessor, granularities: ReleaseGranularity[]): Promise<void> {
 		for (const granularity of granularities) {
 			const result = await this.turnOff(predecessor, granularity);
-			if (!result.ok) this.notify(`Calendaric could not change ${PREDECESSOR_NAME[predecessor]}: ${result.problem}`);
+			if (result.ok) {
+				if (this.unconfirmed.get(granularity) === predecessor) this.unconfirmed.delete(granularity);
+				continue;
+			}
+			this.unconfirmed.set(granularity, predecessor);
+			this.notify(`Calendaric could not change ${PREDECESSOR_NAME[predecessor]}: ${result.problem}`);
 		}
 
-		const still = granularities.filter((granularity) => this.owns(predecessor, granularity));
-		if (still.length > 0) {
+		const freed = granularities.filter((granularity) => this.owner(granularity) === null);
+		if (freed.length > 0) this.notify(`Calendaric now manages ${labels(freed)} notes.`);
+
+		for (const [owner, still] of this.overlaps(granularities)) {
+			if (owner !== predecessor) {
+				this.offerHandOver(owner, still);
+				continue;
+			}
 			this.notify(
 				`Calendaric: ${PREDECESSOR_NAME[predecessor]} still has ${labels(still)} notes on, so Calendaric keeps leaving them alone.`,
 			);
-			return;
 		}
-		this.notify(`Calendaric now manages ${labels(granularities)} notes.`);
 	}
 
 	/** AC-MIG-06.4: anything short of a clear "on" -- absent, unreadable, a throw -- is "not enabled". */
@@ -160,7 +201,7 @@ export class PredecessorGuard {
 				case "calendar":
 					return await this.ports.calendar.disableCalendarWeeklyNotes();
 				case "periodic-notes":
-					return this.ports.periodicNotes.disableGranularity(granularity);
+					return await this.ports.periodicNotes.disableGranularity(granularity);
 			}
 		} catch (error) {
 			return { ok: false, problem: error instanceof Error ? error.message : String(error) };
@@ -190,6 +231,15 @@ export function guardCreation(backingVault: object, guard: PredecessorGuard | nu
 }
 
 /** True when the note must not be written; see `PredecessorGuard.refuse`. No guard, no refusal. */
-export function creationRefused(vault: { readonly backingVault: object }, granularity: ReleaseGranularity): boolean {
-	return guards.get(vault.backingVault)?.refuse(granularity) ?? false;
+export function creationRefused(
+	vault: { readonly backingVault: object },
+	granularity: ReleaseGranularity,
+	quietly = false,
+): boolean {
+	return guards.get(vault.backingVault)?.refuse(granularity, quietly) ?? false;
+}
+
+/** The startup check for a vault; see `PredecessorGuard.announce`. */
+export function announceOverlaps(vault: { readonly backingVault: object }): void {
+	guards.get(vault.backingVault)?.announce();
 }

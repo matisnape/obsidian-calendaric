@@ -47,15 +47,23 @@ export class ObsidianCalendarPluginAdapter implements CalendarPluginPort {
 
 			const plugin = found.value;
 			const writeOptions = plugin["writeOptions"];
-			if (typeof writeOptions !== "function") {
+			const loadData = plugin["loadData"];
+			if (typeof writeOptions !== "function" || typeof loadData !== "function") {
 				return { ok: false, problem: "The Calendar plugin exposes no 'writeOptions' method." };
 			}
 
-			// Called on the plugin: it saves `this.options` once the patch is in.
+			// Called on the plugin: it patches its store, then saves `this.options`.
+			// The patch lands before the save, so a save that fails still leaves
+			// the plugin reading "off" until a restart -- only its data.json says
+			// whether the change will last.
 			await (writeOptions as (this: unknown, change: () => Record<string, unknown>) => Promise<void>).call(
 				plugin,
 				() => ({ showWeeklyNote: false }),
 			);
+			const onDisk: unknown = await (loadData as (this: unknown) => Promise<unknown>).call(plugin);
+			if (typeof onDisk !== "object" || onDisk === null || (onDisk as Record<string, unknown>)["showWeeklyNote"] !== false) {
+				return { ok: false, problem: "The Calendar plugin's saved settings still have weekly notes on." };
+			}
 			return { ok: true };
 		} catch (error) {
 			return { ok: false, problem: `Writing to the Calendar plugin failed: ${describe(error)}` };

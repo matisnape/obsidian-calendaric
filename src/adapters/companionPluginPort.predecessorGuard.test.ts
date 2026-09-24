@@ -18,6 +18,8 @@ import type { ReleaseGranularity, PeriodicConfig } from "../types";
  * the state its plugin would report, and each `disable` changes that state the
  * way the plugin's own settings write would — unless `sticky` says the plugin
  * kept the granularity on anyway, which is the case AC-MIG-06.6 is about.
+ * `unsaved` is the other AC-MIG-06.6 case, in the order the real plugins run
+ * it: the setting changes in memory, then the save fails and the write says so.
  */
 function makePredecessors() {
 	const state = {
@@ -25,12 +27,14 @@ function makePredecessors() {
 		calendarWeekly: false,
 		periodic: [] as string[],
 		sticky: false,
+		unsaved: false,
 		disableCalls: [] as string[],
 	};
 
 	const read = <T>(value: T): CompanionPluginRead<T> => ({ ok: true, value });
 	const absent = <T>(): CompanionPluginRead<T> => ({ ok: false, reason: "absent", problem: "not installed" });
-	const done: CompanionPluginAction = { ok: true };
+	const outcome = (): CompanionPluginAction =>
+		state.unsaved ? { ok: false, problem: "saving data.json failed" } : { ok: true };
 
 	const ports: PredecessorPorts = {
 		companion: {
@@ -41,7 +45,7 @@ function makePredecessors() {
 			disableDailyNotes: () => {
 				state.disableCalls.push("daily-notes");
 				if (!state.sticky) state.dailyNotes = false;
-				return done;
+				return outcome();
 			},
 		},
 		calendar: {
@@ -49,15 +53,15 @@ function makePredecessors() {
 			disableCalendarWeeklyNotes: async () => {
 				state.disableCalls.push("calendar");
 				if (!state.sticky) state.calendarWeekly = false;
-				return done;
+				return outcome();
 			},
 		} satisfies CalendarPluginPort,
 		periodicNotes: {
 			readActiveGranularities: () => read([...state.periodic]),
-			disableGranularity: (name: string) => {
+			disableGranularity: async (name: string) => {
 				state.disableCalls.push(`periodic-notes:${name}`);
 				if (!state.sticky) state.periodic = state.periodic.filter((entry) => entry !== name);
-				return done;
+				return outcome();
 			},
 		},
 	};
@@ -68,6 +72,8 @@ function makePredecessors() {
 interface Shown {
 	message: string;
 	action?: NoticeAction;
+	/** Whether the notice stays until dismissed. */
+	stays?: boolean;
 }
 
 function makeGuard(enabled: ReleaseGranularity[] = ["day", "week", "month"]) {
@@ -76,7 +82,7 @@ function makeGuard(enabled: ReleaseGranularity[] = ["day", "week", "month"]) {
 	const guard = new PredecessorGuard(
 		ports,
 		(granularity) => enabled.includes(granularity),
-		(message, action) => shown.push({ message, action }),
+		(message, action, sticky) => shown.push({ message, action, stays: sticky === true }),
 	);
 	return { state, guard, shown };
 }
@@ -183,6 +189,24 @@ describe("PredecessorGuard: refusing a granularity a predecessor still owns", ()
 
 		expect(shown[0]!.action?.label).toBe("Use Calendaric");
 	});
+
+	it("AC-MIG-06.1: a refusal repeated on every click times out instead of staying on screen", () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+
+		guard.refuse("day");
+		guard.refuse("day");
+
+		expect(shown.map((entry) => entry.stays)).toEqual([false, false]);
+	});
+
+	it("AC-MIG-06.1: a quiet refusal still refuses but shows nothing", () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+
+		expect(guard.refuse("day", true)).toBe(true);
+		expect(shown).toEqual([]);
+	});
 });
 
 describe("PredecessorGuard.announce: the startup check", () => {
@@ -211,12 +235,27 @@ describe("PredecessorGuard.announce: the startup check", () => {
 
 		guard.announce();
 
-		// Periodic Notes owns the day; the week goes to the Calendar plugin,
-		// which is named first when two predecessors both claim it.
+		// Both claim the week, so each notice lists it: either hand-over alone
+		// would leave the week with the other plugin.
 		expect(shown.map((entry) => entry.message)).toEqual([
-			expect.stringMatching(/Periodic Notes.*daily notes/),
+			expect.stringMatching(/Periodic Notes.*daily and weekly notes/),
 			expect.stringMatching(/Calendar plugin.*weekly notes/),
 		]);
+		expect(shown.map((entry) => entry.stays)).toEqual([true, true]);
+	});
+
+	it("AC-MIG-06.2: offers each plugin's hand-over when two of them own the day", () => {
+		const { state, guard, shown } = makeGuard();
+		state.dailyNotes = true;
+		state.periodic = ["day"];
+
+		guard.announce();
+
+		expect(shown.map((entry) => entry.message)).toEqual([
+			expect.stringMatching(/core Daily Notes.*daily notes/),
+			expect.stringMatching(/Periodic Notes.*daily notes/),
+		]);
+		expect(shown.every((entry) => entry.action?.label === "Use Calendaric")).toBe(true);
 	});
 });
 
@@ -241,7 +280,7 @@ describe("PredecessorGuard: a predecessor that cannot be read", () => {
 					readActiveGranularities: () => {
 						throw new Error("registry exploded");
 					},
-					disableGranularity: () => ({ ok: true }),
+					disableGranularity: async () => ({ ok: true }),
 				},
 			},
 			() => true,
@@ -261,7 +300,7 @@ describe("PredecessorGuard: a predecessor that cannot be read", () => {
 			{
 				companion: { readDailyNotes: unreadable, disableDailyNotes: () => ({ ok: true }) },
 				calendar: { readCalendarWeeklyNotes: unreadable, disableCalendarWeeklyNotes: async () => ({ ok: true }) },
-				periodicNotes: { readActiveGranularities: unreadable, disableGranularity: () => ({ ok: true }) },
+				periodicNotes: { readActiveGranularities: unreadable, disableGranularity: async () => ({ ok: true }) },
 			},
 			() => true,
 			(message) => shown.push({ message }),
@@ -343,34 +382,56 @@ describe("PredecessorGuard: handing a granularity to Calendaric", () => {
 		expect(ports.vault.getFile("Daily/2026-04-13.md")).toBeNull();
 	});
 
-	it("AC-MIG-06.6: says so when the predecessor refused the write, and keeps refusing", async () => {
-		const shown: Shown[] = [];
-		let periodic = ["day"];
-		const guard = new PredecessorGuard(
-			{
-				companion: {
-					readDailyNotes: () => ({ ok: true, value: { enabled: false } }),
-					disableDailyNotes: () => ({ ok: true }),
-				},
-				calendar: {
-					readCalendarWeeklyNotes: () => ({ ok: true, value: false }),
-					disableCalendarWeeklyNotes: async () => ({ ok: true }),
-				},
-				periodicNotes: {
-					readActiveGranularities: () => ({ ok: true, value: periodic }),
-					disableGranularity: () => ({ ok: false, problem: "no settings store" }),
-				},
-			},
-			() => true,
-			(message, action) => shown.push({ message, action }),
-		);
+	it("AC-MIG-06.6: keeps refusing when the setting changed in memory but the save failed", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+		state.unsaved = true;
 
 		guard.refuse("day");
 		await shown[0]!.action!.run();
 
-		expect(shown.map((entry) => entry.message).join("\n")).toContain("no settings store");
+		// The plugin now reads "off" from memory, but data.json still says on.
+		expect(state.periodic).toEqual([]);
+		const messages = shown.map((entry) => entry.message).join("\n");
+		expect(messages).toContain("saving data.json failed");
+		expect(messages).not.toContain("now manages");
 		expect(guard.refuse("day")).toBe(true);
-		periodic = [];
+	});
+
+	it("AC-MIG-06.5: a later hand-over that saves lifts a refusal an unsaved one left", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.periodic = ["day"];
+		state.unsaved = true;
+		guard.refuse("day");
+		await shown[0]!.action!.run();
+
+		state.unsaved = false;
+		guard.refuse("day");
+		await shown.at(-1)!.action!.run();
+
+		expect(shown.at(-1)!.message).toContain("Calendaric now manages daily notes");
+		expect(guard.refuse("day")).toBe(false);
+	});
+
+	it("AC-MIG-06.6: after one of two owners hands the day over, names the other and offers its hand-over", async () => {
+		const { state, guard, shown } = makeGuard();
+		state.dailyNotes = true;
+		state.periodic = ["day"];
+
+		guard.refuse("day");
+		expect(shown[0]!.message).toContain("core Daily Notes");
+		await shown[0]!.action!.run();
+
+		expect(state.disableCalls).toEqual(["daily-notes"]);
+		expect(shown.some((entry) => entry.message.includes("now manages"))).toBe(false);
+		const next = shown.at(-1)!;
+		expect(next.message).toContain("Periodic Notes");
+		expect(guard.refuse("day")).toBe(true);
+
+		await next.action!.run();
+
+		expect(state.disableCalls).toEqual(["daily-notes", "periodic-notes:day"]);
+		expect(shown.at(-1)!.message).toContain("Calendaric now manages daily notes");
 		expect(guard.refuse("day")).toBe(false);
 	});
 });

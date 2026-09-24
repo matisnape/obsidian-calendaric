@@ -69,7 +69,8 @@ export interface CalendarPluginPort {
 
 	/**
 	 * Turns `showWeeklyNote` off through the plugin's own `writeOptions`, which
-	 * is what its settings tab calls and what saves its data.json.
+	 * is what its settings tab calls and what saves its data.json. `ok` only
+	 * once the plugin's saved data reads the setting back off.
 	 */
 	disableCalendarWeeklyNotes(): Promise<CompanionPluginAction>;
 }
@@ -143,8 +144,8 @@ export interface PeriodicNotesPort {
 	 *
 	 * Written through the plugin's own settings store, the way its settings tab
 	 * writes: the plugin subscribes to that store and saves its data.json on
-	 * every change. `ok` says the write was handed over, not that it took --
-	 * the caller re-reads `readActiveGranularities` to find out.
+	 * every change. `ok` only once the plugin has said it saved, and its saved
+	 * data reads the granularity back off.
 	 */
-	disableGranularity(name: string): CompanionPluginAction;
+	disableGranularity(name: string): Promise<CompanionPluginAction>;
 }

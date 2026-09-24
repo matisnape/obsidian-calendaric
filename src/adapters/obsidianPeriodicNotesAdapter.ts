@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import type { App, Events } from "obsidian";
 import type {
 	CompanionPluginAction,
 	CompanionPluginRead,
@@ -15,6 +15,9 @@ import { findCommunityPlugin } from "./communityPluginRegistry";
  * `detect-periodic-notes-plugin`). First match wins, in this order.
  */
 const PERIODIC_NOTES_IDS = ["periodic-notes-anks", "periodic-notes"] as const;
+
+/** How long a hand-over waits for the plugin to say it saved. */
+const SAVE_CONFIRM_MS = 5000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
@@ -63,27 +66,63 @@ export class ObsidianPeriodicNotesAdapter implements PeriodicNotesPort {
 		}
 	}
 
-	disableGranularity(name: string): CompanionPluginAction {
+	async disableGranularity(name: string): Promise<CompanionPluginAction> {
 		try {
 			const found = this.findPeriodicNotes();
 			if (!found.ok) return { ok: false, problem: found.problem };
+			const plugin = found.value;
 
 			// The plugin's settings are a store, and writing through the store's
 			// own `update` is what its settings tab does: the plugin subscribes to
 			// the store and saves its data.json on every value it takes.
-			const store = found.value["settings"];
-			if (!isRecord(store) || typeof store["update"] !== "function") {
+			const store = plugin["settings"];
+			const loadData = plugin["loadData"];
+			if (!isRecord(store) || typeof store["update"] !== "function" || typeof loadData !== "function") {
 				return { ok: false, problem: "The Periodic Notes plugin exposes no settings store to write to." };
 			}
 
+			// The store takes the value at once, and the save runs afterwards
+			// without anyone awaiting it: a failed save leaves the plugin reading
+			// "off" until the next restart brings the old data.json back. So the
+			// write only counts once the plugin says it saved and the file agrees.
+			const saved = this.nextSettingsSave();
 			// Called on the store, which may keep its value on its receiver.
 			(store["update"] as (this: unknown, change: (current: unknown) => unknown) => void).call(store, (current) =>
 				withGranularityOff(current, name),
 			);
+			if (!(await saved)) {
+				return { ok: false, problem: "The Periodic Notes plugin did not confirm it saved the change." };
+			}
+
+			const onDisk: unknown = await (loadData as (this: unknown) => Promise<unknown>).call(plugin);
+			if (activeEntry(onDisk, name)?.["enabled"] !== false) {
+				return { ok: false, problem: `The Periodic Notes plugin's saved settings still have ${name} notes on.` };
+			}
 			return { ok: true };
 		} catch (error) {
 			return { ok: false, problem: `Writing to the Periodic Notes plugin failed: ${describe(error)}` };
 		}
+	}
+
+	/**
+	 * Resolves true once the plugin announces a finished save, false when it
+	 * stays silent. It fires that event only after `saveData` resolves, so a
+	 * save that fails is the silence (the plugin's own main.ts,
+	 * `onUpdateSettings`: `await this.saveData(...)`, then the trigger).
+	 */
+	private nextSettingsSave(): Promise<boolean> {
+		// Read as plain `Events`: the event is the plugin's own, not one Workspace declares.
+		const workspace: Events = this.app.workspace;
+		return new Promise((resolve) => {
+			const settle = (saved: boolean): void => {
+				clearTimeout(timer);
+				workspace.offref(ref);
+				resolve(saved);
+			};
+			const ref = workspace.on("periodic-notes:settings-updated", () => settle(true));
+			// ponytail: fixed wait; a save is one small JSON file, a slow disk gets a failure notice and a retry.
+			const timer = setTimeout(() => settle(false), SAVE_CONFIRM_MS);
+		});
 	}
 
 	private findPeriodicNotes(): CompanionPluginRead<Record<string, unknown>> {
@@ -194,6 +233,16 @@ export class ObsidianPeriodicNotesAdapter implements PeriodicNotesPort {
  * through unchanged rather than guessed at: the caller's re-read then still
  * reports the granularity on, and Calendaric keeps its hands off (AC-MIG-06.6).
  */
+/** The granularity's entry in the active calendar set of stored settings, if it has one. */
+function activeEntry(settings: unknown, name: string): Record<string, unknown> | undefined {
+	if (!isRecord(settings) || !Array.isArray(settings["calendarSets"])) return undefined;
+	const active = (settings["calendarSets"] as unknown[]).find(
+		(set) => isRecord(set) && set["id"] === settings["activeCalendarSet"],
+	);
+	const entry = isRecord(active) ? active[name] : undefined;
+	return isRecord(entry) ? entry : undefined;
+}
+
 function withGranularityOff(settings: unknown, name: string): unknown {
 	if (!isRecord(settings)) return settings;
 	const sets = settings["calendarSets"];
