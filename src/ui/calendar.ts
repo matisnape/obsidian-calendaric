@@ -6,20 +6,41 @@ import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from
 import { computeNotePath } from "../notes/noteUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
-import { DotScanner } from "./calendarDots";
+import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, WORD_DOT_SEGMENTS, wordCountSegments } from "./calendarDots";
 import { MonthNavigation } from "./calendarNav";
 import { HOVER_LINK_SOURCE, hoverPreviewRequest, openOrCreateNote, type CreateRequest } from "./cellActions";
 
 /** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
 function makeDotSvg(): SVGElement {
 	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-	svg.setAttribute("class", "calendaric-dot");
+	svg.setAttribute("class", "calendaric-dot calendaric-dot--exists");
 	svg.setAttribute("viewBox", "0 0 6 6");
 	const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
 	circle.setAttribute("cx", "3");
 	circle.setAttribute("cy", "3");
 	circle.setAttribute("r", "2");
 	svg.appendChild(circle);
+	return svg;
+}
+
+/**
+ * The word-count dot: a 6×6 pie of five wedges, the first `filled` of them,
+ * clockwise from the top, marked `is-filled`.
+ */
+function makeWordDotSvg(filled: number): SVGElement {
+	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+	svg.setAttribute("class", "calendaric-dot calendaric-dot--words");
+	svg.setAttribute("viewBox", "0 0 6 6");
+	const point = (i: number) => {
+		const angle = -Math.PI / 2 + (i * 2 * Math.PI) / WORD_DOT_SEGMENTS;
+		return `${(3 + 3 * Math.cos(angle)).toFixed(3)} ${(3 + 3 * Math.sin(angle)).toFixed(3)}`;
+	};
+	for (let i = 0; i < WORD_DOT_SEGMENTS; i++) {
+		const wedge = document.createElementNS("http://www.w3.org/2000/svg", "path");
+		wedge.setAttribute("d", `M3 3 L${point(i)} A3 3 0 0 1 ${point(i + 1)} Z`);
+		wedge.setAttribute("class", i < filled ? "calendaric-dot-segment is-filled" : "calendaric-dot-segment");
+		svg.appendChild(wedge);
+	}
 	return svg;
 }
 
@@ -165,6 +186,8 @@ export class CalendarWidget implements HoverParent {
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
 		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
 		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
+		// Filled in once the notes are read; see drawWordDots.
+		const wordDotSlots: [string, HTMLElement][] = [];
 
 		for (const week of grid) {
 			const tr = this.gridBodyEl.createEl("tr");
@@ -179,6 +202,7 @@ export class CalendarWidget implements HoverParent {
 				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig);
 				if (weekPaths.has(weekPath)) {
 					wDotContainer.appendChild(makeDotSvg());
+					wordDotSlots.push([weekPath, wDotContainer]);
 				}
 				if (weekPath === this.activeFilePath) {
 					wDiv.addClass("is-active");
@@ -210,6 +234,7 @@ export class CalendarWidget implements HoverParent {
 				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig);
 				if (dayPaths.has(dayPath)) {
 					dayDotContainer.appendChild(makeDotSvg());
+					wordDotSlots.push([dayPath, dayDotContainer]);
 				}
 				if (dayPath === this.activeFilePath) {
 					dayDiv.addClass("is-active");
@@ -225,6 +250,23 @@ export class CalendarWidget implements HoverParent {
 					});
 				}
 			}
+		}
+
+		void this.drawWordDots(wordDotSlots);
+	}
+
+	/**
+	 * The word-count dot of every cell whose note exists (AC-CAL-07.2). It
+	 * arrives after the note-exists dot because reading a note is async; a
+	 * render that lands meanwhile has already detached these containers, so a
+	 * late append to one shows nothing.
+	 */
+	private async drawWordDots(slots: [string, HTMLElement][]): Promise<void> {
+		const counts = await this.dots.getWordCounts(slots.map(([path]) => path));
+		for (const [path, container] of slots) {
+			// ponytail: threshold is the default until a setting carries one
+			const filled = wordCountSegments(counts.get(path) ?? 0, DEFAULT_WORDS_PER_SEGMENT);
+			if (filled > 0) container.appendChild(makeWordDotSvg(filled));
 		}
 	}
 

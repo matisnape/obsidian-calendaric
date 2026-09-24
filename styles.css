@@ -330,3 +330,13 @@
 .calendaric-setting-problem {
   color: var(--text-error, var(--text-warning, orange));
 }
+
+/* Word-count dot: filled wedges in the accent colour, the rest faint, so it
+   reads apart from the muted note-exists dot beside it (AC-CAL-07.4). */
+.calendaric-dot--words {
+  fill: var(--color-accent);
+}
+
+.calendaric-dot--words .calendaric-dot-segment:not(.is-filled) {
+  fill-opacity: 0.25;
+}

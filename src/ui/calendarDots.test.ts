@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import moment from "moment";
-import { DotScanner } from "./calendarDots";
+import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, countWords, wordCountSegments } from "./calendarDots";
 import { getMonthGrid, getWeekAnchor } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -61,5 +61,46 @@ describe("DotScanner.getWeekNotePaths", () => {
 
 		expect(scanner.getWeekNotePaths(grid, { ...weekConfig, enabled: false }).size).toBe(0);
 		expect(scanner.getWeekNotePaths(grid, { ...weekConfig, format: "" }).size).toBe(0);
+	});
+});
+
+describe("wordCountSegments", () => {
+	it("AC-CAL-07.3: at a threshold of 250, fills one segment per 250 words, at least one, at most five", () => {
+		const cases: [number, number][] = [
+			[1, 1], [249, 1], [250, 1], [499, 1], [500, 2], [1250, 5], [5000, 5],
+		];
+		for (const [words, segments] of cases) {
+			expect(wordCountSegments(words, 250), `${words} words`).toBe(segments);
+		}
+	});
+
+	it("AC-CAL-07.3: a threshold that is not a positive whole number falls back to 250", () => {
+		for (const bad of [0, -3, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+			expect(wordCountSegments(499, bad), `threshold ${bad}`).toBe(1);
+			expect(wordCountSegments(500, bad), `threshold ${bad}`).toBe(2);
+		}
+		expect(DEFAULT_WORDS_PER_SEGMENT).toBe(250);
+	});
+
+	it("AC-CAL-07.3: honours a valid threshold other than the default", () => {
+		expect(wordCountSegments(100, 50)).toBe(2);
+	});
+
+	it("fills nothing for a note with no words", () => {
+		expect(wordCountSegments(0, 250)).toBe(0);
+	});
+});
+
+describe("countWords", () => {
+	it("counts letter and digit runs, across scripts, and ignores punctuation", () => {
+		expect(countWords("")).toBe(0);
+		expect(countWords("  \n# \n- [ ]  ")).toBe(0);
+		expect(countWords("Hello, world! It's 2026.")).toBe(4);
+		expect(countWords("zażółć gęślą jaźń")).toBe(3);
+	});
+
+	it("leaves out the frontmatter block, which the user did not write as content", () => {
+		expect(countWords("---\ntags: [daily, journal]\n---\n")).toBe(0);
+		expect(countWords("---\ntags: daily\n---\nOne two")).toBe(2);
 	});
 });
