@@ -19,6 +19,7 @@ export const RELEASE_GRANULARITIES = ["day", "week", "month", "year"] as const;
 
 export type ReleaseGranularity = (typeof RELEASE_GRANULARITIES)[number];
 
+/** The granularities a calendar cell stands for: the release set minus year. */
 export type CellGranularity = Exclude<ReleaseGranularity, "year">;
 
 /** Narrows a configured granularity to the set this release creates notes for. */

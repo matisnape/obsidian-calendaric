@@ -186,7 +186,8 @@ describe("AC-ARCH-02.2: one routine parses a filename into a date", () => {
 	it("AC-ARCH-02.5: no other module parses a string against a moment format", () => {
 		const parsers = occurrences(MOMENT_PARSE).map((hit) => hit.split(":")[0]);
 
-		expect([...new Set(parsers)].sort()).toEqual(["src/fmt/parseFilename.ts", "src/notes/periodicNoteIndex.ts"]);
+		expect(parsers).toContain("src/fmt/parseFilename.ts");
+		expect(parsers.filter((path) => path !== "src/fmt/parseFilename.ts")).toEqual(["src/notes/periodicNoteIndex.ts"]);
 	});
 });
 
