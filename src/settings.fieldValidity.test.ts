@@ -69,7 +69,6 @@ function renderTab(settings: CalendaricSettings, ports: Partial<SettingsTabPorts
 	return { tab, saveSettings };
 }
 
-/** The day group's row named `name`: its input and the problem line drawn in it. */
 function field(tab: CalendaricSettingsTab, name: string) {
 	const row = Array.from(tab.containerEl.querySelectorAll<HTMLElement>(".setting-item")).find(
 		(el) => el.querySelector(".setting-item-name")?.textContent === name,
