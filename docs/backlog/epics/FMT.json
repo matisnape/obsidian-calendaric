@@ -449,7 +449,7 @@
       "story": "As someone editing the filename format for a granularity, I want to be warned before saving a format that is illegal, cannot be told apart from other dates, or cannot survive being moved out of its folder, so that I do not silently lose the ability to find my own notes.",
       "rationale": "A format that looks reasonable can still be unusable for its granularity; catching this at save time is cheaper than discovering it once notes already exist under it.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:format-validation",
         "pn:fragile-basename-detection"
@@ -473,8 +473,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/fmt/validateFormat.test.ts \"AC-FMT-05.1: rejects a character Windows does not allow in a filename\", \"... rejects a reserved filename, in the note name or in a folder\" and \"... an illegal character keeps the previous value saved and says why\"; red when the illegal-character set is emptied and when the settings field saves despite an error (mutations)",
           "failure_path": true
         },
         {
@@ -486,8 +486,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/fmt/validateFormat.test.ts \"AC-FMT-05.2: warns that a day format of only DD cannot identify a note\" and \"... warns about a format that reads today back correctly but repeats across months\"; the round trip uses the plugin's own formatWithWeekTokens / parseFilename / computeNoteDate; red when the round-trip check is skipped (mutation)",
           "failure_path": true
         },
         {
@@ -500,8 +500,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/fmt/validateFormat.test.ts \"AC-FMT-05.3: warns, with a workaround, when the part after the last / cannot name the day\" and \"... the workaround keeps an ISO week format ISO\"; red when the basename check is skipped (mutation)",
           "failure_path": true
         },
         {
@@ -513,8 +513,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "src/fmt/validateFormat.test.ts \"AC-FMT-05.4: rejects an empty format instead of falling back to a default\" and \"... an emptied format keeps the previous value saved and says why\"; red when an empty format is accepted and when the field saves despite an error (mutations)",
           "failure_path": true
         }
       ],
