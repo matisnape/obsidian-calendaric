@@ -5,8 +5,10 @@
 // touching the view (US-CAL-09). Each change is reported the way the vault
 // adapter reports it, through the fake port's `emitChange`.
 import { describe, it, expect, vi } from "vitest";
-import type { App } from "obsidian";
+import type { App, WorkspaceLeaf } from "obsidian";
+import type CalendaricPlugin from "../main";
 import { CalendarWidget } from "./calendar";
+import { CalendarView } from "./CalendarView";
 import { getMonthGrid, getWeekAnchor } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
@@ -42,10 +44,11 @@ function dayPath(dayOfMonth: number, config: PeriodicConfig = SETTINGS.day): str
 	return computeNotePath(firstOfMonth().add(dayOfMonth - 1, "day"), config, new FakeVaultConfigPort());
 }
 
-function secondRowWeekPath(): string {
+function rowWeekPath(row: number): string {
 	const grid = getMonthGrid(firstOfMonth(), 1, SETTINGS.week.format);
-	return computeNotePath(getWeekAnchor(grid[1]!.days), SETTINGS.week, new FakeVaultConfigPort());
+	return computeNotePath(getWeekAnchor(grid[row]!.days), SETTINGS.week, new FakeVaultConfigPort());
 }
+const secondRowWeekPath = () => rowWeekPath(1);
 
 async function open(notes: Record<string, string> = {}) {
 	const vault = new FakeVaultPort();
@@ -110,6 +113,16 @@ describe("US-CAL-09: vault changes reach the open grid", () => {
 		expect(existsDots(dayCell(host, 9))).toBe(1);
 	});
 
+	it("AC-CAL-09.3: a week note's rename moves the dot from the old row to the new one", async () => {
+		const { vault, host } = await open({ [rowWeekPath(1)]: "" });
+
+		vault.renameFile(rowWeekPath(1), rowWeekPath(3));
+		vault.emitChange({ kind: "rename", file: { path: rowWeekPath(3) }, oldPath: rowWeekPath(1) });
+
+		expect(existsDots(weekCell(host, 1))).toBe(0);
+		expect(existsDots(weekCell(host, 3))).toBe(1);
+	});
+
 	it("AC-CAL-09.3: a rename to a name that matches no date removes the dot and adds none", async () => {
 		const { vault, host } = await open({ [dayPath(5)]: "" });
 
@@ -139,14 +152,51 @@ describe("US-CAL-09: vault changes reach the open grid", () => {
 
 		expect(scans).not.toHaveBeenCalled();
 	});
+
+	it("an edit that leaves a shown note's word-count dot as it was does not re-scan the month", async () => {
+		const { vault } = await open({ [dayPath(5)]: words(250) });
+		const scans = vi.spyOn(vault, "pathExists");
+
+		vault.seedFile(dayPath(5), words(260));
+		vault.emitChange({ kind: "metadata", file: { path: dayPath(5) } });
+		await settle();
+
+		expect(scans).not.toHaveBeenCalled();
+	});
+
+	it("a created note renders once, not again when the host parses it", async () => {
+		const { vault, host } = await open();
+		vault.seedFile(dayPath(5), words(250));
+		vault.emitChange({ kind: "create", file: { path: dayPath(5) } });
+		await settle();
+		const scans = vi.spyOn(vault, "pathExists");
+
+		vault.emitChange({ kind: "metadata", file: { path: dayPath(5) } });
+		await settle();
+
+		expect(scans).not.toHaveBeenCalled();
+		expect(filledSegments(dayCell(host, 5))).toBe(1);
+	});
 });
 
 describe("US-CAL-09: saved settings reach the open grid", () => {
 	it("AC-CAL-09.4: a saved display setting re-renders the grid at once", async () => {
-		const { host, widget } = await open();
+		// Driven from the view, the hop the plugin calls after a save.
+		const plugin = { settings: SETTINGS } as CalendaricPlugin;
+		const view = new CalendarView({} as WorkspaceLeaf, plugin, {
+			vault: new FakeVaultPort(),
+			vaultConfig: new FakeVaultConfigPort(),
+			workspace: new FakeWorkspacePort(),
+		});
+		const host = document.createElement("div");
+		const pane = document.createElement("div");
+		pane.append(document.createElement("div"), host);
+		Object.assign(view, { app: eventOnlyApp(), containerEl: pane, registerInterval: () => 0 });
+		await view.onOpen();
 		expect(host.querySelector(".calendaric-weeknum-header")).not.toBeNull();
 
-		widget.refreshSettings({ ...SETTINGS, showWeekNumbers: false });
+		plugin.settings = { ...SETTINGS, showWeekNumbers: false };
+		view.refresh();
 
 		expect(host.querySelector(".calendaric-weeknum-header")).toBeNull();
 		expect(host.querySelectorAll(".calendaric-weeknum").length).toBe(0);
