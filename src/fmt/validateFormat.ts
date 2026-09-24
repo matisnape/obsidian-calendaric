@@ -3,7 +3,7 @@ type Moment = ReturnType<typeof window.moment>;
 import type { ReleaseGranularity } from "../types";
 import { DEFAULT_FORMATS } from "../settings/model";
 import { formatWithWeekTokens } from "../notes/noteUtils";
-import { parseFilename } from "./parseFilename";
+import { parseFilename, weekSemantics } from "./parseFilename";
 import { computeNoteDate } from "./noteDate";
 
 /** Errors block saving a format; warnings are shown and the format is saved anyway. */
@@ -23,6 +23,12 @@ const ILLEGAL_CHARACTERS = /[<>:"\\|?*\x00-\x1f]/;
 
 /** Reserved on Windows whatever the extension, so "CON" is still reserved as "CON.md". */
 const RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+
+/**
+ * Empty, or ending in a dot or a space: Windows strips or refuses those, and it
+ * covers "." and "..", which would climb out of the configured folder.
+ */
+const UNUSABLE_SEGMENT = /^$|[. ]$/;
 
 /**
  * The dates a format has to tell apart and read back as themselves. Each moves
@@ -69,17 +75,25 @@ export function validateFormat(
 
 	const written = (date: Moment) => formatWithWeekTokens(format, date);
 
+	const probes = probeDates(today, granularity);
+
 	// Checked on what the format writes, not on its source: a `[?]` literal is
-	// harmless text in the format and an illegal character in the filename.
+	// harmless text in the format and an illegal character in the filename. The
+	// first of January adds the one-digit day and month, so `[COM]D` is caught.
+	// The first date that fails is reported, once, rather than every date.
 	const errors: string[] = [];
-	for (const segment of written(today).split("/")) {
-		const illegal = ILLEGAL_CHARACTERS.exec(segment);
-		if (illegal) errors.push(`"${illegal[0]}" cannot appear in a filename on Windows, so "${segment}" cannot be created.`);
-		else if (RESERVED_NAME.test(segment)) errors.push(`"${segment}" is a reserved filename on Windows.`);
+	for (const date of [...probes, today.clone().startOf("year")]) {
+		if (errors.length > 0) break;
+		for (const segment of written(date).split("/")) {
+			const illegal = ILLEGAL_CHARACTERS.exec(segment);
+			if (illegal) errors.push(`"${illegal[0]}" cannot appear in a filename on Windows, so "${segment}" cannot be created.`);
+			else if (RESERVED_NAME.test(segment)) errors.push(`"${segment}" is a reserved filename on Windows.`);
+			else if (UNUSABLE_SEGMENT.test(segment))
+				errors.push(`"${segment}" cannot be a file or folder name: it is empty, or ends in a dot or a space.`);
+		}
 	}
 	if (errors.length > 0) return { errors, warnings: [] };
 
-	const probes = probeDates(today, granularity);
 	if (!roundTrips(written, format, granularity, probes)) {
 		return {
 			errors: [],
@@ -94,10 +108,13 @@ export function validateFormat(
 	const lastSlash = format.lastIndexOf("/");
 	const basename = (date: Moment) => written(date).split("/").pop() ?? "";
 	if (lastSlash !== -1 && !roundTrips(basename, format, granularity, probes)) {
+		// Keep the user's own week numbering: an ISO format told to use the locale
+		// default would silently change which week a note belongs to.
+		const dated = weekSemantics(format) === "iso" ? "GGGG-[W]WW" : DEFAULT_FORMATS[granularity];
 		return {
 			errors: [],
 			warnings: [
-				`A note moved out of its dated folder would no longer be recognised: the part after the last "/" does not identify the date on its own. Workaround: repeat the whole date in the filename, for example ${format.slice(0, lastSlash)}/${DEFAULT_FORMATS[granularity]}.`,
+				`A note moved out of its dated folder would no longer be recognised: the part after the last "/" does not identify the date on its own. Workaround: repeat the whole date in the filename, for example ${format.slice(0, lastSlash)}/${dated}.`,
 			],
 		};
 	}

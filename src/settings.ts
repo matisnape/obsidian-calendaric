@@ -307,9 +307,14 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const showFormatProblems = (fmt: string) => {
 			const problems = validateFormat(fmt, granularity);
 			formatProblem.empty();
-			formatProblem.appendText([...problems.errors, ...problems.warnings].join(" "));
+			// Both share the error colour, so the words say which outcome it was.
+			const messages = [...problems.errors, ...problems.warnings];
+			const outcome = problems.errors.length > 0 ? "Not saved:" : "Saved, but:";
+			if (messages.length > 0) formatProblem.appendText([outcome, ...messages].join(" "));
 			return problems;
 		};
+		// A stored format that warns says so when the tab reopens, not only on edit.
+		showFormatProblems(config.format || DEFAULT_FORMATS[granularity]);
 
 		const formatControl = formatItem.createDiv({ cls: "setting-item-control" });
 		const formatInput = formatControl.createEl("input", {
