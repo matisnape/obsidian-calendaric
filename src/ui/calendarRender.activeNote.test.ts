@@ -36,8 +36,15 @@ afterEach(() => {
 	window.moment = realMoment;
 });
 
-/** A workspace whose active file the test sets, and whose `file-open` it fires. */
-function activeFileApp(): { app: App; open: (path: string | null) => void } {
+/**
+ * A workspace whose active file the test sets. `open` also fires `file-open`;
+ * `activate` does not, like a note that was active before the widget existed.
+ */
+function activeFileApp(): {
+	app: App;
+	open: (path: string | null) => void;
+	activate: (path: string) => void;
+} {
 	const handlers: ((file: { path: string } | null) => void)[] = [];
 	let active: { path: string } | null = null;
 	const app = {
@@ -57,6 +64,9 @@ function activeFileApp(): { app: App; open: (path: string | null) => void } {
 			active = path === null ? null : { path };
 			for (const cb of handlers) cb(active);
 		},
+		activate: (path) => {
+			active = { path };
+		},
 	};
 }
 
@@ -64,15 +74,16 @@ function setup(settings = SETTINGS): {
 	host: HTMLElement;
 	widget: CalendarWidget;
 	open: (path: string | null) => void;
+	activate: (path: string) => void;
 } {
-	const { app, open } = activeFileApp();
+	const { app, open, activate } = activeFileApp();
 	const host = document.createElement("div");
 	const widget = new CalendarWidget(host, app, settings, {
 		vault: new FakeVaultPort(),
 		vaultConfig: new FakeVaultConfigPort(),
 		workspace: new FakeWorkspacePort(),
 	});
-	return { host, widget, open };
+	return { host, widget, open, activate };
 }
 
 function notePath(date: string, granularity: "day" | "week" | "month"): string {
@@ -198,6 +209,14 @@ describe("AC-CAL-10.3: reveal navigates to a note outside the shown month", () =
 		expect(header(host)).toBe("Apr2026");
 		const row = host.querySelector(".calendaric-weeknum.is-active")?.closest("tr");
 		expect(row?.querySelector(".calendaric-day")?.firstChild?.textContent).toBe("1");
+	});
+
+	it("AC-CAL-10.3: a note active before any file-open reached the widget is still revealed", () => {
+		const { host, widget, activate } = setup();
+		activate(notePath("2026-11-05", "day"));
+		widget.revealActiveNote();
+		expect(header(host)).toBe("Nov2026");
+		expect(activeCells(host)).toEqual(["5"]);
 	});
 
 	it("AC-CAL-10.3: a month note is no day or week note, so reveal leaves the view where it is", () => {
