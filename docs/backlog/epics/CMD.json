@@ -609,7 +609,7 @@
       "story": "As someone who prefers a mouse click over the command palette, I want one ribbon icon that opens my most prominent granularity's note, with a right-click menu covering the other active granularities, so that I have one predictable spot in the sidebar for periodic notes.",
       "rationale": "A single icon avoids cluttering the ribbon with one item per granularity while still keeping every active granularity reachable.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:ribbon-icon-single-granularity",
         "pn:context-menu-open-note"
