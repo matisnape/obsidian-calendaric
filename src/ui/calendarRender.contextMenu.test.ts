@@ -67,7 +67,6 @@ function withFakes(paths: string[]) {
 	return { vault, workspace, host };
 }
 
-/** The real adapters over the parts of `App` they reach; `triggered` is what Obsidian was told. */
 function withRealAdapters(paths: string[]) {
 	const files = new Map<string, TFile>();
 	for (const path of paths) {
