@@ -136,7 +136,7 @@
       "story": "As someone viewing a month of notes, I want each week's row to start on my configured week-start day and always show a complete 6-week grid, so that the week numbers and day columns match how I think about weeks.",
       "rationale": "The grid math must key off the user's actual week-start setting rather than a value that is silently ignored, or the grid disagrees with every other week-aware feature in the plugin.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "calui:compute-month-grid",
         "calendaric:calendar-week-start-resolution"

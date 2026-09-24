@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-24",
+    "generated": "2026-09-25",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -1290,7 +1290,7 @@
       "story": "As someone viewing a month of notes, I want each week's row to start on my configured week-start day and always show a complete 6-week grid, so that the week numbers and day columns match how I think about weeks.",
       "rationale": "The grid math must key off the user's actual week-start setting rather than a value that is silently ignored, or the grid disagrees with every other week-aware feature in the plugin.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "calui:compute-month-grid",
         "calendaric:calendar-week-start-resolution"
@@ -1315,8 +1315,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest src/ui/calendarUtils.monthGrid.test.ts 'AC-FMT-02.1' at 7387ba8: Monday start gives 6x7 cells, every row opening on Monday, with leading/trailing days (getMonthGrid already correct on master); mutation (5 rows) turns it red"
         },
         {
           "id": "AC-FMT-02.2",
@@ -1328,8 +1328,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-02.2' at 7387ba8: Sunday start opens every row on Sunday, each one day before the Monday row; mutation (hard-code Monday) turns it red"
         },
         {
           "id": "AC-FMT-02.3",
@@ -1340,8 +1340,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-02.3' at 7387ba8: a month opening on the week-start day still has 6 rows, the last all next month; mutation (hard-code Monday) turns it red",
           "failure_path": true
         },
         {
@@ -1353,8 +1353,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-02.4' at 7387ba8: the caller's displayed-month moment is unchanged; mutation (startOf on the argument instead of a clone) turns it red"
         },
         {
           "id": "AC-FMT-02.5",
@@ -1366,8 +1366,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest 'AC-FMT-02.5' at 7387ba8: December's trailing days carry the next year in a 6x7 grid; mutation (pin every cell to the displayed year) turns it red",
           "failure_path": true
         }
       ]
