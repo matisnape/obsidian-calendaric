@@ -360,3 +360,148 @@ describe("ObsidianPeriodicNotesAdapter.readActiveCalendarSet", () => {
 		});
 	});
 });
+
+/**
+ * A Periodic Notes instance wired the way the plugin wires itself (its
+ * main.ts): the manager answers from the settings store's current value, and a
+ * subscriber saves every value the store takes, then triggers
+ * 'periodic-notes:settings-updated' on the workspace. The store takes the
+ * value first, so a save that fails leaves memory patched and the event
+ * unfired -- and nobody awaits that save, so its failure is otherwise silent.
+ */
+function storedPeriodicNotes(settings: Record<string, unknown>, save: "works" | "rejects" = "works") {
+	const listeners = new Map<string, Set<() => void>>();
+	const workspace = {
+		on(name: string, callback: () => void) {
+			if (!listeners.has(name)) listeners.set(name, new Set());
+			listeners.get(name)!.add(callback);
+			return { name, callback };
+		},
+		offref(ref: { name: string; callback: () => void }) {
+			listeners.get(ref.name)?.delete(ref.callback);
+		},
+		trigger(name: string) {
+			for (const callback of [...(listeners.get(name) ?? [])]) callback();
+		},
+	};
+
+	let value: unknown = settings;
+	const disk = { data: JSON.parse(JSON.stringify(settings)) as unknown };
+	const store = {
+		update(this: unknown, change: (current: unknown) => unknown) {
+			if (this !== store) throw new Error("update called off its store");
+			value = change(value);
+			void onUpdateSettings(value);
+		},
+	};
+	async function onUpdateSettings(next: unknown): Promise<void> {
+		await Promise.resolve();
+		if (save === "rejects") return; // saveData rejected; the trigger below never runs
+		disk.data = JSON.parse(JSON.stringify(next)) as unknown;
+		workspace.trigger("periodic-notes:settings-updated");
+	}
+
+	const activeSet = () => {
+		const current = value as { activeCalendarSet: string; calendarSets: Record<string, unknown>[] };
+		return current.calendarSets.find((set) => set["id"] === current.activeCalendarSet)!;
+	};
+	const plugin = {
+		settings: store,
+		loadData: async () => JSON.parse(JSON.stringify(disk.data)) as unknown,
+		calendarSetManager: {
+			getActiveSet: activeSet,
+			getActiveGranularities: () =>
+				Object.entries(activeSet())
+					.filter(([, entry]) => (entry as { enabled?: boolean })?.enabled === true)
+					.map(([name]) => name),
+		},
+	};
+	const app = (id: string): App => ({ plugins: { getPlugin: (asked: string) => (asked === id ? plugin : null) }, workspace }) as unknown as App;
+	return { plugin, app, disk, current: () => value, listeners };
+}
+
+const twoSets = () => ({
+	activeCalendarSet: "Work",
+	calendarSets: [
+		{ id: "Default", ctime: 1, day: { enabled: true, format: "YYYY" } },
+		{ id: "Work", ctime: 2, day: { enabled: true, format: "DD" }, week: { enabled: true, format: "ww" } },
+	],
+});
+
+describe("ObsidianPeriodicNotesAdapter.disableGranularity", () => {
+	it("AC-MIG-06.5: switches the granularity off in the active set through the plugin's own store, which saves it", async () => {
+		const { app, disk } = storedPeriodicNotes(twoSets());
+		const adapter = new ObsidianPeriodicNotesAdapter(app("periodic-notes"));
+
+		expect(await adapter.disableGranularity("day")).toEqual({ ok: true });
+
+		const reread = adapter.readActiveGranularities();
+		expect(reread.ok && [...reread.value]).toEqual(["week"]);
+		const written = disk.data as ReturnType<typeof twoSets>;
+		expect(written.calendarSets[1]!.day).toEqual({ enabled: false, format: "DD" });
+	});
+
+	it("AC-MIG-06.5: leaves every other calendar set as it was", async () => {
+		const { app, disk } = storedPeriodicNotes(twoSets());
+		await new ObsidianPeriodicNotesAdapter(app("periodic-notes")).disableGranularity("day");
+
+		expect((disk.data as ReturnType<typeof twoSets>).calendarSets[0]).toEqual(twoSets().calendarSets[0]);
+	});
+
+	it("AC-MIG-06.3: writes to the dev build when that is the one installed", async () => {
+		const { app } = storedPeriodicNotes(twoSets());
+		const adapter = new ObsidianPeriodicNotesAdapter(app("periodic-notes-anks"));
+
+		expect(await adapter.disableGranularity("week")).toEqual({ ok: true });
+
+		const reread = adapter.readActiveGranularities();
+		expect(reread.ok && [...reread.value]).toEqual(["day"]);
+	});
+
+	it("AC-MIG-06.6: reports a save that failed, although the plugin already reads the granularity off", async () => {
+		vi.useFakeTimers();
+		try {
+			const { app, disk, listeners } = storedPeriodicNotes(twoSets(), "rejects");
+			const adapter = new ObsidianPeriodicNotesAdapter(app("periodic-notes"));
+
+			const pending = adapter.disableGranularity("day");
+			await vi.advanceTimersByTimeAsync(5000);
+			const result = await pending;
+
+			const reread = adapter.readActiveGranularities();
+			expect(reread.ok && [...reread.value]).toEqual(["week"]);
+			expect((disk.data as ReturnType<typeof twoSets>).calendarSets[1]!.day.enabled).toBe(true);
+			expect(result.ok).toBe(false);
+			expect(listeners.get("periodic-notes:settings-updated")?.size ?? 0).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("AC-MIG-06.6: a store of an unexpected shape is left unchanged and reported, so the refusal stays", async () => {
+		const { app, current } = storedPeriodicNotes({ activeCalendarSet: "Work", calendarSets: "not a list" });
+		const result = await new ObsidianPeriodicNotesAdapter(app("periodic-notes")).disableGranularity("day");
+
+		expect(current()).toEqual({ activeCalendarSet: "Work", calendarSets: "not a list" });
+		expect(result.ok).toBe(false);
+	});
+
+	it("AC-MIG-06.6: reports a plugin with no writable settings store instead of claiming the write", async () => {
+		const plugin = { calendarSetManager: { getActiveGranularities: () => ["day"] }, settings: { day: {} } };
+		const result = await new ObsidianPeriodicNotesAdapter(makeApp({ "periodic-notes": plugin })).disableGranularity("day");
+
+		expect(result.ok).toBe(false);
+	});
+
+	it("AC-MIG-06.4: reports an unqueryable registry as a failed write, never a throw", async () => {
+		const app = {
+			plugins: {
+				getPlugin: () => {
+					throw new Error("registry exploded");
+				},
+			},
+		} as unknown as App;
+
+		expect((await new ObsidianPeriodicNotesAdapter(app).disableGranularity("day")).ok).toBe(false);
+	});
+});

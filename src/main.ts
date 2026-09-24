@@ -1,20 +1,23 @@
-import { getLanguage, Notice, Plugin, TFile } from "obsidian";
+import { getLanguage, Notice, Plugin } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
 import type { CalendaricSettings, StoredConfig } from "./settings/model";
 import { CalendarView } from "./ui/CalendarView";
 import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
-import { computeNotePath } from "./notes/noteUtils";
-import { createPeriodicNote } from "./notes/noteCreate";
+import { openOrCreatePeriodNote, startUp } from "./notes/periodNoteOpen";
+import type { PeriodNotePorts } from "./notes/periodNoteOpen";
 import { RELEASE_GRANULARITIES } from "./types";
 import type { ReleaseGranularity } from "./types";
-import { openNoteIn, openNoteInNewTab } from "./notes/noteOpen";
+import { openNoteIn } from "./notes/noteOpen";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
 import { ObsidianVaultConfigAdapter } from "./adapters/obsidianVaultConfigAdapter";
 import { ObsidianCalendarLeafAdapter } from "./adapters/obsidianCalendarLeafAdapter";
 import { ObsidianCompanionPluginAdapter } from "./adapters/obsidianCompanionPluginAdapter";
 import { ObsidianPeriodicNotesAdapter } from "./adapters/obsidianPeriodicNotesAdapter";
+import { ObsidianCalendarPluginAdapter } from "./adapters/obsidianCalendarPluginAdapter";
+import { guardCreation, PredecessorGuard } from "./notes/predecessorGuard";
+import type { NoticeAction } from "./notes/predecessorGuard";
 import { ElectronDesktopShellAdapter } from "./adapters/electronDesktopShellAdapter";
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
@@ -22,7 +25,6 @@ import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
 import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { resolveEffectiveConfig } from "./settings/model";
-import type { NoteFile } from "./adapters/vaultPort";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
 import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
@@ -37,6 +39,25 @@ import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
  */
 type Moment = ReturnType<typeof window.moment>;
 
+/** How long a refusal's notice stays, so its button can still be reached. */
+const ACTION_NOTICE_MS = 10_000;
+
+/**
+ * A notice, with a button when there is something to do about it. A sticky
+ * one stays until it is dismissed; a refusal repeats on every click, so it
+ * times out instead of piling up.
+ */
+function showNotice(message: string, action?: NoticeAction, sticky = false): void {
+	if (!action) {
+		new Notice(message, sticky ? 0 : undefined);
+		return;
+	}
+	const notice = new Notice(message, sticky ? 0 : ACTION_NOTICE_MS);
+	notice.messageEl.createEl("button", { text: action.label }).addEventListener("click", () => {
+		notice.hide();
+		void action.run();
+	});
+}
 
 export default class CalendaricPlugin extends Plugin {
 	/**
@@ -62,6 +83,9 @@ export default class CalendaricPlugin extends Plugin {
 	/** The five navigation commands per active granularity (US-CMD-05). */
 	private commands: GranularityCommands | null = null;
 
+	/** Leaves a granularity to a predecessor plugin that still manages it (US-MIG-06). */
+	private guard: PredecessorGuard | null = null;
+
 	async onload() {
 		await this.loadSettings();
 		applyLocaleSettings(this.settings, getLanguage());
@@ -75,13 +99,24 @@ export default class CalendaricPlugin extends Plugin {
 		};
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this, calendarDeps));
 
+		const companion = new ObsidianCompanionPluginAdapter(this.app);
+		const periodicNotes = new ObsidianPeriodicNotesAdapter(this.app);
+		this.guard = new PredecessorGuard(
+			{ companion, calendar: new ObsidianCalendarPluginAdapter(this.app), periodicNotes },
+			(granularity) => this.settings[granularity].enabled,
+			showNotice,
+		);
+		// The grid's clicks reach note creation with the pane's ports only, and
+		// find the guard through the vault those ports wrap.
+		guardCreation(this.app.vault, this.guard);
+
 		// Both host capabilities the settings screen needs are constructed here
 		// and handed over as ports. The screen names neither implementation,
 		// which is what keeps the view off the adapter layer (AC-ARCH-01.1).
 		this.addSettingTab(
 			new CalendaricSettingsTab(this.app, this, {
-				companion: new ObsidianCompanionPluginAdapter(this.app),
-				periodicNotes: new ObsidianPeriodicNotesAdapter(this.app),
+				companion,
+				periodicNotes,
 				desktop: new ElectronDesktopShellAdapter(this.app),
 				vault: new ObsidianVaultAdapter(this.app),
 			}),
@@ -112,7 +147,8 @@ export default class CalendaricPlugin extends Plugin {
 
 			// Startup parks the leaf without revealing or focusing it.
 			void calendar.ensure();
-			void this.openStartupNote();
+			// Every plugin has loaded by now, so this is when an overlap is known.
+			void startUp(this.settings, window.moment(), this.notePorts());
 		});
 
 		this.addCommand(calendarViewCommand(calendarLeaves, calendar.open));
@@ -130,6 +166,8 @@ export default class CalendaricPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
 		this.index?.destroy();
 		this.index = null;
+		guardCreation(this.app.vault, null);
+		this.guard = null;
 		restoreLocale();
 	}
 
@@ -188,41 +226,20 @@ export default class CalendaricPlugin extends Plugin {
 
 	/** Open that period's note, writing it first when the vault holds none. */
 	private async openPeriodNote(granularity: ReleaseGranularity, date: Moment): Promise<void> {
-		const workspace = new ObsidianWorkspaceAdapter(this.app);
-
 		// The index knows which file IS that period's note, and that is not
 		// always the path the format would write: a prefix-matched name and a
 		// frontmatter date both count. Asking it first is what keeps this command
 		// from writing a second note beside one that is already there.
 		const existing = this.index?.get(granularity, date) ?? null;
-		if (existing) {
-			await openNoteIn(existing, "reuse", workspace, existing.path);
-			return;
-		}
+		await openOrCreatePeriodNote(granularity, date, resolveEffectiveConfig(this.settings, granularity), existing, this.notePorts());
+	}
 
-		const config = resolveEffectiveConfig(this.settings, granularity);
-		const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
-
-		let file: NoteFile;
-		try {
-			const creation = await createPeriodicNote(
-				path,
-				date,
-				granularity,
-				config,
-				new ObsidianVaultAdapter(this.app),
-				(message) => new Notice(message),
-			);
-			file = creation.file;
-		} catch (error) {
-			// Something else answers to the path, or the folder chain is
-			// unusable. createPeriodicNote already names which, and the user gets
-			// that wording rather than a silent no-op.
-			new Notice(error instanceof Error ? error.message : String(error));
-			return;
-		}
-
-		await openNoteIn(file, "reuse", workspace, path);
+	private notePorts(): PeriodNotePorts {
+		return {
+			vault: new ObsidianVaultAdapter(this.app),
+			vaultConfig: new ObsidianVaultConfigAdapter(this.app),
+			workspace: new ObsidianWorkspaceAdapter(this.app),
+		};
 	}
 
 	/** Open the closest existing note in one direction, or say there is none. */
@@ -239,40 +256,6 @@ export default class CalendaricPlugin extends Plugin {
 		}
 
 		await openNoteIn(target, "reuse", new ObsidianWorkspaceAdapter(this.app), target.path);
-	}
-
-	private async openStartupNote(): Promise<void> {
-		// Quarter is reserved (DEC-23): a stored configuration may still carry it,
-		// and it is skipped here exactly like a granularity that is switched off.
-		// Every other granularity in the release set opens the same way, so a
-		// monthly startup note is no longer silently dropped (AC-NOTE-04.2).
-		for (const key of RELEASE_GRANULARITIES) {
-			const config = this.settings[key];
-			if (!config.openAtStartup || !config.enabled) continue;
-
-			const date = window.moment();
-			const path = computeNotePath(date, config, new ObsidianVaultConfigAdapter(this.app));
-			const existing = this.app.vault.getAbstractFileByPath(path);
-
-			let file: NoteFile;
-			if (existing instanceof TFile) {
-				file = existing;
-			} else {
-				// Create silently — bypass confirmBeforeCreate on startup.
-				const creation = await createPeriodicNote(
-					path,
-					date,
-					key,
-					config,
-					new ObsidianVaultAdapter(this.app),
-					(message) => new Notice(message),
-				);
-				file = creation.file;
-			}
-
-			await openNoteInNewTab(file, new ObsidianWorkspaceAdapter(this.app), path);
-			break; // Only one granularity can have openAtStartup (enforced by clearStartupNote)
-		}
 	}
 
 	async loadSettings() {

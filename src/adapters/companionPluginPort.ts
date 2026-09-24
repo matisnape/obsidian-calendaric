@@ -48,6 +48,34 @@ export interface CompanionPluginPort {
 }
 
 /**
+ * The Calendar plugin, as far as it can still create notes on its own.
+ *
+ * Its one setting that does is `showWeeklyNote`: with it on, the grid shows
+ * week numbers and a click on one creates a weekly note. Its weekly format,
+ * folder and template fields are dead in the surveyed build
+ * (docs/mapping/sources/cal.json), and it has no daily switch of its own --
+ * the daily notes it creates follow Daily Notes' or Periodic Notes' settings.
+ *
+ * A port of its own rather than two more members on `CompanionPluginPort`,
+ * which the Daily Notes import and its tests implement in full.
+ */
+export interface CalendarPluginPort {
+	/**
+	 * Whether an enabled Calendar plugin has weekly notes on. Probes the
+	 * dev-build id before the published one (AC-MIG-06.3); a plugin that is
+	 * not enabled under either reads as `absent`.
+	 */
+	readCalendarWeeklyNotes(): CompanionPluginRead<boolean>;
+
+	/**
+	 * Turns `showWeeklyNote` off through the plugin's own `writeOptions`, which
+	 * is what its settings tab calls and what saves its data.json. `ok` only
+	 * once the plugin's saved data reads the setting back off.
+	 */
+	disableCalendarWeeklyNotes(): Promise<CompanionPluginAction>;
+}
+
+/**
  * One granularity's entry inside a Periodic Notes calendar set.
  *
  * Five fields, because those are the five the import carries (US-MIG-04).
@@ -110,4 +138,14 @@ export interface PeriodicNotesPort {
 	 * A caller that needs only the names must not have to narrow a whole set.
 	 */
 	readActiveCalendarSet(): CompanionPluginRead<PeriodicNotesCalendarSet>;
+
+	/**
+	 * Switches one granularity off in the active calendar set (AC-MIG-06.5).
+	 *
+	 * Written through the plugin's own settings store, the way its settings tab
+	 * writes: the plugin subscribes to that store and saves its data.json on
+	 * every change. `ok` only once the plugin has said it saved, and its saved
+	 * data reads the granularity back off.
+	 */
+	disableGranularity(name: string): Promise<CompanionPluginAction>;
 }
