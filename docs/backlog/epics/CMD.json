@@ -458,7 +458,7 @@
       "story": "As someone browsing notes I have already written, I want a command that jumps to the nearest existing note before or after the one I am viewing, so that I can move through my history without accidentally creating empty notes.",
       "rationale": "Pure navigation and note creation are different intents, and conflating them would create unwanted files just from browsing.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "pn:jump-to-adjacent-note-command"
       ],
