@@ -11,8 +11,10 @@ Open `docs/calendaric.html` to browse it. Read `calendaric-map.json` to work wit
 That page also carries the backlog built on top of this map.
 
 ```bash
-cd docs && python3 -m http.server 8973
-open http://localhost:8973/calendaric.html
+open https://anks.localhost/obsidian-calendaric/calendaric.html  # always on: the anks_docs server on 8973
+# without it, a server of its own on another port:
+cd docs && python3 -m http.server 8975
+open http://localhost:8975/calendaric.html
 ```
 
 ## Glossary
