@@ -342,7 +342,20 @@ export default class CalendaricPlugin extends Plugin {
 		// Writing through applySettings is what keeps a second configuration group,
 		// and anything else on disk this version does not read, out of harm's way.
 		const next = applySettings(this.stored, this.settings);
-		await this.saveData(next);
+		try {
+			await this.saveData(next);
+		} catch (error) {
+			// The caller edited `this.settings` in place before saving, and every
+			// lookup, command and the calendar read it from there, so the unsaved
+			// edit is undone in place too: the calendar and the import cards hold
+			// these same objects (AC-SET-07.4).
+			const settings = this.settings as unknown as Record<string, unknown>;
+			for (const [key, value] of Object.entries(toSettings(this.stored))) {
+				if (typeof value === "object" && value !== null) Object.assign(settings[key] as object, value);
+				else settings[key] = value;
+			}
+			throw error;
+		}
 		// Only after the write, so a failed save leaves this field equal to the disk.
 		// The Daily Notes import relies on that: it rolls its values back on a throw.
 		this.stored = next;
