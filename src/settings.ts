@@ -268,8 +268,8 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				toggle.onChange(async (value) => {
 					config.enabled = value;
 					await this.save();
-					// Re-render just the badge if openAtStartup status changed
-					// (no full display() needed — toggle state is independent of expand)
+					// Redrawn so "Open on startup" follows this toggle (AC-CMD-09.6).
+					this.display();
 				});
 			});
 
@@ -438,6 +438,8 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			.setDesc(`Opens your ${periodicity} note automatically whenever you open this vault`)
 			.addToggle((toggle) => {
 				toggle.setValue(config.openAtStartup);
+				// A switched-off granularity cannot be chosen (AC-CMD-09.6).
+				toggle.setDisabled(!config.enabled);
 				toggle.onChange(async (value) => {
 					if (value) {
 						clearStartupNote(this.plugin.settings);

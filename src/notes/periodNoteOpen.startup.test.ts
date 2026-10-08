@@ -173,6 +173,18 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 		expect(p.vault.listNotes().map((note) => note.path)).toEqual(["2026-Q2.md"]);
 	});
 
+	it("AC-CMD-09.6 (not enabled): a switched-off day or week cannot be set to open on startup until it is switched on", async () => {
+		const settings = settingsWith("week");
+		const tab = makeTab(settings);
+		const startupToggles = () => startupRows(tab).map((row) => row.querySelector("input") as HTMLInputElement);
+		expect(startupToggles().map((input) => input.disabled)).toEqual([true, false]);
+
+		const dayEnabled = tab.containerEl.querySelector(".periodic-group-heading input") as HTMLInputElement;
+		await handlers.get(dayEnabled)!(true);
+
+		expect(startupToggles().map((input) => input.disabled)).toEqual([false, false]);
+	});
+
 	it("AC-CMD-09.6 (not enabled): a startup flag on a switched-off granularity opens and writes nothing", async () => {
 		const p = ports();
 		const settings = settingsWith("day");
