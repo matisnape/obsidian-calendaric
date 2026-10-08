@@ -27,6 +27,16 @@ export interface WorkspacePort {
 	 */
 	openInLeaf(file: NoteFile, foundAtPath: string, mode: LeafMode): Promise<OpenResult>;
 	/**
+	 * Makes the leaf already showing the note the active one, including a leaf
+	 * Obsidian restored from the last session and has not loaded yet. Resolves
+	 * `false`, touching nothing, when no leaf shows it or when `file` is no longer
+	 * what sits at `foundAtPath` (the same identity rule as `openInLeaf`).
+	 *
+	 * Optional so hand-built ports still type-check; a caller treats its absence
+	 * as "not open anywhere".
+	 */
+	activateIfOpen?(file: NoteFile, foundAtPath: string): Promise<boolean>;
+	/**
 	 * Notices ride this port rather than a port of their own: opening is the only
 	 * flow that reports to the user, and one method does not earn three more files.
 	 */

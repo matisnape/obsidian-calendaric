@@ -7,10 +7,17 @@ export class FakeWorkspacePort implements WorkspacePort {
 	foundPaths: string[] = [];
 	notices: string[] = [];
 	fileMenus: { file: NoteFile; event: MouseEvent; source: string }[] = [];
+	activated: NoteFile[] = [];
 	isMacOS = false;
 	/** Runs inside openInLeaf, to stand in for the vault changing mid-open. */
 	onOpen: (() => void) | null = null;
 	private missing = new Set<string>();
+	private openPaths = new Set<string>();
+
+	/** Stands in for a leaf, loaded or not, already showing the note at `path`. */
+	markOpen(path: string): void {
+		this.openPaths.add(path);
+	}
 
 	/**
 	 * Stands in for every way a path stops holding the note that was found:
@@ -37,6 +44,12 @@ export class FakeWorkspacePort implements WorkspacePort {
 		if (this.missing.has(foundAtPath)) return "missing";
 		this.opened.push({ file, mode });
 		return "opened";
+	}
+
+	async activateIfOpen(file: NoteFile, foundAtPath: string): Promise<boolean> {
+		if (this.missing.has(foundAtPath) || !this.openPaths.has(foundAtPath)) return false;
+		this.activated.push(file);
+		return true;
 	}
 
 	showNotice(message: string): void {

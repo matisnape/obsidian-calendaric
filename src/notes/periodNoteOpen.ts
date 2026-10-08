@@ -68,7 +68,7 @@ export async function openOrCreatePeriodNote(
  * Startup: say which predecessor still owns what (AC-MIG-06.2 -- nothing when
  * none does), then open the startup note in a new tab, writing it silently
  * when it is missing -- unless a predecessor owns it, which that notice has
- * already said.
+ * already said. A leaf that already shows the note is made active instead.
  *
  * Quarter is reserved (DEC-23): a stored configuration may still carry it,
  * and it is skipped here exactly like a granularity that is switched off.
@@ -104,5 +104,7 @@ export async function startUp(
 		}
 	}
 
+	// A tab restored from the last session already shows it (AC-CMD-09.5).
+	if (await ports.workspace.activateIfOpen?.(file, path)) return;
 	await openNoteIn(file, "tab", ports.workspace, path);
 }
