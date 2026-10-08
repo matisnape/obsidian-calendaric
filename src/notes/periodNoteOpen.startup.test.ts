@@ -38,7 +38,6 @@ vi.mock("obsidian", async (importOriginal) => {
 const ports = () => ({ vault: new FakeVaultPort(), vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() });
 const date = () => window.moment("2026-04-13");
 
-/** Every granularity switched off, then `on` given an enabled startup flag. */
 function settingsWith(...on: Array<(typeof GRANULARITIES)[number]>): CalendaricSettings {
 	const settings = structuredClone(DEFAULT_SETTINGS);
 	for (const granularity of GRANULARITIES) settings[granularity].enabled = false;

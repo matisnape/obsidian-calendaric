@@ -12,8 +12,6 @@ interface LeafFixture {
 	deferred?: boolean;
 }
 
-// Structural App fixture: which leaf gets revealed and made active, and whether
-// a new leaf is ever asked for, are the whole contract.
 function makeWorkspace(leafFixtures: LeafFixture[]) {
 	const files = new Map<string, unknown>();
 	const note = new TFile();

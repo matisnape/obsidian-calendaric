@@ -14,7 +14,6 @@ export class FakeWorkspacePort implements WorkspacePort {
 	private missing = new Set<string>();
 	private openPaths = new Set<string>();
 
-	/** Stands in for a leaf, loaded or not, already showing the note at `path`. */
 	markOpen(path: string): void {
 		this.openPaths.add(path);
 	}
