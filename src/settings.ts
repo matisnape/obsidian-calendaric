@@ -166,8 +166,8 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		try {
 			await this.plugin.saveSettings();
 		} catch (error) {
-			// saveSettings has already put the saved values back; redraw so the
-			// screen shows them instead of the edit that was lost.
+			// After a failed write saveSettings has already put the saved values
+			// back; redraw so the screen shows them instead of the edit that was lost.
 			console.error("Calendaric: the settings could not be saved", error);
 			new Notice("Could not save settings.");
 			this.display();

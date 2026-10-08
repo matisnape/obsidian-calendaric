@@ -82,6 +82,9 @@ export default class CalendaricPlugin extends Plugin {
 	 */
 	private stored: StoredConfig = defaultStoredConfig();
 
+	/** Counts saves started, so only the latest failed one undoes the edit in memory. */
+	private saveSeq = 0;
+
 	/** The group in use, flattened. What the settings screen and the views read and edit. */
 	settings: CalendaricSettings = { ...DEFAULT_SETTINGS };
 
@@ -342,9 +345,12 @@ export default class CalendaricPlugin extends Plugin {
 		// Writing through applySettings is what keeps a second configuration group,
 		// and anything else on disk this version does not read, out of harm's way.
 		const next = applySettings(this.stored, this.settings);
+		const seq = ++this.saveSeq;
 		try {
 			await this.saveData(next);
 		} catch (error) {
+			// A later save started meanwhile carries this edit too; let it win.
+			if (seq !== this.saveSeq) throw error;
 			// The caller edited `this.settings` in place before saving, and every
 			// lookup, command and the calendar read it from there, so the unsaved
 			// edit is undone in place too: the calendar and the import cards hold

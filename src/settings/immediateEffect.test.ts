@@ -22,7 +22,8 @@ import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import { makeSettingsTabPorts } from "../__mocks__/settingsTabPorts";
 import { renderPeriodicNotesImportCard } from "./periodicNotesImportCard";
-import type { PeriodicNotesCalendarSet } from "../adapters/companionPluginPort";
+import { renderDailyNotesImportCard } from "./dailyNotesImportCard";
+import type { CompanionPluginPort, PeriodicNotesCalendarSet } from "../adapters/companionPluginPort";
 
 const notices = vi.hoisted((): string[] => []);
 const toggleHandlers = vi.hoisted(() => new WeakMap<HTMLInputElement, (value: boolean) => unknown>());
@@ -260,7 +261,53 @@ describe("AC-SET-07.4: a failed save leaves the plugin on the last saved configu
 		expect(vault.listNotes().map((file) => file.path)).toContain("Daily/2026-04-14.md");
 		expect(vault.listNotes().map((file) => file.path)).not.toContain("Unsaved/2026-04-14.md");
 	});
+
+	it("AC-SET-07.4: a save that fails while a later one is still writing keeps the later edit", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		const pending: { resolve: () => void; reject: (error: Error) => void }[] = [];
+		plugin.saveData = (value: unknown) =>
+			new Promise<void>((resolve, reject) => {
+				pending.push({
+					resolve: () => {
+						disk.data = JSON.parse(JSON.stringify(value)) as unknown;
+						resolve();
+					},
+					reject,
+				});
+			});
+
+		plugin.settings.day.folder = "Jour";
+		const first = plugin.saveSettings();
+		plugin.settings.day.folder = "Journal";
+		const second = plugin.saveSettings();
+
+		pending[0]?.reject(new Error("disk full"));
+		await expect(first).rejects.toThrow("disk full");
+		pending[1]?.resolve();
+		await second;
+
+		expect(dailyFolderOnDisk(disk)).toBe("Journal");
+		expect(plugin.settings.day.folder).toBe("Journal");
+	});
 });
+
+/** A core Daily Notes plugin that is on, so the import card offers to import it. */
+const dailyNotesOn: CompanionPluginPort = {
+	readDailyNotes: () => ({
+		ok: true,
+		value: { enabled: true, format: "YYYY-MM-DD", folder: "Daily", template: "Templates/Day" },
+	}),
+	disableDailyNotes: () => ({ ok: true }),
+};
+
+function buttonNamed(container: HTMLElement, text: string): HTMLButtonElement {
+	const button = Array.from(container.querySelectorAll("button")).find((el) => el.textContent === text);
+	expect(button).toBeTruthy();
+	return button as HTMLButtonElement;
+}
+
+/** The card handlers drop their promises; drain the queue before asserting. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function toggleNamed(tab: CalendaricSettingsTab, name: string): HTMLInputElement {
 	const row = Array.from(tab.containerEl.querySelectorAll(".setting-item")).find(
@@ -288,6 +335,25 @@ describe("AC-SET-07.4: a failed save on the settings screen", () => {
 		expect(notices).toEqual(["Could not save settings."]);
 		expect(plugin.settings.confirmBeforeCreate).toBe(true);
 		expect(toggleNamed(tab, "Confirm before creating new note").checked).toBe(true);
+	});
+
+	it("AC-SET-07.4: a failed Dismiss on the Daily Notes card keeps the offer, with one notice", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		const app = plugin.app as unknown as App;
+		const tab = new CalendaricSettingsTab(app, plugin, makeSettingsTabPorts(app, { companion: dailyNotesOn }));
+		vi.spyOn(console, "error").mockImplementation(() => undefined);
+		tab.display();
+
+		disk.failNext = true;
+		buttonNamed(tab.containerEl, "Dismiss").click();
+		await settle();
+
+		expect(notices).toEqual(["Could not save settings."]);
+		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(false);
+		const offers = Array.from(tab.containerEl.querySelectorAll("strong")).filter(
+			(el) => el.textContent === "Daily Notes plugin detected",
+		);
+		expect(offers).toHaveLength(1);
 	});
 });
 
@@ -319,9 +385,51 @@ describe("AC-SET-07.4: an import card's failed save", () => {
 		expect(plugin.settings.month).toEqual(before);
 		expect(refresh).not.toHaveBeenCalled();
 	});
+
+	it("AC-SET-07.4: the Daily Notes card still rolls back and shows its own notice", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		const day = plugin.settings.day;
+		const before = structuredClone(day);
+		const container = document.createElement("div");
+		const refresh = vi.fn();
+		vi.spyOn(console, "error").mockImplementation(() => undefined);
+		renderDailyNotesImportCard(container, plugin, dailyNotesOn, { save: () => Promise.resolve(), refresh });
+
+		disk.failNext = true;
+		buttonNamed(container, "Import settings").click();
+		await settle();
+
+		expect(notices).toEqual(["Could not save the Daily Notes import."]);
+		expect(plugin.settings.day).toBe(day);
+		expect(plugin.settings.day).toEqual(before);
+		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(false);
+		expect(refresh).not.toHaveBeenCalled();
+	});
 });
 
 describe("a saved change on the settings screen", () => {
+	it("AC-SET-07.1: a format changed on the screen redraws the calendar, and the next lookup uses it", async () => {
+		const { plugin, internals, refresh } = await loadedPlugin("Daily/13-04-2026.md");
+		const app = plugin.app as unknown as App;
+		const tab = new CalendaricSettingsTab(app, plugin, makeSettingsTabPorts(app));
+		tab.display();
+		expect(internals.index?.get("day", at(DATE))).toBeFalsy();
+
+		const daily = Array.from(tab.containerEl.querySelectorAll(".periodic-group")).find(
+			(group) => group.querySelector(".periodic-group-title span")?.textContent === "Daily Notes",
+		);
+		const format = Array.from(daily?.querySelectorAll(".setting-item") ?? [])
+			.find((item) => item.querySelector(".setting-item-name")?.textContent === "Format")
+			?.querySelector("input") as HTMLInputElement;
+		expect(format).toBeTruthy();
+		format.value = "DD-MM-YYYY";
+		format.dispatchEvent(new Event("change"));
+		await settle();
+
+		expect(refresh).toHaveBeenCalledTimes(1);
+		expect(internals.index?.get("day", at(DATE))?.path).toBe("Daily/13-04-2026.md");
+	});
+
 	it("AC-SET-07.3: switching a granularity off on the screen removes its commands and redraws the calendar", async () => {
 		const { plugin, host, refresh } = await loadedPlugin();
 		const app = plugin.app as unknown as App;
