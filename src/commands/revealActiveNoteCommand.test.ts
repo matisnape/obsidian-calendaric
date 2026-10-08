@@ -85,7 +85,6 @@ describe("US-CMD-03: Reveal active note", () => {
 	});
 });
 
-/** Runs the real onload() against a stub app and returns every command it added. */
 async function registeredCommands(): Promise<Command[]> {
 	const commands: Command[] = [];
 	const on = () => ({});
