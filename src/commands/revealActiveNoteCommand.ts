@@ -20,7 +20,9 @@ export interface RevealActiveNoteDeps {
  * say why not, leaving the calendar alone (AC-CMD-03.2).
  *
  * The note is read before open(): opening focuses the calendar leaf, and from
- * then on the active pane is no longer the note's editor. open() runs even when
+ * then on the active pane is no longer the note's editor. The view still finds
+ * the note because workspace.getActiveFile() falls back to the most recently
+ * active file when the active view is not a FileView. open() runs even when
  * the calendar is on screen, because revealing is what loads a deferred view.
  */
 export async function revealActiveNote(deps: RevealActiveNoteDeps): Promise<void> {
