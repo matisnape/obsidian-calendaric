@@ -25,6 +25,7 @@ import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { jumpToClosestNote } from "./commands/jumpCommands";
 import { openNeighbourNote } from "./commands/openNeighbourCommands";
+import { revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import { RibbonIcon } from "./commands/ribbonIcon";
 import type { MenuEntry } from "./commands/ribbonIcon";
 import { resolveEffectiveConfig } from "./settings/model";
@@ -172,6 +173,18 @@ export default class CalendaricPlugin extends Plugin {
 		this.startPeriodLabels();
 
 		this.addCommand(calendarViewCommand(calendarLeaves, calendar.open));
+		this.addCommand(revealActiveNoteCommand({
+			activePath: () => this.activeNotePath(),
+			resolve: (path) => resolveFileDate(path, this.indexConfigs(), new ObsidianVaultConfigAdapter(this.app)),
+			open: calendar.open,
+			view: () => {
+				const view = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0]?.view;
+				return view instanceof CalendarView ? view : null;
+			},
+			notify: (message) => {
+				new Notice(message);
+			},
+		}));
 
 		// Registered during load, not on layout: the palette must already list
 		// them when the user opens it, and a command that fires before the index
