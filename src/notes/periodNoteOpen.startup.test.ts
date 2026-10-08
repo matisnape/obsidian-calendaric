@@ -154,7 +154,9 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 			(group) => group.querySelector(".periodic-group-title span")?.textContent === "Quarterly Notes",
 		);
 		expect(quarterGroup).toBeDefined();
-		expect(Array.from(quarterGroup!.querySelectorAll("input")).every((input) => input.disabled)).toBe(true);
+		const quarterInputs = Array.from(quarterGroup!.querySelectorAll("input"));
+		expect(quarterInputs).not.toHaveLength(0);
+		expect(quarterInputs.every((input) => input.disabled)).toBe(true);
 		// Only day and week carry the row at all.
 		expect(startupRows(tab)).toHaveLength(2);
 	});
@@ -183,6 +185,22 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 		await handlers.get(dayEnabled)!(true);
 
 		expect(startupToggles().map((input) => input.disabled)).toEqual([false, false]);
+	});
+
+	it("AC-CMD-09.6 (not enabled): a stored startup flag on a switched-off day shows as unchosen until day is switched on", async () => {
+		const settings = settingsWith("day");
+		settings.day.enabled = false;
+		const tab = makeTab(settings);
+		const startupToggles = () => startupRows(tab).map((row) => row.querySelector("input") as HTMLInputElement);
+		const badges = () => tab.containerEl.querySelectorAll(".badge");
+		expect(startupToggles().map((input) => input.checked)).toEqual([false, false]);
+		expect(badges()).toHaveLength(0);
+
+		const dayEnabled = tab.containerEl.querySelector(".periodic-group-heading input") as HTMLInputElement;
+		await handlers.get(dayEnabled)!(true);
+
+		expect(startupToggles().map((input) => input.checked)).toEqual([true, false]);
+		expect(badges()).toHaveLength(1);
 	});
 
 	it("AC-CMD-09.6 (not enabled): a startup flag on a switched-off granularity opens and writes nothing", async () => {
