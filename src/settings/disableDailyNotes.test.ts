@@ -252,6 +252,23 @@ describe("AC-MIG-02.5: the disable action when the host plugin cannot be turned 
 	});
 });
 
+describe("a save that fails after the host plugin is turned off", () => {
+	it("is logged, not left as an unhandled rejection", async () => {
+		const host = makeHost();
+		const { containerEl, actions } = renderCard(host, freshSettings());
+		const failure = new Error("disk full");
+		actions.save.mockImplementation(() => Promise.reject(failure));
+		const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+		button(containerEl, "Disable Daily Notes plugin").click();
+		button(modals[0]!.contentEl, "Disable plugin").click();
+		await flush();
+
+		expect(host.disable).toHaveBeenCalledWith(true);
+		expect(logged).toHaveBeenCalledWith("Calendaric: disabling Daily Notes could not be saved", failure);
+	});
+});
+
 describe("AC-MIG-02.2: day notes after the core plugin is turned off", () => {
 	const absent = { ok: false as const, reason: "absent" as const, problem: "" };
 

@@ -25,7 +25,9 @@ export class DisableDailyNotesModal extends Modal {
 		const disableBtn = buttons.createEl("button", { text: "Disable plugin", cls: "mod-warning" });
 		disableBtn.addEventListener("click", () => {
 			this.close();
-			void this.onConfirm();
+			this.onConfirm().catch((error) => {
+				console.error("Calendaric: disabling Daily Notes could not be saved", error);
+			});
 		});
 	}
 
