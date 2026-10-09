@@ -29,7 +29,6 @@ export interface RevealActiveNoteDeps {
 export async function revealActiveNote(deps: RevealActiveNoteDeps): Promise<void> {
 	const path = deps.activePath();
 	const granularity = path === null ? null : deps.resolve(path)?.granularity;
-	// Only a note whose cell the grid highlights can be revealed: a day or a week.
 	if (!granularity || !granularityEntry(granularity).cell?.reveal) {
 		deps.notify(REVEAL_NEEDS_NOTE);
 		return;

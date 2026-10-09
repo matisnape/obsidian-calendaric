@@ -63,7 +63,6 @@ const DEFAULT_GLOBALS: GlobalSettings = {
 	showPeriodLabel: true,
 };
 
-/** What a new vault starts with: each granularity switched on as its registry entry says. */
 export function defaultGranularityConfigs(): GranularityConfigs {
 	return byGranularity(ALL_GRANULARITIES, (granularity) => ({
 		...DEFAULT_PERIODIC_CONFIG,

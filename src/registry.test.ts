@@ -24,7 +24,6 @@ const SCANNED = readdirSync(root("src"), { recursive: true, encoding: "utf8" })
 	.filter((path) => path !== "src/ui/test-setup.ts")
 	.sort();
 
-/** The registry and the granularity modules: the one place the names are allowed. */
 const OWNER = "src/granularity/";
 
 const NAMES: ReadonlySet<string> = new Set(["day", "week", "month", "quarter", "year"]);
@@ -91,7 +90,7 @@ const NOT_GRANULARITY_KNOWLEDGE: Record<string, string> = {
 	'src/fmt/parseFilename.ts: kind === "day"': "a moment token kind, not a granularity",
 	'src/fmt/parseFilename.ts: "year"': "a moment token kind in switch (kind), not a granularity",
 	'src/fmt/parseFilename.ts: "day"': "a moment token kind in switch (kind), not a granularity",
-	// noteUtils sits below the registry: the week and day modules import it, so
+	// noteUtils sits below the registry: the week module imports it, so
 	// reading the registry here would close the cycle the AC-ARCH-05.4 test forbids.
 	'src/notes/noteUtils.ts: granularity === "week"':
 		"weekday spans stay literal outside a weekly format; reading the registry here would make an import cycle",
@@ -102,11 +101,6 @@ const NOT_GRANULARITY_KNOWLEDGE: Record<string, string> = {
 	'src/notes/predecessorGuard.ts: granularity !== "week"': "the Calendar plugin's weekly notes own the week and nothing else",
 };
 
-/**
- * Files another branch owns in the same wave (US-MIG-02). They are Daily Notes
- * code, so a `"day"` in them is the core plugin's one period, and this branch
- * cannot see what they will hold when both land.
- */
 const OTHER_BRANCH_FILES: ReadonlySet<string> = new Set([
 	"src/settings/dailyNotesImportCard.ts",
 	"src/settings/dailyNotesImportModal.ts",
@@ -216,10 +210,6 @@ describe("US-ARCH-05: every shared granularity name still exports, with the same
 		});
 	});
 });
-
-// ---------------------------------------------------------------------------
-// Import edges, read off the parser rather than a regex.
-// ---------------------------------------------------------------------------
 
 const resolve = (from: string, specifier: string): string | null => {
 	if (!specifier.startsWith(".")) return null;

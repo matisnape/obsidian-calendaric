@@ -172,7 +172,6 @@ export class CalendarWidget implements HoverParent {
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
 		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
 		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
-		// Every cell an indicator may draw into, drawn once the grid is built.
 		const cells: IndicatorCell[] = [];
 		const active = this.activeNote();
 		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
@@ -185,7 +184,6 @@ export class CalendarWidget implements HoverParent {
 				const wDiv = wTd.createDiv({ cls: "calendaric-weeknum", text: String(week.weekNumber) });
 				const wDotContainer = wDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				// The week this row shows
 				const anchor = getWeekAnchor(week.days);
 				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig, "week");
 				cells.push({

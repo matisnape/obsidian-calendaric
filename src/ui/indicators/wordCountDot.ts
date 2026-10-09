@@ -23,7 +23,7 @@ function makeWordDotSvg(filled: number): SVGElement {
 }
 
 /**
- * The word-count dot of every cell whose note exists (AC-CAL-07.2). It
+ * The word-count dot of every cell whose note has words (AC-CAL-07.2). It
  * arrives after the note-exists dot because reading a note is async.
  */
 export const wordCountDotIndicator: CalendarIndicator = {

@@ -13,7 +13,6 @@ function makeDotSvg(): SVGElement {
 	return svg;
 }
 
-/** The note-exists dot, in every cell whose periodic note exists. */
 export const noteDotIndicator: CalendarIndicator = {
 	apiVersion: 1,
 	id: "note-dot",

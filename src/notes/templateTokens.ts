@@ -114,7 +114,6 @@ export function substituteTemplateTokens(
 		out = out.replace(new RegExp(`\\{\\{${next}\\}\\}`, "g"), after);
 	}
 
-	// The tokens only one granularity has, such as week's {{monday:fmt}}, live in its own module.
 	if (entry.templateTokens) out = entry.templateTokens(out, { date, weekStart });
 
 	return out;

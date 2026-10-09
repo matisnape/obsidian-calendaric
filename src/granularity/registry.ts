@@ -23,7 +23,6 @@ export type Moment = ReturnType<typeof window.moment>;
 type RelativeTimeKey = Parameters<ReturnType<Moment["localeData"]>["relativeTime"]>[2];
 type StartOf = Parameters<Moment["startOf"]>[0];
 
-/** What the first release does with a granularity it creates notes for (DEC-23). */
 export interface ReleaseFacts {
 	/** The period's name in a label: "This week", "Last month". */
 	readonly unitName: string;
@@ -42,7 +41,6 @@ export interface ReleaseFacts {
 	readonly frontmatterDate?: (date: Moment) => Moment;
 }
 
-/** The grid row a note's cell sits in, as far as revealing it needs to know. */
 export interface RevealRow {
 	/** The calendar's first weekday, moment's `day()` numbering. */
 	readonly weekStart: number;
@@ -50,7 +48,6 @@ export interface RevealRow {
 	readonly sameNote: (date: Moment) => boolean;
 }
 
-/** What a calendar cell for this granularity does. */
 export interface CellFacts {
 	/** The period as a person reads it back, in a create prompt: "The week of 9 February 2026". */
 	readonly subject: (date: Moment) => string;
@@ -62,7 +59,6 @@ export interface CellFacts {
 	readonly reveal?: (date: Moment, row: RevealRow) => [Moment, Moment];
 }
 
-/** What a granularity's own template tokens are handed. */
 export interface TemplateContext {
 	readonly date: Moment;
 	/** moment's `day()` numbering of the week a weekday token reaches into. */
@@ -78,7 +74,6 @@ export interface GranularityEntry {
 	readonly adjective: string;
 	/** The filename format used while the configured one is empty. */
 	readonly defaultFormat: string;
-	/** Whether a new vault starts with this granularity switched on. */
 	readonly defaultEnabled: boolean;
 	/** Present when the first release acts on this granularity; quarter has none (DEC-23). */
 	readonly release?: ReleaseFacts;
@@ -121,13 +116,10 @@ export type ReleaseIds = Readonly<ReleaseOf<Registry>>;
 type GranularityId = Entry["id"];
 type ReleaseId = ReleaseIds[number];
 
-/** The ids whose entry carries cell facts. */
 export type CellId = Extract<Entry, { cell: object }>["id"];
 
-/** The ids whose entry the settings screen edits. */
 export type SettingsId = Extract<Entry, { settings: object }>["id"];
 
-/** Each entry under its id, typed as itself. */
 export const GRANULARITY = (() => {
 	const byId: Record<string, Entry> = {};
 	for (const entry of GRANULARITY_REGISTRY) byId[entry.id] = entry;

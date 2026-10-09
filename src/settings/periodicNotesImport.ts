@@ -80,7 +80,6 @@ const FIELD_LABELS: Record<PeriodicNotesImportKey, string> = {
 	allowPrefixMatch: "Match a filename that starts with the date",
 };
 
-/** "Daily": the granularity's adjective, capitalised to lead a line. */
 function titleOf(granularity: Granularity): string {
 	const { adjective } = GRANULARITY[granularity];
 	return adjective.charAt(0).toUpperCase() + adjective.slice(1);

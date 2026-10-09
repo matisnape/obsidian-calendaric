@@ -10,9 +10,8 @@ import type { Moment } from "./granularity/registry";
  */
 export const INDICATOR_API_VERSION = 1;
 
-/** One calendar cell an indicator may draw into. */
 export interface IndicatorCell {
-	/** What the cell stands for: a day, or a week row's number. */
+	/** What the cell stands for. The calendar draws day cells and week-number cells today. */
 	readonly granularity: CellGranularity;
 	/** The cell's date; for a week row, the row's own first day (`getWeekAnchor`). */
 	readonly date: Moment;
@@ -24,7 +23,6 @@ export interface IndicatorCell {
 	readonly container: HTMLElement;
 }
 
-/** What the calendar shares with every indicator for one render. */
 export interface IndicatorContext {
 	/**
 	 * Word count of each existing note in `paths`, read once per render and kept
@@ -34,7 +32,6 @@ export interface IndicatorContext {
 	getWordCounts(paths: Iterable<string>): Promise<Map<string, number>>;
 }
 
-/** A mark the calendar draws in its cells, such as the note dot. */
 export interface CalendarIndicator {
 	/** The interface version this indicator was written against; must equal `INDICATOR_API_VERSION`. */
 	readonly apiVersion: typeof INDICATOR_API_VERSION;

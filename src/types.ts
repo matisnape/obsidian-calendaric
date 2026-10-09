@@ -24,7 +24,6 @@ export const RELEASE_GRANULARITIES = GRANULARITY_REGISTRY.filter((entry) => "rel
 
 export type ReleaseGranularity = (typeof RELEASE_GRANULARITIES)[number];
 
-/** The granularities a calendar cell stands for: the entries that carry cell facts. */
 export type CellGranularity = CellId;
 
 /** Narrows a configured granularity to the set this release creates notes for. */

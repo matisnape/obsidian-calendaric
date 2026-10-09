@@ -1,10 +1,9 @@
 // AC-ARCH-05.3, at compile time. `npm run build` type-checks this file and
 // vitest never runs it. `apiVersion` is typed as the current interface
 // version, so an indicator written against any other version is a compile
-// the day that stops being true.
+// error, and the `@ts-expect-error` below turns the build red the day it is not.
 import type { CalendarIndicator } from "./indicatorContract";
 
-/** Written against the current interface: compiles unchanged. */
 export const conforming = {
 	apiVersion: 1,
 	id: "conforming",

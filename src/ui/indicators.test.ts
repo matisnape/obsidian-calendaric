@@ -38,7 +38,6 @@ const fake = vi.hoisted(() => {
 	return { indicator, seen, staleDraw: vi.fn() };
 });
 
-// The registry path: the indicator list the renderer imports, with entries added.
 vi.mock("./indicators", async (original) => {
 	const real = await original<typeof import("./indicators")>();
 	const stale = { apiVersion: 2, id: "stale-indicator", draw: fake.staleDraw } as unknown as CalendarIndicator;
@@ -132,7 +131,6 @@ describe("AC-ARCH-05.3: an indicator written against another interface version i
 		expect(fake.staleDraw).not.toHaveBeenCalled();
 		expect(logged).toHaveBeenCalledTimes(1);
 		expect(String(logged.mock.calls[0]?.[0])).toContain('"stale-indicator"');
-		// The indicators that match still draw.
 		expect(marks(dayCell(host, 3))).toEqual(["calendaric-dot calendaric-dot--exists", "fake-mark"]);
 	});
 });
