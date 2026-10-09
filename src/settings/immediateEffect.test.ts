@@ -281,13 +281,47 @@ describe("AC-SET-07.4: a failed save leaves the plugin on the last saved configu
 		plugin.settings.day.folder = "Journal";
 		const second = plugin.saveSettings();
 
+		// The later write waits for the earlier one to settle.
+		await settle();
+		expect(pending).toHaveLength(1);
 		pending[0]?.reject(new Error("disk full"));
 		await expect(first).rejects.toThrow("disk full");
+		await settle();
+		expect(pending).toHaveLength(2);
 		pending[1]?.resolve();
 		await second;
 
 		expect(dailyFolderOnDisk(disk)).toBe("Journal");
 		expect(plugin.settings.day.folder).toBe("Journal");
+	});
+
+	it("AC-SET-07.4: a later save that fails while an earlier one is still writing keeps the earlier edit", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		let finishFirst = () => {};
+		let calls = 0;
+		plugin.saveData = (value: unknown) => {
+			calls += 1;
+			if (calls > 1) return Promise.reject(new Error("disk full"));
+			return new Promise<void>((resolve) => {
+				finishFirst = () => {
+					disk.data = JSON.parse(JSON.stringify(value)) as unknown;
+					resolve();
+				};
+			});
+		};
+
+		plugin.settings.day.folder = "Jour";
+		const first = plugin.saveSettings();
+		plugin.settings.day.folder = "Journal";
+		const second = expect(plugin.saveSettings()).rejects.toThrow("disk full");
+
+		await settle();
+		finishFirst();
+		await first;
+		await second;
+
+		expect(dailyFolderOnDisk(disk)).toBe("Jour");
+		expect(plugin.settings.day.folder).toBe("Jour");
 	});
 });
 
