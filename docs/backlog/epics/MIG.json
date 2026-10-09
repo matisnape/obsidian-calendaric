@@ -120,7 +120,7 @@
       "story": "As someone who has just imported my Daily Notes configuration into Calendaric, I want to be asked before Calendaric turns the old plugin off, so that I keep control over a change to my setup that I did not directly ask for.",
       "rationale": "Disabling another plugin is a destructive action on the user's configuration and must never happen as a silent side effect of import.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "calendaric:disable-core-daily-notes-plugin"
       ],
