@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
 import type { Granularity, PeriodicConfig } from "./types";
 import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
@@ -163,7 +163,16 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	}
 
 	private async save(): Promise<void> {
-		await this.plugin.saveSettings();
+		try {
+			await this.plugin.saveSettings();
+		} catch (error) {
+			// After a failed write saveSettings has already put the saved values
+			// back; redraw so the screen shows them instead of the edit that was lost.
+			console.error("Calendaric: the settings could not be saved", error);
+			new Notice("Could not save settings.");
+			this.display();
+			return;
+		}
 		this.plugin.onSettingsChange();
 	}
 

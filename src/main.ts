@@ -83,6 +83,12 @@ export default class CalendaricPlugin extends Plugin {
 	 */
 	private stored: StoredConfig = defaultStoredConfig();
 
+	/**
+	 * The latest save's write. Each write waits for the one before it, so a failed
+	 * save restores from a `stored` every earlier write has already updated.
+	 */
+	private saving: Promise<void> = Promise.resolve();
+
 	/** The group in use, flattened. What the settings screen and the views read and edit. */
 	settings: CalendaricSettings = { ...DEFAULT_SETTINGS };
 
@@ -355,9 +361,38 @@ export default class CalendaricPlugin extends Plugin {
 		// Writing through applySettings is what keeps a second configuration group,
 		// and anything else on disk this version does not read, out of harm's way.
 		const next = applySettings(this.stored, this.settings);
-		await this.saveData(next);
-		// Only after the write, so a failed save leaves this field equal to the disk.
-		// The Daily Notes import relies on that: it rolls its values back on a throw.
-		this.stored = next;
+		const write = this.saving
+			.catch(() => undefined)
+			.then(async () => {
+				await this.saveData(next);
+				// Only after the write, so a failed save leaves this field equal to the disk.
+				// The Daily Notes import relies on that: it rolls its values back on a throw.
+				this.stored = next;
+			});
+		this.saving = write;
+		try {
+			await write;
+		} catch (error) {
+			// A later save started meanwhile carries this edit too, so its outcome is
+			// this one's: wait for the last queued write, whose own catch restores.
+			if (write !== this.saving) {
+				let latest: Promise<void>;
+				do {
+					latest = this.saving;
+					await latest.catch(() => undefined);
+				} while (latest !== this.saving);
+				return latest;
+			}
+			// The caller edited `this.settings` in place before saving, and every
+			// lookup, command and the calendar read it from there, so the unsaved
+			// edit is undone in place too: the calendar and the import cards hold
+			// these same objects (AC-SET-07.4).
+			const settings = this.settings as unknown as Record<string, unknown>;
+			for (const [key, value] of Object.entries(toSettings(this.stored))) {
+				if (typeof value === "object" && value !== null) Object.assign(settings[key] as object, value);
+				else settings[key] = value;
+			}
+			throw error;
+		}
 	}
 }
