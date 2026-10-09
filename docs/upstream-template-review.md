@@ -3,7 +3,7 @@
 ## TL;DR
 
 - This repository is a fork of the Obsidian sample plugin. Upstream changed 16 files since the fork point.
-- We **took** tooling only: the eslint plugin bump (`eslint-plugin-obsidianmd` 0.1.9 to 0.4.0), upstream's `eslint.config.mts` structure, the esbuild `target` bump, and two whitespace fixes.
+- We **took** tooling only: the eslint plugin bump (`eslint-plugin-obsidianmd` 0.1.9 to 0.4.0), upstream's `eslint.config.mts` structure, the esbuild `target` bump, and two whitespace fixes (`.editorconfig`, `version-bump.mjs`).
 - We did **not** take any file the rewrite owns: `src/main.ts`, `src/settings.ts`, `manifest.json`, `versions.json`, `tsconfig.json` and the workflows. `scripts/templateGuard.test.ts` now fails, naming the file, if the template's `src/main.ts`, `src/settings.ts`, `manifest.json` or `tsconfig.json` is copied over ours.
 - Lint moved from **67 errors / 4 warnings** on master to **49 errors / 83 warnings**. The plugin made many rules warnings and added new ones. Every rule that appeared or disappeared is listed below.
 
@@ -27,7 +27,7 @@ The list comes from `git diff --stat dc2fa22 upstream/master`.
 | `eslint.config.mts` | Taken, in part | Taken: `defineConfig` instead of the deprecated `tseslint.config`, `globalIgnores` first, the ignore entries for `package-lock.json` and `tsconfig.json`, and `eslint.config.mts` (not `.js`) in `allowDefaultProject`, which fixes that file's parsing error. Added: `scripts/templateGuard.test.ts` to `allowDefaultProject`, so the new test is linted. Declined: ignoring `package.json`. It would hide `depend/ban-dependencies`, which reports a real dependency choice. Declined: single quotes, because this codebase uses double quotes. |
 | `esbuild.config.mjs` | Taken, in part | Taken: `target: "es2021"`. Upstream's sample now targets ES2021 for current Obsidian, and this plugin is desktop-only with `minAppVersion` 1.13.7. Declined: the switch to single quotes. `src/arch.test.ts` (AC-ARCH-06.1) matches `outfile: "main.js"` with double quotes, and the codebase uses double quotes. |
 | `.editorconfig` | Taken, in part | Taken: LF line endings. Our copy was stored with CRLF while declaring `end_of_line = lf`. Declined: `quote_type = single`, because the codebase uses double quotes. |
-| `version-bump.mjs` | Taken, in part | Taken: tab indentation, which `.editorconfig` asks for. Declined: upstream's `!(targetVersion in versions)` key check. It fixes the same bug this project fixed for AC-ARCH-06.2, with the same behaviour for version keys, and ours carries the reason in a comment. |
+| `version-bump.mjs` | Taken, in part | Taken: tab indentation, which `.editorconfig` asks for. Its comment now says the bug was in the template at the fork point, since upstream has fixed it since. Declined: upstream's `!(targetVersion in versions)` key check. It fixes the same bug this project fixed for AC-ARCH-06.2, with the same behaviour for version keys, and ours carries the reason in a comment. |
 | `src/main.ts` | Superseded | The rewrite's plugin entry point. Upstream holds the sample plugin (`MyPlugin`, `SampleModal`). Guarded by `scripts/templateGuard.test.ts`. |
 | `src/settings.ts` | Superseded | The rewrite's settings tab. Upstream holds the sample (`MyPluginSettings`, `SampleSettingTab`). Guarded. |
 | `manifest.json` | Superseded | Real plugin id `obsidian-calendaric` and `minAppVersion` 1.13.7. A plugin id must never change after release. Guarded. |

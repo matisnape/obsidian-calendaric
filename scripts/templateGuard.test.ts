@@ -20,10 +20,9 @@ const read = (path: string): string | undefined =>
 	existsSync(root(path)) ? readFileSync(root(path), "utf8") : undefined;
 
 const guards: { file: string; sampleMarker: RegExp }[] = [
-	// The sample's plugin, modal and settings tab class names.
 	{ file: "src/main.ts", sampleMarker: /\b(MyPlugin|SampleModal|SampleSettingTab)\b/ },
 	{ file: "src/settings.ts", sampleMarker: /\b(MyPluginSettings|SampleSettingTab|mySetting)\b/ },
-	// The sample's plugin id. The id must never change after release.
+	// A plugin id must never change after release.
 	{ file: "manifest.json", sampleMarker: /"id":\s*"sample-plugin"/ },
 	// Only a fingerprint: upstream's tsconfig also enables `strict` whole, and
 	// the rewrite type-checks under it. The sample sets skipLibCheck in the file,
