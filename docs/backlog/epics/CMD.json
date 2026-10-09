@@ -710,7 +710,7 @@
       "story": "As someone who wants their day to start on a specific note, I want at most one periodic note to open automatically when the vault loads, so that I land exactly where I want without sorting through several auto-opened tabs.",
       "rationale": "Automatic startup notes only stay useful if the set of them is small and predictable; more than one defeats the purpose.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "pn:startup-note-auto-open",
         "pn:clear-startup-note-exclusivity",
