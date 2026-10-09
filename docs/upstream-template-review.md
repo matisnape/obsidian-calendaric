@@ -87,7 +87,7 @@ Measured with `eslint . -f json` on this branch, and with `npm run lint` on a `g
 
 ### Rules that appeared or rose, one sentence each
 
-Every rise below comes from the plugin bump, which also brought the `obsidian` 1.12.3 typings. None comes from this branch's code, and no file under `src/` changed.
+Every rise below but one comes from the plugin bump, which also brought the `obsidian` 1.12.3 typings. The exception is `obsidianmd/rule-custom-message`: it comes from this branch's `eslint.config.mts`, which makes two command-line scripts parse again. No file under `src/` changed.
 
 - **(parsing error), 1 to 7 in the bump-only run, back to 1.** Plugin 0.4.0 applies its typed config to `.mjs` files, so the four `scripts/*.mjs` files hit the project-service error that `vitest.config.ts` already had, and so did `eslint.config.mts` and the new test. The new config's `allowDefaultProject` lists all six. `vitest.config.ts` stays as on master.
 - **(unused eslint-disable directive), error.** The same four directives as before, in four test files under `src/` that disable `import/no-nodejs-modules`. That rule no longer fires on tests, and 0.4.0 reports unused directives as errors.

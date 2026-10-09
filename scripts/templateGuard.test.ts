@@ -138,7 +138,7 @@ describe("AC-ARCH-10.2: the lint record holds both totals and names every rule t
 		const explained = lint().split("### Rules that disappeared")[1] ?? "";
 		for (const [rule = "", , master, , final] of rows()) {
 			if (master === final) continue;
-			expect(explained, `${rule} moved and is not explained`).toContain(rule.replace(/`/g, ""));
+			expect(explained, `${rule} moved and is not explained`).toContain(rule);
 		}
 	});
 });

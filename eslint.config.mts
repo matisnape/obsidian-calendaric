@@ -24,6 +24,8 @@ export default defineConfig(
 						"eslint.config.mts",
 						"manifest.json",
 						"scripts/templateGuard.test.ts",
+						// A glob: 4 files today, 7 matches in all. Past
+						// typescript-eslint's default limit of 8, `eslint .` fails outright.
 						"scripts/*.mjs",
 					],
 				},
