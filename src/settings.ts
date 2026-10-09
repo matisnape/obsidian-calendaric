@@ -255,7 +255,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		nameEl.createSpan({ text: label });
 
-		if (config.openAtStartup && config.enabled) {
+		if (config.openAtStartup) {
 			nameEl.createEl("span", { text: "Opens at startup", cls: "badge" });
 		}
 
@@ -437,7 +437,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			.setName("Open on startup")
 			.setDesc(`Opens your ${periodicity} note automatically whenever you open this vault`)
 			.addToggle((toggle) => {
-				toggle.setValue(config.openAtStartup && config.enabled);
+				toggle.setValue(config.openAtStartup);
 				// A switched-off granularity cannot be chosen (AC-CMD-09.6).
 				toggle.setDisabled(!config.enabled);
 				toggle.onChange(async (value) => {

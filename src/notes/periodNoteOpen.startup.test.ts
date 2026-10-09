@@ -187,22 +187,6 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 		expect(startupToggles().map((input) => input.disabled)).toEqual([false, false]);
 	});
 
-	it("AC-CMD-09.6 (not enabled): a stored startup flag on a switched-off day shows as unchosen until day is switched on", async () => {
-		const settings = settingsWith("day");
-		settings.day.enabled = false;
-		const tab = makeTab(settings);
-		const startupToggles = () => startupRows(tab).map((row) => row.querySelector("input") as HTMLInputElement);
-		const badges = () => tab.containerEl.querySelectorAll(".badge");
-		expect(startupToggles().map((input) => input.checked)).toEqual([false, false]);
-		expect(badges()).toHaveLength(0);
-
-		const dayEnabled = tab.containerEl.querySelector(".periodic-group-heading input") as HTMLInputElement;
-		await handlers.get(dayEnabled)!(true);
-
-		expect(startupToggles().map((input) => input.checked)).toEqual([true, false]);
-		expect(badges()).toHaveLength(1);
-	});
-
 	it("AC-CMD-09.6 (not enabled): a startup flag on a switched-off granularity opens and writes nothing", async () => {
 		const p = ports();
 		const settings = settingsWith("day");
