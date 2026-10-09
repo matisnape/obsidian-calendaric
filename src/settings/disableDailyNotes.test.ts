@@ -91,7 +91,6 @@ function button(el: HTMLElement, label: string): HTMLButtonElement {
 	return found;
 }
 
-/** Lets the async click handlers run to the end before anything is asserted. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Modal.open() in the shared stub does nothing; record each modal and draw it.
@@ -274,7 +273,7 @@ describe("AC-MIG-02.2: day notes after the core plugin is turned off", () => {
 				calendar: { readCalendarWeeklyNotes: () => absent, disableCalendarWeeklyNotes: () => Promise.resolve({ ok: true }) },
 				periodicNotes: { readActiveGranularities: () => absent, disableGranularity: () => Promise.resolve({ ok: true }) },
 			},
-			(granularity) => settings[granularity].enabled,
+			(granularity) => granularity === "day" && settings.day.enabled,
 			() => undefined,
 		);
 		guardCreation(ports.vault.backingVault, guard);
