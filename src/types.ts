@@ -1,13 +1,16 @@
 import type { Moment } from "moment";
+import { GRANULARITY_REGISTRY } from "./granularity/registry";
+import type { CellId, GranularityIds, ReleaseIds } from "./granularity/registry";
 
-/** Every granularity, in the order the UI and the commands use. */
-export const ALL_GRANULARITIES = ["day", "week", "month", "quarter", "year"] as const;
+/** Every granularity, in the order the UI and the commands use: the registry's own order. */
+export const ALL_GRANULARITIES = GRANULARITY_REGISTRY.map((entry) => entry.id) as unknown as GranularityIds;
 
 /** Quarter is reserved (DEC-23): the type names it, no release-1 behavior uses it. */
 export type Granularity = (typeof ALL_GRANULARITIES)[number];
 
 /**
- * The granularities the first release actually creates notes for (DEC-23).
+ * The granularities the first release actually creates notes for (DEC-23):
+ * the entries that carry release facts.
  *
  * Narrower than `Granularity` on purpose. `Granularity` is what configuration
  * round-trips, quarter included, so a reserved value survives a save it was
@@ -15,12 +18,13 @@ export type Granularity = (typeof ALL_GRANULARITIES)[number];
  * the gap between the two is why the check has to run at runtime: the type
  * cannot refuse a value it is required to carry.
  */
-export const RELEASE_GRANULARITIES = ["day", "week", "month", "year"] as const;
+export const RELEASE_GRANULARITIES = GRANULARITY_REGISTRY.filter((entry) => "release" in entry).map(
+	(entry) => entry.id,
+) as unknown as ReleaseIds;
 
 export type ReleaseGranularity = (typeof RELEASE_GRANULARITIES)[number];
 
-/** The granularities a calendar cell stands for: the release set minus year. */
-export type CellGranularity = Exclude<ReleaseGranularity, "year">;
+export type CellGranularity = CellId;
 
 /** Narrows a configured granularity to the set this release creates notes for. */
 export function isReleaseGranularity(granularity: Granularity): granularity is ReleaseGranularity {

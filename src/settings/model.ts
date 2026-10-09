@@ -1,5 +1,6 @@
 import { ALL_GRANULARITIES, DEFAULT_PERIODIC_CONFIG, PeriodicConfig } from "../types";
 import type { Granularity } from "../types";
+import { GRANULARITY, byGranularity } from "../granularity/registry";
 
 /** Every granularity Calendaric knows, in the order the UI and the commands use. */
 export const GRANULARITIES: readonly Granularity[] = ALL_GRANULARITIES;
@@ -62,15 +63,11 @@ const DEFAULT_GLOBALS: GlobalSettings = {
 	showPeriodLabel: true,
 };
 
-/** Day and week are the two granularities a new vault starts with. */
 export function defaultGranularityConfigs(): GranularityConfigs {
-	return {
-		day: { ...DEFAULT_PERIODIC_CONFIG, enabled: true },
-		week: { ...DEFAULT_PERIODIC_CONFIG, enabled: true },
-		month: { ...DEFAULT_PERIODIC_CONFIG },
-		quarter: { ...DEFAULT_PERIODIC_CONFIG },
-		year: { ...DEFAULT_PERIODIC_CONFIG },
-	};
+	return byGranularity(ALL_GRANULARITIES, (granularity) => ({
+		...DEFAULT_PERIODIC_CONFIG,
+		enabled: GRANULARITY[granularity].defaultEnabled,
+	}));
 }
 
 export const DEFAULT_SETTINGS: CalendaricSettings = {
@@ -254,16 +251,14 @@ export function applySettings(stored: StoredConfig, settings: CalendaricSettings
 
 /**
  * The documented built-in format each granularity falls back to when its own
- * format is left empty (AC-SET-03.1). One table, so the settings screen's
- * placeholder, the Daily Notes import and the resolver cannot drift apart.
+ * format is left empty (AC-SET-03.1), read off each registry entry, so the
+ * settings screen's placeholder, the Daily Notes import and the resolver cannot
+ * drift apart.
  */
-export const DEFAULT_FORMATS: Record<Granularity, string> = {
-	day: "YYYY-MM-DD",
-	week: "gggg-[W]ww",
-	month: "YYYY-MM",
-	quarter: "YYYY-[Q]Q",
-	year: "YYYY",
-};
+export const DEFAULT_FORMATS: Record<Granularity, string> = byGranularity(
+	ALL_GRANULARITIES,
+	(granularity) => GRANULARITY[granularity].defaultFormat,
+);
 
 /** Anything carrying stored per-granularity entries: flattened settings, or a stored group. */
 type ConfigSource = Partial<Record<Granularity, unknown>>;

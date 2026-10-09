@@ -1,6 +1,7 @@
 import type { Moment, unitOfTime } from "moment";
 import type { PeriodicConfig, ReleaseGranularity } from "../types";
-import { formatWithWeekTokens, applyWeekTokens, spanWeekStart } from "./noteUtils";
+import { formatWithWeekTokens, spanWeekStart } from "./noteUtils";
+import { granularityEntry } from "../granularity/registry";
 
 /**
  * The units a `{{date±N<unit>}}` offset accepts, and the moment duration each
@@ -101,19 +102,19 @@ export function substituteTemplateTokens(
 	// {{title}}
 	out = out.replace(/\{\{title\}\}/g, title);
 
-	if (granularity === "day") {
+	const entry = granularityEntry(granularity);
+
+	if (entry.neighbourTokens) {
 		// These tokens exist to link to the adjacent notes, and computeNotePath() names
 		// those files with formatWithWeekTokens(). Plain format() would diverge from it.
-		const yesterday = formatWithWeekTokens(config.format, date.clone().subtract(1, "day"), granularity);
-		const tomorrow = formatWithWeekTokens(config.format, date.clone().add(1, "day"), granularity);
-		out = out.replace(/\{\{yesterday\}\}/g, yesterday);
-		out = out.replace(/\{\{tomorrow\}\}/g, tomorrow);
+		const { previous, next } = entry.neighbourTokens;
+		const before = formatWithWeekTokens(config.format, date.clone().subtract(1, granularity), granularity);
+		const after = formatWithWeekTokens(config.format, date.clone().add(1, granularity), granularity);
+		out = out.replace(new RegExp(`\\{\\{${previous}\\}\\}`, "g"), before);
+		out = out.replace(new RegExp(`\\{\\{${next}\\}\\}`, "g"), after);
 	}
 
-	if (granularity === "week") {
-		// {{monday:fmt}} – {{sunday:fmt}} in template body
-		out = applyWeekTokens(out, date, weekStart);
-	}
+	if (entry.templateTokens) out = entry.templateTokens(out, { date, weekStart });
 
 	return out;
 }

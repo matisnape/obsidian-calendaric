@@ -1,6 +1,7 @@
 import type { Command } from "obsidian";
 import type { ReleaseGranularity } from "../types";
-import { isReleaseGranularity } from "../types";
+import { RELEASE_GRANULARITIES, isReleaseGranularity } from "../types";
+import { GRANULARITY, byGranularity } from "../granularity/registry";
 import type { EnabledSource } from "../settings/model";
 import { getActiveGranularities } from "../settings/model";
 
@@ -34,12 +35,10 @@ export function commandId(granularity: ReleaseGranularity, action: CommandAction
 }
 
 /** What each granularity's notes are called, for the palette to read naturally. */
-export const ADJECTIVE: Record<ReleaseGranularity, string> = {
-	day: "daily",
-	week: "weekly",
-	month: "monthly",
-	year: "yearly",
-};
+export const ADJECTIVE: Record<ReleaseGranularity, string> = byGranularity(
+	RELEASE_GRANULARITIES,
+	(granularity) => GRANULARITY[granularity].adjective,
+);
 
 /** The palette wording of each action. Free to change: no id reads it. */
 const PHRASE: Record<CommandAction, string> = {

@@ -6,6 +6,7 @@ import { resolveFileDate } from "../fmt/resolveFileDate";
 import { computeNoteDate } from "../fmt/noteDate";
 import { RELEASE_GRANULARITIES } from "../types";
 import { resolveNoteFolder } from "./noteUtils";
+import { releaseFacts } from "../granularity/registry";
 
 /**
  * The granularities this index answers for, configured.
@@ -18,34 +19,6 @@ export type PeriodicConfigs = FileConfigs;
 
 /** Which way a jump looks for the closest existing note. */
 export type JumpDirection = "forward" | "backward";
-
-/**
- * The format a frontmatter date is read against, per granularity.
- *
- * Deliberately not the configured format. A frontmatter date is what a
- * template or a script writes to say "this file is that period's note" when
- * the filename cannot say it, so it has to be readable without knowing how
- * this vault happens to name its files.
- */
-const FRONTMATTER_FORMAT: Record<FileGranularity, string> = {
-	day: "YYYY-MM-DD",
-	week: "gggg-[W]ww",
-	month: "YYYY-MM",
-	year: "YYYY",
-};
-
-/**
- * The Monday inside the week `date` starts, which is that week's identity
- * whatever numbering named it.
- *
- * The default frontmatter week format numbers locale weeks, and a locale week
- * can start on a Sunday — a day that belongs to the previous ISO week. Left
- * alone it would file the note one week early. `parseFilename` walks the same
- * step for a locale-numbered filename, so the two agree on which week is which.
- */
-function mondayWithin(date: Moment): Moment {
-	return date.clone().add((1 - date.isoWeekday() + 7) % 7, "days");
-}
 
 /** One indexed note: the file, plus the path it was indexed under. */
 interface IndexedNote {
@@ -225,10 +198,11 @@ export class PeriodicNoteIndex {
 			const written = this.vault.frontmatterString(file, granularity);
 			if (written === null) continue;
 
-			const date = window.moment(written, FRONTMATTER_FORMAT[granularity], true);
+			const { frontmatterFormat, frontmatterDate } = releaseFacts(granularity);
+			const date = window.moment(written, frontmatterFormat, true);
 			if (!date.isValid()) continue;
 
-			return this.noteDateFor(granularity, granularity === "week" ? mondayWithin(date) : date);
+			return this.noteDateFor(granularity, frontmatterDate?.(date) ?? date);
 		}
 		return null;
 	}

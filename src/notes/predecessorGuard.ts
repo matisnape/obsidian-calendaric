@@ -5,6 +5,7 @@ import type {
 	PeriodicNotesPort,
 } from "../adapters/companionPluginPort";
 import { RELEASE_GRANULARITIES } from "../types";
+import { GRANULARITY } from "../granularity/registry";
 import type { ReleaseGranularity } from "../types";
 
 /**
@@ -34,13 +35,6 @@ const PREDECESSOR_NAME: Record<Predecessor, string> = {
 	"daily-notes": "The core Daily Notes plugin",
 	calendar: "The Calendar plugin",
 	"periodic-notes": "The Periodic Notes plugin",
-};
-
-const LABEL: Record<ReleaseGranularity, string> = {
-	day: "daily",
-	week: "weekly",
-	month: "monthly",
-	year: "yearly",
 };
 
 export interface PredecessorPorts {
@@ -103,7 +97,7 @@ export class PredecessorGuard {
 		if (quietly) return true;
 
 		this.notify(
-			`Calendaric: ${PREDECESSOR_NAME[predecessor]} still manages ${LABEL[granularity]} notes, so Calendaric did not create this one.`,
+			`Calendaric: ${PREDECESSOR_NAME[predecessor]} still manages ${GRANULARITY[granularity].adjective} notes, so Calendaric did not create this one.`,
 			this.handOver(predecessor, [granularity]),
 		);
 		return true;
@@ -237,7 +231,7 @@ export class PredecessorGuard {
 }
 
 function labels(granularities: readonly ReleaseGranularity[]): string {
-	return granularities.map((granularity) => LABEL[granularity]).join(" and ");
+	return granularities.map((granularity) => GRANULARITY[granularity].adjective).join(" and ");
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { Command } from "obsidian";
 import type { FileDateIdentity } from "../fmt/resolveFileDate";
+import { granularityEntry } from "../granularity/registry";
 
 export const REVEAL_ACTIVE_NOTE_COMMAND_ID = "reveal-active-note";
 export const REVEAL_NEEDS_NOTE = '"Reveal active note" needs an open daily or weekly note.';
@@ -28,7 +29,7 @@ export interface RevealActiveNoteDeps {
 export async function revealActiveNote(deps: RevealActiveNoteDeps): Promise<void> {
 	const path = deps.activePath();
 	const granularity = path === null ? null : deps.resolve(path)?.granularity;
-	if (granularity !== "day" && granularity !== "week") {
+	if (!granularity || !granularityEntry(granularity).cell?.reveal) {
 		deps.notify(REVEAL_NEEDS_NOTE);
 		return;
 	}

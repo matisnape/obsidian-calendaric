@@ -1,5 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
-import type { Granularity, PeriodicConfig } from "./types";
+import type { PeriodicConfig } from "./types";
+import { GRANULARITY, GRANULARITY_REGISTRY } from "./granularity/registry";
+import type { SettingsId } from "./granularity/registry";
 import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
@@ -29,7 +31,7 @@ const WEEK_START_LABELS: Record<WeekStartOption, string> = {
 };
 
 /** The granularities whose settings the screen can edit today. */
-type ActiveGranularity = Extract<Granularity, "day" | "week">;
+type ActiveGranularity = SettingsId;
 
 /**
  * The format and template guide, published with the source. An installed
@@ -37,28 +39,6 @@ type ActiveGranularity = Extract<Granularity, "day" | "week">;
  * copy of the guide is not there to open (AC-SET-04.5).
  */
 const FORMAT_GUIDE_URL = "https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md";
-
-const GRANULARITY_LABELS: Record<Granularity, string> = {
-	day: "Daily Notes",
-	week: "Weekly Notes",
-	month: "Monthly Notes",
-	quarter: "Quarterly Notes",
-	year: "Yearly Notes",
-};
-
-const GRANULARITY_PERIODICITY: Record<Granularity, string> = {
-	day: "daily",
-	week: "weekly",
-	month: "monthly",
-	quarter: "quarterly",
-	year: "yearly",
-};
-
-/** A filename that starts with this granularity's date and then carries extra text. */
-const PREFIX_MATCH_EXAMPLE: Record<ActiveGranularity, string> = {
-	day: "2026-02-09, travel day",
-	week: "2026-W07, 09.02 - 15.02",
-};
 
 function getMoment() {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,19 +214,19 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private renderPeriodicNotesSection(containerEl: HTMLElement): void {
 		containerEl.createEl("h2", { text: "Periodic Notes" });
 
-		for (const granularity of ["day", "week"] as const) {
-			this.renderPeriodicGroup(containerEl, granularity);
+		for (const entry of GRANULARITY_REGISTRY) {
+			if ("settings" in entry) this.renderPeriodicGroup(containerEl, entry.id);
 		}
 
-		for (const label of ["Monthly Notes", "Quarterly Notes", "Yearly Notes", "Custom Notes"]) {
-			this.renderPlaceholderGroup(containerEl, label);
+		for (const entry of GRANULARITY_REGISTRY) {
+			if (!("settings" in entry)) this.renderPlaceholderGroup(containerEl, entry.label);
 		}
+		this.renderPlaceholderGroup(containerEl, "Custom Notes");
 	}
 
 	private renderPeriodicGroup(containerEl: HTMLElement, granularity: ActiveGranularity): void {
 		const config = this.plugin.settings[granularity];
-		const label = GRANULARITY_LABELS[granularity];
-		const periodicity = GRANULARITY_PERIODICITY[granularity];
+		const { label, adjective: periodicity } = GRANULARITY[granularity];
 
 		// Track expand state locally on the DOM element
 		const group = containerEl.createDiv({ cls: "periodic-group" });
@@ -431,7 +411,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		new Setting(content)
 			.setName("Allow prefix matching")
 			.setDesc(
-				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "${PREFIX_MATCH_EXAMPLE[granularity]}".`,
+				`Also recognise a ${periodicity} note whose filename starts with the date and then carries extra text, e.g. "${GRANULARITY[granularity].settings.prefixMatchExample}".`,
 			)
 			.addToggle((toggle) => {
 				toggle.setValue(config.allowPrefixMatch);
