@@ -7,6 +7,7 @@ import {
 } from "./dailyNotesImport";
 import type { DailyNotesImportKey, LegacyDailyNoteSettings } from "./dailyNotesImport";
 import { DailyNotesImportConflictModal } from "./dailyNotesImportModal";
+import { DisableDailyNotesModal } from "./disableDailyNotesModal";
 import type { CompanionPluginPort } from "../adapters/companionPluginPort";
 import type CalendaricPlugin from "../main";
 
@@ -39,7 +40,7 @@ export function renderDailyNotesImportCard(
 	}
 
 	if (card.kind === "still-active") {
-		renderStillActiveNotice(containerEl, companion, actions);
+		renderStillActiveNotice(containerEl, plugin, companion, actions);
 		return;
 	}
 
@@ -62,6 +63,7 @@ function renderUnreadableNotice(containerEl: HTMLElement, problem: string): void
 // AC-MIG-01.4: the import banner is replaced by this notice once it ran.
 function renderStillActiveNotice(
 	containerEl: HTMLElement,
+	plugin: CalendaricPlugin,
 	companion: CompanionPluginPort,
 	actions: DailyNotesImportCardActions,
 ): void {
@@ -72,14 +74,17 @@ function renderStillActiveNotice(
 	});
 	const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
-	disableBtn.addEventListener("click", async () => {
-		const outcome = companion.disableDailyNotes();
-		if (!outcome.ok) {
-			new Notice(`Could not disable the core Daily Notes plugin. ${outcome.problem}`);
-			return;
-		}
-		await actions.save();
-		actions.refresh();
+	disableBtn.addEventListener("click", () => {
+		// AC-MIG-02.1: nothing is turned off until the user confirms.
+		new DisableDailyNotesModal(plugin.app, async () => {
+			const outcome = companion.disableDailyNotes();
+			if (!outcome.ok) {
+				new Notice(`Could not disable the core Daily Notes plugin. ${outcome.problem}`);
+				return;
+			}
+			await actions.save();
+			actions.refresh();
+		}).open();
 	});
 	const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
 	dismissBtn.addEventListener("click", () => {
@@ -132,16 +137,18 @@ function renderOffer(
 	});
 
 	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
-	disableBtn.addEventListener("click", async () => {
-		const outcome = companion.disableDailyNotes();
-		if (!outcome.ok) {
-			// The offer stays on screen, because it is still the only way in.
-			new Notice(`Could not disable the core Daily Notes plugin, so nothing was changed. ${outcome.problem}`);
-			return;
-		}
-		recordCompanionDisabled(settings, outcome);
-		await actions.save();
-		actions.refresh();
+	disableBtn.addEventListener("click", () => {
+		new DisableDailyNotesModal(app, async () => {
+			const outcome = companion.disableDailyNotes();
+			if (!outcome.ok) {
+				// The offer stays on screen, because it is still the only way in.
+				new Notice(`Could not disable the core Daily Notes plugin, so nothing was changed. ${outcome.problem}`);
+				return;
+			}
+			recordCompanionDisabled(settings, outcome);
+			await actions.save();
+			actions.refresh();
+		}).open();
 	});
 
 	const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
