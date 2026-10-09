@@ -24,6 +24,7 @@ export default defineConfig(
 						"eslint.config.mts",
 						"manifest.json",
 						"scripts/templateGuard.test.ts",
+						"scripts/*.mjs",
 					],
 				},
 				tsconfigRootDir: import.meta.dirname,
