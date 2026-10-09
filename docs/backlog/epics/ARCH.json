@@ -379,7 +379,7 @@
       "story": "As the person adding a new period type or a new calendar indicator later, I want that addition to touch a small, predictable set of files, so that extending Calendaric never means relearning or rewriting the whole plugin.",
       "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended — the new contract must not repeat that failure mode.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -398,8 +398,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/registry.test.ts > 'AC-ARCH-05.1: no module outside src/granularity/ compares, switches on or lists a granularity name' (a TypeScript AST scan of every non-test src file for comparisons, case clauses, membership tests, filter types and hand-written lists of granularity names), 'AC-ARCH-05.1: every allowlisted finding occurs exactly as often as declared, so neither a copy nor a stale entry passes', and 'AC-ARCH-05.1: no granularity module imports another, so adding one edits none of the others'. Each granularity is one entry in src/granularity/registry.ts plus its own module (day, week, month, quarter, year). The allowlist is per finding with a count, never per file: moment token kinds in src/fmt/parseFilename.ts, one week check in src/notes/noteUtils.ts (reading the registry there would make an import cycle), and the fixed-period checks in src/settings/importSource.ts and src/notes/predecessorGuard.ts for the core Daily Notes and Calendar plugins. Mutation-checked by the orchestrator at f0580dc with mutate-check.sh: replacing the registry lookup in src/commands/revealActiveNoteCommand.ts with `granularity !== \"day\" && granularity !== \"week\"` turns the first test red; restore byte-identical."
         },
         {
           "id": "AC-ARCH-05.2",
@@ -411,8 +411,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/indicators.test.ts > 'AC-ARCH-05.2: a registered indicator renders next to the existing dots, in day and week cells'. The test adds a fake indicator only through the indicator list (src/ui/indicators/index.ts, mocked), never touching src/ui/calendar.ts, and asserts its mark is drawn between the note dot and the word-count dot. CalendarIndicator in src/indicatorContract.ts carries TSDoc on every member; the note dot and word-count dots are its first implementations in src/ui/indicators/noteDot.ts and wordCountDot.ts. Mutation-checked by the orchestrator at f0580dc: making the renderer draw only `CALENDAR_INDICATORS.slice(0, 2)` turns the test red; restore byte-identical."
         },
         {
           "id": "AC-ARCH-05.3",
@@ -424,8 +424,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Compile time: src/indicatorContract.typetest.ts holds a conforming indicator and one with `apiVersion: 2` under `// @ts-expect-error`; `npm run build` type-checks it. Checked by the orchestrator at f0580dc: deleting the @ts-expect-error line makes `npm run build` exit 2 with `src/indicatorContract.typetest.ts(15,2): error TS2322: Type '2' is not assignable to type '1'.`; restored byte-identical, build exit 0. Run time: vitest src/ui/indicators.test.ts > 'AC-ARCH-05.3: the renderer skips an indicator whose apiVersion does not match and logs an error naming it'; its draw is never called and one console.error names its id. Mutation-checked by the orchestrator: replacing the version check in src/ui/calendar.ts with `if (false)` turns it red; restore byte-identical.",
           "failure_path": true
         },
         {
@@ -438,8 +438,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/registry.test.ts > 'AC-ARCH-05.4: the registry holds one entry per granularity module, in the order the UI uses', 'AC-ARCH-05.4: the settings default for every granularity comes from its own entry' (equal values plus a scan showing src/settings/model.ts names no granularity), and 'AC-ARCH-05.4: nothing a granularity module imports at runtime reaches back to the registry'. Together with the AC-ARCH-05.1 scan, a new granularity's footprint is its module, its registry entry and that entry's default. Mutation-checked by the orchestrator at f0580dc: a runtime import of GRANULARITY_REGISTRY in src/granularity/week.ts turns the third test red; restore byte-identical. Gates at f0580dc: vitest 'Tests 1168 passed (1168)', npm run build exit 0, check:ac 'No failures.', npm run lint 67 errors / 4 warnings, equal to master."
         }
       ],
       "decisions": [
