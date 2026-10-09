@@ -4372,7 +4372,7 @@
       "story": "As someone tuning periodic-note settings while Obsidian is open, I want the rest of the plugin to pick up my change the instant it is saved, so that I never have to restart Obsidian to see the effect.",
       "rationale": "A setting that only applies after a restart makes every change feel risky to try.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:persist-plugin-settings"
       ],
@@ -4398,8 +4398,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts:160 (a folder change and a format change each trigger one calendar refresh) and :521 (drives the real CalendaricSettingsTab Format input; one refresh, and the index then finds Daily/13-04-2026.md). Path: settings.ts save -> plugin.onSettingsChange -> rebuildFromSettings (src/main.ts:231-243) -> leaf.view.refresh(). Mutation-checked: removing leaf.view.refresh() turns both red. Gap: CalendarView.refresh is stubbed, so the tests prove the redraw is requested, not the view's internal redraw; folder through the real tab is not driven."
         },
         {
           "id": "AC-SET-07.2",
@@ -4410,8 +4410,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts:172 (lookup: after saving the folder as Journal, the real PeriodicNoteIndex returns Journal/...) and :182 (creation: the real openPeriodNote writes Journal/2026-04-13.md on a FakeVaultPort). openPeriodNote resolves the config on every call (src/main.ts:315-317). Mutation-checked: removing index.applySettings(...) turns :172 and :521 red; freezing the folder in openPeriodNote turns :182 red."
         },
         {
           "id": "AC-SET-07.3",
@@ -4422,8 +4422,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts:192 (month off -> on -> off, read through a fake command palette that mimics Obsidian's calendaric: id prefix) and :543 (the real granularity toggle on the real settings tab removes week-open-current). Mutation-checked: removing commands.sync(...) turns both red. Gap: only the off direction is driven through the real tab; live Obsidian palette not exercised."
         },
         {
           "id": "AC-SET-07.4",
@@ -4435,8 +4435,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts describe blocks at :206, :392 and :431 (13 tests): a failed write restores every field in place and leaves the stored copy untouched; lookups, creation, commands and the next save never see the half-applied edit; queued saves keep the right outcome when an earlier or later one fails; the tab and both import cards show a notice. Mutation-checked in src/main.ts saveSettings: emptying the in-place restore (6 red), dropping the superseded-save branch (3 red), dropping this.stored = next (4 red), dropping the queue's catch (4 red). Note: the import cards' own rollback lines are now redundant with the plugin-level restore; removing them leaves the tests green, and the behavior still holds.",
           "failure_path": true
         }
       ],
