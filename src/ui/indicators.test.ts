@@ -41,7 +41,15 @@ const fake = vi.hoisted(() => {
 vi.mock("./indicators", async (original) => {
 	const real = await original<typeof import("./indicators")>();
 	const stale = { apiVersion: 2, id: "stale-indicator", draw: fake.staleDraw } as unknown as CalendarIndicator;
-	return { CALENDAR_INDICATORS: [...real.CALENDAR_INDICATORS, fake.indicator, stale] };
+	const throws: CalendarIndicator = {
+		apiVersion: 1,
+		id: "throwing-indicator",
+		draw() {
+			throw new Error("broken");
+		},
+	};
+	const rejects: CalendarIndicator = { apiVersion: 1, id: "rejecting-indicator", draw: () => Promise.reject(new Error("broken")) };
+	return { CALENDAR_INDICATORS: [...real.CALENDAR_INDICATORS, throws, rejects, fake.indicator, stale] };
 });
 
 const SETTINGS: CalendaricSettings = {
@@ -96,8 +104,11 @@ const marks = (cell: HTMLElement): string[] =>
 
 let logged: MockInstance<typeof console.error>;
 
+const errorsNaming = (id: string): number =>
+	logged.mock.calls.filter((call) => String(call[0]).includes(`"${id}"`)).length;
+
 beforeEach(() => {
-	// Every render here carries the stale indicator, so every render reports it.
+	// Every render here carries the stale and the broken indicators, so every render reports them.
 	logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
@@ -129,8 +140,17 @@ describe("AC-ARCH-05.3: an indicator written against another interface version i
 		const host = await render({ [dayPath(3)]: "" });
 
 		expect(fake.staleDraw).not.toHaveBeenCalled();
-		expect(logged).toHaveBeenCalledTimes(1);
-		expect(String(logged.mock.calls[0]?.[0])).toContain('"stale-indicator"');
+		expect(errorsNaming("stale-indicator")).toBe(1);
 		expect(marks(dayCell(host, 3))).toEqual(["calendaric-dot calendaric-dot--exists", "fake-mark"]);
+	});
+});
+
+describe("US-ARCH-05: an indicator that fails to draw costs only its own marks", () => {
+	it("US-ARCH-05: a throwing and a rejecting indicator are each logged by id, and the indicators after them still draw", async () => {
+		const host = await render({ [dayPath(3)]: "" });
+
+		expect(errorsNaming("throwing-indicator")).toBe(1);
+		expect(errorsNaming("rejecting-indicator")).toBe(1);
+		expect(marks(dayCell(host, 3))).toContain("fake-mark");
 	});
 });

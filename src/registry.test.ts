@@ -39,9 +39,11 @@ const namedKeys = (members: readonly (ts.ObjectLiteralElementLike | ts.TypeEleme
 
 /**
  * Every place `source` knows a granularity by name: a comparison with one, a
- * `case` for one, or a hand-written list of two or more (an array, a union
- * type, or an object or type literal keyed by them). A moment unit argument
- * such as `startOf("month")` is none of these and is not reported.
+ * `case` for one, a membership test (`in`, `includes`, `has`), a filter type
+ * (`Extract` or `Exclude`) naming one, or a hand-written list of two or more
+ * (an array, a union type, or an object or type literal keyed by them). A
+ * moment unit argument such as `startOf("month")` is none of these, and
+ * neither is a one-key object such as the duration `{ day: 1 }`.
  */
 export function granularityKnowledge(source: string): string[] {
 	const file = ts.createSourceFile("source.ts", source, ts.ScriptTarget.Latest, true);
@@ -55,6 +57,8 @@ export function granularityKnowledge(source: string): string[] {
 		ts.SyntaxKind.EqualsEqualsToken,
 		ts.SyntaxKind.ExclamationEqualsToken,
 	]);
+	const MEMBERSHIP = new Set(["includes", "has"]);
+	const FILTER_TYPES = new Set(["Extract", "Exclude"]);
 	const visit = (node: ts.Node): void => {
 		if (ts.isBinaryExpression(node) && COMPARE.has(node.operatorToken.kind) && (isName(node.left) || isName(node.right))) {
 			report(node);
@@ -71,6 +75,17 @@ export function granularityKnowledge(source: string): string[] {
 			report(node);
 		} else if (ts.isTypeLiteralNode(node) && namedKeys(node.members) >= 2) {
 			report(node);
+		} else if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.InKeyword && isName(node.left)) {
+			report(node);
+		} else if (
+			ts.isCallExpression(node) &&
+			ts.isPropertyAccessExpression(node.expression) &&
+			MEMBERSHIP.has(node.expression.name.text) &&
+			isName(node.arguments[0])
+		) {
+			report(node.arguments[0] as ts.Node);
+		} else if (ts.isTypeReferenceNode(node) && FILTER_TYPES.has(node.typeName.getText(file))) {
+			for (const type of node.typeArguments ?? []) if (ts.isLiteralTypeNode(type) && isName(type.literal)) report(type);
 		}
 		ts.forEachChild(node, visit);
 	};
@@ -80,25 +95,25 @@ export function granularityKnowledge(source: string): string[] {
 
 /**
  * Knowledge that is not about a Calendaric granularity, each with why. An entry
- * is the exact finding, never a whole file, so a new comparison added beside
- * one of these still fails.
+ * is the exact finding and how often it occurs, never a whole file, so a new
+ * comparison added beside one of these still fails, even a copy of it.
  */
-const NOT_GRANULARITY_KNOWLEDGE: Record<string, string> = {
+const NOT_GRANULARITY_KNOWLEDGE: Record<string, { count: number; reason: string }> = {
 	// parseFilename's token kinds name the date part a moment token reads.
 	'src/fmt/parseFilename.ts: | "year" | "isoWeekYear" | "localeWeekYear" | "monthNum" | "monthName" | "monthNameShort" | "day" | "isoWeek" | "localeWeek" | "weekdayFull" | "weekdayShort" | "weekdayMin" | "weekdayNum"':
-		"a moment token kind (the date part a token reads), not a granularity",
-	'src/fmt/parseFilename.ts: kind === "day"': "a moment token kind, not a granularity",
-	'src/fmt/parseFilename.ts: "year"': "a moment token kind in switch (kind), not a granularity",
-	'src/fmt/parseFilename.ts: "day"': "a moment token kind in switch (kind), not a granularity",
+		{ count: 1, reason: "a moment token kind (the date part a token reads), not a granularity" },
+	'src/fmt/parseFilename.ts: kind === "day"': { count: 1, reason: "a moment token kind, not a granularity" },
+	'src/fmt/parseFilename.ts: "year"': { count: 1, reason: "a moment token kind in switch (kind), not a granularity" },
+	'src/fmt/parseFilename.ts: "day"': { count: 1, reason: "a moment token kind in switch (kind), not a granularity" },
 	// noteUtils sits below the registry: the week module imports it, so
 	// reading the registry here would close the cycle the AC-ARCH-05.4 test forbids.
 	'src/notes/noteUtils.ts: granularity === "week"':
-		"weekday spans stay literal outside a weekly format; reading the registry here would make an import cycle",
+		{ count: 1, reason: "weekday spans stay literal outside a weekly format; reading the registry here would make an import cycle" },
 	// The core Daily Notes plugin and the Calendar plugin each configure one fixed period.
-	'src/settings/importSource.ts: granularity === "day"': "the core Daily Notes plugin configures the day and nothing else",
-	'src/settings/importSource.ts: granularity !== "day"': "the core Daily Notes plugin configures the day and nothing else",
-	'src/notes/predecessorGuard.ts: granularity !== "day"': "the core Daily Notes plugin owns the day and nothing else",
-	'src/notes/predecessorGuard.ts: granularity !== "week"': "the Calendar plugin's weekly notes own the week and nothing else",
+	'src/settings/importSource.ts: granularity === "day"': { count: 1, reason: "the core Daily Notes plugin configures the day and nothing else" },
+	'src/settings/importSource.ts: granularity !== "day"': { count: 1, reason: "the core Daily Notes plugin configures the day and nothing else" },
+	'src/notes/predecessorGuard.ts: granularity !== "day"': { count: 1, reason: "the core Daily Notes plugin owns the day and nothing else" },
+	'src/notes/predecessorGuard.ts: granularity !== "week"': { count: 1, reason: "the Calendar plugin's weekly notes own the week and nothing else" },
 };
 
 const OTHER_BRANCH_FILES: ReadonlySet<string> = new Set([
@@ -119,10 +134,13 @@ describe("AC-ARCH-05.1: a granularity is known by name only in its registry entr
 		expect(outside).toEqual([]);
 	});
 
-	it("AC-ARCH-05.1: every allowlisted finding still exists, so the allowlist cannot outlive its reason", () => {
-		const present = new Set(findings());
+	it("AC-ARCH-05.1: every allowlisted finding occurs exactly as often as declared, so neither a copy nor a stale entry passes", () => {
+		const tally: Record<string, number> = {};
+		for (const finding of findings()) if (finding in NOT_GRANULARITY_KNOWLEDGE) tally[finding] = (tally[finding] ?? 0) + 1;
+		const declared: Record<string, number> = {};
+		for (const [finding, { count }] of Object.entries(NOT_GRANULARITY_KNOWLEDGE)) declared[finding] = count;
 
-		expect(Object.keys(NOT_GRANULARITY_KNOWLEDGE).filter((finding) => !present.has(finding))).toEqual([]);
+		expect(tally).toEqual(declared);
 	});
 
 	it("AC-ARCH-05.1: the scan reports each shape of granularity knowledge and nothing else", () => {
@@ -133,6 +151,10 @@ describe("AC-ARCH-05.1: a granularity is known by name only in its registry entr
 		expect(granularityKnowledge('type A = Extract<Granularity, "day" | "week">;')).toEqual(['"day" | "week"']);
 		expect(granularityKnowledge('const L = { day: "daily", week: "weekly" };')).toEqual(['{ day: "daily", week: "weekly" }']);
 		expect(granularityKnowledge("type T = { day: string; year: string };")).toEqual(["{ day: string; year: string }"]);
+		expect(granularityKnowledge('type C = Exclude<ReleaseGranularity, "year">;')).toEqual(['"year"']);
+		expect(granularityKnowledge('if (ids.includes("week")) run();')).toEqual(['"week"']);
+		expect(granularityKnowledge('if (seen.has("day")) run();')).toEqual(['"day"']);
+		expect(granularityKnowledge('if ("week" in settings) run();')).toEqual(['"week" in settings']);
 		expect(granularityKnowledge('date.startOf("month").add(1, "day");')).toEqual([]);
 		expect(granularityKnowledge('const one = { day: 1 }; type K = "day" | "night";')).toEqual([]);
 	});
@@ -164,6 +186,8 @@ describe("AC-ARCH-05.4: a new granularity's footprint is its module, its entry a
 		const defaults = defaultGranularityConfigs();
 
 		for (const entry of GRANULARITY_REGISTRY) expect(defaults[entry.id].enabled).toBe(entry.defaultEnabled);
+		// Equal values alone pass a hand-written default; the source must not list the names either.
+		expect(granularityKnowledge(read("src/settings/model.ts"))).toEqual([]);
 	});
 
 	// A cycle through the registry builds and tests fine, then hands the bundle an

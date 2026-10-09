@@ -31,7 +31,7 @@ export const wordCountDotIndicator: CalendarIndicator = {
 	id: "word-count-dot",
 	async draw(cells, context) {
 		const slots = cells.filter((cell) => cell.noteExists);
-		const counts = await context.getWordCounts(slots.map((cell) => cell.path));
+		const counts = await context.wordCounts;
 		for (const cell of slots) {
 			// ponytail: threshold is the default until a setting carries one
 			const filled = wordCountSegments(counts.get(cell.path) ?? 0, DEFAULT_WORDS_PER_SEGMENT);

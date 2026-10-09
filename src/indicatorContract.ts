@@ -25,11 +25,10 @@ export interface IndicatorCell {
 
 export interface IndicatorContext {
 	/**
-	 * Word count of each existing note in `paths`, read once per render and kept
-	 * until the vault reports a change. Call it once per render with every path,
-	 * since each call replaces the set of notes whose edits redraw the grid.
+	 * Word count of the note of every cell whose note exists, read once per
+	 * render by the calendar. A note that cannot be read has no entry.
 	 */
-	getWordCounts(paths: Iterable<string>): Promise<Map<string, number>>;
+	readonly wordCounts: Promise<ReadonlyMap<string, number>>;
 }
 
 export interface CalendarIndicator {

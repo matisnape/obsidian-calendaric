@@ -254,6 +254,8 @@ export class CalendarWidget implements HoverParent {
 	 * reported rather than drawn under rules it was not written for (AC-ARCH-05.3).
 	 */
 	private drawIndicators(cells: readonly IndicatorCell[]): void {
+		// Read here, once: the scanner watches the paths of its last read for edits.
+		const context = { wordCounts: this.dots.getWordCounts(cells.filter((cell) => cell.noteExists).map((cell) => cell.path)) };
 		for (const indicator of CALENDAR_INDICATORS) {
 			// Widened on purpose: typed, it is the current version, and the check is for one that is not.
 			const version: number = indicator.apiVersion;
@@ -266,7 +268,13 @@ export class CalendarWidget implements HoverParent {
 				}
 				continue;
 			}
-			void indicator.draw(cells, this.dots);
+			// One broken indicator must not take the others' marks with it.
+			const failed = (error: unknown): void => console.error(`Calendaric: indicator "${indicator.id}" failed to draw.`, error);
+			try {
+				void Promise.resolve(indicator.draw(cells, context)).catch(failed);
+			} catch (error) {
+				failed(error);
+			}
 		}
 	}
 
