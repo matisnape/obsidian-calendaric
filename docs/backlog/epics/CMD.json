@@ -710,7 +710,7 @@
       "story": "As someone who wants their day to start on a specific note, I want at most one periodic note to open automatically when the vault loads, so that I land exactly where I want without sorting through several auto-opened tabs.",
       "rationale": "Automatic startup notes only stay useful if the set of them is small and predictable; more than one defeats the purpose.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-review",
       "covers": [
         "pn:startup-note-auto-open",
         "pn:clear-startup-note-exclusivity",
@@ -736,8 +736,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:65 \"AC-CMD-09.1\" -- day and week enabled, no startup flag: nothing opens and no file is written. startUp runs from src/main.ts:156-168 inside workspace.onLayoutReady. Mutation-checked: dropping openAtStartup from the find predicate in startUp turns the test red.",
           "failure_path": true
         },
         {
@@ -749,8 +749,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:78 \"AC-CMD-09.2\" -- the seeded day note opens once in mode \"tab\" and its content is unchanged. Mutation-checked: \"tab\" -> \"split\" in startUp turns the test red."
         },
         {
           "id": "AC-CMD-09.3",
@@ -762,8 +762,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:91 \"AC-CMD-09.3\" -- the missing week note is created, then opened once in mode \"tab\". Mutation-checked: \"tab\" -> \"split\" and skipping the creation branch each turn the test red."
         },
         {
           "id": "AC-CMD-09.4",
@@ -775,8 +775,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:131 \"AC-CMD-09.4\" drives the real \"Open on startup\" toggle handler: switching week on leaves only week flagged, the redrawn day toggle reads unchecked, and startUp opens only the week note. Also src/settings.startupExclusive.test.ts:69 (AC-SET-05.1) and src/settings.test.ts:21 (clearStartupNote). Mutation-checked: removing clearStartupNote(...) or the this.display() redraw each turn the test red.",
           "failure_path": true
         },
         {
@@ -788,8 +788,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:103 (restored note: activated, no new leaf) and :116 (a different open note does not block the open); src/adapters/obsidianWorkspaceAdapter.existingLeaf.test.ts:62, :75 (deferred tab found by its saved view state), :84 (backlink pane not matched), :93 (other file at the path not matched). The real adapter implements activateIfOpen and main.ts always builds it. Mutation-checked: forcing the leaf match false, or deleting the early return in startUp, each turn a test red. Gap: the App is a hand-built stub; the deferred-leaf view-state shape is not verified in a live Obsidian.",
           "failure_path": true
         },
         {
@@ -802,8 +802,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodNoteOpen.startup.test.ts:149 (quarter shows only a disabled toggle and no startup row), :164 (a stored quarter flag opens nothing), :178 (a switched-off day's startup toggle is disabled and re-enables after the enabled toggle flips), :190 (a startup flag on a disabled day opens nothing). Quarter is excluded by RELEASE_GRANULARITIES (src/types.ts:18). Mutation-checked: removing toggle.setDisabled(!config.enabled) and removing '&& enabled' from startUp each turn a test red. A stored flag stays shown checked while its granularity is off, per AC-SET-05.4.",
           "failure_path": true
         }
       ],

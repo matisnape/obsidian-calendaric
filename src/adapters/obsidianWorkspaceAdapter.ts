@@ -10,17 +10,34 @@ export class ObsidianWorkspaceAdapter implements WorkspacePort {
 	constructor(private app: App) {}
 
 	async openInLeaf(file: NoteFile, foundAtPath: string, mode: LeafMode): Promise<OpenResult> {
-		const resolved = this.app.vault.getAbstractFileByPath(foundAtPath);
-
-		// Identity, not the path. Obsidian keeps one object per file and rewrites
-		// its path in place on a move, so the path alone answers "is something
-		// here?" when the question is "is this still the note that was found?".
-		// A delete-then-create at the same path would otherwise open the impostor.
-		if (resolved !== file) return "missing";
-		if (!(resolved instanceof TFile)) return "missing";
+		const resolved = this.stillAt(file, foundAtPath);
+		if (!resolved) return "missing";
 
 		await this.leafFor(mode).openFile(resolved);
 		return "opened";
+	}
+
+	async activateIfOpen(file: NoteFile, foundAtPath: string): Promise<boolean> {
+		const resolved = this.stillAt(file, foundAtPath);
+		if (!resolved) return false;
+
+		// A restored tab stays deferred until shown: it has no `view.file` yet,
+		// and only its saved view state names the note. The type check keeps a
+		// backlinks or outline pane, whose state also carries a `file`, out.
+		const leaves: WorkspaceLeaf[] = [];
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			leaves.push(leaf);
+		});
+		const leaf = leaves.find((candidate) => {
+			const state = candidate.getViewState();
+			return state.type === "markdown" && state.state?.file === resolved.path;
+		});
+		if (!leaf) return false;
+
+		// revealLeaf loads a deferred leaf before it resolves.
+		await this.app.workspace.revealLeaf(leaf);
+		this.app.workspace.setActiveLeaf(leaf, { focus: true });
+		return true;
 	}
 
 	showNotice(message: string): void {
@@ -42,6 +59,19 @@ export class ObsidianWorkspaceAdapter implements WorkspacePort {
 		);
 		this.app.workspace.trigger("file-menu", menu, file, source);
 		menu.showAtMouseEvent(event);
+	}
+
+	/**
+	 * Identity, not the path. Obsidian keeps one object per file and rewrites
+	 * its path in place on a move, so the path alone answers "is something
+	 * here?" when the question is "is this still the note that was found?".
+	 * A delete-then-create at the same path would otherwise open the impostor.
+	 */
+	private stillAt(file: NoteFile, foundAtPath: string): TFile | null {
+		const resolved = this.app.vault.getAbstractFileByPath(foundAtPath);
+		if (resolved !== file) return null;
+		if (!(resolved instanceof TFile)) return null;
+		return resolved;
 	}
 
 	private leafFor(mode: LeafMode): WorkspaceLeaf {
