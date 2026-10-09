@@ -120,7 +120,7 @@
       "story": "As someone who has just imported my Daily Notes configuration into Calendaric, I want to be asked before Calendaric turns the old plugin off, so that I keep control over a change to my setup that I did not directly ask for.",
       "rationale": "Disabling another plugin is a destructive action on the user's configuration and must never happen as a silent side effect of import.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [
         "calendaric:disable-core-daily-notes-plugin"
       ],
@@ -144,8 +144,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/disableDailyNotes.test.ts > 'AC-MIG-02.1: asks first, says the plugin will be turned off and warns about hotkeys', run for both buttons (the import offer and the notice shown after import): the modal text says the plugin will be turned off and that hotkeys may stop working, and host.disable is not called until 'Disable plugin' is clicked. Mutation-checked by the orchestrator at 171af1d with mutate-check.sh: deleting the hotkey sentence turns both red; replacing the still-active button's modal with a direct call turns 8 tests red."
         },
         {
           "id": "AC-MIG-02.2",
@@ -157,8 +157,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/settings/disableDailyNotes.test.ts > 'AC-MIG-02.2: Calendaric creates and opens the day note from the imported configuration': import, then the real PredecessorGuard refuses the day note while core Daily Notes is on; after confirm, host.disable(true) ran, settings.day equals the imported config, and openOrCreatePeriodNote opens Journal/13-04-2026.md. Mutation-checked by the orchestrator at 171af1d with mutate-check.sh: setting day.enabled=false in the confirm callback, or calling disable(false), turns it red."
         },
         {
           "id": "AC-MIG-02.3",
@@ -169,8 +169,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/disableDailyNotes.test.ts > 'AC-MIG-02.3: Cancel leaves the plugin enabled and untouched', '... closing the dialog ...', 'AC-MIG-02.3: Dismiss leaves the plugin enabled and opens no dialog', each for both buttons. Mutation-checked by the orchestrator at 171af1d with mutate-check.sh: making Cancel or onClose call onConfirm turns the matching pair red.",
           "failure_path": true
         },
         {
@@ -183,8 +183,8 @@
           ],
           "verifies": "compat",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/disableDailyNotes.test.ts > 'AC-MIG-02.4: confirming calls only the host's disable(true) and deletes no setting or note': host.disable called exactly once with true (Obsidian's own persistent off switch, the one its plugin list flips back), enable never called, the core plugin's options unchanged, vault.delete and vault.trash never called, settings changed only by hasMigratedDailyNoteSettings. Mutation-checked by the orchestrator at 171af1d with mutate-check.sh: disable(false) in the adapter turns it red. Gap: re-enabling from Obsidian's plugin list in a live Obsidian was not exercised; the re-enable is Obsidian's own code path.",
           "failure_path": true
         },
         {
@@ -196,8 +196,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/settings/disableDailyNotes.test.ts > 'AC-MIG-02.5: a plugin gone by the time the user confirms shows a notice and throws nothing', '... a disable that throws ...', '... a plugin with no disable method ...', '... a plugin already turned off elsewhere throws nothing and the card goes away'. Save failure after confirm is logged via console.error, not dropped (171af1d). Mutation-checked by the orchestrator at 171af1d with mutate-check.sh: removing the still-active Notice turns two red.",
           "failure_path": true
         }
       ]
