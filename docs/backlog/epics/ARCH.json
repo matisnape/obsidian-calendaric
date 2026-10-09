@@ -379,7 +379,7 @@
       "story": "As the person adding a new period type or a new calendar indicator later, I want that addition to touch a small, predictable set of files, so that extending Calendaric never means relearning or rewriting the whole plugin.",
       "rationale": "In the target repository today, only day and week are functionally implemented anywhere; month, quarter, and year exist only as inert data shapes and permanently-disabled settings toggles. Separately, the old calendar-ui's indicator (calendar-source) contract was rewritten wholesale between two versions of the same library, forcing every one of its four real consumers to be rewritten rather than extended — the new contract must not repeat that failure mode.",
       "priority": "must",
-      "status": "in-review",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
