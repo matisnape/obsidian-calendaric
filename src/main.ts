@@ -360,8 +360,16 @@ export default class CalendaricPlugin extends Plugin {
 		try {
 			await write;
 		} catch (error) {
-			// A later save started meanwhile carries this edit too; let it win.
-			if (write !== this.saving) throw error;
+			// A later save started meanwhile carries this edit too, so its outcome is
+			// this one's: wait for the last queued write, whose own catch restores.
+			if (write !== this.saving) {
+				let latest: Promise<void>;
+				do {
+					latest = this.saving;
+					await latest.catch(() => undefined);
+				} while (latest !== this.saving);
+				return latest;
+			}
 			// The caller edited `this.settings` in place before saving, and every
 			// lookup, command and the calendar read it from there, so the unsaved
 			// edit is undone in place too: the calendar and the import cards hold

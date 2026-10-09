@@ -285,14 +285,51 @@ describe("AC-SET-07.4: a failed save leaves the plugin on the last saved configu
 		await settle();
 		expect(pending).toHaveLength(1);
 		pending[0]?.reject(new Error("disk full"));
-		await expect(first).rejects.toThrow("disk full");
 		await settle();
 		expect(pending).toHaveLength(2);
 		pending[1]?.resolve();
+		// The later write stored the earlier edit too, so neither caller sees a failure.
+		await first;
 		await second;
 
 		expect(dailyFolderOnDisk(disk)).toBe("Journal");
 		expect(plugin.settings.day.folder).toBe("Journal");
+	});
+
+	it("AC-SET-07.4: a failed save takes the outcome of the last save queued after it, not the next one", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		const pending: { resolve: () => void; reject: (error: Error) => void }[] = [];
+		plugin.saveData = (value: unknown) =>
+			new Promise<void>((resolve, reject) => {
+				pending.push({
+					resolve: () => {
+						disk.data = JSON.parse(JSON.stringify(value)) as unknown;
+						resolve();
+					},
+					reject,
+				});
+			});
+
+		plugin.settings.day.folder = "Jour";
+		const first = plugin.saveSettings();
+		plugin.settings.day.folder = "Journal";
+		const second = expect(plugin.saveSettings()).resolves.toBeUndefined();
+		await settle();
+		pending[0]?.reject(new Error("disk full"));
+		await settle();
+		// The first save is now waiting on the second; a third one joins the queue.
+		plugin.settings.day.folder = "Diary";
+		const third = plugin.saveSettings();
+		pending[1]?.reject(new Error("disk full"));
+		await settle();
+		expect(pending).toHaveLength(3);
+		pending[2]?.resolve();
+		await first;
+		await second;
+		await third;
+
+		expect(dailyFolderOnDisk(disk)).toBe("Diary");
+		expect(plugin.settings.day.folder).toBe("Diary");
 	});
 
 	it("AC-SET-07.4: a later save that fails while an earlier one is still writing keeps the earlier edit", async () => {
@@ -438,6 +475,45 @@ describe("AC-SET-07.4: an import card's failed save", () => {
 		expect(plugin.settings.day).toEqual(before);
 		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(false);
 		expect(refresh).not.toHaveBeenCalled();
+	});
+
+	it("AC-SET-07.4: a failed import write that a later tab save stores keeps the import", async () => {
+		const { plugin, disk } = await loadedPlugin();
+		const pending: { resolve: () => void; reject: (error: Error) => void }[] = [];
+		plugin.saveData = (value: unknown) =>
+			new Promise<void>((resolve, reject) => {
+				pending.push({
+					resolve: () => {
+						disk.data = JSON.parse(JSON.stringify(value)) as unknown;
+						resolve();
+					},
+					reject,
+				});
+			});
+		const container = document.createElement("div");
+		vi.spyOn(console, "error").mockImplementation(() => undefined);
+		renderDailyNotesImportCard(container, plugin, dailyNotesOn, { save: () => Promise.resolve(), refresh: vi.fn() });
+
+		buttonNamed(container, "Import settings").click();
+		await settle();
+		expect(pending).toHaveLength(1);
+		plugin.settings.week.folder = "Weekly";
+		const tabSave = saveFromTab(plugin);
+		pending[0]?.reject(new Error("disk full"));
+		await settle();
+		expect(pending).toHaveLength(2);
+		pending[1]?.resolve();
+		await tabSave;
+		await settle();
+
+		expect(notices).toEqual([]);
+		const onDisk = toSettings(disk.data as StoredConfig);
+		expect(onDisk.day.templatePath).toBe("Templates/Day");
+		expect(onDisk.hasMigratedDailyNoteSettings).toBe(true);
+		expect(onDisk.week.folder).toBe("Weekly");
+		expect(plugin.settings.day.templatePath).toBe("Templates/Day");
+		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(true);
+		expect(plugin.settings.week.folder).toBe("Weekly");
 	});
 });
 
