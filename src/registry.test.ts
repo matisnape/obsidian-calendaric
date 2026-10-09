@@ -34,13 +34,17 @@ const isName = (node: ts.Node | undefined): boolean =>
 const keyName = (name: ts.PropertyName | undefined): string | undefined =>
 	name !== undefined && (ts.isIdentifier(name) || ts.isStringLiteral(name)) ? name.text : undefined;
 
+/** The names a type literal or a union of them carries, as their literal type nodes. */
+const nameLiterals = (type: ts.TypeNode): ts.TypeNode[] =>
+	(ts.isUnionTypeNode(type) ? type.types : [type]).filter((member) => ts.isLiteralTypeNode(member) && isName(member.literal));
+
 const namedKeys = (members: readonly (ts.ObjectLiteralElementLike | ts.TypeElement)[]): number =>
 	new Set(members.map((member) => keyName(member.name)).filter((key) => key !== undefined && NAMES.has(key))).size;
 
 /**
  * Every place `source` knows a granularity by name: a comparison with one, a
  * `case` for one, a membership test (`in`, `includes`, `has`), a filter type
- * (`Extract` or `Exclude`) naming one, or a hand-written list of two or more
+ * (`Extract`, `Exclude`, `Omit` or `Pick`) naming one, or a hand-written list of two or more
  * (an array, a union type, or an object or type literal keyed by them). A
  * moment unit argument such as `startOf("month")` is none of these, and
  * neither is a one-key object such as the duration `{ day: 1 }`.
@@ -58,7 +62,7 @@ export function granularityKnowledge(source: string): string[] {
 		ts.SyntaxKind.ExclamationEqualsToken,
 	]);
 	const MEMBERSHIP = new Set(["includes", "has"]);
-	const FILTER_TYPES = new Set(["Extract", "Exclude"]);
+	const FILTER_TYPES = new Set(["Extract", "Exclude", "Omit", "Pick"]);
 	const visit = (node: ts.Node): void => {
 		if (ts.isBinaryExpression(node) && COMPARE.has(node.operatorToken.kind) && (isName(node.left) || isName(node.right))) {
 			report(node);
@@ -66,10 +70,7 @@ export function granularityKnowledge(source: string): string[] {
 			report(node.expression);
 		} else if (ts.isArrayLiteralExpression(node) && node.elements.filter(isName).length >= 2) {
 			report(node);
-		} else if (
-			ts.isUnionTypeNode(node) &&
-			node.types.filter((type) => ts.isLiteralTypeNode(type) && isName(type.literal)).length >= 2
-		) {
+		} else if (ts.isUnionTypeNode(node) && nameLiterals(node).length >= 2) {
 			report(node);
 		} else if (ts.isObjectLiteralExpression(node) && namedKeys(node.properties) >= 2) {
 			report(node);
@@ -85,7 +86,11 @@ export function granularityKnowledge(source: string): string[] {
 		) {
 			report(node.arguments[0] as ts.Node);
 		} else if (ts.isTypeReferenceNode(node) && FILTER_TYPES.has(node.typeName.getText(file))) {
-			for (const type of node.typeArguments ?? []) if (ts.isLiteralTypeNode(type) && isName(type.literal)) report(type);
+			for (const type of node.typeArguments ?? []) {
+				const names = nameLiterals(type);
+				// A union of two or more names is already reported whole, by the union rule.
+				if (names.length === 1) report(names[0] as ts.Node);
+			}
 		}
 		ts.forEachChild(node, visit);
 	};
@@ -152,6 +157,9 @@ describe("AC-ARCH-05.1: a granularity is known by name only in its registry entr
 		expect(granularityKnowledge('const L = { day: "daily", week: "weekly" };')).toEqual(['{ day: "daily", week: "weekly" }']);
 		expect(granularityKnowledge("type T = { day: string; year: string };")).toEqual(["{ day: string; year: string }"]);
 		expect(granularityKnowledge('type C = Exclude<ReleaseGranularity, "year">;')).toEqual(['"year"']);
+		expect(granularityKnowledge('type C = Exclude<ReleaseGranularity, "year" | "night">;')).toEqual(['"year"']);
+		expect(granularityKnowledge('type C = Omit<Configs, "week">;')).toEqual(['"week"']);
+		expect(granularityKnowledge('type C = Pick<Configs, "day">;')).toEqual(['"day"']);
 		expect(granularityKnowledge('if (ids.includes("week")) run();')).toEqual(['"week"']);
 		expect(granularityKnowledge('if (seen.has("day")) run();')).toEqual(['"day"']);
 		expect(granularityKnowledge('if ("week" in settings) run();')).toEqual(['"week" in settings']);
