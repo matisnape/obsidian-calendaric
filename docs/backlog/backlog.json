@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-25",
+    "generated": "2026-10-09",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -4614,7 +4614,7 @@
       "story": "As someone jumping between many periodic notes, I want a command that jumps the calendar to whatever note I currently have open, so that I can see it in context without manually paging through months.",
       "rationale": "Without this, switching notes and switching the calendar's displayed period are two disconnected actions.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:reveal-active-note-command"
       ],
@@ -4635,8 +4635,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/commands/revealActiveNoteCommand.test.ts > \"AC-CMD-03.1: opens the calendar, then reveals the active note %s in it\" (a day note and a week note) -- the command opens the calendar leaf, waits for its deferred view to load, then calls the view's reveal. The navigation itself is CalendarView.revealActiveNote -> Calendar.revealActiveNote (src/ui/calendar.ts:311), covered by src/ui/calendarRender.activeNote.test.ts AC-CAL-10.3/10.4 (moves to the note's month, day and week, keeps a month the note's row already reaches into). The main.ts glue (getLeavesOfType + instanceof CalendarView) is covered by code review only: two review rounds by the second-model reviewer, round 2 clean. Mutation-checked: 7/7 mutations red."
         },
         {
           "id": "AC-CMD-03.2",
@@ -4649,8 +4649,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/commands/revealActiveNoteCommand.test.ts > \"AC-CMD-03.2: with %s in the active pane, shows the notice and leaves the calendar alone\" (no file, an ordinary note, a month note) -- resolves without throwing, never opens or reveals the calendar, and shows exactly '\"Reveal active note\" needs an open daily or weekly note.' Mutation-checked.",
           "failure_path": true
         },
         {
@@ -4662,8 +4662,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "manual criterion, settled by code plus a structural test: src/commands/revealActiveNoteCommand.test.ts > \"AC-CMD-03.3: the loaded plugin registers it with a plain callback, so the palette always lists it enabled\" loads the real plugin and asserts the command has a callback and no checkCallback. node_modules/obsidian/obsidian.d.ts documents callback as 'Simple callback, triggered globally' and says only checkCallback returning false hides a command from the palette, so a plain callback is listed and enabled whatever the active pane holds. Not exercised in a live Obsidian palette.",
           "failure_path": true
         }
       ],

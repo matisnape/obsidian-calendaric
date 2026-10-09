@@ -173,7 +173,7 @@
       "story": "As someone jumping between many periodic notes, I want a command that jumps the calendar to whatever note I currently have open, so that I can see it in context without manually paging through months.",
       "rationale": "Without this, switching notes and switching the calendar's displayed period are two disconnected actions.",
       "priority": "should",
-      "status": "in-review",
+      "status": "done",
       "covers": [
         "cal:reveal-active-note-command"
       ],
