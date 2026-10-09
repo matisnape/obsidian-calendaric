@@ -846,7 +846,7 @@
       "story": "As a maintainer of a fork that has diverged deliberately from its template, I want the template's tooling improvements evaluated and taken one by one, so that the build and lint setup stays current without an upstream merge overwriting the plugin this project actually rewrote.",
       "rationale": "This repository is a fork of obsidianmd/obsidian-sample-plugin and is three commits behind its fork point, touching 16 files. A plain merge is the wrong instrument: upstream's src/main.ts and src/settings.ts still hold the boilerplate sample, which a merge would drag back over the rewrite, and six of the sixteen files are ones this project has already diverged on on purpose (tsconfig.json via US-ARCH-04's strict mode, the deleted lint.yml replaced by US-ARCH-09's ci.yml, manifest.json and versions.json set to a real minAppVersion, and both source files). Only release.yml has been taken so far, verbatim, as a reference. What is left worth having is the tooling: the eslint plugin bump, which can move the pre-existing lint debt in either direction, and the esbuild and editorconfig modernisation.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "in-review",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -865,8 +865,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: scripts/templateGuard.test.ts > 'AC-ARCH-10.1: <file> has a verdict and a reason', one test per file in `git diff --stat dc2fa22 upstream/master`; docs/upstream-template-review.md classifies each as taken, taken in part, superseded or declined, with the reason. Mutation-checked by the orchestrator at 6a5d9f2 with mutate-check.sh: emptying the version-bump.mjs verdict cell turns 'AC-ARCH-10.1: version-bump.mjs has a verdict and a reason' red (1 failed / 146); restore byte-identical."
         },
         {
           "id": "AC-ARCH-10.2",
@@ -878,8 +878,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: scripts/templateGuard.test.ts > 'AC-ARCH-10.2: the master and final totals match the per-rule table' and 'AC-ARCH-10.2: each rule that appeared, rose or disappeared is named below the table'. The review doc records master 67 errors / 4 warnings, bump-only 51 / 83, branch 53 / 83, per rule, for eslint-plugin-obsidianmd 0.1.9 to 0.4.0, and names each rule that moved. Mutation-checked by the orchestrator at 6a5d9f2: deleting the rule-custom-message table row turns the totals test red (1 failed / 146); the worker's mutation dropping the no-restricted-imports bullet turns the naming test red."
         },
         {
           "id": "AC-ARCH-10.3",
@@ -891,8 +891,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Gates at 6a5d9f2: npm test 'Tests 1303 passed (1303)', 0 warning lines; npm run build rc=0; check:ac rc=0; npm run lint 53 errors / 83 warnings against master's 67 / 4, judged under this ticket's replaced lint rule (a rise must come from the plugin bump and be explained in the review doc). `git diff master -- src` is empty. vitest: 'AC-ARCH-10.3: src/<path> names no sample-plugin class', one test per src file; mutation-checked by the orchestrator: adding `class SampleModal {}` to src/types.ts turns 'AC-ARCH-10.3: src/types.ts names no sample-plugin class' red (1 failed / 146). Gap: obsidianmd/rule-custom-message (8 errors) is not raised by the bump directly. Plugin 0.4.0 stopped parsing scripts/*.mjs (parsing errors 1 to 7 in the bump-only run); the branch's allowDefaultProject makes them parse again, and the new rule then reports eight console calls in scripts/release-check.mjs and scripts/verify.mjs, which master linted clean. Accepted by the orchestrator as a consequence of the bump; the review doc names it."
         },
         {
           "id": "AC-ARCH-10.4",
@@ -904,8 +904,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: scripts/templateGuard.test.ts > 'AC-ARCH-10.4: <file> carries no sample-template marker' for src/main.ts, src/settings.ts, manifest.json and tsconfig.json; the failing title names the file. Mutation-checked by the orchestrator at 6a5d9f2: setting manifest.json's id to \"sample-plugin\" turns 'AC-ARCH-10.4: manifest.json carries no sample-template marker' red (1 failed / 146); worker mutations with the dc2fa22 and upstream tsconfig.json also red.",
           "failure_path": true
         }
       ]
