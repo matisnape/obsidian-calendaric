@@ -5,6 +5,7 @@ import type {
 } from "../adapters/companionPluginPort";
 import type { Granularity } from "../types";
 import { GRANULARITIES } from "./model";
+import { GRANULARITY } from "../granularity/registry";
 
 /**
  * The fields the import carries over, in the order the card lists them.
@@ -79,13 +80,11 @@ const FIELD_LABELS: Record<PeriodicNotesImportKey, string> = {
 	allowPrefixMatch: "Match a filename that starts with the date",
 };
 
-const GRANULARITY_LABELS: Record<Granularity, string> = {
-	day: "Daily",
-	week: "Weekly",
-	month: "Monthly",
-	quarter: "Quarterly",
-	year: "Yearly",
-};
+/** "Daily": the granularity's adjective, capitalised to lead a line. */
+function titleOf(granularity: Granularity): string {
+	const { adjective } = GRANULARITY[granularity];
+	return adjective.charAt(0).toUpperCase() + adjective.slice(1);
+}
 
 function show(value: string | boolean): string {
 	if (typeof value === "boolean") return value ? "on" : "off";
@@ -137,7 +136,7 @@ export function planPeriodicNotesImport(
 				id: `${granularity}.${key}`,
 				granularity,
 				key,
-				label: `${GRANULARITY_LABELS[granularity]} — ${FIELD_LABELS[key]}`,
+				label: `${titleOf(granularity)} — ${FIELD_LABELS[key]}`,
 				current: show(current[key]),
 				incoming: show(incoming[key]),
 			};

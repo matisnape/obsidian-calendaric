@@ -1,13 +1,9 @@
 import type { ReleaseGranularity } from "../types";
 import { computeNoteDate } from "../fmt/noteDate";
+import { releaseFacts } from "../granularity/registry";
 
 /** Read off `window.moment` rather than imported, like main.ts: the bundle carries no moment of its own. */
 type Moment = ReturnType<typeof window.moment>;
-
-const UNIT_NAMES: Record<ReleaseGranularity, string> = { day: "day", week: "week", month: "month", year: "year" };
-
-/** moment's own relative-time keys, so a count reads the way the locale writes it. */
-const COUNT_KEYS = { day: "dd", week: "ww", month: "MM", year: "yy" } as const;
 
 /**
  * The start of the period `date` falls in, read off the note identity itself
@@ -25,20 +21,19 @@ export function humanizePeriod(granularity: ReleaseGranularity, date: Moment, no
 	// Both ends start a period of the same length, so diff in "week" is exact for an ISO week too.
 	const offset = periodStart(date, granularity, weekFormat).diff(periodStart(now, granularity, weekFormat), granularity);
 
-	if (granularity === "day") {
-		if (offset === 0) return "Today";
-		if (offset === -1) return "Yesterday";
-		if (offset === 1) return "Tomorrow";
+	const { unitName, countKey, nearNames } = releaseFacts(granularity);
+	if (nearNames) {
+		const near = nearNames[offset];
+		if (near !== undefined) return near;
 	} else {
-		const unit = UNIT_NAMES[granularity];
-		if (offset === 0) return `This ${unit}`;
-		if (offset === -1) return `Last ${unit}`;
-		if (offset === 1) return `Next ${unit}`;
+		if (offset === 0) return `This ${unitName}`;
+		if (offset === -1) return `Last ${unitName}`;
+		if (offset === 1) return `Next ${unitName}`;
 	}
 
 	const locale = date.localeData();
 	const count = Math.abs(offset);
-	return locale.pastFuture(offset, locale.relativeTime(count, false, COUNT_KEYS[granularity], offset > 0));
+	return locale.pastFuture(offset, locale.relativeTime(count, false, countKey, offset > 0));
 }
 
 export interface LabelledFile {

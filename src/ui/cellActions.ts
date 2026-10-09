@@ -5,6 +5,7 @@ import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { WorkspacePort } from "../adapters/workspacePort";
 import { computeNotePath } from "../notes/noteUtils";
+import { GRANULARITY, cellFacts } from "../granularity/registry";
 import { createPeriodicNote } from "../notes/noteCreate";
 import { openNote } from "../notes/noteOpen";
 import { creationRefused } from "../notes/predecessorGuard";
@@ -19,12 +20,6 @@ import { creationRefused } from "../notes/predecessorGuard";
  * two clicks racing for the same new note — is settled by a test against the
  * ports.
  */
-
-const GRANULARITY_LABEL: Record<CellGranularity, string> = {
-	day: "daily",
-	week: "weekly",
-	month: "monthly",
-};
 
 /** The id Obsidian's Page preview plugin knows this grid by. */
 export const HOVER_LINK_SOURCE = "calendaric";
@@ -192,32 +187,14 @@ async function createNoteInTurn(
  * agreeing to a day rather than to a string.
  */
 function describeCreate(date: Moment, granularity: CellGranularity, path: string): CreateRequest {
-	const label = GRANULARITY_LABEL[granularity];
+	const label = GRANULARITY[granularity].adjective;
 	const filename = path.split("/").pop() ?? path;
-	const subject = subjectFor(granularity, date);
+	const subject = cellFacts(granularity).subject(date);
 
 	return {
 		title: `New ${label} note`,
 		body: `${subject} has no ${label} note yet. Create ${filename}?`,
 	};
-}
-
-/**
- * Names the period the way a person would read it back, not just its filename.
- *
- * A plain switch rather than a record: `noImplicitReturns` fails the build if a
- * future granularity lands here without a case, which is what keeps this in
- * step with `GRANULARITY_LABEL` above.
- */
-function subjectFor(granularity: CellGranularity, date: Moment): string {
-	switch (granularity) {
-		case "week":
-			return `The week of ${date.format("LL")}`;
-		case "month":
-			return `The month of ${date.format("MMMM YYYY")}`;
-		case "day":
-			return date.format("dddd, LL");
-	}
 }
 
 /** The `hover-link` payload Obsidian's Page preview plugin listens for. */

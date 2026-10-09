@@ -90,16 +90,12 @@ const spelledOut = (source: string): string[] =>
 	[...source.matchAll(SPELLED_OUT)].filter((m) => m[1] === undefined).map((m) => m[0]);
 
 describe("AC-ARCH-02.1: one module declares the granularity set", () => {
-	// settings.ts loops over the two granularities it migrates. That is logic, not a
-	// declaration of the set, and stays out of this ticket's scope.
-	it("AC-ARCH-02.1: src/types.ts is the only module spelling the set out as literals", () => {
+	// Since US-ARCH-05 the set is the registry's list of entries, one module per
+	// granularity, so no module spells it out as literals at all.
+	it("AC-ARCH-02.1: no module spells the set out as literals", () => {
 		const spelled = SHIPPED.flatMap((path) => spelledOut(code(path)).map((names) => `${path}: ${names}`));
 
-		expect(spelled).toEqual([
-			'src/settings.ts: "day", "week"',
-			'src/types.ts: "day", "week", "month", "quarter", "year"',
-			'src/types.ts: "day", "week", "month", "year"',
-		]);
+		expect(spelled).toEqual([]);
 	});
 
 	it("AC-ARCH-02.1: no other module declares a type under the canonical names", () => {

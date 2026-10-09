@@ -6,7 +6,10 @@ import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from
 import { computeNotePath } from "../notes/noteUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
-import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, WORD_DOT_SEGMENTS, wordCountSegments } from "./calendarDots";
+import { DotScanner } from "./calendarDots";
+import { CALENDAR_INDICATORS } from "./indicators";
+import { INDICATOR_API_VERSION } from "../indicatorContract";
+import type { IndicatorCell } from "../indicatorContract";
 import { MonthNavigation } from "./calendarNav";
 import {
 	HOVER_LINK_SOURCE,
@@ -19,41 +22,8 @@ import { resolveFileDate, type FileConfigs, type FileDateIdentity } from "../fmt
 import { computeNoteDate } from "../fmt/noteDate";
 import { resolveEffectiveConfig } from "../settings/model";
 import { RELEASE_GRANULARITIES } from "../types";
+import { granularityEntry } from "../granularity/registry";
 import type { CellGranularity } from "../types";
-
-/** Creates the same SVG dot used by the Calendar plugin (6×6 viewBox, circle r=2). */
-function makeDotSvg(): SVGElement {
-	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-	svg.setAttribute("class", "calendaric-dot calendaric-dot--exists");
-	svg.setAttribute("viewBox", "0 0 6 6");
-	const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-	circle.setAttribute("cx", "3");
-	circle.setAttribute("cy", "3");
-	circle.setAttribute("r", "2");
-	svg.appendChild(circle);
-	return svg;
-}
-
-/**
- * The word-count dot: a 6×6 pie of five wedges, the first `filled` of them,
- * clockwise from the top, marked `is-filled`.
- */
-function makeWordDotSvg(filled: number): SVGElement {
-	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-	svg.setAttribute("class", "calendaric-dot calendaric-dot--words");
-	svg.setAttribute("viewBox", "0 0 6 6");
-	const point = (i: number) => {
-		const angle = -Math.PI / 2 + (i * 2 * Math.PI) / WORD_DOT_SEGMENTS;
-		return `${(3 + 3 * Math.cos(angle)).toFixed(3)} ${(3 + 3 * Math.sin(angle)).toFixed(3)}`;
-	};
-	for (let i = 0; i < WORD_DOT_SEGMENTS; i++) {
-		const wedge = document.createElementNS("http://www.w3.org/2000/svg", "path");
-		wedge.setAttribute("d", `M3 3 L${point(i)} A3 3 0 0 1 ${point(i + 1)} Z`);
-		wedge.setAttribute("class", i < filled ? "calendaric-dot-segment is-filled" : "calendaric-dot-segment");
-		svg.appendChild(wedge);
-	}
-	return svg;
-}
 
 export class CalendarWidget implements HoverParent {
 	/** Page preview writes the popover it opens for a cell here. */
@@ -71,6 +41,8 @@ export class CalendarWidget implements HoverParent {
 	private dots: DotScanner;
 	private activeFilePath: string | null = null;
 	private fileOpenRef: EventRef | null = null;
+	/** Indicators already reported as refused, so a refusal is logged once, not every render. */
+	private refusedIndicators = new Set<string>();
 
 	/**
 	 * `deps` is required and has no default (AC-ARCH-11.5): a widget that could
@@ -200,8 +172,8 @@ export class CalendarWidget implements HoverParent {
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
 		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
 		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
-		// Filled in once the notes are read; see drawWordDots.
-		const wordDotSlots: [string, HTMLElement][] = [];
+		// Every cell an indicator may draw into, drawn once the grid is built.
+		const cells: IndicatorCell[] = [];
 		const active = this.activeNote();
 		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
 
@@ -213,13 +185,16 @@ export class CalendarWidget implements HoverParent {
 				const wDiv = wTd.createDiv({ cls: "calendaric-weeknum", text: String(week.weekNumber) });
 				const wDotContainer = wDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				// Dot: weekly note exists for the week this row shows
+				// The week this row shows
 				const anchor = getWeekAnchor(week.days);
 				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig, "week");
-				if (weekPaths.has(weekPath)) {
-					wDotContainer.appendChild(makeDotSvg());
-					wordDotSlots.push([weekPath, wDotContainer]);
-				}
+				cells.push({
+					granularity: "week",
+					date: anchor,
+					path: weekPath,
+					noteExists: weekPaths.has(weekPath),
+					container: wDotContainer,
+				});
 				if (active?.noteDate === computeNoteDate(anchor, "week", weekFormat)) {
 					wDiv.addClass("is-active");
 				}
@@ -247,12 +222,14 @@ export class CalendarWidget implements HoverParent {
 				const dayDiv = td.createDiv({ cls: classes.join(" "), text: String(day.date.date()) });
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				// Dot: daily note exists for this date
 				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig, "day");
-				if (dayPaths.has(dayPath)) {
-					dayDotContainer.appendChild(makeDotSvg());
-					wordDotSlots.push([dayPath, dayDotContainer]);
-				}
+				cells.push({
+					granularity: "day",
+					date: day.date,
+					path: dayPath,
+					noteExists: dayPaths.has(dayPath),
+					container: dayDotContainer,
+				});
 				if (active?.noteDate === computeNoteDate(day.date, "day", weekFormat)) {
 					dayDiv.addClass("is-active");
 				}
@@ -270,28 +247,36 @@ export class CalendarWidget implements HoverParent {
 			}
 		}
 
-		void this.drawWordDots(wordDotSlots);
+		this.drawIndicators(cells);
 	}
 
 	/**
-	 * The word-count dot of every cell whose note exists (AC-CAL-07.2). It
-	 * arrives after the note-exists dot because reading a note is async; a
-	 * render that lands meanwhile has already detached these containers, so a
-	 * late append to one shows nothing.
+	 * Every registered indicator, through the one interface (US-ARCH-05). An
+	 * indicator written against another version of that interface is skipped and
+	 * reported rather than drawn under rules it was not written for (AC-ARCH-05.3).
 	 */
-	private async drawWordDots(slots: [string, HTMLElement][]): Promise<void> {
-		const counts = await this.dots.getWordCounts(slots.map(([path]) => path));
-		for (const [path, container] of slots) {
-			// ponytail: threshold is the default until a setting carries one
-			const filled = wordCountSegments(counts.get(path) ?? 0, DEFAULT_WORDS_PER_SEGMENT);
-			if (filled > 0) container.appendChild(makeWordDotSvg(filled));
+	private drawIndicators(cells: readonly IndicatorCell[]): void {
+		for (const indicator of CALENDAR_INDICATORS) {
+			// Widened on purpose: typed, it is the current version, and the check is for one that is not.
+			const version: number = indicator.apiVersion;
+			if (version !== INDICATOR_API_VERSION) {
+				if (!this.refusedIndicators.has(indicator.id)) {
+					this.refusedIndicators.add(indicator.id);
+					console.error(
+						`Calendaric: indicator "${indicator.id}" targets indicator API version ${version}, this calendar draws version ${INDICATOR_API_VERSION}; it is not drawn.`,
+					);
+				}
+				continue;
+			}
+			void indicator.draw(cells, this.dots);
 		}
 	}
 
 	/**
-	 * The active file as a day or week note, matched the way the note index
-	 * matches it, so a note in a subfolder or under a prefix match counts too.
-	 * Month and year notes resolve to null: only day and week cells highlight.
+	 * The active file as a note whose cell highlights in the grid (a day or a
+	 * week row: the cells whose entry can reveal them), matched the way the note
+	 * index matches it, so a note in a subfolder or under a prefix match counts
+	 * too. Month and year notes resolve to null.
 	 */
 	private activeNote(): FileDateIdentity | null {
 		if (this.activeFilePath === null) return null;
@@ -300,7 +285,7 @@ export class CalendarWidget implements HoverParent {
 			if (this.settings[granularity].enabled) configs[granularity] = resolveEffectiveConfig(this.settings, granularity);
 		}
 		const identity = resolveFileDate(this.activeFilePath, configs, this.deps.vaultConfig);
-		return identity?.granularity === "day" || identity?.granularity === "week" ? identity : null;
+		return identity && granularityEntry(identity.granularity).cell?.reveal ? identity : null;
 	}
 
 	/**
@@ -311,9 +296,13 @@ export class CalendarWidget implements HoverParent {
 	revealActiveNote(): void {
 		this.activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
 		const note = this.activeNote();
-		if (note) {
-			const first = note.granularity === "week" ? this.weekRowStart(note) : note.date;
-			const last = note.granularity === "week" ? first.clone().add(6, "day") : first;
+		const reveal = note && granularityEntry(note.granularity).cell?.reveal;
+		if (note && reveal) {
+			const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
+			const [first, last] = reveal(note.date, {
+				weekStart: resolveWeekStart(this.settings.weekStart),
+				sameNote: (day) => computeNoteDate(day, note.granularity, weekFormat) === note.noteDate,
+			});
 			const month = this.nav.month;
 			if (!first.isSame(month, "month") && !last.isSame(month, "month")) {
 				this.nav.show(first);
@@ -321,20 +310,6 @@ export class CalendarWidget implements HoverParent {
 			}
 		}
 		this.renderGrid();
-	}
-
-	/**
-	 * The first day of the grid row that draws this week note: the one day of
-	 * the note's week that falls on the configured week start (see getWeekAnchor).
-	 */
-	private weekRowStart(note: FileDateIdentity): Moment {
-		const weekStart = resolveWeekStart(this.settings.weekStart);
-		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
-		for (let offset = -6; offset <= 6; offset++) {
-			const day = note.date.clone().add(offset, "day");
-			if (day.day() === weekStart && computeNoteDate(day, "week", weekFormat) === note.noteDate) return day;
-		}
-		return note.date;
 	}
 
 	/** Lightweight refresh — re-renders grid with current settings (e.g. on minute tick). */
