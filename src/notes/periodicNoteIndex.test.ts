@@ -128,6 +128,27 @@ describe("PeriodicNoteIndex — AC-NOTE-11.3 a rename that keeps the file period
 	});
 });
 
+describe("PeriodicNoteIndex — a file moved into a configured folder", () => {
+	it("picks up a non-periodic file renamed into the weekly folder under a title the format writes", () => {
+		const configs: PeriodicConfigs = {
+			day: config("YYYY-MM-DD", "Daily"),
+			week: config("GGGG-[W]WW[, ]{{monday:DD.MM}}", "Weekly"),
+		};
+		const vault = vaultWith("Untitled.md");
+		const index = indexOver(vault, configs);
+		expect(index.get("week", moment("2026-04-13"))).toBeNull();
+
+		vault.renameFile("Untitled.md", "Weekly/2026-W16, 13.04.md");
+		vault.emitChange({
+			kind: "rename",
+			file: { path: "Weekly/2026-W16, 13.04.md" },
+			oldPath: "Untitled.md",
+		});
+
+		expect(index.get("week", moment("2026-04-13"))?.path).toBe("Weekly/2026-W16, 13.04.md");
+	});
+});
+
 describe("PeriodicNoteIndex — AC-NOTE-11.4 a matching name outside every configured folder", () => {
 	it("AC-NOTE-11.4: answers nothing for a daily name that sits outside the daily folder", () => {
 		const index = indexOver(vaultWith("Archive/2026-04-13.md"));
