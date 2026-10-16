@@ -166,15 +166,16 @@ export class CalendarWidget implements HoverParent {
 		// Rebuild tbody
 		this.gridBodyEl.empty();
 
+		const dayConfig = resolveEffectiveConfig(this.settings, "day");
+		const weekConfig = resolveEffectiveConfig(this.settings, "week");
 		const weekStart = resolveWeekStart(this.settings.weekStart);
-		const grid = getMonthGrid(displayedMonth, weekStart, this.settings.week.format);
+		const grid = getMonthGrid(displayedMonth, weekStart, weekConfig.format);
 
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
-		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
-		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
+		const dayPaths = this.dots.getDayNotePaths(displayedMonth, dayConfig);
+		const weekPaths = this.dots.getWeekNotePaths(grid, weekConfig);
 		const cells: IndicatorCell[] = [];
 		const active = this.activeNote();
-		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
 
 		for (const week of grid) {
 			const tr = this.gridBodyEl.createEl("tr");
@@ -185,7 +186,7 @@ export class CalendarWidget implements HoverParent {
 				const wDotContainer = wDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				const anchor = getWeekAnchor(week.days);
-				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig, "week");
+				const weekPath = computeNotePath(anchor, weekConfig, this.deps.vaultConfig, "week");
 				cells.push({
 					granularity: "week",
 					date: anchor,
@@ -193,7 +194,7 @@ export class CalendarWidget implements HoverParent {
 					noteExists: weekPaths.has(weekPath),
 					container: wDotContainer,
 				});
-				if (active?.noteDate === computeNoteDate(anchor, "week", weekFormat)) {
+				if (active?.noteDate === computeNoteDate(anchor, "week", weekConfig.format)) {
 					wDiv.addClass("is-active");
 				}
 
@@ -220,7 +221,7 @@ export class CalendarWidget implements HoverParent {
 				const dayDiv = td.createDiv({ cls: classes.join(" "), text: String(day.date.date()) });
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig, "day");
+				const dayPath = computeNotePath(day.date, dayConfig, this.deps.vaultConfig, "day");
 				cells.push({
 					granularity: "day",
 					date: day.date,
@@ -228,7 +229,7 @@ export class CalendarWidget implements HoverParent {
 					noteExists: dayPaths.has(dayPath),
 					container: dayDotContainer,
 				});
-				if (active?.noteDate === computeNoteDate(day.date, "day", weekFormat)) {
+				if (active?.noteDate === computeNoteDate(day.date, "day", weekConfig.format)) {
 					dayDiv.addClass("is-active");
 				}
 
@@ -352,7 +353,7 @@ export class CalendarWidget implements HoverParent {
 	 * Obsidian's own "Open in new tab" / "Delete" — populates this menu too.
 	 */
 	private handleMonthHeaderContextMenu(event: MouseEvent): void {
-		const path = computeNotePath(this.nav.month, this.settings.month, this.deps.vaultConfig, "month");
+		const path = computeNotePath(this.nav.month, resolveEffectiveConfig(this.settings, "month"), this.deps.vaultConfig, "month");
 		const file = this.deps.vault.getFile(path);
 		if (!file) return;
 
@@ -371,7 +372,7 @@ export class CalendarWidget implements HoverParent {
 			await openOrCreateNote({
 				date,
 				granularity,
-				config: this.settings[granularity],
+				config: resolveEffectiveConfig(this.settings, granularity),
 				confirmBeforeCreate: this.settings.confirmBeforeCreate,
 				event,
 				ports: this.deps,
