@@ -30,7 +30,6 @@ const SETTINGS: CalendaricSettings = {
 	month: { ...DEFAULT_SETTINGS.month, ...EMPTY_FORMAT },
 };
 
-/** Records `file-menu` triggers, the one App call the month header's context menu makes. */
 function recordingApp(triggered: unknown[][]): App {
 	return {
 		workspace: {
@@ -47,7 +46,6 @@ function fakeDeps(): CalendarDeps & { vault: FakeVaultPort; workspace: FakeWorks
 	return { vault: new FakeVaultPort(), vaultConfig: new FakeVaultConfigPort(), workspace: new FakeWorkspacePort() };
 }
 
-/** Writes the note the way main.ts's open-current command does, and returns the path it landed at. */
 async function createNote(deps: ReturnType<typeof fakeDeps>, granularity: ReleaseGranularity, date: ReturnType<typeof window.moment>): Promise<string> {
 	const before = new Set(deps.vault.listNotes().map((note) => note.path));
 	await openOrCreatePeriodNote(granularity, date, resolveEffectiveConfig(SETTINGS, granularity), null, deps);
@@ -131,9 +129,9 @@ describe("calendar reads the resolved config", () => {
 		expect(fileMenus.map((args) => (args[2] as { path: string }).path)).toEqual([path]);
 	});
 
-	// Settings load already repairs a wrong-typed value, so this guards the
-	// calendar's wiring: "" numbers weeks the same as the week default, and only
-	// a value the resolver must replace tells a raw read of the week format apart.
+	// A stored "" would number weeks the same as the week default, so a raw read
+	// of the week format only shows with a value the resolver must replace, here
+	// 5. Settings load already repairs such a value: this guards the wiring.
 	it("AC-SET-03.3: numbers week rows from the resolved week format, not the stored one", () => {
 		const settings = { ...SETTINGS, week: { ...SETTINGS.week, format: 5 } } as unknown as CalendaricSettings;
 
