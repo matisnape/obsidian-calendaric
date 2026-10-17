@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-10-09",
+    "generated": "2026-10-17",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -1044,7 +1044,7 @@
       "story": "As someone who relies on instant calendar dots, jump commands, and open-or-create decisions, I want the plugin to always know instantly which files are my periodic notes without rescanning the whole vault every time, so that every other periodic-note feature stays fast and correct as I create, rename, or delete files.",
       "rationale": "Every other NOTE story depends on this lookup staying correct as files change; if it drifts from reality, all of them silently break.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "calui:periodic-note-file-cache",
         "pn:cache-index-build-on-load",
@@ -1099,8 +1099,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": "PARTLY SETTLED, and the missing half is blocked on another pull request, not on this work. Obsidian's own rename event is covered: src/adapters/obsidianVaultAdapter.test.ts:145 proves the adapter reports a rename, and the index re-keys on it. The criterion also names an EXTERNAL script renaming a raw ISO-week title to a longer \"pretty\" title, and that case needs prefix matching: the pretty title is a date range that only matches the original by its prefix. src/fmt/resolveFileDate.ts on this branch's base passes `false` for allowPrefixMatch behind a comment reading \"no config field carries it yet\" -- stale, since US-SET-01 added PeriodicConfig.allowPrefixMatch (src/types.ts:12). US-FMT-08 wires it. The existing test at periodicNoteIndex.test.ts:107-128 invents a weekly format that happens to moment-parse and never exercises prefix matching, so it is not evidence for this clause. Settle this after US-FMT-08 merges, with a test using allowPrefixMatch: true against a real date-range title."
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts:107 \"AC-NOTE-11.3: picks up an external script's rename from a raw title to a longer pretty one\" -- short format gggg-[W]ww, allowPrefixMatch: true, rename Weekly/2026-W16.md -> Weekly/2026-W16, 13.04 - 19.04.md, asserted through index.get. Orchestrator mutation (scratch worktree at 94f33d5): config.allowPrefixMatch -> false at src/fmt/resolveFileDate.ts:71 and :77 together fails that test; either line alone is rescued by the other (slash-free format re-parses the basename with the same flag). The old long-format test no longer claims this criterion."
         },
         {
           "id": "AC-NOTE-11.4",
@@ -1151,8 +1151,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": "PARTLY SETTLED. The first clause is proved: vitest, three titles naming AC-NOTE-11.7 -- after a delete event the lookup for that period returns nothing. The second clause says the calendar dot for that day disappears, which needs the index wired into the calendar view; the brief forbade that, because src/main.ts and src/ui/calendar.ts both belong to other open pull requests. Nothing here is uncalled by accident: the index is deliberately not wired, the same way US-SET-03's resolver is not. Settle this clause with the ticket that wires them.",
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.test.ts:242 \"AC-NOTE-11.7: answers nothing for a period whose note was deleted\" (lookup clause) and src/ui/calendarRender.liveRefresh.test.ts:91 \"AC-CAL-09.2, AC-NOTE-11.7: a day or week note deleted elsewhere loses its cell's dot with no interaction\" (dot clause, real calendar render, day and week cells 1 -> 0). Orchestrator mutation: src/ui/calendarDots.ts:70 skip delete events -> that test fails (12/13), restored byte-identical.",
           "failure_path": true
         }
       ]
