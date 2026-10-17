@@ -52,6 +52,8 @@ export interface PeriodLabelHost {
 	weekStart(): number;
 	/** Open that day's note in the active pane, writing it first when the vault holds none. */
 	openDay(date: Moment): Promise<void>;
+	/** Off, the index knows no day notes, so a day could only be written, never opened: no strip. */
+	dayEnabled(): boolean;
 }
 
 /** One drawn label. The toggle outlives every redraw, so keyboard focus stays on it. */
@@ -60,6 +62,8 @@ interface DrawnLabel {
 	toggle: HTMLElement;
 	file: LabelledFile;
 	strip: HTMLElement | null;
+	/** The days and marks the strip shows; a sync that leaves it unchanged keeps the buttons, and their focus. */
+	stripKey: string;
 }
 
 /**
@@ -99,11 +103,8 @@ export class PeriodLabels {
 		let drawn = this.drawn.get(contentEl);
 		if (!drawn) {
 			const label = contentEl.createDiv({ cls: "calendaric-period-label" });
-			const toggle = label.createSpan({
-				cls: "calendaric-day-strip-toggle",
-				attr: { role: "button", tabindex: "0", "aria-expanded": "false" },
-			});
-			drawn = { label, toggle, file, strip: null };
+			const toggle = label.createSpan({ cls: "calendaric-day-strip-toggle" });
+			drawn = { label, toggle, file, strip: null, stripKey: "" };
 			const entry = drawn;
 			toggle.addEventListener("click", () => this.toggleStrip(entry));
 			toggle.addEventListener("keydown", (event) => {
@@ -126,26 +127,39 @@ export class PeriodLabels {
 				attr: { "aria-label": "Inexact match: the filename only starts with this period's format" },
 			});
 		}
+
+		const offered = this.host.dayEnabled();
+		if (!offered) this.closeStrip(drawn);
 		if (drawn.strip) this.drawStrip(drawn);
+		toggle.setAttr("role", offered ? "button" : null);
+		toggle.setAttr("tabindex", offered ? "0" : null);
+		toggle.setAttr("aria-expanded", offered ? drawn.strip !== null : null);
 	}
 
 	private toggleStrip(drawn: DrawnLabel): void {
-		if (drawn.strip) {
-			drawn.strip.remove();
-			drawn.strip = null;
-		} else {
-			this.drawStrip(drawn);
-		}
+		if (!this.host.dayEnabled()) return;
+		if (drawn.strip) this.closeStrip(drawn);
+		else this.drawStrip(drawn);
 		drawn.toggle.setAttr("aria-expanded", drawn.strip !== null);
 	}
 
+	private closeStrip(drawn: DrawnLabel): void {
+		drawn.strip?.remove();
+		drawn.strip = null;
+	}
+
 	private drawStrip(drawn: DrawnLabel): void {
+		const { granularity, date } = drawn.file;
+		const days = stripDays(granularity, date, this.host.weekFormat(), this.host.weekStart(), this.host.now());
+		const key = days.map((day) => `${day.date.valueOf()}:${day.isNoteDay}:${day.isToday}`).join();
+		if (drawn.strip && key === drawn.stripKey) return;
+
 		drawn.strip?.remove();
 		const strip = drawn.label.createDiv({ cls: "calendaric-day-strip" });
 		drawn.strip = strip;
+		drawn.stripKey = key;
 
-		const { granularity, date } = drawn.file;
-		for (const day of stripDays(granularity, date, this.host.weekFormat(), this.host.weekStart(), this.host.now())) {
+		for (const day of days) {
 			const button = strip.createEl("button", {
 				cls: "calendaric-day-strip-day",
 				text: day.date.format("dd D"),

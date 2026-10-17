@@ -70,7 +70,7 @@ const FILES: Record<string, LabelledFile> = {
 	"2026-W38.md": { granularity: "week", date: at("2026-09-14"), prefixMatch: false },
 };
 
-function manager(leaves: LabelLeaf[], state = { enabled: true, now: NOW }) {
+function manager(leaves: LabelLeaf[], state = { enabled: true, now: NOW, dayEnabled: true }) {
 	const opened: string[] = [];
 	const labels = new PeriodLabels({
 		leaves: () => leaves,
@@ -80,6 +80,7 @@ function manager(leaves: LabelLeaf[], state = { enabled: true, now: NOW }) {
 		weekFormat: () => "gggg-[W]ww",
 		// The "en" locale's own start, as the plugin keeps the two equal.
 		weekStart: () => 0,
+		dayEnabled: () => state.dayEnabled,
 		openDay: (date) => {
 			opened.push(date.format("YYYY-MM-DD"));
 			return Promise.resolve();
@@ -164,6 +165,47 @@ describe("the day strip", () => {
 		expect(pane.contentEl.querySelectorAll(".calendaric-day-strip")).toHaveLength(1);
 	});
 
+	it("AC-CAL-14.2: switching daily notes off takes the strip away and leaves the label inert", () => {
+		const weekly = leaf("2026-W38.md");
+		const { labels, state } = manager([weekly]);
+		labels.sync();
+		toggleOf(weekly)?.click();
+		expect(stripOf(weekly)).not.toBeNull();
+
+		state.dayEnabled = false;
+		labels.sync();
+		expect(stripOf(weekly)).toBeNull();
+		expect(toggleOf(weekly)?.hasAttribute("tabindex")).toBe(false);
+		toggleOf(weekly)?.click();
+		press(toggleOf(weekly) as HTMLElement, "Enter");
+		expect(stripOf(weekly)).toBeNull();
+
+		state.dayEnabled = true;
+		labels.sync();
+		toggleOf(weekly)?.click();
+		expect(dayButtons(weekly)).toHaveLength(7);
+	});
+
+	it("a sync that changes nothing keeps the day buttons, so a focused day keeps focus", () => {
+		const daily = leaf("2026-09-24.md");
+		document.body.appendChild(daily.contentEl);
+		const { labels, state } = manager([daily]);
+		labels.sync();
+		toggleOf(daily)?.click();
+		const focused = dayButton(daily, "2026-09-22");
+		focused?.focus();
+
+		labels.sync();
+		expect(dayButton(daily, "2026-09-22")).toBe(focused);
+		expect(document.activeElement).toBe(focused);
+
+		// Today moving on is a change: the mark follows it.
+		state.now = "2026-09-25T00:01:00";
+		labels.sync();
+		expect(dayButtons(daily).filter((b) => b.classList.contains("is-today")).map((b) => b.dataset.date)).toEqual(["2026-09-25"]);
+		daily.contentEl.remove();
+	});
+
 	it("closing the pane or destroying the labels takes the strip with them", () => {
 		const daily = leaf("2026-09-24.md");
 		const leaves = [daily];
@@ -212,7 +254,7 @@ describe("PeriodLabels", () => {
 
 	it("AC-CAL-13.3: a periodic note opened after the setting is disabled shows no label", () => {
 		const leaves: LabelLeaf[] = [];
-		const { labels } = manager(leaves, { enabled: false, now: NOW });
+		const { labels } = manager(leaves, { enabled: false, now: NOW, dayEnabled: true });
 		labels.sync();
 
 		const daily = leaf("2026-09-24.md");
@@ -362,11 +404,11 @@ describe("the plugin's period labels", () => {
 	 * open-or-create path, so what a day in the strip does is what Obsidian runs.
 	 */
 	async function pluginOverVault(open: string, ...seeded: [path: string, content: string][]) {
-		return pluginOverVaultFrom("monday", open, ...seeded);
+		return pluginOverVaultFrom({}, open, ...seeded);
 	}
 
 	async function pluginOverVaultFrom(
-		weekStart: "monday" | "sunday",
+		{ weekStart = "monday", dayEnabled = true }: { weekStart?: "monday" | "sunday"; dayEnabled?: boolean },
 		open: string,
 		...seeded: [path: string, content: string][]
 	) {
@@ -390,12 +432,13 @@ describe("the plugin's period labels", () => {
 		instance.settings.weekStart = weekStart;
 		instance.settings.day = {
 			...instance.settings.day,
-			enabled: true,
+			enabled: dayEnabled,
 			format: "YYYY-MM-DD",
 			folder: "Daily",
 			templatePath: "Templates/Day.md",
 			allowPrefixMatch: true,
 		};
+		instance.settings.week = { ...instance.settings.week, enabled: true, format: "GGGG-[W]WW", folder: "Weekly" };
 		const internals = instance as unknown as { index: PeriodicNoteIndex | null; indexConfigs(): PeriodicConfigs; startPeriodLabels(): void };
 		internals.index = new PeriodicNoteIndex(vault, new FakeVaultConfigPort(""), internals.indexConfigs());
 		internals.startPeriodLabels();
@@ -409,9 +452,26 @@ describe("the plugin's period labels", () => {
 
 	const TEMPLATE: [string, string] = ["Templates/Day.md", "# {{title}}"];
 
+	it("AC-CAL-14.2: with daily notes switched off a weekly note offers no strip, so nothing is written beside a day's note", async () => {
+		// Off, the index no longer knows day notes, so a day click could only write one.
+		const { workspace, pane, paths } = await pluginOverVaultFrom(
+			{ dayEnabled: false },
+			"Weekly/2026-W16.md",
+			["Weekly/2026-W16.md", ""],
+			["Daily/2026-04-16 standup.md", "kept"],
+		);
+		const before = paths();
+
+		expect(labelOf(pane)).not.toBeNull();
+		expect(stripOf(pane)).toBeNull();
+		expect(toggleOf(pane)?.getAttribute("role")).toBeNull();
+		expect(workspace.opened).toEqual([]);
+		expect(paths()).toEqual(before);
+	});
+
 	it("AC-CAL-14.1: the strip starts on the start-of-week day the settings name", async () => {
-		const monday = await pluginOverVaultFrom("monday", "Daily/2026-04-15.md", ["Daily/2026-04-15.md", ""]);
-		const sunday = await pluginOverVaultFrom("sunday", "Daily/2026-04-15.md", ["Daily/2026-04-15.md", ""]);
+		const monday = await pluginOverVaultFrom({ weekStart: "monday" }, "Daily/2026-04-15.md", ["Daily/2026-04-15.md", ""]);
+		const sunday = await pluginOverVaultFrom({ weekStart: "sunday" }, "Daily/2026-04-15.md", ["Daily/2026-04-15.md", ""]);
 
 		expect(dayButtons(monday.pane)[0]?.dataset.date).toBe("2026-04-13");
 		expect(dayButtons(sunday.pane)[0]?.dataset.date).toBe("2026-04-12");

@@ -277,6 +277,7 @@ export default class CalendaricPlugin extends Plugin {
 			weekFormat: () => this.indexConfigs().week?.format ?? "",
 			weekStart: () => resolveWeekStart(this.settings.weekStart),
 			openDay: (date) => this.openPeriodNote("day", date),
+			dayEnabled: () => this.settings.day.enabled,
 		});
 		this.periodLabels = labels;
 
