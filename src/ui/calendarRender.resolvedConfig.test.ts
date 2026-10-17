@@ -2,9 +2,9 @@
 //
 // The calendar and note creation read a granularity's settings through the one
 // resolver, so they agree on the note's path (AC-SET-03.3). Each note here is
-// written by the note-creation path main.ts runs, then looked for by the
-// calendar: a stored format of "" is where a raw read and the resolved default
-// part ways.
+// written through openOrCreatePeriodNote with the resolved config, as
+// main.ts:330 calls it, then looked for by the calendar: a stored format of ""
+// is where a raw read and the resolved default part ways.
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendarWidget } from "./calendar";
