@@ -104,11 +104,32 @@ describe("PeriodicNoteIndex — AC-NOTE-11.3 a rename that keeps the file period
 		expect(index.get("day", moment("2026-04-14"))?.path).toBe("Daily/2026-04-14.md");
 	});
 
-	it("AC-NOTE-11.3: picks up an external script's rename from a raw title to a pretty one", () => {
+	it("AC-NOTE-11.3: picks up an external script's rename from a raw title to a longer pretty one", () => {
 		// The vault's weekly Templater script renames the raw note Obsidian
-		// made to the long pretty title and moves it into the weekly folder
-		// (docs/mapping/sources/vault.json). Nothing tells the plugin; the
-		// vault's own rename event is what reports it.
+		// made to a longer pretty title (docs/mapping/sources/vault.json).
+		// The short format only matches a prefix of that title, so the lookup
+		// depends on the granularity's prefix-match opt-in.
+		const configs: PeriodicConfigs = {
+			day: config("YYYY-MM-DD", "Daily"),
+			week: { ...config("gggg-[W]ww", "Weekly"), allowPrefixMatch: true },
+		};
+		const vault = vaultWith("Weekly/2026-W16.md");
+		const index = indexOver(vault, configs);
+		expect(index.get("week", moment("2026-04-13"))?.path).toBe("Weekly/2026-W16.md");
+
+		vault.renameFile("Weekly/2026-W16.md", "Weekly/2026-W16, 13.04 - 19.04.md");
+		vault.emitChange({
+			kind: "rename",
+			file: { path: "Weekly/2026-W16, 13.04 - 19.04.md" },
+			oldPath: "Weekly/2026-W16.md",
+		});
+
+		expect(index.get("week", moment("2026-04-13"))?.path).toBe("Weekly/2026-W16, 13.04 - 19.04.md");
+	});
+});
+
+describe("PeriodicNoteIndex — a file moved into a configured folder", () => {
+	it("picks up a non-periodic file renamed into the weekly folder under a title the format writes", () => {
 		const configs: PeriodicConfigs = {
 			day: config("YYYY-MM-DD", "Daily"),
 			week: config("GGGG-[W]WW[, ]{{monday:DD.MM}}", "Weekly"),

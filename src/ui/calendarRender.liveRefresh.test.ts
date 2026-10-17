@@ -88,7 +88,7 @@ describe("US-CAL-09: vault changes reach the open grid", () => {
 		expect(existsDots(weekCell(host, 1))).toBe(1);
 	});
 
-	it("AC-CAL-09.2: a day or week note deleted elsewhere loses its cell's dot with no interaction", async () => {
+	it("AC-CAL-09.2, AC-NOTE-11.7: a day or week note deleted elsewhere loses its cell's dot with no interaction", async () => {
 		const { vault, host } = await open({ [dayPath(5)]: "", [secondRowWeekPath()]: "" });
 		expect(existsDots(dayCell(host, 5))).toBe(1);
 		expect(existsDots(weekCell(host, 1))).toBe(1);
