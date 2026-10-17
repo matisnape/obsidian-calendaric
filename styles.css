@@ -372,7 +372,8 @@
 
 /* ===== Day strip (US-CAL-14) ===== */
 /* Drawn inside the period label, below its text. */
-.calendaric-day-strip-toggle {
+/* Only while it is a button: with daily notes off the label is inert. */
+.calendaric-day-strip-toggle[role="button"] {
   cursor: pointer;
 }
 

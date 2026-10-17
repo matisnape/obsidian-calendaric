@@ -206,6 +206,29 @@ describe("the day strip", () => {
 		daily.contentEl.remove();
 	});
 
+	it("a locale change with the same week start redraws the day buttons in the new language", () => {
+		const daily = leaf("2026-09-24.md");
+		const { labels } = manager([daily]);
+		labels.sync();
+		toggleOf(daily)?.click();
+		expect(dayButton(daily, "2026-09-22")?.textContent).toBe("Tu 22");
+
+		window.moment.defineLocale("cal14-test", {
+			parentLocale: "en",
+			weekdaysMin: "Nd_Pn_Wt_Śr_Cz_Pt_So".split("_"),
+			weekdays: "niedziela_poniedziałek_wtorek_środa_czwartek_piątek_sobota".split("_"),
+		});
+		try {
+			window.moment.locale("cal14-test");
+			labels.sync();
+			const day = dayButton(daily, "2026-09-22");
+			expect(day?.textContent).toBe("Wt 22");
+			expect(day?.getAttribute("aria-label")).toMatch(/^wtorek, /);
+		} finally {
+			window.moment.locale("en");
+		}
+	});
+
 	it("closing the pane or destroying the labels takes the strip with them", () => {
 		const daily = leaf("2026-09-24.md");
 		const leaves = [daily];

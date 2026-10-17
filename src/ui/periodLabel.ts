@@ -62,7 +62,7 @@ interface DrawnLabel {
 	toggle: HTMLElement;
 	file: LabelledFile;
 	strip: HTMLElement | null;
-	/** The days and marks the strip shows; a sync that leaves it unchanged keeps the buttons, and their focus. */
+	/** The days, marks and text the strip shows; a sync that leaves it unchanged keeps the buttons, and their focus. */
 	stripKey: string;
 }
 
@@ -150,8 +150,12 @@ export class PeriodLabels {
 
 	private drawStrip(drawn: DrawnLabel): void {
 		const { granularity, date } = drawn.file;
-		const days = stripDays(granularity, date, this.host.weekFormat(), this.host.weekStart(), this.host.now());
-		const key = days.map((day) => `${day.date.valueOf()}:${day.isNoteDay}:${day.isToday}`).join();
+		const days = stripDays(granularity, date, this.host.weekFormat(), this.host.weekStart(), this.host.now()).map((day) => ({
+			...day,
+			text: day.date.format("dd D"),
+			ariaLabel: day.date.format("dddd, LL"),
+		}));
+		const key = days.map((day) => `${day.date.valueOf()}:${day.text}:${day.ariaLabel}:${day.isNoteDay}:${day.isToday}`).join();
 		if (drawn.strip && key === drawn.stripKey) return;
 
 		drawn.strip?.remove();
@@ -162,8 +166,8 @@ export class PeriodLabels {
 		for (const day of days) {
 			const button = strip.createEl("button", {
 				cls: "calendaric-day-strip-day",
-				text: day.date.format("dd D"),
-				attr: { "data-date": day.date.format("YYYY-MM-DD"), "aria-label": day.date.format("dddd, LL") },
+				text: day.text,
+				attr: { "data-date": day.date.format("YYYY-MM-DD"), "aria-label": day.ariaLabel },
 			});
 			button.toggleClass("is-note-day", day.isNoteDay);
 			button.toggleClass("is-today", day.isToday);
