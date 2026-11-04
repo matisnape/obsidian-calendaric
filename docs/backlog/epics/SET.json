@@ -103,7 +103,7 @@
       "story": "As someone configuring Calendaric, I want settings that apply to the whole plugin kept separate from any single granularity's settings, so that I can find and change a plugin-wide option without opening every granularity's section.",
       "rationale": "Global and per-granularity settings answer different questions, and mixing them makes the screen for either harder to read.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "cal:settings-tab-ui"
       ],
