@@ -78,7 +78,6 @@ export function openOverlay(trigger: HTMLElement, overlay: HTMLElement, options:
 		if (items.length === 0) return;
 		event.preventDefault();
 		const current = items.indexOf(doc.activeElement as HTMLElement);
-		// From outside the list, down lands on the first item and up on the last.
 		const next = current === -1 ? (step === 1 ? 0 : items.length - 1) : (current + step + items.length) % items.length;
 		const item = items[next]!;
 		if (!item.hasAttribute("tabindex")) item.tabIndex = -1;

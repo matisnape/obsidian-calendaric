@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 //
-// US-CAL-12: the overlay controller, driven by the DOM events a user produces.
 // happy-dom does no layout, so every rect the controller reads is stubbed.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { openOverlay } from "./overlay";
