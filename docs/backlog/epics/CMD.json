@@ -246,7 +246,7 @@
       "story": "As someone who wants exactly one command that opens today's weekly note, I want the generated per-granularity week command to be the only one that does this, so that the command palette never offers two entries that do the same thing.",
       "rationale": "Two commands opening the same note is confusing and leaves one of them as dead code the moment the generated command set covers week.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "cal:open-weekly-note-command"
       ],
