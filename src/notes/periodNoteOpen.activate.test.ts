@@ -255,8 +255,16 @@ describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the 
 
 	it("AC-NOTE-07.6: the week cell click opens the pretty-named file and creates no raw-named duplicate", async () => {
 		const ports = prettyVault();
+		const host = renderCalendar(ports, { ...SETTINGS, week: weekConfig }, "2025-11-10");
+		// The row holding Monday 10 November, the week the pretty file is for.
+		const row = Array.from(host.querySelectorAll("tr")).find((tr) =>
+			Array.from(tr.querySelectorAll(".calendaric-day:not(.is-adjacent-month)")).some((el) => el.firstChild?.textContent === "10"),
+		);
+		const weekCell = row?.querySelector<HTMLElement>(".calendaric-weeknum");
+		if (!weekCell) throw new Error("no week cell for 10 November");
 
-		await click(ports, false, stubConfirm(true), weekConfig, "2025-11-10");
+		weekCell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		await settle();
 
 		expect(openedPaths(ports)).toEqual([PRETTY]);
 		expect(ports.vault.getFile(RAW)).toBeNull();
