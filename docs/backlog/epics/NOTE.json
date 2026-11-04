@@ -102,7 +102,7 @@
       "story": "As someone auditing my notes, I want to list every note of a given granularity that exists in the vault, so that calendars, dashboards, and migrations can be built on a complete set instead of a partial guess.",
       "rationale": "Calendar dots, related-note lists, and index rebuilding all need the complete set, not a sample.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "dni:get-all-daily-notes",
         "dni:get-all-weekly-notes",
