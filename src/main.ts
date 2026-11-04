@@ -1,6 +1,7 @@
 import { getLanguage, MarkdownView, Menu, Notice, Plugin, setTooltip } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
-import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, loadStoredConfig, toSettings } from "./settings/model";
+import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, toSettings } from "./settings/model";
+import { readStoredConfig } from "./settings/upgrade";
 import type { CalendaricSettings, StoredConfig } from "./settings/model";
 import { CalendarView } from "./ui/CalendarView";
 import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
@@ -369,8 +370,23 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.stored = loadStoredConfig(await this.loadData());
+		let raw: unknown;
+		try {
+			raw = await this.loadData();
+		} catch {
+			raw = undefined;
+		}
+		const loaded = readStoredConfig(raw);
+		this.stored = loaded.stored;
 		this.settings = toSettings(this.stored);
+		if (loaded.reset) showNotice("Calendaric: some settings could not be read and were reset to their defaults.");
+		if (loaded.upgraded) {
+			try {
+				await this.saveData(this.stored);
+			} catch {
+				// The upgrade runs again on the next load; the settings in memory are already upgraded.
+			}
+		}
 	}
 
 	async saveSettings() {

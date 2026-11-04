@@ -53,6 +53,8 @@ export interface CalendarSet extends Partial<Record<Granularity, Partial<Periodi
 export interface StoredConfig extends GlobalSettings {
 	activeCalendarSet: string;
 	calendarSets: CalendarSet[];
+	/** Which stored shape wrote this file; see `CONFIG_VERSION` in `./upgrade`. */
+	configVersion?: number;
 }
 
 /** Globals plus the in-use group's granularity configs, flattened for the rest of the plugin. */
@@ -173,9 +175,8 @@ function pickGlobals(source: unknown): GlobalSettings {
  * not what gets saved. That is what lets a group nobody can reach yet survive a
  * load and a save untouched.
  *
- * Not handled here: an older stored shape that keeps day/week/... at the top
- * level instead of inside a group. Adopting those keys into the group is
- * US-MIG-07's; until then they are preserved but not read.
+ * An older shape that keeps day/week/... at the top level is moved into a group
+ * by `readStoredConfig` in `./upgrade` before it reaches here.
  */
 export function loadStoredConfig(raw: unknown): StoredConfig {
 	if (!isRecord(raw)) return defaultStoredConfig();
@@ -199,6 +200,39 @@ export function loadStoredConfig(raw: unknown): StoredConfig {
 		activeCalendarSet,
 		calendarSets,
 	};
+}
+
+/**
+ * The stored values the plugin reads but has to replace with a default because
+ * they hold the wrong type (AC-MIG-07.3). A value that is absent is not one:
+ * filling it is the ordinary case (AC-SET-06.3). Only the globals and the group
+ * in use are checked, because nothing else is read.
+ */
+export function unreadableFields(raw: Record<string, unknown>): string[] {
+	const found: string[] = [];
+	const globals = pickGlobals(raw);
+	for (const [key, value] of Object.entries(globals)) {
+		if (raw[key] !== undefined && raw[key] !== value) found.push(key);
+	}
+	if (raw.activeCalendarSet !== undefined && typeof raw.activeCalendarSet !== "string") found.push("activeCalendarSet");
+	if (raw.calendarSets !== undefined && !(Array.isArray(raw.calendarSets) && raw.calendarSets.every(isRecord))) {
+		found.push("calendarSets");
+	}
+
+	const active = getActiveSet(loadStoredConfig(raw));
+	for (const granularity of GRANULARITIES) {
+		const entry = active[granularity];
+		if (entry === undefined) continue;
+		if (!isRecord(entry)) {
+			found.push(granularity);
+			continue;
+		}
+		const read = normalizeConfig(entry);
+		for (const field of CONFIG_FIELDS) {
+			if (entry[field] !== undefined && entry[field] !== read[field]) found.push(`${granularity}.${field}`);
+		}
+	}
+	return found;
 }
 
 /**
