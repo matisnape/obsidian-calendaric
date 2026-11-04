@@ -812,7 +812,7 @@
       "story": "As someone who wants navigation commands to only apply where they make sense, I want the plugin to tell whether any given file is one of my periodic notes and, if so, which period it represents, so that features like jump-to-adjacent only ever activate for real periodic notes.",
       "rationale": "Every command that only makes sense on a periodic note needs a precise, folder-scoped answer to 'is this one?'.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:is-periodic",
         "pn:find-note-in-cache"
@@ -839,8 +839,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.isPeriodic.test.ts 'AC-NOTE-08.1: recognises %s as a %s note for the period starting %s' (day, week, month, year) and '...a note created after the index was built, with its exact period' assert granularityOf and dateOf through the real PeriodicNoteIndex over a fake vault. Orchestrator mutations at 83e42fc: noteDate computed one day late failed 2; dropping forget(oldPath) failed 4."
         },
         {
           "id": "AC-NOTE-08.2",
@@ -851,8 +851,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: 'AC-NOTE-08.2: does not recognise %s' (vault root, Notes/, Notes/ week name, DailyArchive/ shared prefix) and a date-like file created outside every configured folder. Mutations: stripFolder without the trailing '/' failed 1 (DailyArchive); stripFolder always matching failed 3. Gap: no test reaches the frontmatter route with a file outside every folder.",
           "failure_path": true
         },
         {
@@ -864,8 +864,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: exact-format create/rename of .png, .pdf and .canvas into the folder; prefix-match create/rename for Daily and Weekly; a note renamed from .md to .png leaves the index; a .png carrying day frontmatter is not recognised while the same frontmatter on a .md is. Two independent guards: src/fmt/resolveFileDate.ts refuses a non-.md path by name (removing it failed the prefix-match cases), and identify() in src/notes/periodicNoteIndex.ts refuses it before the frontmatter route (removing it failed the frontmatter .png test, 1 of 27). Every index write goes through remember() then identify(); a scratch probe over create, rename, metadata and applySettings found no route that indexes a non-.md file.",
           "failure_path": true
         },
         {
@@ -877,8 +877,8 @@
           ],
           "verifies": "compat",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: 'AC-NOTE-08.4: still recognises a daily note moved into a subfolder as the same day' and '...a weekly note renamed to a longer title as the same week' (prefix match) assert the new path keeps granularity and date and the old path is gone. Mutations: dropping forget(oldPath) and a one-day-late noteDate both failed them."
         }
       ]
     },

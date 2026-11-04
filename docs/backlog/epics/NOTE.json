@@ -686,7 +686,7 @@
       "story": "As someone who wants navigation commands to only apply where they make sense, I want the plugin to tell whether any given file is one of my periodic notes and, if so, which period it represents, so that features like jump-to-adjacent only ever activate for real periodic notes.",
       "rationale": "Every command that only makes sense on a periodic note needs a precise, folder-scoped answer to 'is this one?'.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "pn:is-periodic",
         "pn:find-note-in-cache"
