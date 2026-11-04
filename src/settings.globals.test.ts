@@ -131,10 +131,11 @@ function enter(input: HTMLInputElement, value: string): void {
 }
 
 describe("US-SET-02 global settings", () => {
-	it("AC-SET-02.1: every global setting sits in a global area that holds no granularity group", () => {
+	it("AC-SET-02.1: every global setting sits in one of the two global areas, which hold no granularity group", () => {
 		const { tab } = renderTab();
+		// General at the top, Advanced at the bottom: the section order is pinned elsewhere (AC-ARCH-07.1).
 		const areas = Array.from(tab.containerEl.querySelectorAll(".calendaric-global-settings"));
-		expect(areas.length).toBeGreaterThan(0);
+		expect(areas).toHaveLength(2);
 
 		for (const name of GLOBAL_ROWS) {
 			const el = row(tab, name);
