@@ -85,6 +85,11 @@ export function readStoredConfig(raw: unknown): LoadedConfig {
 	try {
 		const source = upgraded ? adoptTopLevelGranularities(raw) : raw;
 		const stored = loadStoredConfig(source);
+		// A stray entry is never read; dropping it lets the next save clear its notice.
+		const topLevel = stored as unknown as Record<string, unknown>;
+		if (version <= CONFIG_VERSION) {
+			for (const granularity of GRANULARITIES) if (!isRecord(topLevel[granularity])) delete topLevel[granularity];
+		}
 		return {
 			// Never lower the marker: a newer version's file stays marked as its own.
 			stored: { ...stored, configVersion: Math.max(version, CONFIG_VERSION) },

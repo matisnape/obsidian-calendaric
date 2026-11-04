@@ -179,6 +179,14 @@ describe("AC-MIG-07.2 a file from a newer version loads and keeps what it does n
 		expect(plugin.settings.weekStart).toBe(DEFAULT_SETTINGS.weekStart);
 	});
 
+	it("AC-MIG-07.2: a newer file's own top-level key of a granularity's name survives a save", async () => {
+		const disk = onDisk({ ...newer, week: "iso" });
+		const plugin = await loadedPlugin(disk);
+		await plugin.saveSettings();
+
+		expect((disk.data as Record<string, unknown>).week).toBe("iso");
+	});
+
 	it("AC-MIG-07.2: a field it does not recognise is not an error", async () => {
 		await loadedPlugin(onDisk({ ...newer, weekStart: "sunday" }));
 
@@ -280,6 +288,17 @@ describe("AC-MIG-07.3 an unreadable file or field falls back, says so once, and 
 
 		expect(plugin.settings.day).toEqual(DEFAULT_SETTINGS.day);
 		expect(plugin.settings.week.folder).toBe("journal/week");
+		expect(notices).toHaveLength(1);
+	});
+
+	it("AC-MIG-07.3: a stray top-level entry in a current file is reported once, then cleared by a save", async () => {
+		const disk = onDisk({ configVersion: CONFIG_VERSION, day: 42, activeCalendarSet: "Default", calendarSets: [{ id: "Default" }] });
+		const plugin = await loadedPlugin(disk);
+		expect(notices).toHaveLength(1);
+
+		await plugin.saveSettings();
+		await loadedPlugin(disk);
+
 		expect(notices).toHaveLength(1);
 	});
 
