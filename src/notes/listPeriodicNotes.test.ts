@@ -17,7 +17,6 @@ const CONFIGS: FileConfigs = {
 
 const NO_DEFAULT_FOLDER = new FakeVaultConfigPort("");
 
-/** A vault holding these folders and these note paths, each note with empty content. */
 function vaultWith(folders: string[], paths: string[]): FakeVaultPort {
 	const vault = new FakeVaultPort();
 	for (const folder of folders) vault.seedFolder(folder);
