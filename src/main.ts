@@ -36,6 +36,7 @@ import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 import { resolveFileDate } from "./fmt/resolveFileDate";
 import { PeriodLabels } from "./ui/periodLabel";
 import type { LabelLeaf } from "./ui/periodLabel";
+import { resolveWeekStart } from "./ui/calendarUtils";
 
 /**
  * The date type, taken from the clock this plugin actually reads.
@@ -274,6 +275,9 @@ export default class CalendaricPlugin extends Plugin {
 			resolve: (path) => resolveFileDate(path, this.indexConfigs(), vaultConfig),
 			now: () => window.moment(),
 			weekFormat: () => this.indexConfigs().week?.format ?? "",
+			weekStart: () => resolveWeekStart(this.settings.weekStart),
+			openDay: (date) => this.openPeriodNote("day", date),
+			dayEnabled: () => this.settings.day.enabled,
 		});
 		this.periodLabels = labels;
 

@@ -1,17 +1,9 @@
 import type { ReleaseGranularity } from "../types";
-import { computeNoteDate } from "../fmt/noteDate";
 import { releaseFacts } from "../granularity/registry";
+import { periodStart, stripDays } from "./dayStrip";
 
 /** Read off `window.moment` rather than imported, like main.ts: the bundle carries no moment of its own. */
 type Moment = ReturnType<typeof window.moment>;
-
-/**
- * The start of the period `date` falls in, read off the note identity itself
- * (`granularity:<epoch ms>`), so a week starts wherever the index says it does.
- */
-function periodStart(date: Moment, granularity: ReleaseGranularity, weekFormat: string): Moment {
-	return window.moment(Number(computeNoteDate(date, granularity, weekFormat).split(":")[1]));
-}
 
 /**
  * The period a note belongs to, in words, measured from `now`: Today, Last
@@ -56,6 +48,22 @@ export interface PeriodLabelHost {
 	resolve(path: string): LabelledFile | null;
 	now(): Moment;
 	weekFormat(): string;
+	/** The configured first day of the week, as moment's `day()` number. */
+	weekStart(): number;
+	/** Open that day's note in the active pane, writing it first when the vault holds none. */
+	openDay(date: Moment): Promise<void>;
+	/** Off, the index knows no day notes, so a day could only be written, never opened: no strip. */
+	dayEnabled(): boolean;
+}
+
+/** One drawn label. The toggle outlives every redraw, so keyboard focus stays on it. */
+interface DrawnLabel {
+	label: HTMLElement;
+	toggle: HTMLElement;
+	file: LabelledFile;
+	strip: HTMLElement | null;
+	/** The days, marks and text the strip shows; a sync that leaves it unchanged keeps the buttons, and their focus. */
+	stripKey: string;
 }
 
 /**
@@ -67,7 +75,7 @@ export interface PeriodLabelHost {
  */
 export class PeriodLabels {
 	/** Keyed by the pane's view element, which lives exactly as long as the pane. */
-	private readonly drawn = new Map<HTMLElement, HTMLElement>();
+	private readonly drawn = new Map<HTMLElement, DrawnLabel>();
 
 	constructor(private readonly host: PeriodLabelHost) {}
 
@@ -92,25 +100,83 @@ export class PeriodLabels {
 	}
 
 	private draw(contentEl: HTMLElement, file: LabelledFile): void {
-		let label = this.drawn.get(contentEl);
-		if (!label) {
-			label = contentEl.createDiv({ cls: "calendaric-period-label" });
-			this.drawn.set(contentEl, label);
+		let drawn = this.drawn.get(contentEl);
+		if (!drawn) {
+			const label = contentEl.createDiv({ cls: "calendaric-period-label" });
+			const toggle = label.createSpan({ cls: "calendaric-day-strip-toggle" });
+			drawn = { label, toggle, file, strip: null, stripKey: "" };
+			const entry = drawn;
+			toggle.addEventListener("click", () => this.toggleStrip(entry));
+			toggle.addEventListener("keydown", (event) => {
+				if (event.key !== "Enter" && event.key !== " ") return;
+				// Space would otherwise scroll the pane.
+				event.preventDefault();
+				this.toggleStrip(entry);
+			});
+			this.drawn.set(contentEl, drawn);
 		}
 
-		label.empty();
-		label.createSpan({ text: humanizePeriod(file.granularity, file.date, this.host.now(), this.host.weekFormat()) });
+		drawn.file = file;
+		const { toggle } = drawn;
+		toggle.empty();
+		toggle.createSpan({ text: humanizePeriod(file.granularity, file.date, this.host.now(), this.host.weekFormat()) });
 		if (file.prefixMatch) {
-			label.createSpan({
+			toggle.createSpan({
 				cls: "calendaric-period-label-inexact",
 				text: "≈",
 				attr: { "aria-label": "Inexact match: the filename only starts with this period's format" },
 			});
 		}
+
+		const offered = this.host.dayEnabled();
+		if (!offered) this.closeStrip(drawn);
+		if (drawn.strip) this.drawStrip(drawn);
+		toggle.setAttr("role", offered ? "button" : null);
+		toggle.setAttr("tabindex", offered ? "0" : null);
+		toggle.setAttr("aria-expanded", offered ? drawn.strip !== null : null);
+	}
+
+	private toggleStrip(drawn: DrawnLabel): void {
+		if (!this.host.dayEnabled()) return;
+		if (drawn.strip) this.closeStrip(drawn);
+		else this.drawStrip(drawn);
+		drawn.toggle.setAttr("aria-expanded", drawn.strip !== null);
+	}
+
+	private closeStrip(drawn: DrawnLabel): void {
+		drawn.strip?.remove();
+		drawn.strip = null;
+	}
+
+	private drawStrip(drawn: DrawnLabel): void {
+		const { granularity, date } = drawn.file;
+		const days = stripDays(granularity, date, this.host.weekFormat(), this.host.weekStart(), this.host.now()).map((day) => ({
+			...day,
+			text: day.date.format("dd D"),
+			ariaLabel: day.date.format("dddd, LL"),
+		}));
+		const key = days.map((day) => `${day.date.valueOf()}:${day.text}:${day.ariaLabel}:${day.isNoteDay}:${day.isToday}`).join();
+		if (drawn.strip && key === drawn.stripKey) return;
+
+		drawn.strip?.remove();
+		const strip = drawn.label.createDiv({ cls: "calendaric-day-strip" });
+		drawn.strip = strip;
+		drawn.stripKey = key;
+
+		for (const day of days) {
+			const button = strip.createEl("button", {
+				cls: "calendaric-day-strip-day",
+				text: day.text,
+				attr: { "data-date": day.date.format("YYYY-MM-DD"), "aria-label": day.ariaLabel },
+			});
+			button.toggleClass("is-note-day", day.isNoteDay);
+			button.toggleClass("is-today", day.isToday);
+			button.addEventListener("click", () => void this.host.openDay(day.date));
+		}
 	}
 
 	private remove(contentEl: HTMLElement): void {
-		this.drawn.get(contentEl)?.remove();
+		this.drawn.get(contentEl)?.label.remove();
 		this.drawn.delete(contentEl);
 	}
 }
