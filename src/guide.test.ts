@@ -75,7 +75,6 @@ function settingNames(): Set<string> {
 	return new Set(names.map((name) => name.trim()).filter((name) => name !== ""));
 }
 
-/** Every command name the plugin registers in the palette. */
 function commandNames(): Set<string> {
 	const leaves = { find: () => null } as unknown as Parameters<typeof calendarViewCommand>[0];
 	const reveal = {} as unknown as Parameters<typeof revealActiveNoteCommand>[0];
@@ -97,7 +96,6 @@ function sections(): { heading: string; level: number; body: string }[] {
 	return out;
 }
 
-/** The guide's tables, each as its header cells and its body rows of cells. */
 function tables(): { header: string[]; rows: string[][] }[] {
 	const cells = (line: string) => line.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
 	const out: { header: string[]; rows: string[][] }[] = [];
@@ -179,6 +177,16 @@ describe("the guide's examples", () => {
 	it("AC-ARCH-08.1: the Daily Notes import writes the default format the guide names", () => {
 		const named = /Daily Notes import writes `([^`]+)`/.exec(guide);
 		expect(named?.[1]).toBe(DEFAULT_DAY_FORMAT);
+	});
+
+	it("AC-ARCH-08.1: {{date}} writes the note's own date, not the day the note is created", () => {
+		expect(guide).toMatch(/`\{\{date\}\}` \| The note's own date/);
+		expect(guide).toMatch(/`\{\{date:format\}\}` \| The note's own date/);
+		// A clicked calendar day is not today, so the two readings differ.
+		const date = window.moment("2020-01-02");
+		const config = { ...DEFAULT_SETTINGS.day, format: "YYYY-MM-DD" };
+
+		expect(substituteTemplateTokens("{{date}} {{date:DD.MM}}", date, "day", config, "t")).toBe("2020-01-02 02.01");
 	});
 
 	it("AC-ARCH-08.1: every template variable the guide lists is replaced in a note of its group", () => {

@@ -67,8 +67,8 @@ Template variables are substituted in the body of a note when it is created. The
 
 | Variable | Description |
 |---|---|
-| `{{date}}` | Creation date in the note's configured format |
-| `{{date:format}}` | Creation date with a custom format, e.g. `{{date:DD MMMM YYYY}}` |
+| `{{date}}` | The note's own date in the note's configured format, also for a note created for another day |
+| `{{date:format}}` | The note's own date with a custom format, e.g. `{{date:DD MMMM YYYY}}` |
 | `{{time}}` | Current time, `HH:mm` |
 | `{{title}}` | The note's filename (without extension) |
 
