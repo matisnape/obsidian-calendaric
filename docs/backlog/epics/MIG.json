@@ -209,7 +209,7 @@
       "story": "As someone who uses the Calendar plugin today, I want Calendaric to offer to copy its weekly note settings and display preferences, so that switching plugins does not reset how my week view looks or behaves.",
       "rationale": "No predecessor plugin ever imported Calendar-plugin settings into another plugin's configuration; this is new behaviour needed because Calendaric absorbs the Calendar plugin's role.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
