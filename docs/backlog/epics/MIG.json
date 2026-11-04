@@ -228,8 +228,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "'AC-MIG-03.1: sets week folder, format and template ... and enables week' (calendarImport.test.ts) went red when the week.enabled push was dropped, when the folder push was disabled, and when text() trimming was removed; the adapter test 'reads ... from its options' went red when weeklyNoteFolder or wordsPerDot was dropped from the read map."
         },
         {
           "id": "AC-MIG-03.2",
@@ -240,8 +240,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "'AC-MIG-03.2: with Periodic Notes governing week, ... settings-screen week fields are not imported' went red when weekFromCalendar was forced to true (the control-flow guard); it asserts week is unchanged and weekStart still imported.",
           "failure_path": true
         },
         {
@@ -253,8 +253,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "'AC-MIG-03.3: week start, confirm-before-create, week numbers and locale override ...' went red when each of the four pushed values was hardcoded (value: 'monday', true, true, '')."
         },
         {
           "id": "AC-MIG-03.4",
@@ -265,8 +265,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "'AC-MIG-03.4: a stored wordsPerDot of 250 becomes ...' (unit, 400 -> 250) went red when the pushed value was hardcoded to 1; the DOM test 'importing stores ... words per dot' went red when the card render call in settings.ts was disabled."
         },
         {
           "id": "AC-MIG-03.5",
@@ -278,8 +278,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "The 'lists each customised value', 'declining leaves ... byte-identical' and 'confirming one value replaces that one only' tests went red when the customised check was set to false and when confirmed.includes(id) was forced true; the DOM test 'typed in after the card was drawn' went red when decideNow() re-planning was bypassed. Gap: card-to-modal confirm wiring (card passes the ticked ids to applyCalendarImport) is not asserted; forcing an extra id there survived, though the modal and apply halves are each covered. Gaps closed at 0255da9: a DOM test now confirms one conflict through card and modal and asserts the unconfirmed customised field is unchanged (passing an extra 'week.folder', 'week.templatePath' or an empty confirmed list each turns it red, reviewer round 4); removing plan()'s equal-value skip now turns a test red.",
           "failure_path": true
         },
         {
@@ -291,8 +291,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "'AC-MIG-03.6: no offer when not installed or not enabled' (unit and DOM) went red when the absent-to-hidden branch was removed or changed; the DOM test also went red when the hidden early-return in the card was removed.",
           "failure_path": true
         },
         {
@@ -304,8 +304,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "DOM test 'AC-MIG-03.7: is offered for the criterion's fixture' uses the exact fixture and went red when the card render call was disabled; the unit test stays an offer with all-default values (no shortcut on equal values)."
         },
         {
           "id": "AC-MIG-03.8",
@@ -316,8 +316,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "'AC-MIG-03.8: not offered when every field ... unset' and 'empty and blank week fields count as unset' went red when the incoming/unmapped-empty hidden guard was removed and when text() stopped trimming; the adapter test 'key not carried stays out' went red when defaults were filled in; judged as written (all-unset Given).",
           "failure_path": true
         }
       ],
