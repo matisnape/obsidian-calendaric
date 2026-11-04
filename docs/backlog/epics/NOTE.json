@@ -599,8 +599,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Activating a period with no note creates the note and opens it, through the cell click (openOrCreateNote) and the command path (openOrCreatePeriodNote). src/notes/periodNoteOpen.activate.test.ts asserts the file exists and exactly that path opens on both paths. Removing the open call in cellActions.ts turns three tests red."
         },
         {
           "id": "AC-NOTE-07.2",
@@ -612,8 +612,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Activating a period whose note exists opens it with no second file and byte-identical content: the tests snapshot every vault path and content before and after (toEqual) and assert only the existing path opened, on both entry points; on the click no confirmation is asked even with confirm on. Forcing the existing-note lookup to null in cellActions.ts turns the click test red."
         },
         {
           "id": "AC-NOTE-07.3",
@@ -625,8 +625,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Cell click: with confirmation on and no note, the click asks before any write; declining leaves the vault empty (no note, no parent folder) and opens nothing; a second test proves the vault is still empty when asked. Disabling the confirmation branch turns two tests red; dropping `if (!accepted) return` or ignoring the answer turns the decline test red. The command path has no confirmation setting by design (covers assigns it to cal:*-with-confirmation).",
           "failure_path": true
         },
         {
@@ -638,8 +638,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Cell click: with confirmation off the note is created and opened and the confirm stub (which would decline) is never called. Removing the open after creation turns the test red. The command path has no confirmation setting by design."
         },
         {
           "id": "AC-NOTE-07.5",
@@ -651,8 +651,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "When creation fails, the cell click (real CalendarWidget DOM click) and the command both show `Calendaric could not create the daily note for 2026-04-13: vault is read-only` and open no pane; nested formats name the whole period, a folder-held path is not double-prefixed, and an open failure on an existing note reports the open error, not a creation failure. Letting the command's catch fall through to open turns two tests red; forcing the note-exists decision false turns two red.",
           "failure_path": true
         },
         {
@@ -665,8 +665,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "With the real PeriodicNoteIndex over a fake vault holding `2025-W46, 10.11 - 16.11.md` and prefix matching on, activating that week opens the pretty file and creates no `2025-W46.md`, on the command path and on the week-cell click, which reads the index through the new optional `notes` lookup on CalendarDeps; main.ts wires it lazily and a real-onload test shows null before layout-ready and the file after. Nulling the lookup in calendar.ts turns three tests red; making the command ignore the existing note one red; replacing the main.ts getter one red.",
           "failure_path": true
         }
       ],
