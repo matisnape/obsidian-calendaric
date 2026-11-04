@@ -75,9 +75,9 @@ export class IndicatorDetail {
 			}, DETAIL_OPEN_DELAY_MS);
 		});
 		cell.addEventListener("pointerleave", (event) => {
-			if (event.pointerType === "touch" || keyboardFocus) return;
+			if (event.pointerType === "touch") return;
 			latest++;
-			if (this.open?.cell === cell) this.scheduleClose();
+			if (!keyboardFocus && this.open?.cell === cell) this.scheduleClose();
 		});
 		cell.addEventListener("pointerdown", (event) => {
 			pressedWith = event.pointerType;

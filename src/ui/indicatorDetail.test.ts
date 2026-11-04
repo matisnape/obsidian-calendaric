@@ -256,6 +256,10 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		key(day(3), "Escape");
 		expect(detail()).toBeNull();
 		expect(day(3).hasAttribute("aria-describedby")).toBe(false);
+		pointer(day(3), "pointerenter", "mouse");
+		pointer(day(3), "pointerleave", "mouse");
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(detail()).toBeNull();
 
 		day(3).blur();
 		day(3).focus();
