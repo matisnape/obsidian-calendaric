@@ -835,7 +835,7 @@
       "story": "As someone who thinks in phrases rather than dates, I want to type 'last monday' or 'next week' and land on that period's note, so that I do not have to work out the calendar date first.",
       "rationale": "The natural-language date plugin is installed and enabled in this vault, so this command appears today. Dropping it would remove a working feature.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:nl-date-navigator"
       ],
