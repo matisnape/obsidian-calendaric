@@ -83,7 +83,7 @@ describe("AC-CAL-02.4: the return-to-today control is inactive on the current mo
 		expect(firstRow).not.toBeNull();
 
 		todayControl(host).click();
-		await Promise.resolve();
+		await new Promise((resolve) => setTimeout(resolve, 0));
 
 		expect(header(host)).toBe("Sep2026");
 		expect(host.querySelector("tbody tr")).toBe(firstRow);
