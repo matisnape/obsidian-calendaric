@@ -3511,7 +3511,7 @@
       "story": "As someone opening a popover or a suggestion list from the calendar, I want that overlay to stay fully visible and anchored to whatever triggered it, so that it is never clipped off the edge of the window or left floating in the wrong place.",
       "rationale": "This is the shared positioning behaviour the indicator popover (and future overlay-driven features) depend on to be usable near the edges of the window.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:text-input-suggest-popper-positioning"
       ],
@@ -3531,8 +3531,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "placeOverlay (src/ui/overlay.ts:24) places the overlay below the trigger, flips above when only that fits, and clamps to the window on all four edges. src/ui/overlay.test.ts asserts exact coordinates and a fits-inside check for right, left, top and bottom edges, the bottom-right corner, an exact-fit flip and an oversize overlay. Deleting the right, left or top clamp or the flip each turned 2-3 of 9 tests red.",
           "failure_path": true
         },
         {
@@ -3544,8 +3544,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "openOverlay (overlay.ts:57) re-anchors on a capturing window scroll listener, on resize and on reposition(), and closes when the trigger's rect is fully outside the window. overlay.dom.test.ts covers inner-container scroll, resize, reposition(), and close-out above, below, left and right. Non-capturing scroll turned 6 red, removing the out-of-view close 4 red, removing resize 2 red.",
           "failure_path": true
         },
         {
@@ -3558,8 +3558,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "With itemSelector, ArrowDown/ArrowUp move focus between items with wraparound; the overlay stays open and the key is preventDefault-ed. Items without tabindex get -1 so Electron focuses them; the test asserts the attribute directly. Removing the tabindex guard turned 1 red, the overlay keydown listener 2 red, wrap-to-clamp 1 red. Without itemSelector arrow keys are left alone."
         },
         {
           "id": "AC-CAL-12.4",
@@ -3570,8 +3570,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "A capturing document pointerdown listener closes the overlay for targets outside both overlay and trigger. Tests: outside closes (onClose once), inside stays open, trigger stays open so the caller can toggle. Dropping either exemption turned 1 test red each."
         },
         {
           "id": "AC-CAL-12.5",
@@ -3582,8 +3582,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "A MutationObserver on document.body closes the overlay once trigger.isConnected is false; the test removes the trigger via replaceChildren and asserts onClose once; an unrelated DOM change leaves it open. Removing the isConnected check or observer.observe each turned 1 red. Listener cleanup: a spy test compares every add/remove pair with capture flag; removing the pointerdown or trigger keydown removal turned 1 and 2 red.",
           "failure_path": true
         }
       ],

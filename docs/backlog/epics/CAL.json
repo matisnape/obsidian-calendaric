@@ -1031,7 +1031,7 @@
       "story": "As someone opening a popover or a suggestion list from the calendar, I want that overlay to stay fully visible and anchored to whatever triggered it, so that it is never clipped off the edge of the window or left floating in the wrong place.",
       "rationale": "This is the shared positioning behaviour the indicator popover (and future overlay-driven features) depend on to be usable near the edges of the window.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "pn:text-input-suggest-popper-positioning"
       ],
