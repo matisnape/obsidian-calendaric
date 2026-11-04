@@ -22,7 +22,7 @@ import { DEFAULT_SETTINGS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
 import type CalendaricPlugin from "./main";
-import { applyLocale, restoreLocale } from "./fmt/locale";
+import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 import { formatWithWeekTokens } from "./notes/noteUtils";
 import { substituteTemplateTokens } from "./notes/templateTokens";
 import { GRANULARITY, GRANULARITY_REGISTRY, granularityEntry } from "./granularity/registry";
@@ -34,13 +34,12 @@ import { revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
 
 const GUIDE_PATH = "docs/guide.md";
-// Under happy-dom `import.meta.url` is not a file URL, so paths start at the
+// Under happy-dom `import.meta.url` is not a file URL, so the path starts at the
 // repo root, where vitest runs.
-const readRepoFile = (path: string): string => readFileSync(join(cwd(), path), "utf8");
-const guide = readRepoFile(GUIDE_PATH);
-const manifest = JSON.parse(readRepoFile("manifest.json")) as {
-	isDesktopOnly: boolean;
-};
+const guide = readFileSync(join(cwd(), GUIDE_PATH), "utf8");
+
+/** "Start week on" set to `day`, through the path a saved setting takes to moment. */
+const startWeekOn = (day: WeekStartOption): void => applyLocaleSettings({ overrideLocale: "en", weekStart: day }, "en");
 
 /** The guide's prose: fenced blocks and code spans removed, since those are syntax, not labels. */
 const prose = guide.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
@@ -149,7 +148,7 @@ describe("the guide's examples", () => {
 		for (const { header, rows } of examples) {
 			const context = EXAMPLE_CONTEXTS[header[1]!];
 			expect(context, `no date or week start for the example table "${header[1]}"`).toBeDefined();
-			applyLocale("en", context!.weekStart, "en");
+			startWeekOn(context!.weekStart);
 			const date = window.moment(context!.date);
 
 			const written = rows.map(([format]) => formatWithWeekTokens(format!.match(CODE_SPAN)![1]!, date, "week"));
@@ -160,14 +159,14 @@ describe("the guide's examples", () => {
 	it("AC-ARCH-08.1: the worked example writes the filename the guide shows", () => {
 		const example = /Format: `([^`]+)`\n→ Filename: `([^`]+)`/.exec(guide);
 		expect(example).not.toBeNull();
-		applyLocale("en", "monday", "en");
+		startWeekOn("monday");
 
 		expect(formatWithWeekTokens(example![1]!, window.moment("2026-04-15"), "week")).toBe(example![2]);
 	});
 
 	it("AC-ARCH-08.1: weekday tokens in the Format field are written only for weekly notes", () => {
 		expect(guide).toMatch(/only evaluated for Weekly Notes/);
-		applyLocale("en", "monday", "en");
+		startWeekOn("monday");
 		const date = window.moment("2026-04-15");
 
 		expect(formatWithWeekTokens("YYYY {{monday:DD.MM}}", date, "week")).toBe("2026 13.04");
@@ -189,7 +188,20 @@ describe("the guide's examples", () => {
 		expect(substituteTemplateTokens("{{date}} {{date:DD.MM}}", date, "day", config, "t")).toBe("2020-01-02 02.01");
 	});
 
-	it("AC-ARCH-08.1: every template variable the guide lists is replaced in a note of its group", () => {
+	it("AC-ARCH-08.1: every template variable the guide lists writes the value the guide describes", () => {
+		// The value each row's description promises, for a note on Wed 15 April
+		// 2026 titled "Title" with the format YYYY-MM-DD and a Monday week start.
+		// A row the guide adds without a line here fails rather than going unchecked.
+		const described: Record<string, RegExp> = {
+			"{{date}}": /^2026-04-15$/,
+			"{{date:DD}}": /^15$/,
+			"{{time}}": /^\d{2}:\d{2}$/,
+			"{{title}}": /^Title$/,
+			"{{yesterday}}": /^2026-04-14$/,
+			"{{tomorrow}}": /^2026-04-16$/,
+			"{{monday:DD}}": /^13$/,
+			"{{sunday:DD}}": /^19$/,
+		};
 		const groups: Record<string, readonly ReleaseGranularity[]> = { Universal: RELEASE_GRANULARITIES };
 		for (const g of RELEASE_GRANULARITIES) groups[GRANULARITY[g].label] = [g];
 
@@ -198,7 +210,7 @@ describe("the guide's examples", () => {
 		const listed = all.slice(start + 1).filter((s) => s.level > all[start]!.level);
 		expect(listed.length).toBeGreaterThan(0);
 
-		applyLocale("en", "monday", "en");
+		startWeekOn("monday");
 		const date = window.moment("2026-04-15");
 		for (const { heading, body } of listed) {
 			const granularities = groups[heading];
@@ -211,8 +223,9 @@ describe("the guide's examples", () => {
 			for (const g of granularities!) {
 				const config = { ...DEFAULT_SETTINGS[g], format: "YYYY-MM-DD" };
 				for (const variable of variables) {
-					expect(substituteTemplateTokens(variable, date, g, config, "Title"), `${variable} in a ${g} note`).not.toMatch(
-						/\{\{/,
+					expect(described, `no described value for ${variable}`).toHaveProperty([variable]);
+					expect(substituteTemplateTokens(variable, date, g, config, "Title"), `${variable} in a ${g} note`).toMatch(
+						described[variable]!,
 					);
 				}
 			}
@@ -236,7 +249,7 @@ describe("week tokens and Start week on", () => {
 	});
 
 	it("AC-ARCH-08.2: a weekday token in a non-ISO format resolves inside the configured week", () => {
-		applyLocale("en", "saturday", "en");
+		startWeekOn("saturday");
 		// Wed 15 April 2026 falls in the Saturday-start week Sat 11 – Fri 17 April.
 		const date = window.moment("2026-04-15");
 
@@ -249,7 +262,7 @@ describe("week tokens and Start week on", () => {
 	});
 
 	it("AC-ARCH-08.2: a weekday template token in a non-ISO weekly note resolves inside the configured week", () => {
-		applyLocale("en", "saturday", "en");
+		startWeekOn("saturday");
 		const config = { ...DEFAULT_SETTINGS.week, format: "gggg-[W]ww" };
 
 		expect(substituteTemplateTokens("{{saturday:DD.MM}}", window.moment("2026-04-15"), "week", config, "t")).toBe(
@@ -260,15 +273,15 @@ describe("week tokens and Start week on", () => {
 	it("AC-ARCH-08.2: a locale week number follows the configured week start", () => {
 		// Sat 11 April 2026 opens week 16 when weeks start on Saturday (week 1 is
 		// Sat 27 Dec 2025 – Fri 2 Jan 2026), and sits in week 15 when they start on Monday.
-		applyLocale("en", "saturday", "en");
+		startWeekOn("saturday");
 		expect(formatWithWeekTokens("gggg-[W]ww", window.moment("2026-04-11"), "week")).toBe("2026-W16");
 
-		applyLocale("en", "monday", "en");
+		startWeekOn("monday");
 		expect(formatWithWeekTokens("gggg-[W]ww", window.moment("2026-04-11"), "week")).toBe("2026-W15");
 	});
 
 	it("AC-ARCH-08.2: a format with ISO week tokens keeps the Monday-start ISO week", () => {
-		applyLocale("en", "saturday", "en");
+		startWeekOn("saturday");
 		const date = window.moment("2026-04-15");
 
 		// ISO week 16 of 2026 is Mon 13 – Sun 19 April, so its Saturday is the 18th.
@@ -279,34 +292,45 @@ describe("week tokens and Start week on", () => {
 });
 
 describe("opening the guide from the settings", () => {
-	function guideLink(desktop?: { openPluginFile: (path: string) => undefined }): HTMLAnchorElement {
+	function guideLink(desktop?: { openPluginFile: (path: string) => undefined }): {
+		link: HTMLAnchorElement;
+		container: HTMLElement;
+	} {
 		const tab = makeTab(desktop);
 		tab.display();
 		const link = Array.from(tab.containerEl.querySelectorAll("a")).find(
 			(a) => a.textContent === "Format & template guide",
 		);
 		expect(link).toBeDefined();
-		return link as HTMLAnchorElement;
+		return { link: link as HTMLAnchorElement, container: tab.containerEl };
 	}
 
 	it("AC-ARCH-08.3: the settings link opens the published guide this test reads", () => {
-		const link = guideLink();
+		const { link } = guideLink();
 
 		expect(link.getAttribute("href")).toMatch(new RegExp(`^https://github\\.com/[^/]+/[^/]+/blob/master/${GUIDE_PATH}$`));
 		expect(link.getAttribute("target")).toBe("_blank");
 	});
 
-	it("AC-ARCH-08.3: opening the guide uses no desktop-only capability", () => {
-		// The manifest is desktop-only today (DEC-24). The link is a plain web
+	it("AC-ARCH-08.3: clicking the link leaves it to the browser, with no desktop-only capability", () => {
+		// manifest.json is desktop-only today (DEC-24). The link is a plain web
 		// link anyway, so it keeps working on a phone if mobile support is ever
-		// declared; what must not happen is the click reaching the desktop shell.
-		expect(manifest.isDesktopOnly).toBe(true);
+		// declared; what must not happen is the click reaching the desktop shell,
+		// or a handler cancelling the link's own navigation.
 		const openPluginFile = vi.fn((_path: string) => undefined);
-		const link = guideLink({ openPluginFile });
-		document.addEventListener("click", (event) => event.preventDefault(), { once: true });
+		const { link, container } = guideLink({ openPluginFile });
+		let cancelledByPlugin: boolean | null = null;
+		// The tab is detached, so its own root is the last element the click
+		// bubbles through. Cancelling there stops happy-dom from opening the page;
+		// its window.open is on an internal window that vi.spyOn(window) cannot reach.
+		container.addEventListener("click", (event) => {
+			cancelledByPlugin = event.defaultPrevented;
+			event.preventDefault();
+		});
 
 		link.click();
 
+		expect(cancelledByPlugin).toBe(false);
 		expect(openPluginFile).not.toHaveBeenCalled();
 	});
 });
