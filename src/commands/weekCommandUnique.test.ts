@@ -66,7 +66,8 @@ async function loadedPlugin(weekEnabled: boolean) {
 	await plugin.onload();
 
 	const weekPath = computeNotePath(window.moment(), resolveEffectiveConfig(plugin.settings, "week"), ports.vaultConfig, "week");
-	return { plugin, commands, ports, vault, weekPath };
+	const dayPath = computeNotePath(window.moment(), resolveEffectiveConfig(plugin.settings, "day"), ports.vaultConfig, "day");
+	return { plugin, commands, ports, vault, weekPath, dayPath };
 }
 
 async function commandsOpeningThisWeek(loaded: Awaited<ReturnType<typeof loadedPlugin>>): Promise<Command[]> {
@@ -76,7 +77,9 @@ async function commandsOpeningThisWeek(loaded: Awaited<ReturnType<typeof loadedP
 	for (const command of commands) {
 		const before = workspace.opened.length;
 		if (command.checkCallback) command.checkCallback(false);
-		else command.callback?.();
+		else if (command.callback) command.callback();
+		else if (command.editorCheckCallback) command.editorCheckCallback(false, {} as never, {} as never);
+		else command.editorCallback?.({} as never, {} as never);
 		await flush();
 		if (workspace.opened.slice(before).some(({ file }) => file.path === weekPath)) found.push(command);
 	}
@@ -102,12 +105,14 @@ describe("US-CMD-04: one command opens the current week's note", () => {
 	it("AC-CMD-04.1: with this week's note already there, the one command opens it and writes no second note", async () => {
 		const loaded = await loadedPlugin(true);
 		loaded.vault.seedFile(loaded.weekPath, "kept");
+		const before = loaded.vault.listNotes().map(({ path }) => path);
 
 		const openers = await commandsOpeningThisWeek(loaded);
 
 		expect(openers.map((command) => command.id)).toEqual(["week-open-current"]);
-		// The day command writes today's note too; only the week's path is counted.
-		expect(loaded.vault.listNotes().filter(({ path }) => path === loaded.weekPath)).toHaveLength(1);
+		// The day command writes today's note; nothing else may appear.
+		const added = loaded.vault.listNotes().map(({ path }) => path).filter((path) => !before.includes(path));
+		expect(added).toEqual([loaded.dayPath]);
 		const note = loaded.vault.getFile(loaded.weekPath);
 		expect(note && (await loaded.vault.readFile(note))).toBe("kept");
 	});
