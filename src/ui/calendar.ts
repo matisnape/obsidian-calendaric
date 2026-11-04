@@ -4,6 +4,8 @@ import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
+import { creationFailure } from "../notes/periodNoteOpen";
+import { openNote } from "../notes/noteOpen";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
@@ -373,11 +375,19 @@ export class CalendarWidget implements HoverParent {
 		granularity: CellGranularity,
 		event: MouseEvent,
 	): Promise<void> {
+		const config = this.config(granularity);
+		// The index knows the period's note even when it does not sit at the
+		// format's path, as under prefix matching (AC-NOTE-07.6).
+		const found = this.deps.notes?.get(granularity, date) ?? null;
 		try {
+			if (found) {
+				await openNote(found, event, this.deps.workspace, found.path);
+				return;
+			}
 			await openOrCreateNote({
 				date,
 				granularity,
-				config: this.config(granularity),
+				config,
 				confirmBeforeCreate: this.settings.confirmBeforeCreate,
 				event,
 				ports: this.deps,
@@ -386,9 +396,15 @@ export class CalendarWidget implements HoverParent {
 		} catch (error) {
 			// The click is the last caller: an unhandled rejection here would be
 			// a cell that silently does nothing. The notice rides the workspace
-			// port, the way US-NOTE-06 reports a note that vanished.
+			// port, the way US-NOTE-06 reports a note that vanished. With no note
+			// for the period the write is what failed, and the notice names the
+			// period it was for (AC-NOTE-07.5).
+			const path = computeNotePath(date, config, this.deps.vaultConfig, granularity);
+			const noteExists = found !== null || this.deps.vault.getFile(path) !== null;
 			this.deps.workspace.showNotice(
-				error instanceof Error ? error.message : "Calendaric could not open that note.",
+				noteExists
+					? error instanceof Error ? error.message : "Calendaric could not open that note."
+					: creationFailure(granularity, date, config, error),
 			);
 		}
 	}

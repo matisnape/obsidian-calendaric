@@ -3,10 +3,11 @@ import type { PeriodicConfig, ReleaseGranularity } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { LeafMode, WorkspacePort } from "../adapters/workspacePort";
-import { computeNotePath } from "./noteUtils";
+import { computeNotePath, formatWithWeekTokens } from "./noteUtils";
 import { createPeriodicNote } from "./noteCreate";
 import { openNoteIn } from "./noteOpen";
 import { announceOverlaps, creationRefused } from "./predecessorGuard";
+import { GRANULARITY } from "../granularity/registry";
 
 /** The date type, read off the clock Obsidian provides rather than imported (see main.ts). */
 type Moment = ReturnType<typeof window.moment>;
@@ -54,14 +55,35 @@ export async function openOrCreatePeriodNote(
 		);
 		file = creation.file;
 	} catch (error) {
-		// Something else answers to the path, or the folder chain is unusable.
-		// createPeriodicNote already names which, and the user gets that wording
-		// rather than a silent no-op.
-		ports.workspace.showNotice(error instanceof Error ? error.message : String(error));
+		// No pane is opened for a note that does not exist (AC-NOTE-07.5).
+		ports.workspace.showNotice(creationFailure(granularity, date, config, error));
 		return;
 	}
 
 	await openNoteIn(file, mode, ports.workspace, path);
+}
+
+/**
+ * The notice for a note that could not be written: which period, and why
+ * (AC-NOTE-07.5). The cause alone -- "vault is read-only" -- does not say
+ * which note was being made. The period is named by its formatted name, the
+ * one name every granularity's note has; a format like `YYYY/MM/DD` keeps
+ * its folders, which the filename alone would drop. The calendar click's
+ * handler words its own failure with this too.
+ */
+export function creationFailure(
+	granularity: ReleaseGranularity,
+	date: Moment,
+	config: PeriodicConfig,
+	error: unknown,
+): string {
+	const period = formatWithWeekTokens(config.format, date, granularity);
+	// The writer's own refusals already open with the plugin's name.
+	const cause = (error instanceof Error ? error.message : String(error)).replace(
+		/^Calendaric cannot create a note there: /,
+		"",
+	);
+	return `Calendaric could not create the ${GRANULARITY[granularity].adjective} note for ${period}: ${cause}`;
 }
 
 /**
