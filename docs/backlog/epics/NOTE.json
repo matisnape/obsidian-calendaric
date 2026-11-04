@@ -866,8 +866,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The arrival handler in src/notes/templateOnArrival.ts is subscribed in main.ts only after layout-ready and templates an empty file only when its exact path is the one Calendaric would write. Tests cover a user-created day file and another plugin's week file, each receiving its substituted template; Calendaric's own create ends with one substitution and no second write. Mutation-checked at df5d159: removing the emptiness guard (:81), the exact-path check (:72), the predecessor guard (:66) or the create-kind filter (:39) each turned tests red. Orchestrator readings: a rename onto a matching name and a prefix-matched name are not templated; a granularity owned by a predecessor plugin is skipped quietly. All tested against a fake vault, not a real Obsidian create event."
         },
         {
           "id": "AC-NOTE-10.2",
@@ -879,8 +879,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "A file created with content is left byte-identical, because the handler returns when the file is non-empty, and the check repeats inside processFile at write time. A test types into the file while the template is read and shows the typed text is kept with no fold state applied. Mutation-checked at df5d159: deleting the first check (:81) or the write-time check (:90) each turned a test red.",
           "failure_path": true
         },
         {
@@ -893,8 +893,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Calendaric subscribes to vault creates inside onLayoutReady, so the creates Obsidian reports for existing files during load never reach it. templateOnArrival.startup.test.ts drives the real plugin onload: an empty matching file reported before layout-ready stays empty, one created afterwards is templated, and unload leaves zero create listeners. Mutation-checked at df5d159: moving the subscription out of onLayoutReady turned both startup tests red, and deleting the stop call on unload (main.ts:243) turned the unload test red.",
           "failure_path": true
         }
       ],
