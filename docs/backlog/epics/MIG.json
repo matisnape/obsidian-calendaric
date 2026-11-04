@@ -725,7 +725,7 @@
       "story": "As someone who keeps this plugin updated, I want Calendaric to keep working with my existing settings after an update, so that a plugin upgrade never quietly resets or breaks my folders, formats and templates.",
       "rationale": "Calendaric's stored configuration shape will change over time; none of the predecessor plugins actually implemented this (their own version field was written but never read back), so this has to be built new rather than ported.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [

@@ -6111,7 +6111,7 @@
       "story": "As someone who keeps this plugin updated, I want Calendaric to keep working with my existing settings after an update, so that a plugin upgrade never quietly resets or breaks my folders, formats and templates.",
       "rationale": "Calendaric's stored configuration shape will change over time; none of the predecessor plugins actually implemented this (their own version field was written but never read back), so this has to be built new rather than ported.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -6130,8 +6130,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Tests 'AC-MIG-07.1: a file with the granularities at the top level keeps every folder, format, template and toggle' (fixture copied from e7f3e11^ DEFAULT_SETTINGS with every toggle flipped), 'the upgraded file is saved in the current shape and reloads the same' and 'a grouped file still carrying the old top-level entries...' all went red when the adoption's `entry[field] = value` copy in upgrade.ts was removed (6 of 22 failed); the pre-granularities (weekStart-only) shape also has a fixture.",
           "failure_path": true
         },
         {
@@ -6145,8 +6145,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-MIG-07.2: every field it does not recognise, and the newer marker, survive a save' went red when `Math.max(version, CONFIG_VERSION)` became `CONFIG_VERSION`; unknown-field no-notice, fallback weekStart 'fortnightly' to default, and unknown futureGlobal/futureGroupField/decade preservation are asserted. Minor gap: removing hasStrayEntry's `version > CONFIG_VERSION` guard survives, because the newer-file `week:'iso'` test asserts preservation but not the absence of a notice. Gap closed at 58c776f: the newer-file test now asserts no notice, and dropping hasStrayEntry's version guard turns it red (reviewer round 4).",
           "failure_path": true
         },
         {
@@ -6160,8 +6160,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Tests 'a file that is not valid JSON loads the defaults and shows one notice' and 'a load that throws...' went red on `reset: raw !== null` to `reset: false` and on replacing the loadData catch in main.ts; 'a folder holding a number resets that field alone, with one notice' and the notice assertions (9 tests) went red when the showNotice call was disabled; 'a global of the wrong type in an older file' went red when `unreadableFields(raw)` was dropped.",
           "failure_path": true
         },
         {
@@ -6174,8 +6174,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Tests 'AC-MIG-07.4: the upgrade writes once, and a second open writes nothing' and 'a file already in the current shape is not rewritten on open' both went red when main.ts `loaded.upgraded && !loaded.reset` became `!loaded.reset`.",
           "failure_path": true
         },
         {
@@ -6188,8 +6188,8 @@
           ],
           "verifies": "data",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-MIG-07.5: an upgrade that throws partway writes nothing and the plugin still loads' (getter throws on month.folder mid-adoption) went red when the catch returned `upgraded:true, reset:false`, and 'a successful upgrade is one saveData call carrying the whole upgraded shape' went red with the adoption copy removed; a failed upgrade writes nothing and a good one is a single whole-object saveData, with OS-level atomicity of Obsidian's plain-writeFile adapter a platform limit out of scope. The reported equivalent mutant (`upgraded:true, reset:true` in the catch) is confirmed equivalent: it stayed green because main.ts's `!loaded.reset` also blocks the write.",
           "failure_path": true
         }
       ],
