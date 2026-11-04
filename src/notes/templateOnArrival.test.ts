@@ -159,8 +159,9 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		expect(vault.contentAt(DAY_PATH)).toBe(written);
 	});
 
-	it("AC-NOTE-10.2: text typed into the new file while the template is read is kept", async () => {
+	it("AC-NOTE-10.2: text typed into the new file while the template is read is kept, and not folded", async () => {
 		const { vault } = setup();
+		vault.seedFoldState(DAY_TEMPLATE, { folds: [{ from: 0, to: 1 }], lines: 3 });
 		const read = vault.readFile.bind(vault);
 		vi.spyOn(vault, "readFile").mockImplementation(async (file) => {
 			// The user types after the emptiness check, before the write.
@@ -172,6 +173,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		await settle();
 
 		expect(vault.contentAt(DAY_PATH)).toBe("typed\n");
+		expect(vault.appliedFoldStates).toEqual([]);
 	});
 
 	it("US-NOTE-10: a change that is not a create, such as the host parsing an empty note already there, writes nothing", async () => {
