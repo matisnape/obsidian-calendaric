@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+// @vitest-environment happy-dom
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
@@ -6,6 +7,10 @@ import { openOrCreatePeriodNote } from "./periodNoteOpen";
 import { PeriodicNoteIndex } from "./periodicNoteIndex";
 import { openOrCreateNote, type CreateRequest } from "../ui/cellActions";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
+import type { App } from "obsidian";
+import { CalendarWidget } from "../ui/calendar";
+import { DEFAULT_SETTINGS } from "../settings/model";
+import type { CalendaricSettings } from "../settings/model";
 import type { PeriodicConfig } from "../types";
 
 /**
@@ -54,6 +59,38 @@ function command(ports: Ports, existing = ports.vault.getFile(PATH)) {
 }
 
 const openedPaths = (ports: Ports) => ports.workspace.opened.map((entry) => entry.file.path);
+
+/** Settings for the calendar pane, confirmation off so a click writes at once. */
+const SETTINGS: CalendaricSettings = { ...DEFAULT_SETTINGS, confirmBeforeCreate: false, showWeekNumbers: true, weekStart: "monday" };
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+afterEach(() => {
+	vi.useRealTimers();
+});
+
+/**
+ * A calendar pane over the fakes, showing the month `date` falls in: the pane
+ * opens on today's month, so the clock is set to `date` (timers stay real).
+ */
+function renderCalendar(ports: Ports, settings: CalendaricSettings, date: string): HTMLElement {
+	vi.useFakeTimers({ toFake: ["Date"] });
+	vi.setSystemTime(new Date(`${date}T12:00:00`));
+	const app = {
+		workspace: { on: (): object => ({}), offref: (): undefined => undefined, trigger: (): undefined => undefined },
+	} as unknown as App;
+	const host = document.createElement("div");
+	new CalendarWidget(host, app, settings, ports);
+	return host;
+}
+
+function dayCellOf(host: HTMLElement, dayOfMonth: number): HTMLElement {
+	const cell = Array.from(host.querySelectorAll<HTMLElement>(".calendaric-day:not(.is-adjacent-month)")).find(
+		(el) => el.firstChild?.textContent === String(dayOfMonth),
+	);
+	if (!cell) throw new Error(`no cell for day ${dayOfMonth}`);
+	return cell;
+}
 
 describe("AC-NOTE-07.1: a period with no note gets one, and it opens", () => {
 	it("AC-NOTE-07.1: the cell click creates the missing note and opens it", async () => {
@@ -148,14 +185,32 @@ describe("AC-NOTE-07.4: with confirmation off, the note is created and opened at
 describe("AC-NOTE-07.5: a note that cannot be created says so and opens no pane", () => {
 	const FAILURE = "Calendaric could not create the daily note for 2026-04-13: vault is read-only";
 
-	// The click rejects and `calendar.ts`'s handler shows the message as the
-	// notice; the command shows it itself.
-	it("AC-NOTE-07.5: the cell click fails naming the period and saying the note could not be created, and opens nothing", async () => {
+	// The click's last stop is the calendar's own handler, which turns the
+	// rejection into the notice; `openOrCreateNote` keeps the cause as it was.
+	it("AC-NOTE-07.5: the cell click names the period, says the note could not be created, and opens nothing", async () => {
 		const ports = makePorts();
 		ports.vault.createFileError = new Error("vault is read-only");
+		const host = renderCalendar(ports, { ...SETTINGS, day: dayConfig }, DAY);
 
-		await expect(click(ports, false)).rejects.toThrow(FAILURE);
+		dayCellOf(host, 13).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		await settle();
+
+		expect(ports.workspace.notices).toEqual([FAILURE]);
 		expect(ports.workspace.opened).toEqual([]);
+	});
+
+	it("AC-NOTE-07.5: an open that fails on a note that does exist is not reported as a failed creation", async () => {
+		const ports = makePorts();
+		ports.vault.seedFile(PATH, "");
+		ports.workspace.openInLeaf = async () => {
+			throw new Error("leaf refused");
+		};
+		const host = renderCalendar(ports, { ...SETTINGS, day: dayConfig }, DAY);
+
+		dayCellOf(host, 13).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		await settle();
+
+		expect(ports.workspace.notices).toEqual(["leaf refused"]);
 	});
 
 	it("AC-NOTE-07.5: the command names the period, says the note could not be created, and opens nothing", async () => {

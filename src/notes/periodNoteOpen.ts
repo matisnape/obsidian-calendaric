@@ -67,9 +67,10 @@ export async function openOrCreatePeriodNote(
  * The notice for a note that could not be written: which period, and why
  * (AC-NOTE-07.5). The cause alone -- "vault is read-only" -- does not say
  * which note was being made, and the period is named as its filename because
- * that is the one name every granularity's note has.
+ * that is the one name every granularity's note has. The calendar click's
+ * handler words its own failure with this too.
  */
-function creationFailure(granularity: ReleaseGranularity, path: string, error: unknown): string {
+export function creationFailure(granularity: ReleaseGranularity, path: string, error: unknown): string {
 	const period = (path.split("/").pop() ?? path).replace(/\.md$/, "");
 	const cause = error instanceof Error ? error.message : String(error);
 	return `Calendaric could not create the ${GRANULARITY[granularity].adjective} note for ${period}: ${cause}`;
