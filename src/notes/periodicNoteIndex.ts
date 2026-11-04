@@ -4,7 +4,7 @@ import type { NoteFile, VaultChange, VaultIndexPort } from "../adapters/vaultPor
 import type { FileConfigs, FileGranularity } from "../fmt/resolveFileDate";
 import { resolveFileDate } from "../fmt/resolveFileDate";
 import { computeNoteDate } from "../fmt/noteDate";
-import { RELEASE_GRANULARITIES } from "../types";
+import { RELEASE_GRANULARITIES, isReleaseGranularity } from "../types";
 import { resolveNoteFolder } from "./noteUtils";
 import { releaseFacts } from "../granularity/registry";
 
@@ -59,8 +59,20 @@ export class PeriodicNoteIndex {
 		this.rebuild();
 	}
 
-	/** The note for that period, or null when the vault holds none. */
+	/**
+	 * The note for that period, or null when the vault holds none.
+	 *
+	 * Throws for a granularity outside the release set. The type already says
+	 * day, week, month or year, but a configured value can still carry a
+	 * reserved one such as quarter, and answering null for it would read as
+	 * "no note yet" to a caller about to create one.
+	 */
 	get(granularity: FileGranularity, date: Moment): NoteFile | null {
+		if (!isReleaseGranularity(granularity)) {
+			throw new Error(
+				`Calendaric cannot look up a ${String(granularity)} note: that granularity is not supported in this release.`,
+			);
+		}
 		return this.byNoteDate.get(this.noteDateFor(granularity, date))?.file ?? null;
 	}
 
