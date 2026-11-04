@@ -54,6 +54,12 @@ describe("listPeriodicNotes", () => {
 		]);
 	});
 
+	it("AC-NOTE-02.1: two files naming the same day both come back", () => {
+		const vault = vaultWith(["Daily/archive"], ["Daily/2026-11-04.md", "Daily/archive/2026-11-04.md"]);
+
+		expect(listedPaths(vault, "day")).toEqual(["Daily/2026-11-04.md", "Daily/archive/2026-11-04.md"]);
+	});
+
 	it("AC-NOTE-02.2: a configured folder that does not exist is an error naming that folder", () => {
 		const vault = vaultWith(["Weekly"], ["Weekly/2026-W45.md"]);
 
@@ -91,9 +97,9 @@ describe("listPeriodicNotes", () => {
 		expect(listedPaths(vault, "day")).toEqual(["Daily/2026-11-04.md"]);
 	});
 
-	it("throws for a granularity that is not configured, rather than answering no notes", () => {
+	it("a granularity that is switched off gives an empty list", () => {
 		const vault = vaultWith(["Daily"], ["Daily/2026-11-04.md"]);
 
-		expect(() => listPeriodicNotes("month", CONFIGS, vault, NO_DEFAULT_FOLDER)).toThrow(/month/);
+		expect(listPeriodicNotes("month", CONFIGS, vault, NO_DEFAULT_FOLDER)).toEqual([]);
 	});
 });

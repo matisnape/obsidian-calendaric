@@ -12,8 +12,9 @@ import { resolveNoteFolder } from "./noteUtils";
  * not. Unlike `PeriodicNoteIndex`, a frontmatter date does not make a file count,
  * and two files naming the same period both come back.
  *
- * Throws when the granularity is not configured, or when its folder is missing:
- * an empty list there would read as "no notes yet". The vault root always exists.
+ * A granularity absent from `configs` is switched off and claims no file, so it
+ * gives an empty list. Throws when its folder is missing: an empty list there
+ * would read as "no notes yet". The vault root always exists.
  */
 export function listPeriodicNotes(
 	granularity: FileGranularity,
@@ -22,9 +23,7 @@ export function listPeriodicNotes(
 	vaultConfig: VaultConfigPort,
 ): NoteFile[] {
 	const config = configs[granularity];
-	if (!config) {
-		throw new Error(`Calendaric cannot list ${granularity} notes: that granularity is not configured.`);
-	}
+	if (!config) return [];
 
 	const folder = resolveNoteFolder(config.folder, vaultConfig);
 	if (folder !== "" && !vault.folderExists(folder)) {
