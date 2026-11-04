@@ -752,7 +752,7 @@
       "story": "As a release owner on a free-tier GitHub account, I want every pull request to run the same install, test and build gates automatically, so that a broken gate is caught before merge without relying on a human to run it locally, and without the workflow burning through a limited run-minute budget.",
       "rationale": "No CI has ever run on this repository; ci.gates in the project's local tool config is provisional because it came from a local YAML parse rather than a real pipeline, and the account's Actions run-minutes are limited. Lint is deliberately excluded from the workflow at first — see DEC-26.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -797,8 +797,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Observed on a real pull_request run of the current CI workflow (workflow id 355960720, job 'install, test, build'): run https://github.com/matisnape/obsidian-calendaric/actions/runs/34650118584 on PR branch note-05-apply-the-configured-template-when-creating-a-note (head 0ac7685) failed at step 'build', the step list marks 'build' as the failing step, and the check run 'install, test, build' on that head reported conclusion failure. Settled from GitHub's own run and check-run records, 2026-11-04.",
           "failure_path": true
         },
         {
