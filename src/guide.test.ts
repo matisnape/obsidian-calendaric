@@ -22,8 +22,9 @@ import { DEFAULT_SETTINGS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
 import type CalendaricPlugin from "./main";
+import type { Moment } from "./granularity/registry";
 import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
-import { formatWithWeekTokens } from "./notes/noteUtils";
+import { formatWithWeekTokens, getWeekNumber, WEEKDAY_ISO } from "./notes/noteUtils";
 import { substituteTemplateTokens } from "./notes/templateTokens";
 import { GRANULARITY, GRANULARITY_REGISTRY, granularityEntry } from "./granularity/registry";
 import { RELEASE_GRANULARITIES } from "./types";
@@ -74,13 +75,13 @@ function settingNames(): Set<string> {
 	return new Set(names.map((name) => name.trim()).filter((name) => name !== ""));
 }
 
-function commandNames(): Set<string> {
+function commandNames(granularities: readonly ReleaseGranularity[] = RELEASE_GRANULARITIES): Set<string> {
 	const leaves = { find: () => null } as unknown as Parameters<typeof calendarViewCommand>[0];
 	const reveal = {} as unknown as Parameters<typeof revealActiveNoteCommand>[0];
 	return new Set([
 		calendarViewCommand(leaves, () => Promise.resolve()).name,
 		revealActiveNoteCommand(reveal).name,
-		...RELEASE_GRANULARITIES.flatMap((g) => COMMAND_ACTIONS.map((action) => commandName(g, action))),
+		...granularities.flatMap((g) => COMMAND_ACTIONS.map((action) => commandName(g, action))),
 	]);
 }
 
@@ -107,16 +108,25 @@ function tables(): { header: string[]; rows: string[][] }[] {
 
 const CODE_SPAN = /^`([^`]+)`$/;
 
+const DATE_RE = /\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (\d{1,2} [A-Z][a-z]+ \d{4})\b/;
+
 /**
- * The date and "Start week on" each example table's output column is written
- * for, keyed by that column's header. A new example table needs a line here,
- * or the test below fails on it rather than skipping it.
+ * The date and "Start week on" day a line of the guide names, such as
+ * "Wed 15 April 2026, **Start week on** Monday". Both come from the guide, so an
+ * example cannot keep its output while the week start it claims changes. The
+ * date is a thunk, because a moment must be made after the week start is applied.
  */
-const EXAMPLE_CONTEXTS: Record<string, { date: string; weekStart: WeekStartOption }> = {
-	"Example output (Mon 13 April 2026)": { date: "2026-04-13", weekStart: "monday" },
-	"Week of 13–19 April 2026, **Start week on** Monday": { date: "2026-04-15", weekStart: "monday" },
-	"Filename for Wed 15 April 2026, **Start week on** Saturday": { date: "2026-04-15", weekStart: "saturday" },
-};
+function contextOf(text: string): { date: () => Moment; weekStart: WeekStartOption } {
+	const named = new RegExp(`${DATE_RE.source}.*\\*\\*Start week on\\*\\*(?: set to)? ([A-Z][a-z]+)\\b`).exec(text);
+	expect(named, `no date and Start week on day in "${text}"`).not.toBeNull();
+	const [, weekday, day, start] = named!;
+	const weekStart = start!.toLowerCase();
+	expect(Object.keys(WEEKDAY_ISO), `"${start}" is not a day of the week`).toContain(weekStart);
+	const date = () => window.moment(day, "D MMMM YYYY", "en", true);
+	// A weekday that does not match its date would mislead a reader as much as a wrong output.
+	expect(date().format("ddd"), `"${weekday} ${day}"`).toBe(weekday);
+	return { date, weekStart: weekStart as WeekStartOption };
+}
 
 beforeEach(() => {
 	window.moment.locale("en");
@@ -135,6 +145,15 @@ describe("the guide's names", () => {
 		expect(named.filter((name) => !known.has(name))).toEqual([]);
 	});
 
+	it("AC-ARCH-08.4: every command the plugin registers is named in bold in the guide", () => {
+		const named = new Set([...prose.matchAll(/\*\*([^*]+)\*\*/g)].map(([, name]) => name!.trim()));
+		// Commands exist only for a switched-on group, and only a group with a
+		// settings section can be switched on; monthly and yearly are placeholders.
+		const switchable = RELEASE_GRANULARITIES.filter((g) => "settings" in GRANULARITY[g]);
+
+		expect([...commandNames(switchable)].filter((name) => !named.has(name))).toEqual([]);
+	});
+
 	it("AC-ARCH-08.5: the guide quotes no name outside bold, where the check above cannot see it", () => {
 		expect([...prose.matchAll(/"([^"\n]+)"/g)].map(([, quoted]) => quoted)).toEqual([]);
 	});
@@ -146,10 +165,9 @@ describe("the guide's examples", () => {
 		expect(examples.length).toBeGreaterThan(0);
 
 		for (const { header, rows } of examples) {
-			const context = EXAMPLE_CONTEXTS[header[1]!];
-			expect(context, `no date or week start for the example table "${header[1]}"`).toBeDefined();
-			startWeekOn(context!.weekStart);
-			const date = window.moment(context!.date);
+			const context = contextOf(header[1]!);
+			startWeekOn(context.weekStart);
+			const date = context.date();
 
 			const written = rows.map(([format]) => formatWithWeekTokens(format!.match(CODE_SPAN)![1]!, date, "week"));
 			expect(written).toEqual(rows.map(([, output]) => output!.match(CODE_SPAN)![1]));
@@ -157,11 +175,33 @@ describe("the guide's examples", () => {
 	});
 
 	it("AC-ARCH-08.1: the worked example writes the filename the guide shows", () => {
-		const example = /Format: `([^`]+)`\n→ Filename: `([^`]+)`/.exec(guide);
+		const example = /^(Example, .+):\n\nFormat: `([^`]+)`\n→ Filename: `([^`]+)`/m.exec(guide);
 		expect(example).not.toBeNull();
-		startWeekOn("monday");
+		const context = contextOf(example![1]!);
+		startWeekOn(context.weekStart);
 
-		expect(formatWithWeekTokens(example![1]!, window.moment("2026-04-15"), "week")).toBe(example![2]);
+		expect(formatWithWeekTokens(example![2]!, context.date(), "week")).toBe(example![3]);
+	});
+
+	it("AC-ARCH-08.1: the week rule's worked sentences say what the code writes", () => {
+		const rule = sections().find((s) => s.heading === "Which week a token reads")?.body ?? "";
+		const runs = new RegExp(
+			`With ([A-Z][a-z]+) as the first day, the week of ${DATE_RE.source} runs from (\\w{3} \\d{1,2}) to (\\w{3} \\d{1,2}) `,
+		).exec(rule);
+		const order = /With a ([A-Z][a-z]+) start, `([^`]+)` writes `([^`]+)`/.exec(rule);
+		expect(runs).not.toBeNull();
+		expect(order).not.toBeNull();
+
+		const week = contextOf(`${runs![2]} ${runs![3]}, **Start week on** ${runs![1]}`);
+		startWeekOn(week.weekStart);
+		expect([week.date().startOf("week").format("ddd D"), week.date().endOf("week").format("ddd D")]).toEqual([
+			runs![4],
+			runs![5],
+		]);
+
+		const ordered = contextOf(`${runs![2]} ${runs![3]}, **Start week on** ${order![1]}`);
+		startWeekOn(ordered.weekStart);
+		expect(formatWithWeekTokens(order![2]!, ordered.date(), "week")).toBe(order![3]);
 	});
 
 	it("AC-ARCH-08.1: weekday tokens in the Format field are written only for weekly notes", () => {
@@ -246,6 +286,7 @@ describe("week tokens and Start week on", () => {
 		expect(rule).toMatch(/follow \*\*Start week on\*\*/);
 		expect(rule).toMatch(/ISO week tokens \(`W`, `WW`, `GGGG`\)/);
 		expect(rule).toMatch(/always start on Monday/);
+		expect(rule).toMatch(/week number column \(\*\*Show week numbers\*\*\) numbers weeks the way the weekly note's \*\*Format\*\* does/);
 	});
 
 	it("AC-ARCH-08.2: a weekday token in a non-ISO format resolves inside the configured week", () => {
@@ -275,6 +316,7 @@ describe("week tokens and Start week on", () => {
 		// Sat 27 Dec 2025 – Fri 2 Jan 2026), and sits in week 15 when they start on Monday.
 		startWeekOn("saturday");
 		expect(formatWithWeekTokens("gggg-[W]ww", window.moment("2026-04-11"), "week")).toBe("2026-W16");
+		expect(getWeekNumber(window.moment("2026-04-11"), "gggg-[W]ww")).toBe(16);
 
 		startWeekOn("monday");
 		expect(formatWithWeekTokens("gggg-[W]ww", window.moment("2026-04-11"), "week")).toBe("2026-W15");
@@ -286,6 +328,11 @@ describe("week tokens and Start week on", () => {
 
 		// ISO week 16 of 2026 is Mon 13 – Sun 19 April, so its Saturday is the 18th.
 		expect(formatWithWeekTokens("GGGG-[W]WW, {{saturday:DD.MM}}", date, "week")).toBe("2026-W16, 18.04");
+		// `W` alone is an ISO token too, with no `G` beside it.
+		expect(formatWithWeekTokens("[W]WW, {{saturday:DD.MM}}", date, "week")).toBe("W16, 18.04");
+		// Sat 11 April 2026 is in ISO week 15 (Mon 6 – Sun 12 April), not the Saturday-start week 16.
+		expect(getWeekNumber(window.moment("2026-04-11"), "[W]WW")).toBe(15);
+		expect(getWeekNumber(window.moment("2026-04-11"), "GGGG-[W]WW")).toBe(15);
 		const config = { ...DEFAULT_SETTINGS.week, format: "GGGG-[W]WW" };
 		expect(substituteTemplateTokens("{{saturday:DD.MM}}", date, "week", config, "t")).toBe("18.04");
 	});

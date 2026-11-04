@@ -11,13 +11,13 @@ The **Format** field controls the filename of created notes. It accepts two synt
 
 Standard [moment.js format tokens](https://momentjs.com/docs/#/displaying/format/) apply to all granularities:
 
-| Token | Example output (Mon 13 April 2026) |
+| Token | Example output for Sun 12 April 2026, **Start week on** Monday |
 |---|---|
-| `YYYY-MM-DD` | `2026-04-13` |
-| `gggg-[W]ww` | `2026-W16` |
+| `YYYY-MM-DD` | `2026-04-12` |
+| `gggg-[W]ww` | `2026-W15` |
 | `YYYY-MM` | `2026-04` |
 
-The `gggg-[W]ww` row assumes **Start week on** is Monday. See
+The `gggg-[W]ww` row depends on the **Start week on** day the table names. See
 [Which week a token reads](#which-week-a-token-reads).
 
 When Obsidian's built-in Daily Notes plugin stored no format of its own, the
@@ -30,14 +30,14 @@ Calendaric extends the **Format** field with week tokens that insert the date of
 
 Syntax: `{{weekday:format}}` where `weekday` is `monday`–`sunday` and `format` is any moment.js format string.
 
-| Token | Week of 13–19 April 2026, **Start week on** Monday |
+| Token | Week of Wed 15 April 2026, **Start week on** Monday |
 |---|---|
 | `{{monday:DD.MM}}` | `13.04` |
 | `{{tuesday:DD.MM}}` | `14.04` |
 | `{{wednesday:YYYY-MM-DD}}` | `2026-04-15` |
 | `{{sunday:DD.MM}}` | `19.04` |
 
-Example, with **Start week on** set to Monday:
+Example, for Wed 15 April 2026 with **Start week on** set to Monday:
 
 Format: `gggg-[W]ww, {{monday:DD.MM}} – {{sunday:DD.MM}}`
 → Filename: `2026-W16, 13.04 – 19.04`
@@ -51,11 +51,34 @@ This lets you encode the full date range of the week directly in the filename, w
   - Name the days in the order your week runs. With a Saturday start, `{{monday:DD.MM}} – {{sunday:DD.MM}}` writes `13.04 – 12.04`, because that Sunday comes before that Monday.
 - A format that uses ISO week tokens (`W`, `WW`, `GGGG`) asked for ISO weeks. ISO weeks always start on Monday, whatever **Start week on** says, and the week tokens in that format follow the ISO week.
 - Template variables in a weekly note's body read the same week as its filename.
+- The calendar's week number column (**Show week numbers**) numbers weeks the way the weekly note's **Format** does: ISO week numbers for an ISO format, **Start week on** weeks otherwise.
 
 | Format | Filename for Wed 15 April 2026, **Start week on** Saturday |
 |---|---|
 | `gggg-[W]ww, {{saturday:DD.MM}} – {{friday:DD.MM}}` | `2026-W16, 11.04 – 17.04` |
 | `GGGG-[W]WW, {{saturday:DD.MM}}` | `2026-W16, 18.04` |
+| `[W]WW, {{saturday:DD.MM}}` | `W16, 18.04` |
+
+---
+
+## Commands
+
+Open the command palette and type a command's name.
+
+| Command | What it does |
+|---|---|
+| **Open calendar** | Opens the calendar view. The palette leaves it out while the calendar is already on screen. |
+| **Reveal active note** | Shows the period of the daily or weekly note in the active pane in the calendar. |
+
+Each switched-on group (**Daily Notes**, **Weekly Notes**) adds its own commands:
+
+| Command | What it does |
+|---|---|
+| **Open current daily note**, **Open current weekly note** | Opens the note for the period that holds today, creating it first when the vault has none. |
+| **Open next daily note**, **Open next weekly note** | Opens the note for the period after the note in the active pane, creating it first when the vault has none. |
+| **Open previous daily note**, **Open previous weekly note** | The same, for the period before. |
+| **Jump forward to next existing daily note**, **Jump forward to next existing weekly note** | Opens the closest existing note after the one in the active pane. It never creates a note. |
+| **Jump backward to previous existing daily note**, **Jump backward to previous existing weekly note** | The same, before the one in the active pane. |
 
 ---
 
