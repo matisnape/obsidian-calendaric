@@ -6862,7 +6862,7 @@
       "story": "As a Calendaric user reading the format-and-template guide, I want every behaviour it documents to match what the plugin actually does, so that I can trust the documentation instead of discovering the real behaviour by trial and error.",
       "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting — the documented and the implemented behaviour disagree today.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -6881,21 +6881,21 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "At head 1ee3a55, src/guide.test.ts reads docs/guide.md and checks against the real code every example table row, the worked weekly example, the week-rule sentences, the template variables, the week number sentence and each Commands-table description; commands run through the plugin's own palette path. Mutation-checked at 1ee3a55: changing the guide's jump, Open calendar, Reveal or next/previous description, the Saturday-start span (13.04 – 12.04) or the example table's week start each turned the suite red, as did removing the Open calendar palette check (calendarCommand.ts:116) or flipping the jump direction (jumpCommands.ts)."
         },
         {
           "id": "AC-ARCH-08.2",
           "given": "the \"Start week on\" setting is configured to a given day",
           "when": "a week-based template token or a week number is resolved",
           "then": [
-            "it uses the day configured in \"Start week on\", never a fixed numbering independent of that setting",
-            "the guide states that week-based tokens and week numbers follow the configured \"Start week on\" day"
+            "it uses the day configured in \"Start week on\", except that a format using ISO week tokens (W, WW, GGGG) keeps ISO Monday-start numbering",
+            "the guide states both rules: week-based tokens and week numbers follow the configured \"Start week on\" day, and ISO week tokens always start on Monday"
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Criterion reworded at verdict time to the orchestrator's decision: ISO week tokens keep ISO Monday-start numbering, everything else follows \"Start week on\" (the AC-FMT-03 behaviour the code already had). At head 1ee3a55, tests with a Saturday start pin weekday tokens and locale week numbers to the Saturday week and W, WW and GGGG formats to the ISO Monday week, and assert the guide states both halves. Mutation-checked: narrowing noteUtils.ts:73 from /[GW]/ to /[G]/, swapping isoWeek() for week() in weekNumberFor (noteUtils.ts:298) and pinning the locale first day to Monday (fmt/locale.ts:54) each turned tests red."
         },
         {
           "id": "AC-ARCH-08.3",
@@ -6907,8 +6907,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The settings link is a plain https link to the published guide with target=_blank (settings.ts:41); a click test asserts the click is not cancelled and the desktop-only openPluginFile is never called. Mutation-checked at 24075ec: changing the link path to guide2.md turned the test red. The manifest is isDesktopOnly true (DEC-24), so every declared platform is desktop, where the link is browser-native; tested in happy-dom, not on a device."
         },
         {
           "id": "AC-ARCH-08.4",
@@ -6920,8 +6920,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "At head 1ee3a55, every bold setting or command name in the guide must exist in the live settings tab or command list, every registered command must be named in bold in the guide, and the addCommand call count is tied to the commands the check reads, so a rename, removal or new command fails the guide test in the same change; a changed behaviour sentence fails through the 08.1 checks. Mutation-checked: renaming \"Open calendar\" (calendarCommand.ts:114), \"Reveal active note\" (revealActiveNoteCommand.ts:45), \"Start week on\" (settings.ts:166) or \"Allow prefix matching\" (settings.ts:412) each turned the suite red."
         },
         {
           "id": "AC-ARCH-08.5",
@@ -6933,8 +6933,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "At head 1ee3a55, the guide test collects names mechanically, by rendering the real settings tab and calling the real command factories, with no hand list, compares them with every bold name in the guide, and bans quoted names outside bold. It runs in npm test, which the release workflow's verify step runs, so a stale guide blocks a release. Mutation-checked: renaming a documented setting or command in source turned the suite red.",
           "failure_path": true
         }
       ],
