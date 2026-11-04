@@ -174,6 +174,10 @@ export class PeriodicNoteIndex {
 
 	/** Which period this file is the note for, by name first and frontmatter second. */
 	private identify(file: NoteFile): string | null {
+		// Only a markdown file is a note (AC-NOTE-08.3). resolveFileDate already
+		// refuses one by name; this also stops the frontmatter route below.
+		if (!/\.md$/i.test(file.path)) return null;
+
 		const byName = resolveFileDate(file.path, this.configs, this.vaultConfig);
 		if (byName) return byName.noteDate;
 

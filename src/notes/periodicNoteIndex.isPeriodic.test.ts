@@ -5,6 +5,7 @@ import { DEFAULT_PERIODIC_CONFIG } from "../types";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
+import { resolveFileDate } from "../fmt/resolveFileDate";
 
 function config(format: string, folder: string): PeriodicConfig {
 	return { ...DEFAULT_PERIODIC_CONFIG, enabled: true, format, folder };
@@ -144,6 +145,32 @@ describe("PeriodicNoteIndex — AC-NOTE-08.3 a file that is not markdown", () =>
 			expect(recognised(index, path)).toBeNull();
 		},
 	);
+
+	// The calendar's active-file check calls resolveFileDate without the index,
+	// so that guard has to hold on its own.
+	it.each(["Daily/2026-04-15.png", "Weekly/2026-W16.pdf"])(
+		"AC-NOTE-08.3: resolveFileDate refuses %s under a prefix-match format, outside the index",
+		(path) => {
+			expect(resolveFileDate(path, PREFIX_CONFIGS, NO_DEFAULT_FOLDER)).toBeNull();
+			expect(resolveFileDate(path.replace(/\.\w+$/, ".md"), PREFIX_CONFIGS, NO_DEFAULT_FOLDER)).not.toBeNull();
+		},
+	);
+
+	it("AC-NOTE-08.3: does not recognise a non-markdown file by the date its frontmatter claims", () => {
+		const vault = vaultWith();
+		const index = indexOver(vault);
+
+		// The same frontmatter on a markdown file is what makes it a note, so
+		// only the extension can be what keeps the .png out.
+		for (const path of ["Daily/Planning.md", "Daily/Planning.png"]) {
+			vault.seedFile(path, "");
+			vault.seedFrontmatter(path, { day: "2026-04-15" });
+			vault.emitChange({ kind: "metadata", file: { path } });
+		}
+
+		expect(recognised(index, "Daily/Planning.md")).toEqual({ granularity: "day", date: "2026-04-15" });
+		expect(recognised(index, "Daily/Planning.png")).toBeNull();
+	});
 
 	it.each([
 		["an exact", CONFIGS],
