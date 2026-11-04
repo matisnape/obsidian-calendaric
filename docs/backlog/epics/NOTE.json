@@ -10,7 +10,7 @@
       "story": "As someone reviewing my periodic notes, I want to check whether a note for a specific day, week, month, or year already exists, so that other features can decide whether to open it or create it without guessing.",
       "rationale": "Every open-or-create flow, calendar dot, and adjacent-note search depends on this lookup being fast and correct.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "dni:get-daily-note",
         "dni:get-weekly-note",

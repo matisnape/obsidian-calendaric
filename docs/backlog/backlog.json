@@ -136,7 +136,7 @@
       "story": "As someone reviewing my periodic notes, I want to check whether a note for a specific day, week, month, or year already exists, so that other features can decide whether to open it or create it without guessing.",
       "rationale": "Every open-or-create flow, calendar dot, and adjacent-note search depends on this lookup being fast and correct.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "dni:get-daily-note",
         "dni:get-weekly-note",
@@ -165,8 +165,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.lookup.test.ts four 'AC-NOTE-01.1:' tests call the real PeriodicNoteIndex.get for day, week, month and year with a moment that is not the period's first day and assert the returned path. Orchestrator mutations at b5e6985: get always returning null failed all 4; keying on the raw moment instead of the period start failed week, month and year."
         },
         {
           "id": "AC-NOTE-01.2",
@@ -179,8 +179,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: four 'AC-NOTE-01.2:' tests assert get does not throw, returns null, and leaves the vault unchanged (same note list, target path absent, no folder created). Mutations: throw on miss failed 4; fabricate a file on miss failed 4. The no-write clause holds by construction: get has no write path.",
           "failure_path": true
         },
         {
@@ -192,8 +192,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: four 'AC-NOTE-01.3:' tests call get at T08:15 and T21:40 on one day for every granularity and expect the same note. Mutation: keying on the raw moment failed all 4, including day."
         },
         {
           "id": "AC-NOTE-01.4",
@@ -205,8 +205,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: 'AC-NOTE-01.4: refuses quarter, naming it and saying it is not supported in this release' asserts an Error naming the quarter note and the phrase 'is not supported in this release', with no file returned. Mutation: disabling the isReleaseGranularity guard failed exactly that test. Only quarter is tested, the one value the criterion names.",
           "failure_path": true
         }
       ],
