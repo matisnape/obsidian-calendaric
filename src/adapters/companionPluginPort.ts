@@ -180,3 +180,22 @@ export interface PeriodicNotesPort {
 	 */
 	disableGranularity(name: string): Promise<CompanionPluginAction>;
 }
+
+/**
+ * The Natural Language Dates plugin (`nldates-obsidian`), which the date
+ * switcher borrows its parser from (US-CMD-10).
+ *
+ * A port of its own: no other flow reads that plugin, and the fakes of the
+ * existing companion ports have no use for it.
+ */
+export interface NaturalDatesPort {
+	/** True while the plugin is installed, enabled and still exposes `parseDate`. */
+	isAvailable(): boolean;
+
+	/**
+	 * The moment the phrase names, or null when the plugin does not recognise
+	 * it. A plugin that went away or broke also yields null: to the switcher
+	 * either way the phrase names no date.
+	 */
+	parseDate(phrase: string): Date | null;
+}

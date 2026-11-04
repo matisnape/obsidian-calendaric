@@ -1,4 +1,4 @@
-import { getLanguage, MarkdownView, Menu, Notice, Plugin, setTooltip } from "obsidian";
+import { getLanguage, MarkdownView, Menu, Notice, Plugin, setTooltip, View } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { applySettings, defaultStoredConfig, DEFAULT_SETTINGS, toSettings } from "./settings/model";
 import { readStoredConfig } from "./settings/upgrade";
@@ -7,7 +7,7 @@ import { CalendarView } from "./ui/CalendarView";
 import { VIEW_TYPE_CALENDAR } from "./ui/viewType";
 import { openOrCreatePeriodNote, startUp } from "./notes/periodNoteOpen";
 import type { PeriodNotePorts } from "./notes/periodNoteOpen";
-import { RELEASE_GRANULARITIES } from "./types";
+import { isReleaseGranularity, RELEASE_GRANULARITIES } from "./types";
 import type { ReleaseGranularity } from "./types";
 import { ObsidianVaultAdapter } from "./adapters/obsidianVaultAdapter";
 import { ObsidianWorkspaceAdapter } from "./adapters/obsidianWorkspaceAdapter";
@@ -30,7 +30,7 @@ import { openNeighbourNote } from "./commands/openNeighbourCommands";
 import { revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import { RibbonIcon } from "./commands/ribbonIcon";
 import type { MenuEntry } from "./commands/ribbonIcon";
-import { resolveEffectiveConfig } from "./settings/model";
+import { getActiveGranularities, resolveEffectiveConfig } from "./settings/model";
 import type { CalendarDeps } from "./adapters/calendarDeps";
 import type { LeafMode } from "./adapters/workspacePort";
 import { HOVER_LINK_SOURCE } from "./ui/cellActions";
@@ -39,6 +39,12 @@ import { resolveFileDate } from "./fmt/resolveFileDate";
 import { PeriodLabels } from "./ui/periodLabel";
 import type { LabelLeaf } from "./ui/periodLabel";
 import { resolveWeekStart } from "./ui/calendarUtils";
+import { ObsidianNaturalDatesAdapter } from "./adapters/obsidianNaturalDatesAdapter";
+import type { NaturalDatesPort } from "./adapters/companionPluginPort";
+import { dateSwitcherCommand } from "./commands/dateSwitcherCommand";
+import { suggestPeriods } from "./commands/datePhrase";
+import { DateSwitcherModal } from "./ui/dateSwitcherModal";
+import { formatWithWeekTokens } from "./notes/noteUtils";
 
 /**
  * The date type, taken from the clock this plugin actually reads.
@@ -205,6 +211,19 @@ export default class CalendaricPlugin extends Plugin {
 			},
 		}));
 
+		const naturalDates = this.naturalDatesPort();
+		this.addCommand(dateSwitcherCommand({
+			available: () => naturalDates.isAvailable(),
+			// Every leaf holds a view, so this is null only when no leaf is active.
+			hasActiveLeaf: () => this.app.workspace.getActiveViewOfType(View) !== null,
+			open: () => new DateSwitcherModal(this.app, {
+				suggest: (query) => suggestPeriods(query, (phrase) => naturalDates.parseDate(phrase), getActiveGranularities(this.settings).filter(isReleaseGranularity)),
+				noteName: ({ granularity, date }) => formatWithWeekTokens(resolveEffectiveConfig(this.settings, granularity).format, date, granularity),
+				open: ({ granularity, date }, mode) => void this.openPeriodNote(granularity, date, mode),
+				isMacOS: this.notePorts().workspace.isMacOS,
+			}).open(),
+		}));
+
 		// Registered during load, not on layout: the palette must already list
 		// them when the user opens it, and a command that fires before the index
 		// exists still opens or creates the period's note.
@@ -354,6 +373,10 @@ export default class CalendaricPlugin extends Plugin {
 			vaultConfig: new ObsidianVaultConfigAdapter(this.app),
 			workspace: new ObsidianWorkspaceAdapter(this.app),
 		};
+	}
+
+	private naturalDatesPort(): NaturalDatesPort {
+		return new ObsidianNaturalDatesAdapter(this.app);
 	}
 
 	private async openNeighbour(granularity: ReleaseGranularity, direction: JumpDirection): Promise<void> {

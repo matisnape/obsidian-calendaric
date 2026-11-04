@@ -77,6 +77,43 @@ export class Modal {
 	close(): void {}
 }
 
+export class View {}
+
+type KeyHandler = { modifiers: string[] | null; key: string | null; func: (evt: KeyboardEvent) => unknown };
+
+/** Records each key binding; a test calls a handler's `func` to stand in for the key press. */
+export class Scope {
+	handlers: KeyHandler[] = [];
+	register(modifiers: string[] | null, key: string | null, func: KeyHandler["func"]): KeyHandler {
+		const handler = { modifiers, key, func };
+		this.handlers.push(handler);
+		return handler;
+	}
+}
+
+/**
+ * The parts of Obsidian's SuggestModal the date switcher uses.
+ * `selectActiveSuggestion` mirrors the host: with no suggestion it does
+ * nothing and the modal stays open; with one it closes the modal, then hands
+ * the suggestion to `onChooseSuggestion`.
+ */
+export abstract class SuggestModal<T> extends Modal {
+	emptyStateText = "";
+	inputEl: HTMLInputElement = document.createElement("input");
+	scope = new Scope();
+	setPlaceholder(_placeholder: string): void {}
+	setInstructions(_instructions: unknown[]): void {}
+	abstract getSuggestions(query: string): T[] | Promise<T[]>;
+	abstract renderSuggestion(value: T, el: HTMLElement): void;
+	abstract onChooseSuggestion(item: T, evt: MouseEvent | KeyboardEvent): void;
+	async selectActiveSuggestion(evt: MouseEvent | KeyboardEvent): Promise<void> {
+		const [first] = await this.getSuggestions(this.inputEl.value);
+		if (first === undefined) return;
+		this.close();
+		this.onChooseSuggestion(first, evt);
+	}
+}
+
 export class Notice {
 	constructor(_message: string) {}
 }

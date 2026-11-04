@@ -35,6 +35,7 @@ import { getMonthGrid, resolveWeekStart } from "./ui/calendarUtils";
 import { calendarViewCommand } from "./ui/calendarCommand";
 import { revealActiveNote, revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import type { RevealActiveNoteDeps } from "./commands/revealActiveNoteCommand";
+import { dateSwitcherCommand } from "./commands/dateSwitcherCommand";
 import type { CommandAction } from "./commands/granularityCommands";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
 import { DEFAULT_PERIODIC_CONFIG } from "./types";
@@ -100,7 +101,12 @@ function settingNames(): Set<string> {
 function singleCommandNames(): string[] {
 	const leaves = { find: () => null } as unknown as Parameters<typeof calendarViewCommand>[0];
 	const reveal = {} as unknown as Parameters<typeof revealActiveNoteCommand>[0];
-	return [calendarViewCommand(leaves, () => Promise.resolve()).name, revealActiveNoteCommand(reveal).name];
+	const dateSwitcher = {} as unknown as Parameters<typeof dateSwitcherCommand>[0];
+	return [
+		calendarViewCommand(leaves, () => Promise.resolve()).name,
+		revealActiveNoteCommand(reveal).name,
+		dateSwitcherCommand(dateSwitcher).name,
+	];
 }
 
 function commandNames(granularities: readonly ReleaseGranularity[] = RELEASE_GRANULARITIES): Set<string> {
