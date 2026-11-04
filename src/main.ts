@@ -171,11 +171,12 @@ export default class CalendaricPlugin extends Plugin {
 			// Reading the whole vault is what building the index costs, so it
 			// waits until the workspace says the vault is there to read.
 			const vault = new ObsidianVaultAdapter(this.app);
-			const index = new PeriodicNoteIndex(vault, new ObsidianVaultConfigAdapter(this.app), this.indexConfigs());
+			const vaultConfig = new ObsidianVaultConfigAdapter(this.app);
+			const index = new PeriodicNoteIndex(vault, vaultConfig, this.indexConfigs());
 			this.index = index;
 			// Here and not in onload: Obsidian reports every file already in the
 			// vault as a create while it loads, and those must not be templated (AC-NOTE-10.3).
-			this.stopTemplateOnArrival = templateOnArrival(vault, index, (granularity) =>
+			this.stopTemplateOnArrival = templateOnArrival(vault, vaultConfig, index, (granularity) =>
 				resolveEffectiveConfig(this.settings, granularity),
 			);
 

@@ -122,7 +122,7 @@ describe("AC-NOTE-10.3: the startup line is drawn at layout-ready", () => {
 		expect(plugin.contentAt("Daily/2026-04-13.md")).toBe("# 2026-04-13\n");
 	});
 
-	it("AC-NOTE-10.1: the plugin's subscription is removed on unload", async () => {
+	it("US-NOTE-10: the plugin's subscription is removed on unload", async () => {
 		const plugin = await loadPlugin();
 		await plugin.fireLayoutReady();
 

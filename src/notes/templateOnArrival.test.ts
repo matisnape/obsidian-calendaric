@@ -66,8 +66,13 @@ function setup(configs: PeriodicConfigs = { day: dayConfig, week: weekConfig }, 
 	vault.seedFile(DAY_TEMPLATE, DAY_BODY);
 	vault.seedFile(WEEK_TEMPLATE, "# {{title}}\n");
 	seed?.(vault);
-	const index = new PeriodicNoteIndex(vault, new FakeVaultConfigPort(""), configs);
-	const stop = templateOnArrival(vault, index, (granularity) => configs[granularity] ?? DEFAULT_PERIODIC_CONFIG);
+	const vaultConfig = new FakeVaultConfigPort("");
+	const index = new PeriodicNoteIndex(vault, vaultConfig, configs);
+	const stop = templateOnArrival(vault, vaultConfig, index, (granularity) => {
+		const config = configs[granularity];
+		if (!config) throw new Error(`no ${String(granularity)} config in this test`);
+		return config;
+	});
 	return { vault, index, stop };
 }
 
@@ -107,6 +112,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 	});
 
 	it("AC-NOTE-10.1: an empty file in the day folder whose name is no period's note is left untouched", async () => {
+		const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
 		const { vault } = setup();
 		const writes = vi.spyOn(vault, "processFile");
 
@@ -115,8 +121,30 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		await settle();
 
 		expect(writes).not.toHaveBeenCalled();
+		expect(errors).not.toHaveBeenCalled();
 		expect(vault.contentAt("Daily/shopping.md")).toBe("");
 		expect(vault.contentAt("Elsewhere/2026-04-13.md")).toBe("");
+		errors.mockRestore();
+	});
+
+	it("AC-NOTE-10.1: an empty note in a subfolder of the day folder is the day's note, but not directly in the folder, so it stays empty", async () => {
+		const { vault, index } = setup();
+
+		await vault.createFile("Daily/archive/2026-04-13.md", "");
+		await settle();
+
+		expect(index.granularityOf("Daily/archive/2026-04-13.md")).toBe("day");
+		expect(vault.contentAt("Daily/archive/2026-04-13.md")).toBe("");
+	});
+
+	it("AC-NOTE-10.1: with prefix matching on, an empty prefix-matched name is the day's note, but not the format's name, so it stays empty", async () => {
+		const { vault, index } = setup({ day: { ...dayConfig, allowPrefixMatch: true } });
+
+		await vault.createFile("Daily/2026-04-13 standup.md", "");
+		await settle();
+
+		expect(index.granularityOf("Daily/2026-04-13 standup.md")).toBe("day");
+		expect(vault.contentAt("Daily/2026-04-13 standup.md")).toBe("");
 	});
 
 	it("AC-NOTE-10.2: a matching file created with content is left byte-identical", async () => {
@@ -146,7 +174,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		expect(vault.contentAt(DAY_PATH)).toBe("typed\n");
 	});
 
-	it("AC-NOTE-10.3: an empty matching file already in the vault when the index is built is not written", async () => {
+	it("US-NOTE-10: a change that is not a create, such as the host parsing an empty note already there, writes nothing", async () => {
 		const { vault } = setup(undefined, (seeded) => seeded.seedFile(DAY_PATH, ""));
 		const writes = vi.spyOn(vault, "processFile");
 
@@ -157,7 +185,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		expect(vault.contentAt(DAY_PATH)).toBe("");
 	});
 
-	it("AC-NOTE-10.1: a rename onto a matching name is not a create, and is not templated", async () => {
+	it("US-NOTE-10: a rename onto a matching name is not a create, and is not templated", async () => {
 		const { vault } = setup(undefined, (seeded) => seeded.seedFile("Daily/draft.md", ""));
 
 		vault.renameFile("Daily/draft.md", DAY_PATH);
@@ -183,7 +211,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		errors.mockRestore();
 	});
 
-	it("AC-NOTE-10.1: an empty day file stays empty, with no notice, while core Daily Notes still owns the day", async () => {
+	it("US-NOTE-10: an empty day file stays empty, with no notice, while core Daily Notes still owns the day", async () => {
 		const { vault } = setup();
 		const shown: string[] = [];
 		const dailyNotesOn = new PredecessorGuard(
@@ -215,7 +243,7 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		expect(vault.contentAt(WEEK_PATH)).toBe("# 2026-W16\n");
 	});
 
-	it("AC-NOTE-10.1: after unsubscribing, a new empty matching file is left alone", async () => {
+	it("US-NOTE-10: after unsubscribing, a new empty matching file is left alone", async () => {
 		const { vault, stop } = setup();
 
 		stop();
@@ -223,5 +251,26 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		await settle();
 
 		expect(vault.contentAt(DAY_PATH)).toBe("");
+	});
+
+	it("US-NOTE-10: a create already in flight when the plugin unsubscribes writes nothing", async () => {
+		const { vault, stop } = setup();
+
+		await vault.createFile(DAY_PATH, "");
+		stop();
+		await settle();
+
+		expect(vault.contentAt(DAY_PATH)).toBe("");
+	});
+
+	it("US-NOTE-10: the template's fold state comes with it, as on a note Calendaric creates", async () => {
+		const { vault } = setup();
+		const folds = { folds: [{ from: 0, to: 1 }], lines: 3 };
+		vault.seedFoldState(DAY_TEMPLATE, folds);
+
+		await vault.createFile(DAY_PATH, "");
+		await settle();
+
+		expect(vault.appliedFoldStates).toEqual([{ path: DAY_PATH, foldState: folds }]);
 	});
 });
