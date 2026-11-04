@@ -5,7 +5,7 @@
 // caught as it opens so a test can type into it and confirm.
 import { describe, it, expect, vi, afterEach } from "vitest";
 import type { Command } from "obsidian";
-import { View } from "obsidian";
+import { TFile, View } from "obsidian";
 import CalendaricPlugin from "../main";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -65,14 +65,17 @@ interface Options {
 	naturalDates: NaturalDatesPort | null;
 	activeLeaf: boolean;
 	isMacOS?: boolean;
+	weeklyNotes?: boolean;
+	/** Notes the plugin's index finds in the vault, each with the frontmatter it carries. */
+	indexed?: Record<string, Record<string, string>>;
 }
 
-async function loadedPlugin({ naturalDates, activeLeaf, isMacOS = false }: Options) {
+async function loadedPlugin({ naturalDates, activeLeaf, isMacOS = false, weeklyNotes = true, indexed = {} }: Options) {
 	const stored = defaultStoredConfig();
 	const set = stored.calendarSets[0];
 	if (!set) throw new Error("default configuration has no calendar set");
 	set.day = { ...set.day, enabled: true, templatePath: DAY_TEMPLATE };
-	set.week = { ...set.week, enabled: true, templatePath: WEEK_TEMPLATE };
+	set.week = { ...set.week, enabled: weeklyNotes, templatePath: WEEK_TEMPLATE };
 
 	const vault = new FakeVaultPort();
 	vault.seedFolder("Templates");
@@ -83,20 +86,29 @@ async function loadedPlugin({ naturalDates, activeLeaf, isMacOS = false }: Optio
 	const ports: PeriodNotePorts = { vault, vaultConfig: new FakeVaultConfigPort(""), workspace };
 
 	const commands: Command[] = [];
+	const files = Object.keys(indexed).map((path) => Object.assign(new TFile(), { path }));
+	let layoutReady: () => void = () => undefined;
 	const on = () => ({});
 	const plugin = new CalendaricPlugin({} as never, {} as never);
 	Object.assign(plugin, {
 		app: {
 			plugins: { getPlugin: () => null },
 			workspace: {
-				onLayoutReady: () => undefined,
+				onLayoutReady: (callback: () => void) => {
+					layoutReady = callback;
+				},
 				getLeavesOfType: () => [],
 				getRightLeaf: () => null,
 				getActiveViewOfType: (type: unknown) => (activeLeaf && type === View ? {} : null),
 				on,
 			},
-			vault: { on, getMarkdownFiles: () => [] },
-			metadataCache: { on, offref: () => undefined, getFileCache: () => null, getFirstLinkpathDest: () => null },
+			vault: { on, getMarkdownFiles: () => files },
+			metadataCache: {
+				on,
+				offref: () => undefined,
+				getFileCache: (file: TFile) => ({ frontmatter: indexed[file.path] }),
+				getFirstLinkpathDest: () => null,
+			},
 		},
 		loadData: () => Promise.resolve(JSON.parse(JSON.stringify(stored)) as unknown),
 		saveData: () => Promise.resolve(),
@@ -115,6 +127,7 @@ async function loadedPlugin({ naturalDates, activeLeaf, isMacOS = false }: Optio
 		...(naturalDates ? { naturalDatesPort: () => naturalDates } : {}),
 	});
 	await plugin.onload();
+	layoutReady();
 
 	const pathOf = (granularity: ReleaseGranularity, iso: string) =>
 		computeNotePath(window.moment(iso), resolveEffectiveConfig(plugin.settings, granularity), ports.vaultConfig, granularity);
@@ -206,6 +219,25 @@ describe("US-CMD-10: confirming a phrase lands on that period's note", () => {
 		expect(note && (await loaded.vault.readFile(note))).toBe("kept");
 	});
 
+	it("AC-CMD-10.3: a day whose note the index finds under another name opens that note, and the switcher names it", async () => {
+		const loaded = await loadedPlugin({
+			naturalDates: fakeNaturalDates(true),
+			activeLeaf: true,
+			indexed: { "Journal/monday.md": { day: "2026-11-02" } },
+		});
+		const modal = openSwitcher(loaded);
+		const [suggestion] = modal.getSuggestions("last monday");
+		if (!suggestion) throw new Error("no suggestion for last monday");
+		const el = document.createElement("div");
+		modal.renderSuggestion(suggestion, el);
+
+		await confirm(modal, "last monday");
+
+		expect(el.querySelector("small")?.textContent).toBe("monday");
+		expect(loaded.workspace.opened.map(({ file, mode }) => [file.path, mode])).toEqual([["Journal/monday.md", "reuse"]]);
+		expect(loaded.vault.getFile(loaded.pathOf("day", "2026-11-02"))).toBeNull();
+	});
+
 	it("AC-CMD-10.4: a phrase naming a day with no note creates it from the daily template and opens it in the active pane", async () => {
 		const loaded = await loadedPlugin({ naturalDates: fakeNaturalDates(true), activeLeaf: true });
 		const dayPath = loaded.pathOf("day", "2026-11-05");
@@ -240,6 +272,16 @@ describe("US-CMD-10: confirming a phrase lands on that period's note", () => {
 		expect(loaded.notePaths()).toEqual(before);
 		expect(close).not.toHaveBeenCalled();
 		// What the host shows in an empty list.
+		expect(modal.getSuggestions("purple elephant")).toEqual([]);
+		expect(modal.emptyStateText).toMatch(/not recognised/i);
+	});
+
+	it("AC-CMD-10.5: a phrase the parser reads, for a period whose notes are off, says the notes are off, not that it was not recognised", async () => {
+		const loaded = await loadedPlugin({ naturalDates: fakeNaturalDates(true), activeLeaf: true, weeklyNotes: false });
+		const modal = openSwitcher(loaded);
+
+		expect(modal.getSuggestions("next week")).toEqual([]);
+		expect(modal.emptyStateText).toMatch(/turned off/i);
 		expect(modal.getSuggestions("purple elephant")).toEqual([]);
 		expect(modal.emptyStateText).toMatch(/not recognised/i);
 	});

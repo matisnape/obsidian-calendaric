@@ -218,7 +218,11 @@ export default class CalendaricPlugin extends Plugin {
 			hasActiveLeaf: () => this.app.workspace.getActiveViewOfType(View) !== null,
 			open: () => new DateSwitcherModal(this.app, {
 				suggest: (query) => suggestPeriods(query, (phrase) => naturalDates.parseDate(phrase), getActiveGranularities(this.settings).filter(isReleaseGranularity)),
-				noteName: ({ granularity, date }) => formatWithWeekTokens(resolveEffectiveConfig(this.settings, granularity).format, date, granularity),
+				namesADate: (query) => naturalDates.parseDate(query.trim()) !== null,
+				// The note that opens is the one the index names, which can sit under another name.
+				noteName: ({ granularity, date }) =>
+					this.index?.get(granularity, date)?.path.replace(/^.*\//, "").replace(/\.md$/i, "") ??
+					formatWithWeekTokens(resolveEffectiveConfig(this.settings, granularity).format, date, granularity),
 				open: ({ granularity, date }, mode) => void this.openPeriodNote(granularity, date, mode),
 				isMacOS: this.notePorts().workspace.isMacOS,
 			}).open(),

@@ -41,9 +41,10 @@ describe("US-CMD-10: a phrase maps to one period", () => {
 	});
 
 	it("never offers a quarter, which is reserved", () => {
-		const parse = parser({ "next quarter": "2027-01-01" });
+		const parse = parser({ "next quarter": "2027-01-01", "in 2 quarters": "2027-04-01" });
 
-		expect(suggestPeriods("next quarter", parse, ALL).map((s) => s.granularity)).not.toContain("quarter");
+		expect(suggestPeriods("next quarter", parse, ALL)).toEqual([]);
+		expect(suggestPeriods("in 2 quarters", parse, ALL)).toEqual([]);
 	});
 });
 

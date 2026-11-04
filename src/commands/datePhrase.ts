@@ -1,4 +1,4 @@
-import { RELEASE_GRANULARITIES } from "../types";
+import { ALL_GRANULARITIES, isReleaseGranularity, RELEASE_GRANULARITIES } from "../types";
 import { releaseFacts } from "../granularity/registry";
 import type { ReleaseGranularity } from "../types";
 
@@ -44,8 +44,13 @@ const WEEKDAY_SHORTCUTS: readonly Shortcut[] = RELATIVE.flatMap((word) =>
 	WEEKDAYS.map((day): Shortcut => ({ label: `${word} ${day}`, granularity: RELEASE_GRANULARITIES[0] })),
 );
 
-function granularityOf(phrase: string): ReleaseGranularity {
+/**
+ * A reserved granularity (quarter, DEC-23) has no note to open, so a phrase
+ * naming one gets null rather than the day the parser's date falls in.
+ */
+function granularityOf(phrase: string): ReleaseGranularity | null {
 	const words = phrase.split(/\s+/).map((word) => word.replace(/s$/, ""));
+	if (ALL_GRANULARITIES.some((granularity) => !isReleaseGranularity(granularity) && words.includes(granularity))) return null;
 	return RELEASE_GRANULARITIES.find((granularity) => words.includes(releaseFacts(granularity).unitName)) ?? RELEASE_GRANULARITIES[0];
 }
 
@@ -67,7 +72,8 @@ export function suggestPeriods(
 	const typed = query.trim().toLowerCase();
 	const pool = typed === "" ? DEFAULT_SHORTCUTS : [...DEFAULT_SHORTCUTS, ...WEEKDAY_SHORTCUTS];
 	const shortcuts = pool.filter(({ label }) => label.toLowerCase().startsWith(typed));
-	const candidates = shortcuts.length > 0 ? shortcuts : [{ label: query.trim(), granularity: granularityOf(typed) }];
+	const named = granularityOf(typed);
+	const candidates = shortcuts.length > 0 ? shortcuts : named ? [{ label: query.trim(), granularity: named }] : [];
 
 	const found: PeriodSuggestion[] = [];
 	for (const { label, granularity } of candidates) {
