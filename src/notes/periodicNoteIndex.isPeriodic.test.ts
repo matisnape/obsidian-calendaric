@@ -142,6 +142,21 @@ describe("PeriodicNoteIndex — AC-NOTE-08.3 a file that is not markdown", () =>
 			expect(recognised(index, path)).toBeNull();
 		},
 	);
+
+	it.each([
+		["an exact", CONFIGS],
+		["a prefix-match", PREFIX_CONFIGS],
+	])("AC-NOTE-08.3: drops a note renamed from .md to .png under %s format", (_kind, configs) => {
+		const vault = vaultWith("Daily/2026-04-15.md");
+		const index = indexOver(vault, configs);
+		expect(recognised(index, "Daily/2026-04-15.md")).toEqual({ granularity: "day", date: "2026-04-15" });
+
+		rename(vault, "Daily/2026-04-15.md", "Daily/2026-04-15.png");
+
+		expect(recognised(index, "Daily/2026-04-15.png")).toBeNull();
+		expect(recognised(index, "Daily/2026-04-15.md")).toBeNull();
+		expect(index.get("day", window.moment("2026-04-15"))).toBeNull();
+	});
 });
 
 describe("PeriodicNoteIndex — AC-NOTE-08.4 a rename that keeps the period", () => {

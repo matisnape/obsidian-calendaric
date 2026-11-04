@@ -48,6 +48,11 @@ export function resolveFileDate(
 	configs: FileConfigs,
 	vaultConfig: VaultConfigPort,
 ): FileDateIdentity | null {
+	// Only a markdown file is a note (AC-NOTE-08.3). Checked here, not in
+	// parseFilename, because that one also parses bare names with no extension;
+	// left to it, a prefix-match format reads ".png" as the rest of a longer title.
+	if (!/\.md$/i.test(path)) return null;
+
 	for (const granularity of RELEASE_GRANULARITIES) {
 		const identity = matchGranularity(path, granularity, configs, vaultConfig);
 		if (identity) return identity;
