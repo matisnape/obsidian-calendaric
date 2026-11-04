@@ -121,6 +121,8 @@ export default class CalendaricPlugin extends Plugin {
 			vault: new ObsidianVaultAdapter(this.app),
 			vaultConfig: new ObsidianVaultConfigAdapter(this.app),
 			workspace: new ObsidianWorkspaceAdapter(this.app),
+			// Read on each click: the index is built only once the layout is ready.
+			notes: { get: (granularity, date) => this.index?.get(granularity, date) ?? null },
 		};
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this, calendarDeps));
 

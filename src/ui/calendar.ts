@@ -5,6 +5,7 @@ import type { CalendaricSettings } from "../settings";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { creationFailure } from "../notes/periodNoteOpen";
+import { openNote } from "../notes/noteOpen";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
@@ -375,7 +376,14 @@ export class CalendarWidget implements HoverParent {
 		event: MouseEvent,
 	): Promise<void> {
 		const config = this.config(granularity);
+		// The index knows the period's note even when it does not sit at the
+		// format's path, as under prefix matching (AC-NOTE-07.6).
+		const found = this.deps.notes?.get(granularity, date) ?? null;
 		try {
+			if (found) {
+				await openNote(found, event, this.deps.workspace, found.path);
+				return;
+			}
 			await openOrCreateNote({
 				date,
 				granularity,
@@ -389,11 +397,12 @@ export class CalendarWidget implements HoverParent {
 			// The click is the last caller: an unhandled rejection here would be
 			// a cell that silently does nothing. The notice rides the workspace
 			// port, the way US-NOTE-06 reports a note that vanished. With no note
-			// at the path the write is what failed, and the notice names the
+			// for the period the write is what failed, and the notice names the
 			// period it was for (AC-NOTE-07.5).
 			const path = computeNotePath(date, config, this.deps.vaultConfig, granularity);
+			const noteExists = found !== null || this.deps.vault.getFile(path) !== null;
 			this.deps.workspace.showNotice(
-				this.deps.vault.getFile(path)
+				noteExists
 					? error instanceof Error ? error.message : "Calendaric could not open that note."
 					: creationFailure(granularity, path, error),
 			);

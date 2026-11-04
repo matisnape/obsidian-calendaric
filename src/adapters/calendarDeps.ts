@@ -1,6 +1,10 @@
 import type { VaultConfigPort } from "./vaultConfigPort";
-import type { VaultIndexPort, VaultPort } from "./vaultPort";
+import type { NoteFile, VaultIndexPort, VaultPort } from "./vaultPort";
+import type { ReleaseGranularity } from "../types";
 import type { WorkspacePort } from "./workspacePort";
+
+/** Read off the clock Obsidian provides rather than imported (see main.ts). */
+type Moment = ReturnType<typeof window.moment>;
 
 /**
  * Every host capability the calendar pane uses, as one object.
@@ -18,4 +22,16 @@ export interface CalendarDeps {
 	vault: VaultPort & VaultIndexPort;
 	vaultConfig: VaultConfigPort;
 	workspace: WorkspacePort;
+	/**
+	 * Which file is a period's note, answered by the plugin's one note index.
+	 * The format's own path is not always that file: under prefix matching the
+	 * note can carry more text after the date (AC-NOTE-07.6). Optional because
+	 * a pane drawn without it still opens the note at the format's path.
+	 */
+	notes?: NoteLookup;
+}
+
+/** The one question the click path asks the note index. Null while it is not built. */
+export interface NoteLookup {
+	get(granularity: ReleaseGranularity, date: Moment): NoteFile | null;
 }

@@ -7,8 +7,11 @@ import { openOrCreatePeriodNote } from "./periodNoteOpen";
 import { PeriodicNoteIndex } from "./periodicNoteIndex";
 import { openOrCreateNote, type CreateRequest } from "../ui/cellActions";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
-import type { App } from "obsidian";
+import type { App, Command } from "obsidian";
+import { TFile } from "obsidian";
+import CalendaricPlugin from "../main";
 import { CalendarWidget } from "../ui/calendar";
+import type { NoteLookup } from "../adapters/calendarDeps";
 import { DEFAULT_SETTINGS } from "../settings/model";
 import type { CalendaricSettings } from "../settings/model";
 import type { PeriodicConfig } from "../types";
@@ -20,6 +23,14 @@ import type { PeriodicConfig } from "../types";
  */
 
 window.moment.locale("en");
+
+// onload() reads the app language and draws the ribbon tooltip; the shared
+// mock carries neither.
+vi.mock("obsidian", async (importOriginal) => ({
+	...(await importOriginal<typeof import("obsidian")>()),
+	getLanguage: () => "en",
+	setTooltip: () => undefined,
+}));
 
 const DAY = "2026-04-13";
 const PATH = "Daily/2026-04-13.md";
@@ -73,14 +84,14 @@ afterEach(() => {
  * A calendar pane over the fakes, showing the month `date` falls in: the pane
  * opens on today's month, so the clock is set to `date` (timers stay real).
  */
-function renderCalendar(ports: Ports, settings: CalendaricSettings, date: string): HTMLElement {
+function renderCalendar(ports: Ports, settings: CalendaricSettings, date: string, notes?: NoteLookup): HTMLElement {
 	vi.useFakeTimers({ toFake: ["Date"] });
 	vi.setSystemTime(new Date(`${date}T12:00:00`));
 	const app = {
 		workspace: { on: (): object => ({}), offref: (): undefined => undefined, trigger: (): undefined => undefined },
 	} as unknown as App;
 	const host = document.createElement("div");
-	new CalendarWidget(host, app, settings, ports);
+	new CalendarWidget(host, app, settings, { ...ports, notes });
 	return host;
 }
 
@@ -253,20 +264,91 @@ describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the 
 		expect(ports.vault.listNotes().map((file) => file.path)).toEqual([PRETTY]);
 	});
 
+	/** The week-number cell of the row holding `dayOfMonth`. */
+	function weekCellOf(host: HTMLElement, dayOfMonth: number): HTMLElement {
+		const row = Array.from(host.querySelectorAll("tr")).find((tr) =>
+			Array.from(tr.querySelectorAll(".calendaric-day:not(.is-adjacent-month)")).some(
+				(el) => el.firstChild?.textContent === String(dayOfMonth),
+			),
+		);
+		const cell = row?.querySelector<HTMLElement>(".calendaric-weeknum");
+		if (!cell) throw new Error(`no week cell for day ${dayOfMonth}`);
+		return cell;
+	}
+
+	function clickWeekOfTheTenth(ports: Ports) {
+		const index = new PeriodicNoteIndex(ports.vault, ports.vaultConfig, { week: weekConfig });
+		const host = renderCalendar(ports, { ...SETTINGS, week: weekConfig }, "2025-11-10", index);
+		weekCellOf(host, 10).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		return settle();
+	}
+
 	it("AC-NOTE-07.6: the week cell click opens the pretty-named file and creates no raw-named duplicate", async () => {
 		const ports = prettyVault();
-		const host = renderCalendar(ports, { ...SETTINGS, week: weekConfig }, "2025-11-10");
-		// The row holding Monday 10 November, the week the pretty file is for.
-		const row = Array.from(host.querySelectorAll("tr")).find((tr) =>
-			Array.from(tr.querySelectorAll(".calendaric-day:not(.is-adjacent-month)")).some((el) => el.firstChild?.textContent === "10"),
-		);
-		const weekCell = row?.querySelector<HTMLElement>(".calendaric-weeknum");
-		if (!weekCell) throw new Error("no week cell for 10 November");
 
-		weekCell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-		await settle();
+		await clickWeekOfTheTenth(ports);
 
 		expect(openedPaths(ports)).toEqual([PRETTY]);
 		expect(ports.vault.getFile(RAW)).toBeNull();
+		expect(ports.vault.listNotes().map((file) => file.path)).toEqual([PRETTY]);
+	});
+
+	it("AC-NOTE-07.6: a pretty-named file that fails to open is not reported as a note that could not be created", async () => {
+		const ports = prettyVault();
+		ports.workspace.openInLeaf = async () => {
+			throw new Error("leaf refused");
+		};
+
+		await clickWeekOfTheTenth(ports);
+
+		expect(ports.workspace.notices).toEqual(["leaf refused"]);
+		expect(ports.vault.getFile(RAW)).toBeNull();
+	});
+
+	// The pane is handed the plugin's own index, read when the click happens:
+	// the index does not exist yet when the pane's deps are built.
+	it("AC-NOTE-07.6: onload hands the calendar pane the plugin's index, once the layout is ready", async () => {
+		const pretty = new TFile();
+		pretty.path = PRETTY;
+		let layoutReady: (() => void) | null = null;
+		let viewFactory: ((leaf: never) => unknown) | null = null;
+		const on = () => ({});
+		const instance = new CalendaricPlugin({} as never, {} as never);
+		Object.assign(instance, {
+			app: {
+				workspace: {
+					onLayoutReady: (callback: () => void) => {
+						layoutReady = callback;
+					},
+					getLeavesOfType: () => [],
+					getRightLeaf: () => null,
+					on,
+				},
+				vault: { on, getMarkdownFiles: () => [pretty] },
+				metadataCache: { on, offref: () => undefined, getFileCache: () => null, getFirstLinkpathDest: () => null },
+			},
+			loadData: () => Promise.resolve(null),
+			registerView: (_type: string, factory: (leaf: never) => unknown) => {
+				viewFactory = factory;
+			},
+			addSettingTab: () => undefined,
+			registerHoverLinkSource: () => undefined,
+			addRibbonIcon: () => document.createElement("div"),
+			addCommand: (command: Command) => command,
+			registerEvent: () => undefined,
+			registerInterval: (id: number) => id,
+		});
+		await instance.onload();
+		instance.settings = { ...instance.settings, week: weekConfig };
+
+		const view = (viewFactory as unknown as (leaf: never) => { deps: { notes?: NoteLookup } })({} as never);
+		const notes = view.deps.notes;
+		const week = window.moment("2025-11-12");
+		expect(notes?.get("week", week)).toBeNull();
+
+		(layoutReady as unknown as () => void)();
+		await settle();
+
+		expect(notes?.get("week", week)).toBe(pretty);
 	});
 });
