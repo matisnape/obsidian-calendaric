@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { App } from "obsidian";
 import { CalendarWidget } from "./calendar";
-import { DETAIL_CLOSE_DELAY_MS } from "./indicatorDetail";
+import { DETAIL_CLOSE_DELAY_MS, DETAIL_OPEN_DELAY_MS } from "./indicatorDetail";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
@@ -66,26 +66,44 @@ const lines = () => Array.from(detail()?.querySelectorAll(".calendaric-indicator
 const pointer = (el: Element, type: string, pointerType: string) =>
 	el.dispatchEvent(new PointerEvent(type, { bubbles: type !== "pointerenter" && type !== "pointerleave", pointerType }));
 
+async function hover(el: HTMLElement): Promise<void> {
+	pointer(el, "pointerenter", "mouse");
+	await vi.advanceTimersByTimeAsync(DETAIL_OPEN_DELAY_MS);
+	await settle();
+}
+
 /**
  * A touch tap as Chromium orders it: pointerdown, focus, then click, with the
- * microtasks between those dispatches run, as a browser runs them.
+ * microtasks between those dispatches run, as a browser runs them. The click is
+ * a plain MouseEvent, so only the press says it was a touch.
  */
 async function tap(el: HTMLElement): Promise<void> {
 	pointer(el, "pointerdown", "touch");
 	el.focus();
 	await settle();
 	pointer(el, "pointerup", "touch");
-	pointer(el, "click", "touch");
+	el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 	await settle();
 }
 
-const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+const key = (el: Element, k: string, init: KeyboardEventInit = {}) =>
+	el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...init }));
 
 describe("US-CAL-08: indicator detail without needing to hover", () => {
 	it("AC-CAL-08.1: resting the pointer on a cell with indicators shows each indicator's value near the cell", async () => {
 		const { day } = await render();
 
 		pointer(day(3), "pointerenter", "mouse");
+		await vi.advanceTimersByTimeAsync(DETAIL_OPEN_DELAY_MS - 1);
+		pointer(day(3), "pointerleave", "mouse");
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(detail()).toBeNull();
+
+		pointer(day(3), "pointerenter", "mouse");
+		await vi.advanceTimersByTimeAsync(DETAIL_OPEN_DELAY_MS - 1);
+		await settle();
+		expect(detail()).toBeNull();
+		await vi.advanceTimersByTimeAsync(1);
 		await settle();
 
 		expect(lines()).toEqual(["Note exists", "300 words"]);
@@ -96,8 +114,7 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 
 	it("AC-CAL-08.2: leaving the cell closes the detail view after the 250 ms dismissal delay", async () => {
 		const { day } = await render();
-		pointer(day(3), "pointerenter", "mouse");
-		await settle();
+		await hover(day(3));
 
 		pointer(day(3), "pointerleave", "mouse");
 		expect(DETAIL_CLOSE_DELAY_MS).toBe(250);
@@ -109,8 +126,7 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 
 	it("AC-CAL-08.2: moving from the cell onto the detail view keeps it open, and leaving it closes it", async () => {
 		const { day } = await render();
-		pointer(day(3), "pointerenter", "mouse");
-		await settle();
+		await hover(day(3));
 		const view = detail()!;
 
 		pointer(day(3), "pointerleave", "mouse");
@@ -121,6 +137,20 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		pointer(view, "pointerleave", "mouse");
 		await vi.advanceTimersByTimeAsync(250);
 		expect(view.isConnected).toBe(false);
+	});
+
+	it("AC-CAL-08.2: the focus a mouse click gives the cell does not keep the view open once the pointer leaves", async () => {
+		const { day } = await render();
+		await hover(day(3));
+
+		pointer(day(3), "pointerdown", "mouse");
+		day(3).focus();
+		day(3).click();
+		await settle();
+		pointer(day(3), "pointerleave", "mouse");
+		await vi.advanceTimersByTimeAsync(250);
+
+		expect(detail()).toBeNull();
 	});
 
 	it("AC-CAL-08.3: a touch tap shows the same detail instead of opening the note, and a second tap opens it", async () => {
@@ -163,8 +193,7 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		const { day, vault } = await render();
 		const createFile = vi.spyOn(vault, "createFile");
 
-		pointer(day(5), "pointerenter", "mouse");
-		await settle();
+		await hover(day(5));
 		expect(detail()).toBeNull();
 
 		day(5).focus();
@@ -194,13 +223,31 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		expect(detail()?.getAttribute("role")).toBe("tooltip");
 		expect(day(3).getAttribute("aria-describedby")).toBe(detail()?.id);
 		expect(detail()?.id).not.toBe("");
+
+		pointer(day(3), "pointerenter", "mouse");
+		pointer(day(3), "pointerleave", "mouse");
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(day(3).getAttribute("aria-describedby")).toBe(detail()?.id);
+
+		day(3).blur();
+		await hover(day(3));
+		pointer(day(3), "pointerleave", "mouse");
+		await vi.advanceTimersByTimeAsync(250);
+		expect(detail()).toBeNull();
 	});
 
 	it("AC-CAL-08.5: Escape and blur close the detail view, and Enter or Space open the note as a click does", async () => {
 		const { day, workspace } = await render();
-		// After a tap and a blur, the next focus is keyboard focus again.
+		// After a tap, Enter opens the note: the tap's touch press is over.
 		await tap(day(3));
 		key(day(3), "Escape");
+		key(day(3), "Enter");
+		await settle();
+		expect(workspace.opened).toHaveLength(1);
+		// After a blur, the next focus is keyboard focus again, even after a press dragged off without a click.
+		day(3).blur();
+		pointer(day(3), "pointerdown", "mouse");
+		day(3).focus();
 		day(3).blur();
 
 		day(3).focus();
@@ -220,10 +267,13 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		day(3).focus();
 		key(day(3), "Enter");
 		await settle();
-		expect(workspace.opened).toHaveLength(1);
+		expect(workspace.opened).toHaveLength(2);
 		key(day(3), " ");
 		await settle();
-		expect(workspace.opened).toHaveLength(2);
+		expect(workspace.opened).toHaveLength(3);
+		key(day(3), "Enter", { ctrlKey: true });
+		await settle();
+		expect(workspace.opened.map((open) => open.mode)).toEqual(["reuse", "reuse", "reuse", "split"]);
 	});
 });
 

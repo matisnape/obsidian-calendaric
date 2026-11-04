@@ -2,6 +2,8 @@ import type { CalendarIndicator, IndicatorCell, IndicatorContext } from "../indi
 import { openOverlay, type OverlayHandle } from "./overlay";
 
 export const DETAIL_CLOSE_DELAY_MS = 250;
+/** How long the pointer rests on a cell before its view opens, so a sweep across the grid opens none. */
+export const DETAIL_OPEN_DELAY_MS = 200;
 
 /** Detail view ids, unique across every calendar on the page. */
 let detailIds = 0;
@@ -42,8 +44,11 @@ export class IndicatorDetail {
 	 * the view's **Open note** button, calls `activate`.
 	 */
 	attach(cell: HTMLElement, lines: () => Promise<string[]>, activate: (event: MouseEvent) => void): void {
-		// True from a pointer press until the cell loses focus or the press is cancelled: the focus that press gives the cell is not keyboard focus.
-		let pressed = false;
+		// The pointer type of the press in progress, until its click, a cancel or a blur. The
+		// focus a press gives the cell is not keyboard focus, and a touch press makes its click a tap.
+		let pressedWith: string | null = null;
+		// Focus that came from the keyboard: the pointer leaving the cell does not close its view.
+		let keyboardFocus = false;
 		// Bumped by every request and every dismissal, so a request that resolves late is dropped.
 		let latest = 0;
 
@@ -63,25 +68,31 @@ export class IndicatorDetail {
 		cell.addEventListener("pointerenter", (event) => {
 			if (event.pointerType === "touch") return;
 			this.cancelClose();
-			if (this.open?.cell !== cell) void request(false);
+			if (this.open?.cell === cell) return;
+			const ticket = ++latest;
+			setTimeout(() => {
+				if (ticket === latest) void request(false);
+			}, DETAIL_OPEN_DELAY_MS);
 		});
 		cell.addEventListener("pointerleave", (event) => {
-			if (event.pointerType === "touch") return;
+			if (event.pointerType === "touch" || keyboardFocus) return;
 			latest++;
 			if (this.open?.cell === cell) this.scheduleClose();
 		});
-		cell.addEventListener("pointerdown", () => {
-			pressed = true;
+		cell.addEventListener("pointerdown", (event) => {
+			pressedWith = event.pointerType;
 		});
 		cell.addEventListener("pointercancel", () => {
-			pressed = false;
+			pressedWith = null;
 		});
 		// A tap focuses the cell before its click; showing the view then would make that click open the note.
 		cell.addEventListener("focus", () => {
-			if (!pressed && this.open?.cell !== cell) void request(false);
+			keyboardFocus = pressedWith === null;
+			if (keyboardFocus && this.open?.cell !== cell) void request(false);
 		});
 		cell.addEventListener("blur", (event) => {
-			pressed = false;
+			pressedWith = null;
+			keyboardFocus = false;
 			// Focus moving onto the view's own button keeps it, or the tap on that button would miss.
 			// No `instanceof Node`: in a popout window the node comes from that window's own globals.
 			if (this.open?.cell === cell && this.open.view.contains(event.relatedTarget as Node | null)) return;
@@ -91,9 +102,8 @@ export class IndicatorDetail {
 			if (event.key === "Escape") dismiss();
 		});
 		cell.addEventListener("click", (event) => {
-			// Electron's click carries the pointer type; a keyboard `click()` does not. No
-			// `instanceof PointerEvent`: a popout window's events come from its own globals.
-			const touch = "pointerType" in event && event.pointerType === "touch";
+			const touch = pressedWith === "touch";
+			pressedWith = null;
 			void (async () => {
 				if (touch && this.open?.cell !== cell && (await request(true))) return;
 				activate(event);

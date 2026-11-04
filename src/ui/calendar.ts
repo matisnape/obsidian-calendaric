@@ -460,6 +460,8 @@ function keyboardActivated(el: HTMLElement): void {
 	el.addEventListener("keydown", (event) => {
 		if (event.key !== "Enter" && event.key !== " ") return;
 		event.preventDefault();
-		el.click();
+		// Not `el.click()`: that drops the modifier keys, and Cmd or Ctrl opens the note in a split.
+		const { ctrlKey, metaKey, shiftKey, altKey } = event;
+		el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey, metaKey, shiftKey, altKey }));
 	});
 }
