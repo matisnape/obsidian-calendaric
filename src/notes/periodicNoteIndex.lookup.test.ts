@@ -24,7 +24,6 @@ const CONFIGS: PeriodicConfigs = {
 
 const NO_DEFAULT_FOLDER = new FakeVaultConfigPort("");
 
-/** A vault holding exactly these note paths, each with empty content. */
 function vaultWith(...paths: string[]): FakeVaultPort {
 	const vault = new FakeVaultPort();
 	for (const path of paths) vault.seedFile(path, "");
