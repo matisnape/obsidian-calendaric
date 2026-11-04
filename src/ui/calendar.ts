@@ -11,7 +11,8 @@ import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 import { CALENDAR_INDICATORS } from "./indicators";
 import { INDICATOR_API_VERSION } from "../indicatorContract";
-import type { IndicatorCell, IndicatorContext } from "../indicatorContract";
+import type { CalendarIndicator, IndicatorCell, IndicatorContext } from "../indicatorContract";
+import { IndicatorDetail, describeCell } from "./indicatorDetail";
 import { MonthNavigation } from "./calendarNav";
 import {
 	HOVER_LINK_SOURCE,
@@ -45,6 +46,7 @@ export class CalendarWidget implements HoverParent {
 	private fileOpenRef: EventRef | null = null;
 	/** Indicators already reported as refused, so a refusal is logged once, not every render. */
 	private refusedIndicators = new Set<string>();
+	private detail = new IndicatorDetail();
 
 	/**
 	 * `deps` is required and has no default (AC-ARCH-11.5): a widget that could
@@ -104,15 +106,18 @@ export class CalendarWidget implements HoverParent {
 
 		const prevBtn = navButtons.createDiv({
 			cls: "calendaric-nav-btn",
-			attr: { "aria-label": "Previous month" },
+			attr: { "aria-label": "Previous month", role: "button" },
 		});
+		keyboardActivated(prevBtn);
 		prevBtn.innerHTML = svgArrow;
 		prevBtn.addEventListener("click", () => this.nav.prev());
 
 		this.todayBtnEl = navButtons.createDiv({
 			cls: "calendaric-today-btn",
 			text: "Today",
+			attr: { role: "button" },
 		});
+		keyboardActivated(this.todayBtnEl);
 		// The control decides nothing itself: MonthNavigation is inert on the
 		// current month, so a click here while the button reads as inactive
 		// changes no month and asks for no re-render.
@@ -120,8 +125,9 @@ export class CalendarWidget implements HoverParent {
 
 		const nextBtn = navButtons.createDiv({
 			cls: "calendaric-nav-btn calendaric-nav-btn--next",
-			attr: { "aria-label": "Next month" },
+			attr: { "aria-label": "Next month", role: "button" },
 		});
+		keyboardActivated(nextBtn);
 		nextBtn.innerHTML = svgArrow;
 		nextBtn.addEventListener("click", () => this.nav.next());
 
@@ -177,6 +183,7 @@ export class CalendarWidget implements HoverParent {
 		const dayPaths = this.dots.getDayNotePaths(displayedMonth, dayConfig);
 		const weekPaths = this.dots.getWeekNotePaths(grid, weekConfig);
 		const cells: IndicatorCell[] = [];
+		const detailTargets: [HTMLElement, IndicatorCell, (event: MouseEvent) => void][] = [];
 		const active = this.activeNote();
 
 		for (const week of grid) {
@@ -189,22 +196,22 @@ export class CalendarWidget implements HoverParent {
 
 				const anchor = getWeekAnchor(week.days);
 				const weekPath = computeNotePath(anchor, weekConfig, this.deps.vaultConfig, "week");
-				cells.push({
+				const weekCell: IndicatorCell = {
 					granularity: "week",
 					date: anchor,
 					path: weekPath,
 					noteExists: weekPaths.has(weekPath),
 					container: wDotContainer,
-				});
+				};
+				cells.push(weekCell);
 				if (active?.noteDate === computeNoteDate(anchor, "week", weekConfig.format)) {
 					wDiv.addClass("is-active");
 				}
 
 				if (this.settings.week.enabled) {
 					wDiv.style.cursor = "pointer";
-					wDiv.addEventListener("click", (e) => {
-						void this.handleNoteClick(anchor.clone(), "week", e);
-					});
+					keyboardActivated(wDiv);
+					detailTargets.push([wDiv, weekCell, (e) => void this.handleNoteClick(anchor.clone(), "week", e)]);
 					// The hover previews `weekPath`, which is the path the click
 					// above resolves from the same anchor — one reference date per
 					// row, whatever the week starts on (DEC-06).
@@ -224,22 +231,22 @@ export class CalendarWidget implements HoverParent {
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				const dayPath = computeNotePath(day.date, dayConfig, this.deps.vaultConfig, "day");
-				cells.push({
+				const dayCell: IndicatorCell = {
 					granularity: "day",
 					date: day.date,
 					path: dayPath,
 					noteExists: dayPaths.has(dayPath),
 					container: dayDotContainer,
-				});
+				};
+				cells.push(dayCell);
 				if (active?.noteDate === computeNoteDate(day.date, "day", weekConfig.format)) {
 					dayDiv.addClass("is-active");
 				}
 
 				if (this.settings.day.enabled) {
 					dayDiv.style.cursor = "pointer";
-					dayDiv.addEventListener("click", (e) => {
-						void this.handleNoteClick(day.date, "day", e);
-					});
+					keyboardActivated(dayDiv);
+					detailTargets.push([dayDiv, dayCell, (e) => void this.handleNoteClick(day.date, "day", e)]);
 					dayDiv.addEventListener("mouseover", (e) => {
 						this.handleNoteHover(e, dayDiv, dayPath);
 					});
@@ -248,19 +255,24 @@ export class CalendarWidget implements HoverParent {
 			}
 		}
 
-		this.drawIndicators(cells);
+		const { indicators, context } = this.drawIndicators(cells);
+		for (const [el, cell, activate] of detailTargets) {
+			this.detail.attach(el, () => describeCell(indicators, cell, context), activate);
+		}
 	}
 
 	/**
 	 * Every registered indicator, through the one interface (US-ARCH-05). An
 	 * indicator written against another version of that interface is skipped and
 	 * reported rather than drawn under rules it was not written for (AC-ARCH-05.3).
+	 * Returns the indicators it drew and their context, for the detail view.
 	 */
-	private drawIndicators(cells: readonly IndicatorCell[]): void {
+	private drawIndicators(cells: readonly IndicatorCell[]): { indicators: CalendarIndicator[]; context: IndicatorContext } {
 		// Read here, once: the scanner watches the paths of its last read for edits.
 		const existing = cells.filter((cell) => cell.noteExists).map((cell) => cell.path);
 		const wordsPerDot = this.settings.wordsPerDot;
 		const context: IndicatorContext = { wordCounts: this.dots.getWordCounts(existing, wordsPerDot), wordsPerDot };
+		const drawn: CalendarIndicator[] = [];
 		for (const indicator of CALENDAR_INDICATORS) {
 			// Widened on purpose: typed, it is the current version, and the check is for one that is not.
 			const version: number = indicator.apiVersion;
@@ -273,6 +285,7 @@ export class CalendarWidget implements HoverParent {
 				}
 				continue;
 			}
+			drawn.push(indicator);
 			// One broken indicator must not take the others' marks with it.
 			const failed = (error: unknown): void => console.error(`Calendaric: indicator "${indicator.id}" failed to draw.`, error);
 			try {
@@ -281,6 +294,7 @@ export class CalendarWidget implements HoverParent {
 				failed(error);
 			}
 		}
+		return { indicators: drawn, context };
 	}
 
 	/** The only path to a granularity's resolved config, the same one note creation reads (AC-SET-03.3); `enabled` is read directly. */
@@ -435,7 +449,19 @@ export class CalendarWidget implements HoverParent {
 			this.app.workspace.offref(this.fileOpenRef);
 			this.fileOpenRef = null;
 		}
+		this.detail.close();
 		this.dots.destroy();
 		this.containerEl.empty();
 	}
+}
+
+function keyboardActivated(el: HTMLElement): void {
+	el.tabIndex = 0;
+	el.addEventListener("keydown", (event) => {
+		if (event.key !== "Enter" && event.key !== " ") return;
+		event.preventDefault();
+		// Not `el.click()`: that drops the modifier keys, and Cmd or Ctrl opens the note in a split.
+		const { ctrlKey, metaKey, shiftKey, altKey } = event;
+		el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey, metaKey, shiftKey, altKey }));
+	});
 }

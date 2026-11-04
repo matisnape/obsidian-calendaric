@@ -47,4 +47,11 @@ export interface CalendarIndicator {
 	 * first has already detached these containers, so a late mark shows nothing.
 	 */
 	draw(cells: readonly IndicatorCell[], context: IndicatorContext): void | Promise<void>;
+	/**
+	 * One line for the cell's detail view, or `null` when this indicator has
+	 * nothing to say about the cell. A cell every indicator returns `null` for
+	 * shows no detail view. Optional, so an indicator without it still matches
+	 * the current `INDICATOR_API_VERSION`.
+	 */
+	describe?(cell: IndicatorCell, context: IndicatorContext): string | null | Promise<string | null>;
 }

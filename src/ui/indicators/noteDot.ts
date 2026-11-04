@@ -19,4 +19,5 @@ export const noteDotIndicator: CalendarIndicator = {
 	draw(cells) {
 		for (const cell of cells) if (cell.noteExists) cell.container.appendChild(makeDotSvg());
 	},
+	describe: (cell) => (cell.noteExists ? "Note exists" : null),
 };
