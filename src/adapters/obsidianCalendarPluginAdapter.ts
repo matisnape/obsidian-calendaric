@@ -1,5 +1,11 @@
 import type { App } from "obsidian";
-import type { CalendarPluginPort, CompanionPluginAction, CompanionPluginRead } from "./companionPluginPort";
+import type {
+	CalendarPluginPort,
+	CalendarPluginSettings,
+	CalendarSettingsPort,
+	CompanionPluginAction,
+	CompanionPluginRead,
+} from "./companionPluginPort";
 import { findCommunityPlugin } from "./communityPluginRegistry";
 
 /**
@@ -8,6 +14,17 @@ import { findCommunityPlugin } from "./communityPluginRegistry";
  * forks.json, capability `dev-plugin-id-fallback`). First match wins.
  */
 const CALENDAR_IDS = ["calendar-anks", "calendar"] as const;
+
+const CALENDAR_SETTING_TYPES: Record<keyof CalendarPluginSettings, "string" | "boolean" | "number"> = {
+	weekStart: "string",
+	shouldConfirmBeforeCreate: "boolean",
+	showWeeklyNote: "boolean",
+	wordsPerDot: "number",
+	localeOverride: "string",
+	weeklyNoteFormat: "string",
+	weeklyNoteFolder: "string",
+	weeklyNoteTemplate: "string",
+};
 
 function describe(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
@@ -19,18 +36,15 @@ function describe(error: unknown): string {
  * `writeOptions` is the one call that changes a setting and saves it
  * (docs/mapping/sources/cal.json, api_surface).
  */
-export class ObsidianCalendarPluginAdapter implements CalendarPluginPort {
+export class ObsidianCalendarPluginAdapter implements CalendarPluginPort, CalendarSettingsPort {
 	constructor(private app: App) {}
 
 	readCalendarWeeklyNotes(): CompanionPluginRead<boolean> {
 		try {
-			const found = findCommunityPlugin(this.app, CALENDAR_IDS, "Calendar");
-			if (!found.ok) return found;
+			const options = this.readOptions();
+			if (!options.ok) return options;
 
-			const options = found.value["options"];
-			const showWeeklyNote = typeof options === "object" && options !== null
-				? (options as Record<string, unknown>)["showWeeklyNote"]
-				: undefined;
+			const showWeeklyNote = options.value?.["showWeeklyNote"];
 			if (typeof showWeeklyNote !== "boolean") {
 				return { ok: false, reason: "mismatch", problem: "The Calendar plugin reported no usable 'showWeeklyNote' setting." };
 			}
@@ -38,6 +52,37 @@ export class ObsidianCalendarPluginAdapter implements CalendarPluginPort {
 		} catch (error) {
 			return { ok: false, reason: "mismatch", problem: `Reading the Calendar plugin failed: ${describe(error)}` };
 		}
+	}
+
+	readCalendarSettings(): CompanionPluginRead<CalendarPluginSettings> {
+		try {
+			const options = this.readOptions();
+			if (!options.ok) return options;
+			if (options.value === undefined) {
+				return { ok: false, reason: "mismatch", problem: "The Calendar plugin reported no settings object." };
+			}
+
+			const settings: Record<string, unknown> = {};
+			for (const [key, type] of Object.entries(CALENDAR_SETTING_TYPES)) {
+				const value = options.value[key];
+				if (value === undefined || value === null) continue;
+				if (typeof value !== type) {
+					return { ok: false, reason: "mismatch", problem: `The Calendar plugin's '${key}' setting is not a ${type}.` };
+				}
+				settings[key] = value;
+			}
+			return { ok: true, value: settings as CalendarPluginSettings };
+		} catch (error) {
+			return { ok: false, reason: "mismatch", problem: `Reading the Calendar plugin failed: ${describe(error)}` };
+		}
+	}
+
+	/** The enabled plugin's `options`, or undefined when that is not an object. Both reads start here. */
+	private readOptions(): CompanionPluginRead<Record<string, unknown> | undefined> {
+		const found = findCommunityPlugin(this.app, CALENDAR_IDS, "Calendar");
+		if (!found.ok) return found;
+		const options = found.value["options"];
+		return { ok: true, value: typeof options === "object" && options !== null ? (options as Record<string, unknown>) : undefined };
 	}
 
 	async disableCalendarWeeklyNotes(): Promise<CompanionPluginAction> {
