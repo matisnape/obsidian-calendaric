@@ -279,7 +279,7 @@ export class CalendarWidget implements HoverParent {
 		}
 	}
 
-	/** The calendar's one read of a granularity's settings, the same one note creation makes (AC-SET-03.3). */
+	/** The only path to a granularity's resolved config, the same one note creation reads (AC-SET-03.3); `enabled` is read directly. */
 	private config(granularity: ReleaseGranularity): PeriodicConfig {
 		return resolveEffectiveConfig(this.settings, granularity);
 	}
