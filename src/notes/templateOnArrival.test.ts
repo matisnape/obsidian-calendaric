@@ -9,6 +9,7 @@ import type { PeriodicConfigs } from "./periodicNoteIndex";
 import { createPeriodicNote } from "./noteCreate";
 import { substituteTemplateTokens } from "./templateTokens";
 import { templateOnArrival } from "./templateOnArrival";
+import { guardCreation, PredecessorGuard } from "./predecessorGuard";
 
 // Every substitution pass counted, as templateAppliedOnce.test.ts does: the
 // real expansion is kept, so no test passes on content nobody produced.
@@ -180,6 +181,38 @@ describe("US-NOTE-10 — an empty matching file created while Calendaric runs ge
 		expect(vault.contentAt(WEEK_PATH)).toBe("");
 		expect(errors).not.toHaveBeenCalled();
 		errors.mockRestore();
+	});
+
+	it("AC-NOTE-10.1: an empty day file stays empty, with no notice, while core Daily Notes still owns the day", async () => {
+		const { vault } = setup();
+		const shown: string[] = [];
+		const dailyNotesOn = new PredecessorGuard(
+			{
+				companion: {
+					readDailyNotes: () => ({ ok: true, value: { enabled: true, format: "", folder: "", template: "" } }),
+					disableDailyNotes: () => ({ ok: true }),
+				},
+				calendar: {
+					readCalendarWeeklyNotes: () => ({ ok: true, value: false }),
+					disableCalendarWeeklyNotes: async () => ({ ok: true }),
+				},
+				periodicNotes: {
+					readActiveGranularities: () => ({ ok: true, value: [] }),
+					disableGranularity: async () => ({ ok: true }),
+				},
+			},
+			() => true,
+			(message) => shown.push(message),
+		);
+		guardCreation(vault.backingVault, dailyNotesOn);
+
+		await vault.createFile(DAY_PATH, "");
+		await vault.createFile(WEEK_PATH, "");
+		await settle();
+
+		expect(vault.contentAt(DAY_PATH)).toBe("");
+		expect(shown).toEqual([]);
+		expect(vault.contentAt(WEEK_PATH)).toBe("# 2026-W16\n");
 	});
 
 	it("AC-NOTE-10.1: after unsubscribing, a new empty matching file is left alone", async () => {

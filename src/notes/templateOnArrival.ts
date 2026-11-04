@@ -2,9 +2,10 @@ import type { NoteFile, VaultIndexPort, VaultPort, VaultWritePort } from "../ada
 import type { FileGranularity } from "../fmt/resolveFileDate";
 import type { PeriodicConfig } from "../types";
 import type { PeriodicNoteIndex } from "./periodicNoteIndex";
+import { creationRefused } from "./predecessorGuard";
 import { substituteTemplateTokens } from "./templateTokens";
 
-type ArrivalVault = Pick<VaultPort, "getTemplateFile" | "readFile"> & VaultIndexPort & VaultWritePort;
+type ArrivalVault = Pick<VaultPort, "backingVault" | "getTemplateFile" | "readFile"> & VaultIndexPort & VaultWritePort;
 
 /** Which period a path is the note for: the index's own identification, not a second matcher. */
 type PeriodLookup = Pick<PeriodicNoteIndex, "granularityOf" | "dateOf">;
@@ -41,6 +42,9 @@ async function templateIfEmpty(
 	const granularity = notes.granularityOf(file.path);
 	const date = notes.dateOf(file.path);
 	if (granularity === null || date === null) return;
+	// A predecessor that still owns the granularity templates its own notes, so
+	// a second template would double it. Quietly: nobody asked Calendaric for this note.
+	if (creationRefused(vault, granularity, true)) return;
 
 	const settings = config(granularity);
 	// No template, or one that is not there: a manual file stays as it is, and
