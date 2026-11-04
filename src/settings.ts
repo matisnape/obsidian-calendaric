@@ -6,7 +6,8 @@ import { clearStartupNote, DEFAULT_FORMATS, DEFAULT_WORDS_PER_DOT, isWordsPerDot
 import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import { renderPeriodicNotesImportCard } from "./settings/periodicNotesImportCard";
-import type { CompanionPluginPort, PeriodicNotesPort } from "./adapters/companionPluginPort";
+import { renderCalendarImportCard } from "./settings/calendarImportCard";
+import type { CalendarSettingsPort, CompanionPluginPort, PeriodicNotesPort } from "./adapters/companionPluginPort";
 import type { DesktopShellPort } from "./adapters/desktopShellPort";
 import type { VaultPort } from "./adapters/vaultPort";
 import { validateTemplatePath } from "./notes/validateTemplatePath";
@@ -97,8 +98,13 @@ function renderGuardedSection(containerEl: HTMLElement, label: string, render: (
 export interface SettingsTabPorts {
 	/** Reads and writes another plugin's settings. Typed because its shape is not ours. */
 	readonly companion: CompanionPluginPort;
-	/** Reads the Periodic Notes plugin's active calendar set, for the import card. */
-	readonly periodicNotes: Pick<PeriodicNotesPort, "readActiveCalendarSet">;
+	/**
+	 * Reads the Periodic Notes plugin's active calendar set, for its import card,
+	 * and what it governs, for the Calendar import (AC-MIG-03.2).
+	 */
+	readonly periodicNotes: Pick<PeriodicNotesPort, "readActiveCalendarSet" | "readActiveGranularities">;
+	/** Reads the Calendar plugin's settings, for its import card. */
+	readonly calendar: CalendarSettingsPort;
 	/** Opens a file in the operating system. Absent on mobile. */
 	readonly desktop: DesktopShellPort;
 	/**
@@ -136,6 +142,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 				save: () => this.save(),
 				refresh: () => this.display(),
 			});
+		});
+		renderGuardedSection(containerEl, "Calendar plugin import", () => {
+			renderCalendarImportCard(containerEl, this.plugin, this.ports, { refresh: () => this.display() });
 		});
 		renderGuardedSection(containerEl, "General", () => this.renderGeneralSection(containerEl));
 		renderGuardedSection(containerEl, "Periodic Notes", () => this.renderPeriodicNotesSection(containerEl));

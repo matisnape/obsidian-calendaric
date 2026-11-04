@@ -76,6 +76,37 @@ export interface CalendarPluginPort {
 }
 
 /**
+ * The Calendar plugin's stored settings that the import reads (US-MIG-03),
+ * under that plugin's own key names.
+ *
+ * A key the plugin does not carry is left out rather than filled with that
+ * plugin's default: AC-MIG-03.8 is about values the user set, and a default
+ * filled in here would look like one.
+ */
+export interface CalendarPluginSettings {
+	weekStart?: string;
+	shouldConfirmBeforeCreate?: boolean;
+	showWeeklyNote?: boolean;
+	wordsPerDot?: number;
+	localeOverride?: string;
+	weeklyNoteFormat?: string;
+	weeklyNoteFolder?: string;
+	weeklyNoteTemplate?: string;
+}
+
+/**
+ * Reads the Calendar plugin's settings for the import. A port of its own,
+ * because the four test fakes of `CalendarPluginPort` have no use for it.
+ */
+export interface CalendarSettingsPort {
+	/**
+	 * Same plugin lookup as `readCalendarWeeklyNotes`, so a disabled plugin reads
+	 * as `absent`. A key holding a value of the wrong type is a `mismatch`.
+	 */
+	readCalendarSettings(): CompanionPluginRead<CalendarPluginSettings>;
+}
+
+/**
  * One granularity's entry inside a Periodic Notes calendar set.
  *
  * Five fields, because those are the five the import carries (US-MIG-04).

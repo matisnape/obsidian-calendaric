@@ -13,11 +13,12 @@
 // It lives under `src/__mocks__/` rather than beside the tests because
 // `src/arch.test.ts` sweeps every other non-test module in `src/` and asserts
 // that nothing outside `src/main.ts` constructs an adapter (AC-ARCH-01.1). This
-// module constructs three, which is what a composition root for a test is. The
+// module constructs several, which is what a composition root for a test is. The
 // sweep skips this directory, and that is the whole reason for the location.
 import type { App } from "obsidian";
 import { ObsidianCompanionPluginAdapter } from "../adapters/obsidianCompanionPluginAdapter";
 import { ObsidianPeriodicNotesAdapter } from "../adapters/obsidianPeriodicNotesAdapter";
+import { ObsidianCalendarPluginAdapter } from "../adapters/obsidianCalendarPluginAdapter";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import type { SettingsTabPorts } from "../settings";
 
@@ -35,6 +36,7 @@ export function makeSettingsTabPorts(app: App, overrides: Partial<SettingsTabPor
 	return {
 		companion: new ObsidianCompanionPluginAdapter(app),
 		periodicNotes: new ObsidianPeriodicNotesAdapter(app),
+		calendar: new ObsidianCalendarPluginAdapter(app),
 		desktop: { openPluginFile: () => undefined },
 		vault: new FakeVaultPort(),
 		...overrides,

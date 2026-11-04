@@ -148,6 +148,7 @@ export default class CalendaricPlugin extends Plugin {
 			new CalendaricSettingsTab(this.app, this, {
 				companion,
 				periodicNotes,
+				calendar: new ObsidianCalendarPluginAdapter(this.app),
 				desktop: new ElectronDesktopShellAdapter(this.app),
 				vault: new ObsidianVaultAdapter(this.app),
 			}),
