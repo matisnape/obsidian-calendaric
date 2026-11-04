@@ -171,8 +171,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": "HALF SETTLED, and the missing half needs a DOM harness this repository does not have. The second clause is proved: vitest: src/ui/calendarNav.test.ts > \"AC-CAL-02.4: reports the inactive state and does nothing when activated\" asserts atCurrentMonth is true, that clicking leaves the month unchanged, and that the redraw counter stays at zero, so the handler really is inert; three further tests cover repeated clicks, the return to the active state after leaving the month, and September 2027 not matching September 2026. Mutation-checked by the orchestrator: removing the early exit from toToday fails 2 tests. The FIRST clause -- that the control is SHOWN in an inactive state -- is not proved. calendar.ts sets is-disabled and aria-disabled from nav.atCurrentMonth, but nothing tests that link: vitest runs in the node environment, neither jsdom nor happy-dom is installed, and calendar.ts relies on Obsidian own DOM extensions (createEl, createDiv, empty, addClass). This is the same missing harness that holds AC-CAL-01.5 and the \"user sees the notice\" clause of US-ARCH-04 open.",
+          "status": "pass",
+          "evidence": "Two DOM tests in src/ui/calendarRender.todayControl.test.ts drive the real CalendarWidget under happy-dom, clock pinned to 2026-09-14. Test 1: on the current month the control has class is-disabled and aria-disabled=\"true\"; after Next month both flip off. Test 2: clicking it while inactive leaves the header unchanged, keeps the identical first tbody row node (no re-render), opens nothing and creates no file or folder. Mutation-checked at 4e65a5d: is-disabled forced false (calendar.ts:163), aria-disabled forced \"false\" (calendar.ts:164), is-disabled forced true, and the early return in toToday removed (calendarNav.ts:67) each turned a test red; sources restored byte-identical.",
           "failure_path": true
         },
         {
