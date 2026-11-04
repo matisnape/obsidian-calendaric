@@ -71,6 +71,12 @@ describe("decideCalendarImportCard / applyCalendarImport", () => {
 		});
 	});
 
+	it("AC-MIG-03.1: the week format is imported as the Calendar plugin uses it, untrimmed", () => {
+		const target = importInto(weekOff(), ports(enabled({ weeklyNoteFormat: " gggg-ww" })));
+
+		expect(target.week.format).toBe(" gggg-ww");
+	});
+
 	it("AC-MIG-03.1: one week field alone is enough to enable week", () => {
 		const target = importInto(weekOff(), ports(enabled({ weeklyNoteFolder: "Weekly" })));
 

@@ -114,7 +114,9 @@ function translate(
 
 	if (weekFromCalendar) {
 		const week: Incoming[] = [];
-		const format = text(source.weeklyNoteFormat);
+		// Untrimmed, as getWeeklyNoteSettings() hands it to the Calendar plugin: a
+		// trimmed format would name different files than the notes it already made.
+		const format = text(source.weeklyNoteFormat) === undefined ? undefined : source.weeklyNoteFormat;
 		const folder = text(source.weeklyNoteFolder);
 		const template = text(source.weeklyNoteTemplate);
 		if (format !== undefined) week.push({ id: "week.format", label: "Weekly note format", value: format });
