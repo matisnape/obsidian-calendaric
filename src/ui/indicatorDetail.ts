@@ -83,16 +83,17 @@ export class IndicatorDetail {
 		cell.addEventListener("blur", (event) => {
 			pressed = false;
 			// Focus moving onto the view's own button keeps it, or the tap on that button would miss.
-			const to = event.relatedTarget;
-			if (to instanceof Node && this.open?.cell === cell && this.open.view.contains(to)) return;
+			// No `instanceof Node`: in a popout window the node comes from that window's own globals.
+			if (this.open?.cell === cell && this.open.view.contains(event.relatedTarget as Node | null)) return;
 			dismiss();
 		});
 		cell.addEventListener("keydown", (event) => {
 			if (event.key === "Escape") dismiss();
 		});
 		cell.addEventListener("click", (event) => {
-			// Electron's click is a PointerEvent; a keyboard `click()` has no pointer type.
-			const touch = event instanceof PointerEvent && event.pointerType === "touch";
+			// Electron's click carries the pointer type; a keyboard `click()` does not. No
+			// `instanceof PointerEvent`: a popout window's events come from its own globals.
+			const touch = "pointerType" in event && event.pointerType === "touch";
 			void (async () => {
 				if (touch && this.open?.cell !== cell && (await request(true))) return;
 				activate(event);
