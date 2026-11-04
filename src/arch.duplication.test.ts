@@ -249,6 +249,7 @@ describe("AC-ARCH-02.4: one function probes each plugin registry", () => {
 		expect(probes).toEqual([
 			"src/adapters/obsidianCalendarPluginAdapter.ts: CALENDAR_IDS",
 			"src/adapters/obsidianCalendarPluginAdapter.ts: CALENDAR_IDS",
+			"src/adapters/obsidianNaturalDatesAdapter.ts: NLDATES_IDS",
 			"src/adapters/obsidianPeriodicNotesAdapter.ts: PERIODIC_NOTES_IDS",
 		]);
 	});

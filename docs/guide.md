@@ -70,6 +70,7 @@ Open the command palette and type a command's name.
 |---|---|
 | **Open calendar** | Opens the calendar view. The palette leaves it out while the calendar is already on screen. |
 | **Reveal active note** | Shows the period of the daily or weekly note in the active pane in the calendar. |
+| **Open date switcher** | Type a date in words, like last monday or next week, to open that period's note. Needs the Natural Language Dates plugin enabled. |
 
 Each switched-on group (**Daily Notes**, **Weekly Notes**) adds its own commands:
 
