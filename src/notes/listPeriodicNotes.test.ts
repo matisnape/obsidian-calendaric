@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { listPeriodicNotes } from "./listPeriodicNotes";
-import type { FileConfigs } from "../fmt/resolveFileDate";
+import type { FileConfigs, FileGranularity } from "../fmt/resolveFileDate";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
 import type { PeriodicConfig } from "../types";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
@@ -101,5 +101,12 @@ describe("listPeriodicNotes", () => {
 		const vault = vaultWith(["Daily"], ["Daily/2026-11-04.md"]);
 
 		expect(listPeriodicNotes("month", CONFIGS, vault, NO_DEFAULT_FOLDER)).toEqual([]);
+	});
+
+	it("throws for a granularity outside the release set, rather than answering no notes", () => {
+		const vault = vaultWith(["Daily"], ["Daily/2026-11-04.md"]);
+		const quarter = "quarter" as FileGranularity;
+
+		expect(() => listPeriodicNotes(quarter, CONFIGS, vault, NO_DEFAULT_FOLDER)).toThrow(/quarter/);
 	});
 });

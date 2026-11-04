@@ -2,6 +2,7 @@ import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { NoteFile, VaultIndexPort, VaultPort } from "../adapters/vaultPort";
 import type { FileConfigs, FileGranularity } from "../fmt/resolveFileDate";
 import { resolveFileDate } from "../fmt/resolveFileDate";
+import { isReleaseGranularity } from "../types";
 import { resolveNoteFolder } from "./noteUtils";
 
 /**
@@ -13,8 +14,9 @@ import { resolveNoteFolder } from "./noteUtils";
  * and two files naming the same period both come back.
  *
  * A granularity absent from `configs` is switched off and claims no file, so it
- * gives an empty list. Throws when its folder is missing: an empty list there
- * would read as "no notes yet". The vault root always exists.
+ * gives an empty list. Throws for one outside the release set, such as quarter
+ * carried by a configured value, and when the folder is missing: an empty list
+ * there would read as "no notes yet". The vault root always exists.
  */
 export function listPeriodicNotes(
 	granularity: FileGranularity,
@@ -22,6 +24,12 @@ export function listPeriodicNotes(
 	vault: Pick<VaultPort, "folderExists"> & Pick<VaultIndexPort, "listNotes">,
 	vaultConfig: VaultConfigPort,
 ): NoteFile[] {
+	if (!isReleaseGranularity(granularity)) {
+		throw new Error(
+			`Calendaric cannot list ${String(granularity)} notes: that granularity is not supported in this release.`,
+		);
+	}
+
 	const config = configs[granularity];
 	if (!config) return [];
 
