@@ -148,6 +148,16 @@ describe("AC-NOTE-07.4: with confirmation off, the note is created and opened at
 describe("AC-NOTE-07.5: a note that cannot be created says so and opens no pane", () => {
 	const FAILURE = "Calendaric could not create the daily note for 2026-04-13: vault is read-only";
 
+	// The click rejects and `calendar.ts`'s handler shows the message as the
+	// notice; the command shows it itself.
+	it("AC-NOTE-07.5: the cell click fails naming the period and saying the note could not be created, and opens nothing", async () => {
+		const ports = makePorts();
+		ports.vault.createFileError = new Error("vault is read-only");
+
+		await expect(click(ports, false)).rejects.toThrow(FAILURE);
+		expect(ports.workspace.opened).toEqual([]);
+	});
+
 	it("AC-NOTE-07.5: the command names the period, says the note could not be created, and opens nothing", async () => {
 		const ports = makePorts();
 		ports.vault.createFileError = new Error("vault is read-only");
@@ -186,5 +196,14 @@ describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the 
 		expect(openedPaths(ports)).toEqual([PRETTY]);
 		expect(ports.vault.getFile(RAW)).toBeNull();
 		expect(ports.vault.listNotes().map((file) => file.path)).toEqual([PRETTY]);
+	});
+
+	it("AC-NOTE-07.6: the week cell click opens the pretty-named file and creates no raw-named duplicate", async () => {
+		const ports = prettyVault();
+
+		await click(ports, false, stubConfirm(true), weekConfig, "2025-11-10");
+
+		expect(openedPaths(ports)).toEqual([PRETTY]);
+		expect(ports.vault.getFile(RAW)).toBeNull();
 	});
 });
