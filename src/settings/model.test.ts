@@ -15,6 +15,7 @@ import type { CalendarSet, StoredConfig } from "./model";
 import { decideDailyNotesCard } from "./dailyNotesImport";
 import type { CompanionPluginPort } from "../adapters/companionPluginPort";
 import { DEFAULT_PERIODIC_CONFIG } from "../types";
+import { DEFAULT_WORDS_PER_SEGMENT, wordCountSegments } from "../ui/calendarDots";
 
 /** A fully written-out stored configuration, as `saveData` would have left it. */
 function storedFixture(extra: Partial<StoredConfig> = {}): Record<string, unknown> {
@@ -607,3 +608,55 @@ function countingCompanionPort(): { port: CompanionPluginPort; reads: () => numb
 		reads: () => reads,
 	};
 }
+
+describe("US-SET-02 global settings are stored once, with documented defaults", () => {
+	it("AC-SET-02.2: a changed global is written once, at the top level, never inside a granularity's config", () => {
+		const loaded = toSettings(loadStoredConfig(undefined));
+		const saved: unknown = JSON.parse(
+			JSON.stringify(applySettings(loadStoredConfig(undefined), { ...loaded, wordsPerDot: 400, showWeekNumbers: false })),
+		);
+		const text = JSON.stringify(saved);
+
+		expect(text.match(/"wordsPerDot"/g)).toHaveLength(1);
+		expect(text.match(/"showWeekNumbers"/g)).toHaveLength(1);
+		expect(saved).toMatchObject({ wordsPerDot: 400, showWeekNumbers: false });
+		expect(toSettings(loadStoredConfig(saved)).wordsPerDot).toBe(400);
+	});
+
+	it("AC-SET-02.3: a fresh install gives every global its documented default, none undefined", () => {
+		const settings = toSettings(loadStoredConfig(undefined));
+
+		expect({
+			weekStart: settings.weekStart,
+			showWeekNumbers: settings.showWeekNumbers,
+			confirmBeforeCreate: settings.confirmBeforeCreate,
+			overrideLocale: settings.overrideLocale,
+			hasMigratedDailyNoteSettings: settings.hasMigratedDailyNoteSettings,
+			showPeriodLabel: settings.showPeriodLabel,
+			wordsPerDot: settings.wordsPerDot,
+		}).toEqual({
+			weekStart: "monday",
+			showWeekNumbers: true,
+			confirmBeforeCreate: true,
+			overrideLocale: "",
+			hasMigratedDailyNoteSettings: false,
+			showPeriodLabel: true,
+			wordsPerDot: 250,
+		});
+	});
+
+	it("AC-SET-02.4: the word-count threshold defaults to 250, the value the dots fall back to", () => {
+		expect(toSettings(loadStoredConfig({})).wordsPerDot).toBe(250);
+		expect(toSettings(loadStoredConfig({})).wordsPerDot).toBe(DEFAULT_WORDS_PER_SEGMENT);
+	});
+
+	it("AC-SET-02.5: a stored threshold that is not a positive whole number reads back as 250, by the dots' own rule", () => {
+		for (const stored of [0, -1, 2.5, "300", "abc", Number.NaN, null, 300, 1]) {
+			const read = toSettings(loadStoredConfig({ wordsPerDot: stored })).wordsPerDot;
+			const dotsAccept = wordCountSegments(1000, stored as number) !== wordCountSegments(1000, DEFAULT_WORDS_PER_SEGMENT);
+			const accepted = typeof stored === "number" && Number.isInteger(stored) && stored > 0;
+			expect(read, `stored ${String(stored)}`).toBe(accepted ? stored : 250);
+			expect(dotsAccept, `dots on ${String(stored)}`).toBe(accepted);
+		}
+	});
+});

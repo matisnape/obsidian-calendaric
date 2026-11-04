@@ -26,6 +26,12 @@ export interface GlobalSettings {
 	overrideLocale: string;
 	hasMigratedDailyNoteSettings: boolean;
 	showPeriodLabel: boolean;
+	/**
+	 * Words that fill one segment of a day's word-count dot (DEC-22). Optional
+	 * so a settings object built before this field existed still type-checks;
+	 * `loadStoredConfig` and `toSettings` always fill it.
+	 */
+	wordsPerDot?: number;
 }
 
 export type GranularityConfigs = Record<Granularity, PeriodicConfig>;
@@ -54,6 +60,9 @@ export interface CalendaricSettings extends GlobalSettings, GranularityConfigs {
 
 export const DEFAULT_CALENDAR_SET_ID = "Default";
 
+/** The documented default for `wordsPerDot` (DEC-22). */
+export const DEFAULT_WORDS_PER_DOT = 250;
+
 const DEFAULT_GLOBALS: GlobalSettings = {
 	weekStart: "monday",
 	showWeekNumbers: true,
@@ -61,6 +70,7 @@ const DEFAULT_GLOBALS: GlobalSettings = {
 	overrideLocale: "",
 	hasMigratedDailyNoteSettings: false,
 	showPeriodLabel: true,
+	wordsPerDot: DEFAULT_WORDS_PER_DOT,
 };
 
 export function defaultGranularityConfigs(): GranularityConfigs {
@@ -126,6 +136,14 @@ const CONFIG_FIELDS = [
 	"openAtStartup",
 ] as const;
 
+/**
+ * The rule a word-count threshold must meet, the same one `wordCountSegments`
+ * applies to the threshold it is handed (AC-SET-02.5).
+ */
+export function isWordsPerDot(value: unknown): value is number {
+	return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
 function asWeekStart(value: unknown, fallback: WeekStartOption): WeekStartOption {
 	return WEEK_START_OPTIONS.find((option) => option === value) ?? fallback;
 }
@@ -142,6 +160,7 @@ function pickGlobals(source: unknown): GlobalSettings {
 			DEFAULT_GLOBALS.hasMigratedDailyNoteSettings,
 		),
 		showPeriodLabel: asBoolean(raw.showPeriodLabel, DEFAULT_GLOBALS.showPeriodLabel),
+		wordsPerDot: isWordsPerDot(raw.wordsPerDot) ? raw.wordsPerDot : DEFAULT_GLOBALS.wordsPerDot,
 	};
 }
 
