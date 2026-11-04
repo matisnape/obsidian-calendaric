@@ -4687,7 +4687,7 @@
       "story": "As someone who wants exactly one command that opens today's weekly note, I want the generated per-granularity week command to be the only one that does this, so that the command palette never offers two entries that do the same thing.",
       "rationale": "Two commands opening the same note is confusing and leaves one of them as dead code the moment the generated command set covers week.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "cal:open-weekly-note-command"
       ],
@@ -4710,8 +4710,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Tests 'AC-CMD-04.1: with week enabled, exactly one command opens this week's note, creating it in the active pane' and '...with this week's note already there, the one command opens it and writes no second note' run the real CalendaricPlugin.onload() and count commands by behaviour (which ones open this week's note path), expecting exactly ['week-open-current'], the note created in reuse mode, and a seeded note kept. Mutants: differently named duplicate opener in main.ts -> KILLED; open-current made a no-op -> KILLED; default open mode reuse->tab -> KILLED; creation path forced to return -> KILLED. Mutation-checked at 587611d; review fix f783091 only widens the test harness (editor callbacks counted, any extra written note caught) and the AC gate re-ran green at f783091 (1639 passed)."
         },
         {
           "id": "AC-CMD-04.2",
@@ -4723,8 +4723,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-CMD-04.2: with week enabled, no legacy Open Weekly Note command and no second command doing its job' asserts no command named /open weekly note/i, no id open-weekly-note, and exactly one behavioural opener. No legacy command ever existed on master, so no production change was needed (DEC-10). Mutants: duplicate under another id (go-this-week) -> KILLED; legacy-named no-op 'Open Weekly Note' -> KILLED. Mutation-checked at 587611d; review fix f783091 only widens the test harness (editor callbacks counted, any extra written note caught) and the AC gate re-ran green at f783091 (1639 passed).",
           "failure_path": true
         },
         {
@@ -4737,8 +4737,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-CMD-04.3: with week disabled, no command opens this week's note and Open Weekly Note is absent' disables week through stored config, asserts settings.week.enabled is false after the real onload, then no week opener, no legacy name, no week- id. Mutants: sync forced to include week -> KILLED (only 04.3 fails); duplicate opener and legacy-named command -> KILLED. Mutation-checked at 587611d; review fix f783091 only widens the test harness (editor callbacks counted, any extra written note caught) and the AC gate re-ran green at f783091 (1639 passed).",
           "failure_path": true
         }
       ],
