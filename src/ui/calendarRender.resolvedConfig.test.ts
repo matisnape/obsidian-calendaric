@@ -147,7 +147,6 @@ describe("calendar reads the resolved config", () => {
 	});
 });
 
-/** Settings with stored fields of `granularity` replaced, as a hand edit could leave them. */
 function handEdited(granularity: "day" | "week", fields: Record<string, unknown>): CalendaricSettings {
 	return { ...SETTINGS, [granularity]: { ...SETTINGS[granularity], ...fields } } as unknown as CalendaricSettings;
 }
