@@ -21,7 +21,7 @@ import { CalendaricSettingsTab } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { makeSettingsTabPorts } from "./__mocks__/settingsTabPorts";
-import type CalendaricPlugin from "./main";
+import CalendaricPlugin from "./main";
 import type { Moment } from "./granularity/registry";
 import { applyLocaleSettings, restoreLocale } from "./fmt/locale";
 import { formatWithWeekTokens, getWeekNumber, WEEKDAY_ISO } from "./notes/noteUtils";
@@ -33,7 +33,15 @@ import { COMMAND_ACTIONS, commandName, GranularityCommands } from "./commands/gr
 import type { Command } from "obsidian";
 import { getMonthGrid, resolveWeekStart } from "./ui/calendarUtils";
 import { calendarViewCommand } from "./ui/calendarCommand";
-import { revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
+import { revealActiveNote, revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
+import type { RevealActiveNoteDeps } from "./commands/revealActiveNoteCommand";
+import { jumpToClosestNote } from "./commands/jumpCommands";
+import type { CommandAction } from "./commands/granularityCommands";
+import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
+import { DEFAULT_PERIODIC_CONFIG } from "./types";
+import { FakeVaultPort } from "./adapters/fakeVaultPort";
+import { FakeVaultConfigPort } from "./adapters/fakeVaultConfigPort";
+import { FakeWorkspacePort } from "./adapters/fakeWorkspacePort";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
 
 const GUIDE_PATH = "docs/guide.md";
@@ -399,6 +407,144 @@ describe("the guide's palette and calendar rules", () => {
 		expect(row?.days[0]?.date.format("ddd D")).toBe(`${firstWeekday} ${firstDate}`);
 		expect(row?.weekNumber).toBe(Number(shown));
 		expect(formatWithWeekTokens("GGGG-[W]WW", inRowDate, "week")).toBe(writes);
+	});
+});
+
+// Each "What it does" sentence of the Commands section is matched word for word,
+// then held to what the command's code does, so neither can change alone.
+describe("the guide's command descriptions", () => {
+	/** The "What it does" cell of the Commands row that names `command` in bold. */
+	function describes(command: string): string {
+		const row = tables()
+			.flatMap((t) => (t.header[0] === "Command" ? t.rows : []))
+			.find((cells) => cells[0]!.includes(`**${command}**`));
+		expect(row, `no Commands row names **${command}**`).toBeDefined();
+		return row![1]!;
+	}
+
+	const DAY = { ...DEFAULT_PERIODIC_CONFIG, enabled: true, format: "YYYY-MM-DD", folder: "Daily" };
+
+	/** A daily-notes vault holding `paths`, with `active` in the active pane. */
+	function world(active: string | null, ...paths: string[]) {
+		const vault = new FakeVaultPort();
+		for (const path of paths) vault.seedFile(path, "");
+		const vaultConfig = new FakeVaultConfigPort("");
+		const workspace = new FakeWorkspacePort();
+		const index = new PeriodicNoteIndex(vault, vaultConfig, { day: DAY });
+		const ports = { vault, vaultConfig, workspace };
+		const notes = () => vault.listNotes().map((f) => f.path).sort();
+		const opened = () => workspace.opened.map(({ file }) => file.path);
+		return { active, vault, workspace, index, ports, notes, opened };
+	}
+
+	/** Run one generated command the way the palette does, through the plugin. */
+	async function runCommand(w: ReturnType<typeof world>, action: CommandAction): Promise<void> {
+		const instance = new CalendaricPlugin({} as never, {} as never);
+		const view = w.active === null ? null : { file: { path: w.active } };
+		Object.assign(instance, {
+			app: { workspace: { getActiveViewOfType: () => view } },
+			loadData: () => Promise.resolve(null),
+			index: w.index,
+			notePorts: () => w.ports,
+		});
+		await instance.loadSettings();
+		instance.settings.day = { ...instance.settings.day, ...DAY };
+		const plugin = instance as unknown as { runGranularityCommand(g: ReleaseGranularity, a: CommandAction): Promise<void> };
+		await plugin.runGranularityCommand("day", action);
+	}
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("AC-ARCH-08.1: Open calendar opens the view and is left out of the palette while the view is on screen", () => {
+		expect(describes("Open calendar")).toBe(
+			"Opens the calendar view. The palette leaves it out while the calendar is already on screen.",
+		);
+
+		let visible = true;
+		const open = vi.fn(() => Promise.resolve());
+		const command = calendarViewCommand({ find: () => ({ isVisible: () => visible }) } as never, open);
+
+		expect(command.checkCallback!(true)).toBe(false);
+		visible = false;
+		expect(command.checkCallback!(true)).toBe(true);
+		command.checkCallback!(false);
+		expect(open).toHaveBeenCalledOnce();
+	});
+
+	it("AC-ARCH-08.1: Reveal active note shows a daily or weekly note's period, and no other note's", async () => {
+		expect(describes("Reveal active note")).toBe(
+			"Shows the period of the daily or weekly note in the active pane in the calendar.",
+		);
+
+		const revealed: string[] = [];
+		for (const granularity of RELEASE_GRANULARITIES) {
+			const deps: RevealActiveNoteDeps = {
+				activePath: () => "note.md",
+				resolve: () => ({ granularity }) as never,
+				open: () => Promise.resolve(),
+				view: () => ({ revealActiveNote: () => void revealed.push(granularity) }),
+				notify: () => undefined,
+			};
+			await revealActiveNote(deps);
+		}
+
+		expect(revealed).toEqual(["day", "week"]);
+	});
+
+	it("AC-ARCH-08.1: Open current opens today's note, writing it first when the vault has none", async () => {
+		expect(describes("Open current daily note")).toBe(
+			"Opens the note for the period that holds today, creating it first when the vault has none.",
+		);
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date(2026, 3, 15, 12));
+
+		const empty = world(null);
+		await runCommand(empty, "open-current");
+		expect(empty.notes()).toEqual(["Daily/2026-04-15.md"]);
+		expect(empty.opened()).toEqual(["Daily/2026-04-15.md"]);
+
+		const kept = world(null, "Daily/2026-04-15.md");
+		await runCommand(kept, "open-current");
+		expect(kept.notes()).toEqual(["Daily/2026-04-15.md"]);
+		expect(kept.opened()).toEqual(["Daily/2026-04-15.md"]);
+	});
+
+	it("AC-ARCH-08.1: Open next and Open previous count from the active note, writing the note when missing", async () => {
+		expect(describes("Open next daily note")).toBe(
+			"Opens the note for the period after the note in the active pane, creating it first when the vault has none.",
+		);
+		expect(describes("Open previous daily note")).toBe("The same, for the period before.");
+		// Today is far from the active note, so a count from today would land elsewhere.
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date(2026, 3, 15, 12));
+
+		const w = world("Daily/2020-01-06.md", "Daily/2020-01-06.md");
+		await runCommand(w, "open-next");
+		await runCommand(w, "open-previous");
+
+		expect(w.opened()).toEqual(["Daily/2020-01-07.md", "Daily/2020-01-05.md"]);
+		expect(w.notes()).toEqual(["Daily/2020-01-05.md", "Daily/2020-01-06.md", "Daily/2020-01-07.md"]);
+	});
+
+	it("AC-ARCH-08.1: the jumps open the closest existing note either side of the active one and never write one", async () => {
+		expect(describes("Jump forward to next existing daily note")).toBe(
+			"Opens the closest existing note after the one in the active pane. It never creates a note.",
+		);
+		expect(describes("Jump backward to previous existing daily note")).toBe(
+			"The same, before the one in the active pane.",
+		);
+
+		const w = world(null, "Daily/2020-01-01.md", "Daily/2020-01-06.md", "Daily/2020-01-09.md");
+		const before = w.notes();
+		await jumpToClosestNote("day", "forward", "Daily/2020-01-06.md", w.index, w.workspace);
+		await jumpToClosestNote("day", "backward", "Daily/2020-01-06.md", w.index, w.workspace);
+		// Past the last note there is nothing to open, and nothing is written in its place.
+		await jumpToClosestNote("day", "forward", "Daily/2020-01-09.md", w.index, w.workspace);
+
+		expect(w.opened()).toEqual(["Daily/2020-01-09.md", "Daily/2020-01-01.md"]);
+		expect(w.notes()).toEqual(before);
 	});
 });
 
