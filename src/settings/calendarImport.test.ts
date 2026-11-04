@@ -170,6 +170,22 @@ describe("decideCalendarImportCard / applyCalendarImport", () => {
 		expect(target.wordsPerDot).toBe(250);
 	});
 
+	it("AC-MIG-03.5: a value Calendaric already holds is neither a change nor a conflict", () => {
+		const target = fresh();
+		target.weekStart = "sunday";
+		target.week.folder = "Same";
+		const card = decideCalendarImportCard(
+			ports(enabled({ weekStart: "sunday", weeklyNoteFolder: "Same", weeklyNoteTemplate: "Theirs.md" })),
+			target,
+			LOCALES,
+		);
+
+		expect(card.kind).toBe("offer");
+		if (card.kind !== "offer") return;
+		const ids = [...card.plan.changes, ...card.plan.conflicts].map((field) => field.id);
+		expect(ids).toEqual(["week.templatePath"]);
+	});
+
 	describe("AC-MIG-03.5: a customised week value is only replaced after the user confirms", () => {
 		function customised(): CalendaricSettings {
 			const target = fresh();

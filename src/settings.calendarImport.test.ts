@@ -2,7 +2,7 @@
 //
 // The Calendar plugin import as the user meets it: the real settings tab and
 // the real adapters, over a minimal host that carries a fake Calendar plugin.
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";
 import { DEFAULT_SETTINGS } from "./settings/model";
@@ -85,6 +85,38 @@ describe("the Calendar plugin import card in the settings tab", () => {
 		await Promise.resolve();
 
 		expect(settings.week.folder).toBe("Mine");
+	});
+
+	it("AC-MIG-03.5: confirming one conflict in the modal replaces that value only", async () => {
+		const settings = structuredClone(DEFAULT_SETTINGS);
+		settings.week = { ...settings.week, format: "GGGG-[W]WW", folder: "Mine", templatePath: "Mine.md" };
+		const opened: CalendarImportConflictModal[] = [];
+		const open = vi.spyOn(CalendarImportConflictModal.prototype, "open").mockImplementation(function (
+			this: CalendarImportConflictModal,
+		) {
+			opened.push(this);
+			this.onOpen();
+		});
+		const card = calendarCard(
+			render(
+				{ calendar: { options: { weeklyNoteFormat: "gggg-ww", weeklyNoteFolder: "Theirs", weeklyNoteTemplate: "Theirs.md" } } },
+				settings,
+			),
+		);
+
+		card?.querySelector("button")?.click();
+		const modalEl = opened[0]!.contentEl;
+		const folderRow = Array.from(modalEl.querySelectorAll(".calendaric-import-conflict")).find((row) =>
+			row.textContent?.includes("Weekly note folder"),
+		);
+		folderRow!.querySelector("input")!.checked = true;
+		Array.from(modalEl.querySelectorAll("button"))
+			.find((b) => b.textContent === "Import selected")
+			?.click();
+		await Promise.resolve();
+		open.mockRestore();
+
+		expect(settings.week).toMatchObject({ format: "GGGG-[W]WW", folder: "Theirs", templatePath: "Mine.md" });
 	});
 });
 
