@@ -39,7 +39,6 @@ function weekOff(): CalendaricSettings {
 	return target;
 }
 
-/** Runs the whole decision and applies whatever it offers, confirming `confirmed`. */
 function importInto(
 	target: CalendaricSettings,
 	source: CalendarImportPorts,

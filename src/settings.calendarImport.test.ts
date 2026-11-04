@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 //
-// The Calendar plugin import as the user meets it: the real settings tab, the
-// real adapters, and a host whose only fake is the Calendar plugin object.
+// The Calendar plugin import as the user meets it: the real settings tab and
+// the real adapters, over a minimal host that carries a fake Calendar plugin.
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendaricSettingsTab } from "./settings";

@@ -15,7 +15,7 @@ function knownLocales(): readonly string[] | undefined {
 	return moment?.locales?.();
 }
 
-/** The Calendar plugin import card. decideCalendarImportCard decides; this only draws. */
+/** The Calendar plugin import card. decideCalendarImportCard decides what it shows; this draws it and stores the choice. */
 export function renderCalendarImportCard(
 	containerEl: HTMLElement,
 	plugin: CalendaricPlugin,

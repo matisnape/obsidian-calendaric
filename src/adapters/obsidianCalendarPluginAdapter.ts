@@ -15,7 +15,6 @@ import { findCommunityPlugin } from "./communityPluginRegistry";
  */
 const CALENDAR_IDS = ["calendar-anks", "calendar"] as const;
 
-/** The type each key of `CalendarPluginSettings` must hold in the plugin's `options`. */
 const CALENDAR_SETTING_TYPES: Record<keyof CalendarPluginSettings, "string" | "boolean" | "number"> = {
 	weekStart: "string",
 	shouldConfirmBeforeCreate: "boolean",

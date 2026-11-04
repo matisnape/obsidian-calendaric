@@ -9,7 +9,6 @@ import type { CalendaricSettings } from "./model";
 import { resolveImportSources } from "./importSource";
 import type { ImportSource } from "./importSource";
 
-/** Every Calendaric setting the Calendar import can write. */
 export type CalendarImportFieldId =
 	| "weekStart"
 	| "confirmBeforeCreate"
@@ -61,7 +60,7 @@ export interface CalendarImportPorts {
 
 type Incoming = Omit<CalendarImportField, "current" | "incoming">;
 
-/** Empty or blank counts as unset (AC-MIG-03.8); folder and template are trimmed as the Calendar plugin trims them. */
+/** Empty or blank counts as unset (AC-MIG-03.8). A set value is trimmed, as the Calendar plugin trims its folder and template. */
 function text(value: string | undefined): string | undefined {
 	const trimmed = value?.trim();
 	return trimmed ? trimmed : undefined;
@@ -121,7 +120,6 @@ function translate(
 		if (format !== undefined) week.push({ id: "week.format", label: "Weekly note format", value: format });
 		if (folder !== undefined) week.push({ id: "week.folder", label: "Weekly note folder", value: folder });
 		if (template !== undefined) week.push({ id: "week.templatePath", label: "Weekly note template", value: template });
-		// AC-MIG-03.1: importing the week's configuration turns week on.
 		if (week.length > 0) incoming.push({ id: "week.enabled", label: "Weekly notes", value: true }, ...week);
 	}
 
@@ -204,7 +202,6 @@ export function decideCalendarImportCard(
 
 	const { week } = resolveImportSources(ports.periodicNotes, ports.companion);
 	const { incoming, unmapped } = translate(source.value, weekFromCalendar(week), locales);
-	// AC-MIG-03.8: nothing set, nothing to offer.
 	if (incoming.length === 0 && unmapped.length === 0) return { kind: "hidden" };
 	return { kind: "offer", plan: plan(incoming, unmapped, target) };
 }

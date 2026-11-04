@@ -103,7 +103,6 @@ export interface SettingsTabPorts {
 	 * and what it governs, for the Calendar import (AC-MIG-03.2).
 	 */
 	readonly periodicNotes: Pick<PeriodicNotesPort, "readActiveCalendarSet" | "readActiveGranularities">;
-	/** Reads the Calendar plugin's settings, for its import card. */
 	readonly calendar: CalendarSettingsPort;
 	/** Opens a file in the operating system. Absent on mobile. */
 	readonly desktop: DesktopShellPort;
