@@ -5,7 +5,7 @@
 // written through openOrCreatePeriodNote with the resolved config, as
 // main.ts:330 calls it, then looked for by the calendar: a stored format of ""
 // is where a raw read and the resolved default part ways.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { CalendarWidget } from "./calendar";
 import { getMonthGrid, getWeekAnchor, resolveWeekStart } from "./calendarUtils";
@@ -179,21 +179,6 @@ const activeDays = (host: HTMLElement): string[] =>
 	Array.from(host.querySelectorAll(".calendaric-day.is-active")).map((cell) => cell.firstChild?.textContent ?? "");
 
 describe("the active note, and every field the resolver repairs", () => {
-	const realMoment = window.moment;
-
-	// A fixed month, so the reveal test's week row straddles a month end.
-	beforeEach(() => {
-		window.moment = Object.assign(
-			(...args: Parameters<typeof realMoment>) =>
-				args.length === 0 ? realMoment("2026-05-15T12:00:00") : realMoment(...args),
-			realMoment,
-		);
-	});
-
-	afterEach(() => {
-		window.moment = realMoment;
-	});
-
 	it("AC-SET-03.3: a day note written with the default for an empty format is highlighted as the active note", async () => {
 		const deps = fakeDeps();
 		const path = await createNote(deps, "day", tenthOfMonth());
@@ -206,23 +191,26 @@ describe("the active note, and every field the resolver repairs", () => {
 		expect(activeDays(host)).toEqual(["10"]);
 	});
 
-	// A stored "" finds the same week row as the default here, because the
-	// note's parsed date is already its row's first day; only a value the
-	// resolver must replace tells a raw read of the week format apart.
-	it("AC-SET-03.3: revealing an active week note reads the resolved week format", async () => {
+	// Reveal reads the week format only to find the row's first day, which the
+	// default format's parsed date already is. So a stored "" reveals the same
+	// row, and a raw read of a value the resolver must replace, here 5, shows
+	// only as a throw.
+	it("AC-SET-03.3: revealing an active week note from another month returns to its row, reading the resolved week format", async () => {
 		const settings = handEdited("week", { format: 5 });
 		const deps = fakeDeps();
-		const grid = getMonthGrid(firstOfMonth(), resolveWeekStart(SETTINGS.weekStart), "");
-		const lastRow = grid.find((week) => week.days.some((day) => day.date.isSame(firstOfMonth().endOf("month"), "day")))!;
-		const path = await createNote(deps, "week", getWeekAnchor(lastRow.days), settings);
+		const path = await createNote(deps, "week", secondRowAnchor(), settings);
 		const { app, open } = activeFileApp();
 		const host = document.createElement("div");
 		const widget = new CalendarWidget(host, app, settings, deps);
+		const next = host.querySelector<HTMLElement>(".calendaric-nav-btn--next")!;
+		next.click();
+		next.click();
 
 		open(path);
 		widget.revealActiveNote();
 
 		expect(host.querySelector(".calendaric-month")?.textContent).toBe(firstOfMonth().format("MMM"));
+		expect(weekCell(host, 1).classList.contains("is-active")).toBe(true);
 	});
 
 	it("AC-SET-03.3: a hand-edited prefix-match flag the resolver turns off does not count a prefixed name as the active note", async () => {
@@ -247,7 +235,7 @@ describe("the active note, and every field the resolver repairs", () => {
 		expect(hasDot(dayCell(render(deps, settings), 10))).toBe(true);
 	});
 
-	it("AC-SET-03.3: a hand-edited template path the resolver drops writes the note note creation writes", async () => {
+	it("AC-SET-03.3: a hand-edited template path the resolver drops writes the note note creation writes, with no template-read notice", async () => {
 		const settings = handEdited("day", { templatePath: 5 });
 		const byCreation = fakeDeps();
 		const path = await createNote(byCreation, "day", tenthOfMonth(), settings);
