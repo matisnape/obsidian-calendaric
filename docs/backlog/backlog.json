@@ -5276,7 +5276,7 @@
       "story": "As someone who thinks in phrases rather than dates, I want to type 'last monday' or 'next week' and land on that period's note, so that I do not have to work out the calendar date first.",
       "rationale": "The natural-language date plugin is installed and enabled in this vault, so this command appears today. Dropping it would remove a working feature.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:nl-date-navigator"
       ],
@@ -5301,8 +5301,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "command listed (checkCallback true) with nldates enabled and a leaf active; dropping the availability check turned the tests red. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed)."
         },
         {
           "id": "AC-CMD-10.2",
@@ -5314,8 +5314,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "full [id,name] list of every other command equal across enabled, disabled and absent; no open, Notice or console error; always-available adapter turned it red. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed).",
           "failure_path": true
         },
         {
@@ -5328,8 +5328,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "existing day note opens in reuse mode, note list and content unchanged. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed)."
         },
         {
           "id": "AC-CMD-10.4",
@@ -5341,8 +5341,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "day (tomorrow) and week (next week) notes created from their templates, opened in reuse mode. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed)."
         },
         {
           "id": "AC-CMD-10.5",
@@ -5354,8 +5354,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "unknown phrase: nothing opened or created, close not called, emptyStateText says not recognised; blanking it or accepting any phrase turned it red. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed).",
           "failure_path": true
         },
         {
@@ -5367,8 +5367,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "no active leaf: command not listed; dropping or inverting the leaf check turned it red. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed).",
           "failure_path": true
         },
         {
@@ -5380,8 +5380,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Mod+Enter (meta on macOS, ctrl elsewhere) opens in split, plain Enter reuses; forcing reuse or rebinding Mod turned both tests red. Mutation-checked at 21f3136 by the worker and again by the orchestrator in a scratch worktree; review fixes 838b00c and 0b42e15 (round 1 findings, quarter phrase now says not recognised) re-gated green at 0b42e15 (1671 passed)."
         }
       ],
       "notes": [
