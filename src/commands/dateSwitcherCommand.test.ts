@@ -48,6 +48,7 @@ const PHRASES: Record<string, string> = {
 	"last monday": "2026-11-02",
 	tomorrow: "2026-11-05",
 	"next week": "2026-11-11",
+	"next quarter": "2027-02-04",
 };
 
 function fakeNaturalDates(available: boolean): NaturalDatesPort {
@@ -283,6 +284,9 @@ describe("US-CMD-10: confirming a phrase lands on that period's note", () => {
 		expect(modal.getSuggestions("next week")).toEqual([]);
 		expect(modal.emptyStateText).toMatch(/turned off/i);
 		expect(modal.getSuggestions("purple elephant")).toEqual([]);
+		expect(modal.emptyStateText).toMatch(/not recognised/i);
+		// Quarter is reserved (DEC-23): no setting turns its notes on, so the parser reading it changes nothing.
+		expect(modal.getSuggestions("next quarter")).toEqual([]);
 		expect(modal.emptyStateText).toMatch(/not recognised/i);
 	});
 });

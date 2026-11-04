@@ -42,7 +42,7 @@ import { resolveWeekStart } from "./ui/calendarUtils";
 import { ObsidianNaturalDatesAdapter } from "./adapters/obsidianNaturalDatesAdapter";
 import type { NaturalDatesPort } from "./adapters/companionPluginPort";
 import { dateSwitcherCommand } from "./commands/dateSwitcherCommand";
-import { suggestPeriods } from "./commands/datePhrase";
+import { namesReservedUnit, suggestPeriods } from "./commands/datePhrase";
 import { DateSwitcherModal } from "./ui/dateSwitcherModal";
 import { formatWithWeekTokens } from "./notes/noteUtils";
 
@@ -218,7 +218,7 @@ export default class CalendaricPlugin extends Plugin {
 			hasActiveLeaf: () => this.app.workspace.getActiveViewOfType(View) !== null,
 			open: () => new DateSwitcherModal(this.app, {
 				suggest: (query) => suggestPeriods(query, (phrase) => naturalDates.parseDate(phrase), getActiveGranularities(this.settings).filter(isReleaseGranularity)),
-				namesADate: (query) => naturalDates.parseDate(query.trim()) !== null,
+				namesADate: (query) => !namesReservedUnit(query) && naturalDates.parseDate(query.trim()) !== null,
 				// The note that opens is the one the index names, which can sit under another name.
 				noteName: ({ granularity, date }) =>
 					this.index?.get(granularity, date)?.path.replace(/^.*\//, "").replace(/\.md$/i, "") ??

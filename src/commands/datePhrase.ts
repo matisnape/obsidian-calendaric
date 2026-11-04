@@ -44,13 +44,20 @@ const WEEKDAY_SHORTCUTS: readonly Shortcut[] = RELATIVE.flatMap((word) =>
 	WEEKDAYS.map((day): Shortcut => ({ label: `${word} ${day}`, granularity: RELEASE_GRANULARITIES[0] })),
 );
 
-/**
- * A reserved granularity (quarter, DEC-23) has no note to open, so a phrase
- * naming one gets null rather than the day the parser's date falls in.
- */
+function wordsOf(phrase: string): string[] {
+	return phrase.trim().toLowerCase().split(/\s+/).map((word) => word.replace(/s$/, ""));
+}
+
+/** Whether a phrase names a reserved granularity (quarter, DEC-23), which has no note to open. */
+export function namesReservedUnit(phrase: string): boolean {
+	const words = wordsOf(phrase);
+	return ALL_GRANULARITIES.some((granularity) => !isReleaseGranularity(granularity) && words.includes(granularity));
+}
+
+/** null for a reserved unit, rather than the day the parser's date falls in. */
 function granularityOf(phrase: string): ReleaseGranularity | null {
-	const words = phrase.split(/\s+/).map((word) => word.replace(/s$/, ""));
-	if (ALL_GRANULARITIES.some((granularity) => !isReleaseGranularity(granularity) && words.includes(granularity))) return null;
+	if (namesReservedUnit(phrase)) return null;
+	const words = wordsOf(phrase);
 	return RELEASE_GRANULARITIES.find((granularity) => words.includes(releaseFacts(granularity).unitName)) ?? RELEASE_GRANULARITIES[0];
 }
 
