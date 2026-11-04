@@ -7,6 +7,7 @@ import { computeNotePath } from "./noteUtils";
 import { createPeriodicNote } from "./noteCreate";
 import { openNoteIn } from "./noteOpen";
 import { announceOverlaps, creationRefused } from "./predecessorGuard";
+import { GRANULARITY } from "../granularity/registry";
 
 /** The date type, read off the clock Obsidian provides rather than imported (see main.ts). */
 type Moment = ReturnType<typeof window.moment>;
@@ -54,14 +55,24 @@ export async function openOrCreatePeriodNote(
 		);
 		file = creation.file;
 	} catch (error) {
-		// Something else answers to the path, or the folder chain is unusable.
-		// createPeriodicNote already names which, and the user gets that wording
-		// rather than a silent no-op.
-		ports.workspace.showNotice(error instanceof Error ? error.message : String(error));
+		// No pane is opened for a note that does not exist (AC-NOTE-07.5).
+		ports.workspace.showNotice(creationFailure(granularity, path, error));
 		return;
 	}
 
 	await openNoteIn(file, mode, ports.workspace, path);
+}
+
+/**
+ * The notice for a note that could not be written: which period, and why
+ * (AC-NOTE-07.5). The cause alone -- "vault is read-only" -- does not say
+ * which note was being made, and the period is named as its filename because
+ * that is the one name every granularity's note has.
+ */
+function creationFailure(granularity: ReleaseGranularity, path: string, error: unknown): string {
+	const period = (path.split("/").pop() ?? path).replace(/\.md$/, "");
+	const cause = error instanceof Error ? error.message : String(error);
+	return `Calendaric could not create the ${GRANULARITY[granularity].adjective} note for ${period}: ${cause}`;
 }
 
 /**
