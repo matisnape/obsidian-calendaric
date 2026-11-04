@@ -106,17 +106,17 @@ describe("the Calendar plugin import card in the settings tab", () => {
 
 		card?.querySelector("button")?.click();
 		const modalEl = opened[0]!.contentEl;
-		const folderRow = Array.from(modalEl.querySelectorAll(".calendaric-import-conflict")).find((row) =>
-			row.textContent?.includes("Weekly note folder"),
+		const formatRow = Array.from(modalEl.querySelectorAll(".calendaric-import-conflict")).find((row) =>
+			row.textContent?.includes("Weekly note format"),
 		);
-		folderRow!.querySelector("input")!.checked = true;
+		formatRow!.querySelector("input")!.checked = true;
 		Array.from(modalEl.querySelectorAll("button"))
 			.find((b) => b.textContent === "Import selected")
 			?.click();
 		await Promise.resolve();
 		open.mockRestore();
 
-		expect(settings.week).toMatchObject({ format: "GGGG-[W]WW", folder: "Theirs", templatePath: "Mine.md" });
+		expect(settings.week).toMatchObject({ format: "gggg-ww", folder: "Mine", templatePath: "Mine.md" });
 	});
 });
 
