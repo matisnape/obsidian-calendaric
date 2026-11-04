@@ -396,3 +396,40 @@
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
 }
+
+/* ===== Overlays (src/ui/overlay.ts sets only left and top) ===== */
+.calendaric-overlay {
+  position: fixed;
+  z-index: var(--layer-popover);
+}
+
+/* ===== Indicator detail view ===== */
+.calendaric-indicator-detail {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  box-shadow: var(--shadow-s);
+  color: var(--text-normal);
+  font-size: var(--font-ui-smaller);
+  padding: var(--size-4-1) var(--size-4-2);
+}
+
+.calendaric-indicator-detail button {
+  margin-top: var(--size-4-1);
+}
+
+/* Keyboard focus on a cell or a navigation control. */
+.calendaric-day:focus-visible,
+.calendaric-weeknum:focus-visible,
+.calendaric-nav-btn:focus-visible,
+.calendaric-today-btn:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+/* ===== Settings ===== */
+.calendaric-global-settings {
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: var(--size-4-4);
+  padding-bottom: var(--size-4-2);
+}

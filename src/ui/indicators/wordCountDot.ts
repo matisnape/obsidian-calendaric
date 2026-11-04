@@ -37,4 +37,10 @@ export const wordCountDotIndicator: CalendarIndicator = {
 			if (filled > 0) cell.container.appendChild(makeWordDotSvg(filled));
 		}
 	},
+	// The same cells the dot is drawn for: a note with at least one word.
+	async describe(cell, context) {
+		const count = cell.noteExists ? ((await context.wordCounts).get(cell.path) ?? 0) : 0;
+		if (count <= 0) return null;
+		return count === 1 ? "1 word" : `${count} words`;
+	},
 };
