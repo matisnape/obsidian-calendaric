@@ -42,13 +42,11 @@ function makePorts() {
 }
 type Ports = ReturnType<typeof makePorts>;
 
-/** A confirm stub that records every question and answers `answer`. */
 function stubConfirm(answer: boolean) {
 	const asked: CreateRequest[] = [];
 	return { asked, confirm: async (request: CreateRequest) => (asked.push(request), answer) };
 }
 
-/** Everything in the fake vault, by path, so "nothing changed" is one comparison. */
 function snapshot(vault: FakeVaultPort): Record<string, string | undefined> {
 	return Object.fromEntries(vault.listNotes().map((file) => [file.path, vault.contentAt(file.path)]));
 }
@@ -71,7 +69,6 @@ function command(ports: Ports, existing = ports.vault.getFile(PATH)) {
 
 const openedPaths = (ports: Ports) => ports.workspace.opened.map((entry) => entry.file.path);
 
-/** Settings for the calendar pane, confirmation off so a click writes at once. */
 const SETTINGS: CalendaricSettings = { ...DEFAULT_SETTINGS, confirmBeforeCreate: false, showWeekNumbers: true, weekStart: "monday" };
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -264,7 +261,6 @@ describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the 
 		expect(ports.vault.listNotes().map((file) => file.path)).toEqual([PRETTY]);
 	});
 
-	/** The week-number cell of the row holding `dayOfMonth`. */
 	function weekCellOf(host: HTMLElement, dayOfMonth: number): HTMLElement {
 		const row = Array.from(host.querySelectorAll("tr")).find((tr) =>
 			Array.from(tr.querySelectorAll(".calendaric-day:not(.is-adjacent-month)")).some(
