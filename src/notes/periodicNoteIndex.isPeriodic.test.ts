@@ -71,7 +71,9 @@ describe("PeriodicNoteIndex — AC-NOTE-08.1 a file in a configured folder, in i
 });
 
 describe("PeriodicNoteIndex — AC-NOTE-08.2 a date-like name outside every configured folder", () => {
-	it.each(["2026-04-15.md", "Notes/2026-04-15.md", "Notes/2026-W16.md", "Weekly/2026-04-15.md"])(
+	// "DailyArchive" shares the daily folder's name as a prefix: only the
+	// trailing "/" in the folder check keeps it outside.
+	it.each(["2026-04-15.md", "Notes/2026-04-15.md", "Notes/2026-W16.md", "DailyArchive/2026-04-15.md"])(
 		"AC-NOTE-08.2: does not recognise %s",
 		(path) => {
 			const index = indexOver(vaultWith(path));
@@ -182,5 +184,6 @@ describe("PeriodicNoteIndex — AC-NOTE-08.4 a rename that keeps the period", ()
 			granularity: "week",
 			date: "2026-04-13",
 		});
+		expect(recognised(index, "Weekly/2026-W16.md")).toBeNull();
 	});
 });
