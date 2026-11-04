@@ -130,8 +130,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Test 'AC-NOTE-02.1: returns every note of the granularity, the ones nested in subfolders included' seeds Daily/2026-11-03.md, Daily/2026/11/2026-11-04.md (two levels deep), Daily/archive/2025-01-01.md plus a Weekly file, asserts the exact 3 day paths. Mutants: flat-only filter -> KILLED; depth<=1 subfolder filter -> KILLED. Mutation-checked at 3546e9f; review fixes 9507a4e/65c572d (absent granularity returns [], reserved granularity throws) leave these tests unchanged, and the AC gate re-ran green at 65c572d (1571 passed)."
         },
         {
           "id": "AC-NOTE-02.2",
@@ -142,8 +142,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Tests 'AC-NOTE-02.2: a configured folder that does not exist is an error naming that folder' (/\"Daily\"/), default-folder fallback names \"Inbox\", and vault-root ('' and '/') does not throw. Mutants: drop folderExists check -> KILLED (2 tests); message without folder name -> KILLED (2 tests); check root too -> KILLED (root test). Mutation-checked at 3546e9f; review fixes 9507a4e/65c572d (absent granularity returns [], reserved granularity throws) leave these tests unchanged, and the AC gate re-ran green at 65c572d (1571 passed).",
           "failure_path": true
         },
         {
@@ -155,8 +155,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-NOTE-02.3: an existing but empty folder gives an empty list, not an error' (Daily seeded, only Weekly file elsewhere; asserts []). Mutant: throw when no notes of the granularity -> KILLED. Mutation-checked at 3546e9f; review fixes 9507a4e/65c572d (absent granularity returns [], reserved granularity throws) leave these tests unchanged, and the AC gate re-ran green at 65c572d (1571 passed).",
           "failure_path": true
         },
         {
@@ -168,8 +168,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Test 'AC-NOTE-02.4: a markdown file in the folder whose name does not match the format is left out' seeds Daily/meeting notes.md and Daily/projects/2026-11.md inside the configured folder, asserts only Daily/2026-11-04.md. Mutants: filter replaced by true -> KILLED (02.4 among 3); filter ignoring granularity -> KILLED. Scratch worktree removed, restores byte-identical. Mutation-checked at 3546e9f; review fixes 9507a4e/65c572d (absent granularity returns [], reserved granularity throws) leave these tests unchanged, and the AC gate re-ran green at 65c572d (1571 passed).",
           "failure_path": true
         }
       ]
