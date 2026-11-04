@@ -75,6 +75,17 @@ describe("the Calendar plugin import card in the settings tab", () => {
 
 		expect(settings.wordsPerDot).toBe(250);
 	});
+
+	it("AC-MIG-03.5: a week folder typed in after the card was drawn is not overwritten without confirmation", async () => {
+		const settings = structuredClone(DEFAULT_SETTINGS);
+		const card = calendarCard(render({ calendar: { options: { weeklyNoteFolder: "Theirs" } } }, settings));
+
+		settings.week.folder = "Mine";
+		card?.querySelector("button")?.click();
+		await Promise.resolve();
+
+		expect(settings.week.folder).toBe("Mine");
+	});
 });
 
 describe("CalendarImportConflictModal", () => {

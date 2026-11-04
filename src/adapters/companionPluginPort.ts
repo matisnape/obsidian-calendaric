@@ -80,8 +80,8 @@ export interface CalendarPluginPort {
  * under that plugin's own key names.
  *
  * A key the plugin does not carry is left out rather than filled with that
- * plugin's default: AC-MIG-03.8 is about values the user set, and a default
- * filled in here would look like one.
+ * plugin's default. The plugin itself writes its defaults into `options` and
+ * data.json once it has loaded, so in practice every key is present.
  */
 export interface CalendarPluginSettings {
 	weekStart?: string;

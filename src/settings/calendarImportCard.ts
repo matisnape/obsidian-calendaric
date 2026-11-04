@@ -1,6 +1,6 @@
 import { Notice } from "obsidian";
 import { applyCalendarImport, decideCalendarImportCard } from "./calendarImport";
-import type { CalendarImportFieldId, CalendarImportPlan, CalendarImportPorts } from "./calendarImport";
+import type { CalendarImportCard, CalendarImportFieldId, CalendarImportPlan, CalendarImportPorts } from "./calendarImport";
 import { CalendarImportConflictModal } from "./calendarImportModal";
 import type CalendaricPlugin from "../main";
 
@@ -9,20 +9,16 @@ export interface CalendarImportCardActions {
 	refresh: () => void;
 }
 
-/** Locale codes the host knows, read through Obsidian's moment; undefined when it has none. */
-function knownLocales(): readonly string[] | undefined {
-	const { moment } = window as unknown as { moment?: { locales?: () => string[] } };
-	return moment?.locales?.();
-}
-
 /** The Calendar plugin import card. decideCalendarImportCard decides what it shows; this draws it and stores the choice. */
 export function renderCalendarImportCard(
 	containerEl: HTMLElement,
 	plugin: CalendaricPlugin,
 	ports: CalendarImportPorts,
+	/** Locale codes the host knows; undefined when it has none. */
+	locales: readonly string[] | undefined,
 	actions: CalendarImportCardActions,
 ): void {
-	const card = decideCalendarImportCard(ports, plugin.settings, knownLocales());
+	const card = decideCalendarImportCard(ports, plugin.settings, locales);
 	if (card.kind === "hidden") return;
 
 	if (card.kind === "unreadable") {
@@ -32,13 +28,14 @@ export function renderCalendarImportCard(
 		return;
 	}
 
-	renderOffer(containerEl, plugin, card.plan, actions);
+	renderOffer(containerEl, plugin, card.plan, () => decideCalendarImportCard(ports, plugin.settings, locales), actions);
 }
 
 function renderOffer(
 	containerEl: HTMLElement,
 	plugin: CalendaricPlugin,
 	plan: CalendarImportPlan,
+	decideNow: () => CalendarImportCard,
 	actions: CalendarImportCardActions,
 ): void {
 	const { app, settings } = plugin;
@@ -60,7 +57,7 @@ function renderOffer(
 	// follows what the Calendar plugin carries, not what Calendaric lacks.
 	if (fields.length === 0) card.createEl("p", { text: "Calendaric already has every value it can import." });
 
-	const confirm = async (confirmed: CalendarImportFieldId[]) => {
+	const confirm = async (plan: CalendarImportPlan, confirmed: CalendarImportFieldId[]) => {
 		const { weekStart, confirmBeforeCreate, showWeekNumbers, wordsPerDot, overrideLocale } = settings;
 		const previousWeek = { ...settings.week };
 		applyCalendarImport(settings, plan, confirmed);
@@ -83,7 +80,15 @@ function renderOffer(
 		cls: "mod-cta",
 	});
 	importBtn.addEventListener("click", () => {
-		if (plan.conflicts.length === 0) void confirm([]);
-		else new CalendarImportConflictModal(app, plan.conflicts, confirm).open();
+		// Planned again against the settings as they are now: a field the user
+		// filled in after the card was drawn is a conflict, not an addition (AC-MIG-03.5).
+		const now = decideNow();
+		if (now.kind !== "offer") {
+			actions.refresh();
+			return;
+		}
+		const fresh = now.plan;
+		if (fresh.conflicts.length === 0) void confirm(fresh, []);
+		else new CalendarImportConflictModal(app, fresh.conflicts, (confirmed) => confirm(fresh, confirmed)).open();
 	});
 }

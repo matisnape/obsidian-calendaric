@@ -143,7 +143,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			});
 		});
 		renderGuardedSection(containerEl, "Calendar plugin import", () => {
-			renderCalendarImportCard(containerEl, this.plugin, this.ports, { refresh: () => this.display() });
+			renderCalendarImportCard(containerEl, this.plugin, this.ports, getMoment()?.locales(), {
+				refresh: () => this.display(),
+			});
 		});
 		renderGuardedSection(containerEl, "General", () => this.renderGeneralSection(containerEl));
 		renderGuardedSection(containerEl, "Periodic Notes", () => this.renderPeriodicNotesSection(containerEl));
