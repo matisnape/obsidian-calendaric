@@ -654,7 +654,7 @@
       "story": "As a Calendaric user reading the format-and-template guide, I want every behaviour it documents to match what the plugin actually does, so that I can trust the documentation instead of discovering the real behaviour by trial and error.",
       "rationale": "The map found docs/guide.md stating that week tokens follow the user's configured week-start setting, while the code that resolves those tokens hard-codes ISO week numbering regardless of that setting — the documented and the implemented behaviour disagree today.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
