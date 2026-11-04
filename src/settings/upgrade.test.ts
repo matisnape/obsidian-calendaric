@@ -180,11 +180,13 @@ describe("AC-MIG-07.2 a file from a newer version loads and keeps what it does n
 	});
 
 	it("AC-MIG-07.2: a newer file's own top-level key of a granularity's name survives a save", async () => {
-		const disk = onDisk({ ...newer, week: "iso" });
+		// weekStart readable, so any notice here would come from the `week` key.
+		const disk = onDisk({ ...newer, weekStart: "sunday", week: "iso" });
 		const plugin = await loadedPlugin(disk);
 		await plugin.saveSettings();
 
 		expect((disk.data as Record<string, unknown>).week).toBe("iso");
+		expect(notices).toEqual([]);
 	});
 
 	it("AC-MIG-07.2: a field it does not recognise is not an error", async () => {
