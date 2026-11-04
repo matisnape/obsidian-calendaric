@@ -23,7 +23,7 @@ import { computeNoteDate } from "../fmt/noteDate";
 import { resolveEffectiveConfig } from "../settings/model";
 import { RELEASE_GRANULARITIES } from "../types";
 import { granularityEntry } from "../granularity/registry";
-import type { CellGranularity } from "../types";
+import type { CellGranularity, PeriodicConfig, ReleaseGranularity } from "../types";
 
 export class CalendarWidget implements HoverParent {
 	/** Page preview writes the popover it opens for a cell here. */
@@ -166,15 +166,16 @@ export class CalendarWidget implements HoverParent {
 		// Rebuild tbody
 		this.gridBodyEl.empty();
 
+		const dayConfig = this.config("day");
+		const weekConfig = this.config("week");
 		const weekStart = resolveWeekStart(this.settings.weekStart);
-		const grid = getMonthGrid(displayedMonth, weekStart, this.settings.week.format);
+		const grid = getMonthGrid(displayedMonth, weekStart, weekConfig.format);
 
 		// Scan for existing notes in the visible month (cheap: vault.getFiles() is in-memory)
-		const dayPaths = this.dots.getDayNotePaths(displayedMonth, this.settings.day);
-		const weekPaths = this.dots.getWeekNotePaths(grid, this.settings.week);
+		const dayPaths = this.dots.getDayNotePaths(displayedMonth, dayConfig);
+		const weekPaths = this.dots.getWeekNotePaths(grid, weekConfig);
 		const cells: IndicatorCell[] = [];
 		const active = this.activeNote();
-		const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
 
 		for (const week of grid) {
 			const tr = this.gridBodyEl.createEl("tr");
@@ -185,7 +186,7 @@ export class CalendarWidget implements HoverParent {
 				const wDotContainer = wDiv.createDiv({ cls: "calendaric-dot-container" });
 
 				const anchor = getWeekAnchor(week.days);
-				const weekPath = computeNotePath(anchor, this.settings.week, this.deps.vaultConfig, "week");
+				const weekPath = computeNotePath(anchor, weekConfig, this.deps.vaultConfig, "week");
 				cells.push({
 					granularity: "week",
 					date: anchor,
@@ -193,7 +194,7 @@ export class CalendarWidget implements HoverParent {
 					noteExists: weekPaths.has(weekPath),
 					container: wDotContainer,
 				});
-				if (active?.noteDate === computeNoteDate(anchor, "week", weekFormat)) {
+				if (active?.noteDate === computeNoteDate(anchor, "week", weekConfig.format)) {
 					wDiv.addClass("is-active");
 				}
 
@@ -220,7 +221,7 @@ export class CalendarWidget implements HoverParent {
 				const dayDiv = td.createDiv({ cls: classes.join(" "), text: String(day.date.date()) });
 				const dayDotContainer = dayDiv.createDiv({ cls: "calendaric-dot-container" });
 
-				const dayPath = computeNotePath(day.date, this.settings.day, this.deps.vaultConfig, "day");
+				const dayPath = computeNotePath(day.date, dayConfig, this.deps.vaultConfig, "day");
 				cells.push({
 					granularity: "day",
 					date: day.date,
@@ -228,7 +229,7 @@ export class CalendarWidget implements HoverParent {
 					noteExists: dayPaths.has(dayPath),
 					container: dayDotContainer,
 				});
-				if (active?.noteDate === computeNoteDate(day.date, "day", weekFormat)) {
+				if (active?.noteDate === computeNoteDate(day.date, "day", weekConfig.format)) {
 					dayDiv.addClass("is-active");
 				}
 
@@ -278,6 +279,11 @@ export class CalendarWidget implements HoverParent {
 		}
 	}
 
+	/** The only path to a granularity's resolved config, the same one note creation reads (AC-SET-03.3); `enabled` is read directly. */
+	private config(granularity: ReleaseGranularity): PeriodicConfig {
+		return resolveEffectiveConfig(this.settings, granularity);
+	}
+
 	/**
 	 * The active file as a note whose cell highlights in the grid (a day or a
 	 * week row: the cells whose entry can reveal them), matched the way the note
@@ -288,7 +294,7 @@ export class CalendarWidget implements HoverParent {
 		if (this.activeFilePath === null) return null;
 		const configs: FileConfigs = {};
 		for (const granularity of RELEASE_GRANULARITIES) {
-			if (this.settings[granularity].enabled) configs[granularity] = resolveEffectiveConfig(this.settings, granularity);
+			if (this.settings[granularity].enabled) configs[granularity] = this.config(granularity);
 		}
 		const identity = resolveFileDate(this.activeFilePath, configs, this.deps.vaultConfig);
 		return identity && granularityEntry(identity.granularity).cell?.reveal ? identity : null;
@@ -304,7 +310,7 @@ export class CalendarWidget implements HoverParent {
 		const note = this.activeNote();
 		const reveal = note && granularityEntry(note.granularity).cell?.reveal;
 		if (note && reveal) {
-			const weekFormat = resolveEffectiveConfig(this.settings, "week").format;
+			const weekFormat = this.config("week").format;
 			const [first, last] = reveal(note.date, {
 				weekStart: resolveWeekStart(this.settings.weekStart),
 				sameNote: (day) => computeNoteDate(day, note.granularity, weekFormat) === note.noteDate,
@@ -352,7 +358,7 @@ export class CalendarWidget implements HoverParent {
 	 * Obsidian's own "Open in new tab" / "Delete" — populates this menu too.
 	 */
 	private handleMonthHeaderContextMenu(event: MouseEvent): void {
-		const path = computeNotePath(this.nav.month, this.settings.month, this.deps.vaultConfig, "month");
+		const path = computeNotePath(this.nav.month, this.config("month"), this.deps.vaultConfig, "month");
 		const file = this.deps.vault.getFile(path);
 		if (!file) return;
 
@@ -371,7 +377,7 @@ export class CalendarWidget implements HoverParent {
 			await openOrCreateNote({
 				date,
 				granularity,
-				config: this.settings[granularity],
+				config: this.config(granularity),
 				confirmBeforeCreate: this.settings.confirmBeforeCreate,
 				event,
 				ports: this.deps,
