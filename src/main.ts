@@ -380,7 +380,8 @@ export default class CalendaricPlugin extends Plugin {
 		this.stored = loaded.stored;
 		this.settings = toSettings(this.stored);
 		if (loaded.reset) showNotice("Calendaric: some settings could not be read and were reset to their defaults.");
-		if (loaded.upgraded) {
+		// With a reset the write would put defaults over values the user can still repair.
+		if (loaded.upgraded && !loaded.reset) {
 			try {
 				await this.saveData(this.stored);
 			} catch {

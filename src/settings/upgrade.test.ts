@@ -201,6 +201,8 @@ describe("AC-MIG-07.2 a file from a newer version loads and keeps what it does n
 
 		const saved = disk.data as Record<string, unknown>;
 		expect(saved.configVersion).toBe(CONFIG_VERSION + 5);
+		// Known limit: the value this version could not interpret is saved as its default.
+		expect(saved.weekStart).toBe(DEFAULT_SETTINGS.weekStart);
 		expect(saved.futureGlobal).toEqual({ theme: "dark" });
 		const group = activeGroup(saved);
 		expect(group.futureGroupField).toBe(3);
@@ -273,6 +275,21 @@ describe("AC-MIG-07.3 an unreadable file or field falls back, says so once, and 
 		expect(notices).toHaveLength(1);
 	});
 
+	it("AC-MIG-07.3: an older file's top-level entry that is not an object is reported", async () => {
+		const plugin = await loadedPlugin(onDisk({ ...editedFlatFile(), day: 42 }));
+
+		expect(plugin.settings.day).toEqual(DEFAULT_SETTINGS.day);
+		expect(plugin.settings.week.folder).toBe("journal/week");
+		expect(notices).toHaveLength(1);
+	});
+
+	it("AC-MIG-07.3: an upgrade with an unreadable value writes nothing over it", async () => {
+		const disk = onDisk({ ...editedFlatFile(), showWeekNumbers: "yes" });
+		await loadedPlugin(disk);
+
+		expect(disk.writes).toBe(0);
+	});
+
 	it("AC-MIG-07.3: a missing file, a missing field or an upgrade shows no notice", async () => {
 		await loadedPlugin(onDisk(null));
 		await loadedPlugin(onDisk({ activeCalendarSet: "Default", calendarSets: [{ id: "Default", day: { folder: "j" } }] }));
@@ -303,7 +320,9 @@ describe("AC-MIG-07.4 an upgraded file is not upgraded again", () => {
 	});
 });
 
-describe("AC-MIG-07.5 an upgrade is written whole or not at all", () => {
+// Covers 07.5's first Then only. A write torn by a crash is Obsidian's
+// adapter.write (a plain writeFile) and is not guarded here.
+describe("AC-MIG-07.5 the upgrade reaches saveData whole or not at all", () => {
 	/** A disk that holds bytes, as data.json does, and hands back what it parses. */
 	function byteDisk(file: unknown, onParse: (data: Record<string, unknown>) => void = () => undefined) {
 		const disk = { bytes: JSON.stringify(file), saves: [] as unknown[] };

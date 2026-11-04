@@ -1,4 +1,4 @@
-import { GRANULARITIES, defaultGranularityConfigs, getActiveSet, loadStoredConfig, unreadableFields } from "./model";
+import { GRANULARITIES, defaultGranularityConfigs, getActiveSet, isRecord, loadStoredConfig, unreadableFields } from "./model";
 import type { CalendarSet, StoredConfig } from "./model";
 
 /**
@@ -19,10 +19,6 @@ export interface LoadedConfig {
 	reset: boolean;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 /**
  * The version a file was written by. A file from before the marker existed is
  * told apart by its shape: only version 1 put a granularity at the top level.
@@ -30,6 +26,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function storedVersion(raw: Record<string, unknown>): number {
 	if (typeof raw.configVersion === "number") return raw.configVersion;
 	return GRANULARITIES.some((granularity) => isRecord(raw[granularity])) ? 1 : CONFIG_VERSION;
+}
+
+/**
+ * A top-level granularity that is not an object: a hand-edited version 1 entry,
+ * dropped by the upgrade or left unread. A newer version may use those keys.
+ */
+function hasStrayEntry(raw: Record<string, unknown>, version: number): boolean {
+	if (version > CONFIG_VERSION) return false;
+	return GRANULARITIES.some((granularity) => raw[granularity] !== undefined && !isRecord(raw[granularity]));
 }
 
 /**
@@ -86,7 +91,7 @@ export function readStoredConfig(raw: unknown): LoadedConfig {
 			upgraded,
 			// Both: the adoption reads the globals of `raw` through their type guards,
 			// and only `source` holds the adopted granularities.
-			reset: unreadableFields(raw).length > 0 || unreadableFields(source).length > 0,
+			reset: unreadableFields(raw).length > 0 || unreadableFields(source).length > 0 || hasStrayEntry(raw, version),
 		};
 	} catch {
 		// A failed upgrade writes nothing (AC-MIG-07.5). The file is read as it
