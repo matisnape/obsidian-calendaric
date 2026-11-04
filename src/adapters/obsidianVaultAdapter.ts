@@ -1,6 +1,6 @@
 import { TFile, TFolder } from "obsidian";
 import type { App, EventRef } from "obsidian";
-import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort } from "./vaultPort";
+import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort, VaultWritePort } from "./vaultPort";
 
 /**
  * Obsidian's fold store is not part of the published API, so it is described
@@ -13,7 +13,7 @@ interface FoldManager {
 }
 
 /** Wires VaultPort to the real Obsidian Vault/MetadataCache API. */
-export class ObsidianVaultAdapter implements VaultPort, VaultIndexPort {
+export class ObsidianVaultAdapter implements VaultPort, VaultIndexPort, VaultWritePort {
 	constructor(private app: App) {}
 
 	get backingVault(): object {
@@ -87,6 +87,13 @@ export class ObsidianVaultAdapter implements VaultPort, VaultIndexPort {
 			throw new Error(`Expected a TFile at path: ${file.path}`);
 		}
 		return await this.app.vault.read(file);
+	}
+
+	async processFile(file: NoteFile, transform: (content: string) => string): Promise<void> {
+		if (!(file instanceof TFile)) {
+			throw new Error(`Expected a TFile at path: ${file.path}`);
+		}
+		await this.app.vault.process(file, transform);
 	}
 
 	getTemplateFile(templatePath: string): NoteFile | null {

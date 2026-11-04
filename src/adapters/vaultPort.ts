@@ -84,3 +84,18 @@ export interface VaultIndexPort {
 	 */
 	onChange(handler: (change: VaultChange) => void): () => void;
 }
+
+/**
+ * Writing a file that already exists, which only the arrival template does
+ * (US-NOTE-10). Kept off `VaultPort` so a port that only creates notes does not
+ * have to answer for it.
+ */
+export interface VaultWritePort {
+	/**
+	 * Rewrite a file from its current content, read and written as one step.
+	 *
+	 * `transform` sees what is on disk at write time, not what an earlier read
+	 * saw, so an edit made in between is never overwritten.
+	 */
+	processFile(file: NoteFile, transform: (content: string) => string): Promise<void>;
+}

@@ -21,6 +21,7 @@ import { ElectronDesktopShellAdapter } from "./adapters/electronDesktopShellAdap
 import { calendarViewCommand, createCalendarCoordinator } from "./ui/calendarCommand";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
 import type { JumpDirection, PeriodicConfigs } from "./notes/periodicNoteIndex";
+import { templateOnArrival } from "./notes/templateOnArrival";
 import { GranularityCommands } from "./commands/granularityCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { jumpToClosestNote } from "./commands/jumpCommands";
@@ -101,6 +102,9 @@ export default class CalendaricPlugin extends Plugin {
 	 */
 	private index: PeriodicNoteIndex | null = null;
 
+	/** Unsubscribes the arrival template (US-NOTE-10); set once the index exists. */
+	private stopTemplateOnArrival: (() => void) | null = null;
+
 	/** The five navigation commands per active granularity (US-CMD-05). */
 	private commands: GranularityCommands | null = null;
 
@@ -166,10 +170,13 @@ export default class CalendaricPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			// Reading the whole vault is what building the index costs, so it
 			// waits until the workspace says the vault is there to read.
-			this.index = new PeriodicNoteIndex(
-				new ObsidianVaultAdapter(this.app),
-				new ObsidianVaultConfigAdapter(this.app),
-				this.indexConfigs(),
+			const vault = new ObsidianVaultAdapter(this.app);
+			const index = new PeriodicNoteIndex(vault, new ObsidianVaultConfigAdapter(this.app), this.indexConfigs());
+			this.index = index;
+			// Here and not in onload: Obsidian reports every file already in the
+			// vault as a create while it loads, and those must not be templated (AC-NOTE-10.3).
+			this.stopTemplateOnArrival = templateOnArrival(vault, index, (granularity) =>
+				resolveEffectiveConfig(this.settings, granularity),
 			);
 
 			// Startup parks the leaf without revealing or focusing it.
@@ -232,6 +239,8 @@ export default class CalendaricPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
 		this.index?.destroy();
 		this.index = null;
+		this.stopTemplateOnArrival?.();
+		this.stopTemplateOnArrival = null;
 		guardCreation(this.app.vault, null);
 		this.guard = null;
 		this.periodLabels?.destroy();
