@@ -44,11 +44,13 @@ export interface OverlayOptions {
 
 export interface OverlayHandle {
 	close(): void;
+	/** Re-anchors to the trigger; for moves no scroll or window resize reports. */
+	reposition(): void;
 }
 
 /**
  * Shows `overlay` next to `trigger` and keeps it there until a click or tap
- * outside it, the trigger leaving the page or scrolling out of the window, or
+ * outside both of them, the trigger leaving the page or scrolling out of the window, or
  * `close()`. The page's own CSS must make `.calendaric-overlay` fixed-position:
  * only `left` and `top` are set here.
  */
@@ -58,6 +60,7 @@ export function openOverlay(trigger: HTMLElement, overlay: HTMLElement, options:
 	if (!win) throw new Error("openOverlay: the trigger's document has no window");
 
 	const reposition = () => {
+		if (!open) return;
 		const rect = trigger.getBoundingClientRect();
 		const outOfView = rect.bottom <= 0 || rect.top >= win.innerHeight || rect.right <= 0 || rect.left >= win.innerWidth;
 		if (outOfView) return close();
@@ -67,8 +70,10 @@ export function openOverlay(trigger: HTMLElement, overlay: HTMLElement, options:
 		overlay.style.top = `${pos.top}px`;
 	};
 
+	// The trigger is the caller's to toggle: closing here would let its own click reopen it.
 	const onPointerDown = (event: Event) => {
-		if (!overlay.contains(event.target as Node)) close();
+		const target = event.target as Node;
+		if (!overlay.contains(target) && !trigger.contains(target)) close();
 	};
 
 	const onKeyDown = (event: KeyboardEvent) => {
@@ -113,5 +118,5 @@ export function openOverlay(trigger: HTMLElement, overlay: HTMLElement, options:
 	observer.observe(doc.body, { childList: true, subtree: true });
 	reposition();
 
-	return { close };
+	return { close, reposition };
 }

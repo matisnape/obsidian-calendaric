@@ -42,6 +42,12 @@ describe("placeOverlay", () => {
 		expect(fitsInside(pos)).toBe(true);
 	});
 
+	it("AC-CAL-12.1: it flips above when the space there is exactly its height", () => {
+		const short = { width: 800, height: 200 };
+
+		expect(placeOverlay(trigger(100, 100), size, short)).toEqual({ left: 100, top: 0 });
+	});
+
 	it("AC-CAL-12.1: with no room above or below it is clamped to the bottom edge", () => {
 		const tall = { width: 200, height: 560 };
 		const pos = placeOverlay(trigger(100, 50), tall, viewport);

@@ -67,11 +67,26 @@ describe("openOverlay", () => {
 		expect([overlay.style.left, overlay.style.top]).toEqual(["50px", "80px"]);
 	});
 
-	it("AC-CAL-12.2: closes when the trigger scrolls out of the window", () => {
+	it("AC-CAL-12.2: re-anchors when the caller reports a move no event announces", () => {
+		const handle = openOverlay(trigger, overlay);
+
+		// A sidebar toggle or pane resize moves the cell without a window scroll or resize.
+		stubRect(trigger, { left: 400, top: 300, width: 40, height: 20 });
+		handle.reposition();
+
+		expect([overlay.style.left, overlay.style.top]).toEqual(["400px", "320px"]);
+	});
+
+	it.each([
+		["above", { left: 100, top: -60 }],
+		["below", { left: 100, top: 768 }],
+		["left of", { left: -60, top: 100 }],
+		["right of", { left: 1024, top: 100 }],
+	])("AC-CAL-12.2: closes when the trigger scrolls out %s the window", (_, at) => {
 		const onClose = vi.fn();
 		openOverlay(trigger, overlay, { onClose });
 
-		stubRect(trigger, { left: 100, top: -60, width: 40, height: 20 });
+		stubRect(trigger, { ...at, width: 40, height: 20 });
 		scroller.dispatchEvent(new Event("scroll"));
 
 		expect(overlay.isConnected).toBe(false);
@@ -85,13 +100,18 @@ describe("openOverlay", () => {
 			item.textContent = text;
 			return item;
 		});
+		items[1]!.tabIndex = 0;
 		openOverlay(trigger, overlay, { itemSelector: ".item" });
 
 		// The first press can come from the trigger, e.g. a text input the list suggests for.
-		arrow(trigger, "ArrowDown");
+		// It must not also scroll the pane or move a caret.
+		expect(arrow(trigger, "ArrowDown")).toBe(false);
 		expect(document.activeElement).toBe(items[0]);
+		// Electron only focuses an element with a tabindex; one the caller set is kept.
+		expect(items[0]!.getAttribute("tabindex")).toBe("-1");
 		arrow(items[0]!, "ArrowDown");
 		expect(document.activeElement).toBe(items[1]);
+		expect(items[1]!.getAttribute("tabindex")).toBe("0");
 		arrow(items[1]!, "ArrowDown");
 		arrow(items[2]!, "ArrowDown");
 		expect(document.activeElement).toBe(items[0]);
@@ -127,6 +147,14 @@ describe("openOverlay", () => {
 		openOverlay(trigger, overlay);
 
 		pointerDown(item);
+
+		expect(overlay.isConnected).toBe(true);
+	});
+
+	it("AC-CAL-12.4: a click or tap on the trigger leaves it open, so the caller can toggle", () => {
+		openOverlay(trigger, overlay);
+
+		pointerDown(trigger);
 
 		expect(overlay.isConnected).toBe(true);
 	});
@@ -196,6 +224,7 @@ describe("openOverlay", () => {
 		stubRect(trigger, { left: 300, top: 250, width: 40, height: 20 });
 		scroller.dispatchEvent(new Event("scroll"));
 		window.dispatchEvent(new Event("resize"));
+		handle.reposition();
 		pointerDown(outside);
 		expect(arrow(trigger, "ArrowDown")).toBe(true);
 		expect(arrow(items[0]!, "ArrowDown")).toBe(true);
