@@ -256,8 +256,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": "HALF SETTLED, and the missing half is wiring, not correctness. vitest: src/settings/model.test.ts > \"AC-SET-03.3: hands two callers the same format, folder, template and prefix-match values\" and \"AC-SET-03.3: is unaffected by a caller that writes to the config it was handed\" prove the resolver is deterministic and returns a fresh object per call; mutation-checked by the orchestrator (returning the stored object itself fails 3 tests). But no consumer calls it yet: src/ui/calendar.ts and src/notes/noteCreate.ts still read settings[granularity] directly, so two parts of the running plugin can still disagree. The criterion is about two callers agreeing, so it stays unverified until the consumers are wired. Deliberately not done in this ticket: US-NOTE-04 and US-CAL-02 own those two files right now and the edit would collide."
+          "status": "pass",
+          "evidence": "Holds at 38eebd2. src/ui/calendar.ts routes every config read through one private config() (:284), the only caller of resolveEffectiveConfig; only `enabled` is read raw. Mutation on a scratch worktree: substituting the raw settings folder at the day render (:169), week render (:170), activeNote (:297), month menu (:361) and click (:380) turns 3,1,1,1,1 tests red; format turns 2,4,3,2,4 red; templatePath at click turns 1 red; allowPrefixMatch at activeNote turns 1 red. Other templatePath/allowPrefixMatch mutations survive only where the site never reads the field."
         },
         {
           "id": "AC-SET-03.4",
