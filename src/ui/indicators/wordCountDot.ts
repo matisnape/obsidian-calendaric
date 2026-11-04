@@ -1,5 +1,5 @@
 import type { CalendarIndicator } from "../../indicatorContract";
-import { DEFAULT_WORDS_PER_SEGMENT, WORD_DOT_SEGMENTS, wordCountSegments } from "../calendarDots";
+import { WORD_DOT_SEGMENTS, wordCountSegments } from "../calendarDots";
 
 /**
  * The word-count dot: a 6×6 pie of five wedges, the first `filled` of them,
@@ -33,8 +33,7 @@ export const wordCountDotIndicator: CalendarIndicator = {
 		const slots = cells.filter((cell) => cell.noteExists);
 		const counts = await context.wordCounts;
 		for (const cell of slots) {
-			// ponytail: threshold is the default until a setting carries one
-			const filled = wordCountSegments(counts.get(cell.path) ?? 0, DEFAULT_WORDS_PER_SEGMENT);
+			const filled = wordCountSegments(counts.get(cell.path) ?? 0, context.wordsPerDot);
 			if (filled > 0) cell.container.appendChild(makeWordDotSvg(filled));
 		}
 	},

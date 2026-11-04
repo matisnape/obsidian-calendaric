@@ -29,6 +29,11 @@ export interface IndicatorContext {
 	 * render by the calendar. A note that cannot be read has no entry.
 	 */
 	readonly wordCounts: Promise<ReadonlyMap<string, number>>;
+	/**
+	 * Words per filled segment of the word-count dot, as stored (DEC-22).
+	 * Absent or not a positive whole number means the built-in default.
+	 */
+	readonly wordsPerDot?: number;
 }
 
 export interface CalendarIndicator {
