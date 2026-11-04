@@ -563,7 +563,7 @@
       "story": "As someone keeping a periodic journal, I want activating a period to take me straight to its note, so that I never have to manually find or create the file myself.",
       "rationale": "This is the single most-used operation in the plugin: the payoff every other NOTE story exists to support.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "cal:open-or-create-daily-note",
         "cal:open-or-create-weekly-note",
