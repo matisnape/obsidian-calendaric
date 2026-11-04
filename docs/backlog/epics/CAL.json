@@ -739,8 +739,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Resting a mouse pointer on a day cell that has a note shows a detail view directly under the cell listing \"Note exists\" and \"300 words\" (src/ui/indicatorDetail.test.ts, real PointerEvents); a pointer that leaves before the 200 ms open delay shows nothing. Mutation-checked at f5417ea: open delay set to 0 (indicatorDetail.ts:75) and the calendar.ts attach call replaced by a plain click listener each turned the suite red."
         },
         {
           "id": "AC-CAL-08.2",
@@ -751,8 +751,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The close delay is the single constant DETAIL_CLOSE_DELAY_MS = 250 (indicatorDetail.ts:4), and the test pins the bound: 249 ms after the pointer leaves the view is open, at 250 ms it is gone; moving onto the view keeps it open. Mutation-checked at f5417ea: the constant set to 400 and the timer multiplied by 20 (indicatorDetail.ts:152) each turned tests red."
         },
         {
           "id": "AC-CAL-08.3",
@@ -764,8 +764,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "A tap is driven with real PointerEvents of pointerType touch (pointerdown, focus, pointerup, click, in Chromium's order). The first tap shows the same lines as hover and does not open the note; a second tap or the Open note button opens it. Mutation-checked at f5417ea: removing the touch branch in the click handler (indicatorDetail.ts:108) or clearing the pointerdown touch detection (indicatorDetail.ts:83) turned the suite red. No real touch device was used."
         },
         {
           "id": "AC-CAL-08.4",
@@ -776,8 +776,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "A day with no note shows no detail view on hover, keyboard focus or tap, and the tap falls through to creating the note once. Mutation-checked at f5417ea: removing the empty-lines guard (indicatorDetail.ts:58) or the count <= 0 guard in wordCountDot.ts turned the test red. Cells of a disabled granularity get no detail view at all; the orchestrator accepts that as by design (a disabled granularity shows no indicators).",
           "failure_path": true
         },
         {
@@ -790,8 +790,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "Day and week cells carry tabindex 0; focusing a cell with a note shows the detail with role=tooltip, and the cell's aria-describedby points at the connected view holding the text. Escape and blur close it and remove the attribute; Enter and Space act as a click. Mutation-checked at f5417ea: removing tabIndex, role, aria-describedby, the focus handler or the Escape handler each turned the suite red. Exposure is proven by DOM structure, not a screen reader; the 60 s grid refresh that drops focus is logged as a follow-up."
         }
       ],
       "decisions": [
