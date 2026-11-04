@@ -77,12 +77,16 @@ function settingNames(): Set<string> {
 	return new Set(names.map((name) => name.trim()).filter((name) => name !== ""));
 }
 
-function commandNames(granularities: readonly ReleaseGranularity[] = RELEASE_GRANULARITIES): Set<string> {
+/** The commands main.ts adds one by one, outside the per-group template. */
+function singleCommandNames(): string[] {
 	const leaves = { find: () => null } as unknown as Parameters<typeof calendarViewCommand>[0];
 	const reveal = {} as unknown as Parameters<typeof revealActiveNoteCommand>[0];
+	return [calendarViewCommand(leaves, () => Promise.resolve()).name, revealActiveNoteCommand(reveal).name];
+}
+
+function commandNames(granularities: readonly ReleaseGranularity[] = RELEASE_GRANULARITIES): Set<string> {
 	return new Set([
-		calendarViewCommand(leaves, () => Promise.resolve()).name,
-		revealActiveNoteCommand(reveal).name,
+		...singleCommandNames(),
 		...granularities.flatMap((g) => COMMAND_ACTIONS.map((action) => commandName(g, action))),
 	]);
 }
@@ -148,10 +152,10 @@ describe("the guide's names", () => {
 	});
 
 	it("AC-ARCH-08.4: every command the plugin registers is one this check reads", () => {
-		// commandNames() reads the two single commands main.ts adds and the
-		// template GranularityCommands adds per group. A new addCommand call
-		// anywhere in src changes these counts, so it cannot ship unless that
-		// function, and with it the guide check below, learns the new command.
+		// commandNames() reads the single commands main.ts adds and the template
+		// GranularityCommands adds per group. main.ts must add exactly as many
+		// commands as singleCommandNames() builds, and no other file may call
+		// addCommand, so a new command fails here until commandNames() reads it.
 		const counts: Record<string, number> = {};
 		for (const file of readdirSync(join(cwd(), "src"), { recursive: true, encoding: "utf8" })) {
 			if (!file.endsWith(".ts") || file.endsWith(".test.ts") || file.startsWith("__mocks__")) continue;
@@ -159,7 +163,10 @@ describe("the guide's names", () => {
 			if (n > 0) counts[file] = n;
 		}
 
-		expect(counts).toEqual({ "main.ts": 2, [join("commands", "granularityCommands.ts")]: 1 });
+		expect(counts).toEqual({
+			"main.ts": singleCommandNames().length,
+			[join("commands", "granularityCommands.ts")]: 1,
+		});
 	});
 
 	it("AC-ARCH-08.4: every command the plugin registers is named in bold in the guide", () => {
