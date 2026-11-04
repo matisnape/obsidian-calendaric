@@ -840,7 +840,7 @@
       "story": "As someone who creates note files by hand, I want an empty file whose folder and filename match a configured periodic-note folder and format to receive the configured template, so that manually created notes match notes created by Calendaric.",
       "rationale": "A note's origin should not change what it looks like once it is recognised as a period's note.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "pn:auto-apply-template-on-empty-manual-file"
       ],
