@@ -104,7 +104,6 @@ describe("openOverlay", () => {
 		openOverlay(trigger, overlay, { itemSelector: ".item" });
 
 		// The first press can come from the trigger, e.g. a text input the list suggests for.
-		// It must not also scroll the pane or move a caret.
 		expect(arrow(trigger, "ArrowDown")).toBe(false);
 		expect(document.activeElement).toBe(items[0]);
 		// Electron only focuses an element with a tabindex; one the caller set is kept.
