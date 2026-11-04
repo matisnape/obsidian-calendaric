@@ -52,10 +52,6 @@ function activeGroup(data: unknown): Record<string, unknown> {
 	return stored.calendarSets[Math.max(index, 0)] as unknown as Record<string, unknown>;
 }
 
-// ---------------------------------------------------------------------------
-// The shapes Calendaric has saved before this one
-// ---------------------------------------------------------------------------
-
 /**
  * Before US-SET-01 (`git show e7f3e11^:src/settings.ts`): the granularities sat
  * at the top level, and `saveData` wrote the whole object, so every field of
