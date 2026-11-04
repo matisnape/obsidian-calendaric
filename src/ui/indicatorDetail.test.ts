@@ -1,7 +1,4 @@
 // @vitest-environment happy-dom
-//
-// US-CAL-08: a cell's indicator detail view, reached by hover, by a touch tap
-// and by keyboard focus, through the calendar render.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { App } from "obsidian";
 import { CalendarWidget } from "./calendar";
@@ -41,7 +38,6 @@ afterEach(() => {
 	document.body.replaceChildren();
 });
 
-/** Lets the vault reads and every `describe` promise settle. */
 async function settle(): Promise<void> {
 	for (let i = 0; i < 5; i++) await vi.advanceTimersByTimeAsync(0);
 }
@@ -70,10 +66,14 @@ const lines = () => Array.from(detail()?.querySelectorAll(".calendaric-indicator
 const pointer = (el: Element, type: string, pointerType: string) =>
 	el.dispatchEvent(new PointerEvent(type, { bubbles: type !== "pointerenter" && type !== "pointerleave", pointerType }));
 
-/** A touch tap as Chromium orders it: pointerdown, focus, then click. */
+/**
+ * A touch tap as Chromium orders it: pointerdown, focus, then click, with the
+ * microtasks between those dispatches run, as a browser runs them.
+ */
 async function tap(el: HTMLElement): Promise<void> {
 	pointer(el, "pointerdown", "touch");
 	el.focus();
+	await settle();
 	pointer(el, "pointerup", "touch");
 	pointer(el, "click", "touch");
 	await settle();
@@ -184,6 +184,9 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 		expect(day(3).getAttribute("tabindex")).toBe("0");
 		expect(host.querySelector(".calendaric-weeknum")?.getAttribute("tabindex")).toBe("0");
 
+		// A touch that starts a scroll is cancelled and gives no focus; the keyboard focus after it still counts.
+		pointer(day(3), "pointerdown", "touch");
+		pointer(day(3), "pointercancel", "touch");
 		day(3).focus();
 		await settle();
 
@@ -195,9 +198,14 @@ describe("US-CAL-08: indicator detail without needing to hover", () => {
 
 	it("AC-CAL-08.5: Escape and blur close the detail view, and Enter or Space open the note as a click does", async () => {
 		const { day, workspace } = await render();
+		// After a tap and a blur, the next focus is keyboard focus again.
+		await tap(day(3));
+		key(day(3), "Escape");
+		day(3).blur();
 
 		day(3).focus();
 		await settle();
+		expect(detail()).not.toBeNull();
 		key(day(3), "Escape");
 		expect(detail()).toBeNull();
 		expect(day(3).hasAttribute("aria-describedby")).toBe(false);

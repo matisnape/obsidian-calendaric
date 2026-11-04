@@ -1,7 +1,6 @@
 import type { CalendarIndicator, IndicatorCell, IndicatorContext } from "../indicatorContract";
 import { openOverlay, type OverlayHandle } from "./overlay";
 
-/** How long the detail view stays after the pointer leaves its cell (AC-CAL-08.2). */
 export const DETAIL_CLOSE_DELAY_MS = 250;
 
 /** Detail view ids, unique across every calendar on the page. */
@@ -43,6 +42,8 @@ export class IndicatorDetail {
 	 * the view's **Open note** button, calls `activate`.
 	 */
 	attach(cell: HTMLElement, lines: () => Promise<string[]>, activate: (event: MouseEvent) => void): void {
+		// True from a pointer press until the cell loses focus or the press is cancelled: the focus that press gives the cell is not keyboard focus.
+		let pressed = false;
 		// Bumped by every request and every dismissal, so a request that resolves late is dropped.
 		let latest = 0;
 
@@ -69,11 +70,18 @@ export class IndicatorDetail {
 			latest++;
 			if (this.open?.cell === cell) this.scheduleClose();
 		});
-		// A tap focuses the cell too; its click's own request then supersedes this one.
+		cell.addEventListener("pointerdown", () => {
+			pressed = true;
+		});
+		cell.addEventListener("pointercancel", () => {
+			pressed = false;
+		});
+		// A tap focuses the cell before its click; showing the view then would make that click open the note.
 		cell.addEventListener("focus", () => {
-			if (this.open?.cell !== cell) void request(false);
+			if (!pressed && this.open?.cell !== cell) void request(false);
 		});
 		cell.addEventListener("blur", (event) => {
+			pressed = false;
 			// Focus moving onto the view's own button keeps it, or the tap on that button would miss.
 			const to = event.relatedTarget;
 			if (to instanceof Node && this.open?.cell === cell && this.open.view.contains(to)) return;

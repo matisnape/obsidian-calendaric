@@ -455,7 +455,6 @@ export class CalendarWidget implements HoverParent {
 	}
 }
 
-/** Makes `el` focusable, with Enter and Space doing what a click on it does. */
 function keyboardActivated(el: HTMLElement): void {
 	el.tabIndex = 0;
 	el.addEventListener("keydown", (event) => {
