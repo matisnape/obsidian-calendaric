@@ -147,7 +147,7 @@ describe("calendar reads the resolved config", () => {
 	});
 });
 
-function handEdited(granularity: "day" | "week", fields: Record<string, unknown>): CalendaricSettings {
+function handEdited(granularity: ReleaseGranularity, fields: Record<string, unknown>): CalendaricSettings {
 	return { ...SETTINGS, [granularity]: { ...SETTINGS[granularity], ...fields } } as unknown as CalendaricSettings;
 }
 
@@ -239,6 +239,53 @@ describe("the active note, and every field the resolver repairs", () => {
 		await createNote(deps, "day", tenthOfMonth(), settings);
 
 		expect(hasDot(dayCell(render(deps, settings), 10))).toBe(true);
+	});
+
+	it("AC-SET-03.3: a hand-edited week folder the resolver drops finds the week note where note creation put it", async () => {
+		const settings = handEdited("week", { folder: 5 });
+		const deps = fakeDeps();
+		await createNote(deps, "week", secondRowAnchor(), settings);
+
+		expect(hasDot(weekCell(render(deps, settings), 1))).toBe(true);
+	});
+
+	it("AC-SET-03.3: clicking a day under a hand-edited folder the resolver drops opens the note note creation wrote", async () => {
+		const settings = handEdited("day", { folder: 5 });
+		const deps = fakeDeps();
+		const path = await createNote(deps, "day", tenthOfMonth(), settings);
+		const host = render(deps, settings);
+
+		dayCell(host, 10).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		await settle();
+
+		expect(deps.workspace.opened.map((open) => open.file.path)).toEqual([path]);
+		expect(deps.vault.listNotes().map((note) => note.path)).toEqual([path]);
+	});
+
+	it("AC-SET-03.3: a day note under a hand-edited folder the resolver drops is highlighted as the active note", async () => {
+		const settings = handEdited("day", { folder: 5 });
+		const deps = fakeDeps();
+		const path = await createNote(deps, "day", tenthOfMonth(), settings);
+		const { app, open } = activeFileApp();
+		const host = document.createElement("div");
+		new CalendarWidget(host, app, settings, deps);
+
+		open(path);
+
+		expect(activeDays(host)).toEqual(["10"]);
+	});
+
+	it("AC-SET-03.3: the month header's context menu under a hand-edited folder the resolver drops finds the month note", async () => {
+		const settings = handEdited("month", { folder: 5 });
+		const deps = fakeDeps();
+		const path = await createNote(deps, "month", firstOfMonth(), settings);
+		const triggered: unknown[][] = [];
+		const host = render(deps, settings, triggered);
+
+		host.querySelector(".calendaric-month-header")!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+
+		const fileMenus = triggered.filter((args) => args[0] === "file-menu");
+		expect(fileMenus.map((args) => (args[2] as { path: string }).path)).toEqual([path]);
 	});
 
 	it("AC-SET-03.3: a hand-edited template path the resolver drops writes the note note creation writes, with no template-read notice", async () => {
