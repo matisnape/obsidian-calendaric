@@ -35,7 +35,6 @@ import { getMonthGrid, resolveWeekStart } from "./ui/calendarUtils";
 import { calendarViewCommand } from "./ui/calendarCommand";
 import { revealActiveNote, revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import type { RevealActiveNoteDeps } from "./commands/revealActiveNoteCommand";
-import { jumpToClosestNote } from "./commands/jumpCommands";
 import type { CommandAction } from "./commands/granularityCommands";
 import { PeriodicNoteIndex } from "./notes/periodicNoteIndex";
 import { DEFAULT_PERIODIC_CONFIG } from "./types";
@@ -43,6 +42,18 @@ import { FakeVaultPort } from "./adapters/fakeVaultPort";
 import { FakeVaultConfigPort } from "./adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "./adapters/fakeWorkspacePort";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
+
+// main.ts builds its jump commands' workspace in place, with no seam to hand a
+// fake in, and only main.ts imports this adapter. The command-description tests
+// below put their fake workspace here.
+const pluginWorkspace = vi.hoisted(() => ({ current: null as object | null }));
+vi.mock("./adapters/obsidianWorkspaceAdapter", () => ({
+	ObsidianWorkspaceAdapter: class {
+		constructor() {
+			return pluginWorkspace.current ?? {};
+		}
+	},
+}));
 
 const GUIDE_PATH = "docs/guide.md";
 // Under happy-dom `import.meta.url` is not a file URL, so the path starts at the
@@ -441,6 +452,7 @@ describe("the guide's command descriptions", () => {
 	async function runCommand(w: ReturnType<typeof world>, action: CommandAction): Promise<void> {
 		const instance = new CalendaricPlugin({} as never, {} as never);
 		const view = w.active === null ? null : { file: { path: w.active } };
+		pluginWorkspace.current = w.workspace;
 		Object.assign(instance, {
 			app: { workspace: { getActiveViewOfType: () => view } },
 			loadData: () => Promise.resolve(null),
@@ -455,6 +467,7 @@ describe("the guide's command descriptions", () => {
 
 	afterEach(() => {
 		vi.useRealTimers();
+		pluginWorkspace.current = null;
 	});
 
 	it("AC-ARCH-08.1: Open calendar opens the view and is left out of the palette while the view is on screen", () => {
@@ -505,9 +518,11 @@ describe("the guide's command descriptions", () => {
 		expect(empty.notes()).toEqual(["Daily/2026-04-15.md"]);
 		expect(empty.opened()).toEqual(["Daily/2026-04-15.md"]);
 
-		const kept = world(null, "Daily/2026-04-15.md");
+		const kept = world(null);
+		kept.vault.seedFile("Daily/2026-04-15.md", "kept");
 		await runCommand(kept, "open-current");
 		expect(kept.notes()).toEqual(["Daily/2026-04-15.md"]);
+		expect(kept.vault.contentAt("Daily/2026-04-15.md")).toBe("kept");
 		expect(kept.opened()).toEqual(["Daily/2026-04-15.md"]);
 	});
 
@@ -536,12 +551,13 @@ describe("the guide's command descriptions", () => {
 			"The same, before the one in the active pane.",
 		);
 
-		const w = world(null, "Daily/2020-01-01.md", "Daily/2020-01-06.md", "Daily/2020-01-09.md");
+		const w = world("Daily/2020-01-06.md", "Daily/2020-01-01.md", "Daily/2020-01-06.md", "Daily/2020-01-09.md");
 		const before = w.notes();
-		await jumpToClosestNote("day", "forward", "Daily/2020-01-06.md", w.index, w.workspace);
-		await jumpToClosestNote("day", "backward", "Daily/2020-01-06.md", w.index, w.workspace);
+		await runCommand(w, "jump-forward");
+		await runCommand(w, "jump-backward");
 		// Past the last note there is nothing to open, and nothing is written in its place.
-		await jumpToClosestNote("day", "forward", "Daily/2020-01-09.md", w.index, w.workspace);
+		w.active = "Daily/2020-01-09.md";
+		await runCommand(w, "jump-forward");
 
 		expect(w.opened()).toEqual(["Daily/2020-01-09.md", "Daily/2020-01-01.md"]);
 		expect(w.notes()).toEqual(before);
