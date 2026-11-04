@@ -191,26 +191,32 @@ describe("the active note, and every field the resolver repairs", () => {
 		expect(activeDays(host)).toEqual(["10"]);
 	});
 
-	// Reveal reads the week format only to find the row's first day, which the
-	// default format's parsed date already is. So a stored "" reveals the same
-	// row, and a raw read of a value the resolver must replace, here 5, shows
-	// only as a throw.
+	// With weeks starting on Saturday, the note for Saturday 2026-08-01 parses to
+	// a Monday in July, and only the week format picks the August row as its
+	// own. A raw read of the stored "" picks the July row instead.
 	it("AC-SET-03.3: revealing an active week note from another month returns to its row, reading the resolved week format", async () => {
-		const settings = handEdited("week", { format: 5 });
-		const deps = fakeDeps();
-		const path = await createNote(deps, "week", secondRowAnchor(), settings);
-		const { app, open } = activeFileApp();
-		const host = document.createElement("div");
-		const widget = new CalendarWidget(host, app, settings, deps);
-		const next = host.querySelector<HTMLElement>(".calendaric-nav-btn--next")!;
-		next.click();
-		next.click();
+		const realMoment = window.moment;
+		window.moment = Object.assign(
+			(...args: Parameters<typeof realMoment>) =>
+				args.length === 0 ? realMoment("2026-11-15T12:00:00") : realMoment(...args),
+			realMoment,
+		);
+		try {
+			const settings: CalendaricSettings = { ...SETTINGS, weekStart: "saturday" };
+			const deps = fakeDeps();
+			const path = await createNote(deps, "week", window.moment("2026-08-01"), settings);
+			const { app, open } = activeFileApp();
+			const host = document.createElement("div");
+			const widget = new CalendarWidget(host, app, settings, deps);
 
-		open(path);
-		widget.revealActiveNote();
+			open(path);
+			widget.revealActiveNote();
 
-		expect(host.querySelector(".calendaric-month")?.textContent).toBe(firstOfMonth().format("MMM"));
-		expect(weekCell(host, 1).classList.contains("is-active")).toBe(true);
+			expect(host.querySelector(".calendaric-month")?.textContent).toBe("Aug");
+			expect(weekCell(host, 0).classList.contains("is-active")).toBe(true);
+		} finally {
+			window.moment = realMoment;
+		}
 	});
 
 	it("AC-SET-03.3: a hand-edited prefix-match flag the resolver turns off does not count a prefixed name as the active note", async () => {
