@@ -1,7 +1,7 @@
-import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort } from "./vaultPort";
+import type { FoldState, NoteFile, VaultChange, VaultIndexPort, VaultPort, VaultWritePort } from "./vaultPort";
 
 /** In-memory VaultPort substitute for tests — no running Obsidian required. */
-export class FakeVaultPort implements VaultPort, VaultIndexPort {
+export class FakeVaultPort implements VaultPort, VaultIndexPort, VaultWritePort {
 	private folders = new Set<string>();
 	private files = new Map<string, string>();
 	private lostFolderRaces = new Set<string>();
@@ -155,6 +155,12 @@ export class FakeVaultPort implements VaultPort, VaultIndexPort {
 		const content = this.files.get(file.path);
 		if (content === undefined) throw new Error(`File not found: ${file.path}`);
 		return content;
+	}
+
+	async processFile(file: NoteFile, transform: (content: string) => string): Promise<void> {
+		const content = this.files.get(file.path);
+		if (content === undefined) throw new Error(`File not found: ${file.path}`);
+		this.files.set(file.path, transform(content));
 	}
 
 	getTemplateFile(templatePath: string): NoteFile | null {
