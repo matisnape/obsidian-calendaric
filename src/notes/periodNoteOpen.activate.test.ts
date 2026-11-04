@@ -230,6 +230,30 @@ describe("AC-NOTE-07.5: a note that cannot be created says so and opens no pane"
 		expect(ports.workspace.notices).toEqual([FAILURE]);
 		expect(ports.workspace.opened).toEqual([]);
 	});
+
+	it("AC-NOTE-07.5: a format that nests folders names the whole period, not its last segment", async () => {
+		const ports = makePorts();
+		ports.vault.createFileError = new Error("vault is read-only");
+		const nested: PeriodicConfig = { ...dayConfig, format: "YYYY/MM/DD" };
+
+		await openOrCreatePeriodNote("day", window.moment(DAY), nested, null, ports);
+
+		expect(ports.workspace.notices).toEqual([
+			"Calendaric could not create the daily note for 2026/04/13: vault is read-only",
+		]);
+	});
+
+	it("AC-NOTE-07.5: a path a folder already holds is named once, without a second Calendaric prefix", async () => {
+		const ports = makePorts();
+		ports.vault.seedFolder(PATH);
+
+		await command(ports, null);
+
+		expect(ports.workspace.notices).toEqual([
+			`Calendaric could not create the daily note for 2026-04-13: ${PATH} is not a Markdown note.`,
+		]);
+		expect(ports.workspace.opened).toEqual([]);
+	});
 });
 
 describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the week's note", () => {
@@ -346,5 +370,22 @@ describe("AC-NOTE-07.6: a pretty-named weekly note under prefix matching is the 
 		await settle();
 
 		expect(notes?.get("week", week)).toBe(pretty);
+	});
+});
+
+describe("AC-NOTE-07.6: the calendar click opens the note the index names, for any cell", () => {
+	it("AC-NOTE-07.6: the day cell click opens the file the index names, though it is not at the format's path", async () => {
+		const ports = makePorts();
+		ports.vault.seedFile("Journal/monday.md", "");
+		const file = ports.vault.getFile("Journal/monday.md");
+		const host = renderCalendar(ports, { ...SETTINGS, day: dayConfig }, DAY, {
+			get: (granularity, date) => (granularity === "day" && date.isSame(DAY, "day") ? file : null),
+		});
+
+		dayCellOf(host, 13).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		await settle();
+
+		expect(openedPaths(ports)).toEqual(["Journal/monday.md"]);
+		expect(ports.vault.getFile(PATH)).toBeNull();
 	});
 });

@@ -404,7 +404,7 @@ export class CalendarWidget implements HoverParent {
 			this.deps.workspace.showNotice(
 				noteExists
 					? error instanceof Error ? error.message : "Calendaric could not open that note."
-					: creationFailure(granularity, path, error),
+					: creationFailure(granularity, date, config, error),
 			);
 		}
 	}
