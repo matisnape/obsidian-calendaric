@@ -12,7 +12,7 @@
 // names a removed setting or states a behaviour the code no longer has stops
 // the release (AC-ARCH-08.5). A rename therefore cannot ship without the guide
 // changing in the same change (AC-ARCH-08.4).
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cwd } from "node:process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,7 +29,9 @@ import { substituteTemplateTokens } from "./notes/templateTokens";
 import { GRANULARITY, GRANULARITY_REGISTRY, granularityEntry } from "./granularity/registry";
 import { RELEASE_GRANULARITIES } from "./types";
 import type { ReleaseGranularity } from "./types";
-import { COMMAND_ACTIONS, commandName } from "./commands/granularityCommands";
+import { COMMAND_ACTIONS, commandName, GranularityCommands } from "./commands/granularityCommands";
+import type { Command } from "obsidian";
+import { getMonthGrid, resolveWeekStart } from "./ui/calendarUtils";
 import { calendarViewCommand } from "./ui/calendarCommand";
 import { revealActiveNoteCommand } from "./commands/revealActiveNoteCommand";
 import { DEFAULT_DAY_FORMAT } from "./settings/dailyNotesImport";
@@ -143,6 +145,21 @@ describe("the guide's names", () => {
 
 		expect(named.length).toBeGreaterThan(0);
 		expect(named.filter((name) => !known.has(name))).toEqual([]);
+	});
+
+	it("AC-ARCH-08.4: every command the plugin registers is one this check reads", () => {
+		// commandNames() reads the two single commands main.ts adds and the
+		// template GranularityCommands adds per group. A new addCommand call
+		// anywhere in src changes these counts, so it cannot ship unless that
+		// function, and with it the guide check below, learns the new command.
+		const counts: Record<string, number> = {};
+		for (const file of readdirSync(join(cwd(), "src"), { recursive: true, encoding: "utf8" })) {
+			if (!file.endsWith(".ts") || file.endsWith(".test.ts") || file.startsWith("__mocks__")) continue;
+			const n = readFileSync(join(cwd(), "src", file), "utf8").match(/\.addCommand\(/g)?.length ?? 0;
+			if (n > 0) counts[file] = n;
+		}
+
+		expect(counts).toEqual({ "main.ts": 2, [join("commands", "granularityCommands.ts")]: 1 });
 	});
 
 	it("AC-ARCH-08.4: every command the plugin registers is named in bold in the guide", () => {
@@ -335,6 +352,46 @@ describe("week tokens and Start week on", () => {
 		expect(getWeekNumber(window.moment("2026-04-11"), "GGGG-[W]WW")).toBe(15);
 		const config = { ...DEFAULT_SETTINGS.week, format: "GGGG-[W]WW" };
 		expect(substituteTemplateTokens("{{saturday:DD.MM}}", date, "week", config, "t")).toBe("18.04");
+	});
+});
+
+describe("the guide's palette and calendar rules", () => {
+	it("AC-ARCH-08.1: the palette lists next, previous and jump commands only from a note of their group", () => {
+		expect(prose).toContain(
+			"The palette lists the next, previous and jump commands only while the active pane holds a note of that group.",
+		);
+
+		const filed: Command[] = [];
+		const host = { addCommand: (c: Command) => (filed.push(c), c), removeCommand: () => undefined };
+		new GranularityCommands(host, () => undefined, () => "week").sync({ day: { enabled: true }, week: { enabled: true } });
+		const listed = (c: Command) => (c.checkCallback ? c.checkCallback(true) !== false : true);
+		const fromNote = /^(Open next|Open previous|Jump) /;
+
+		// The active pane holds a weekly note: every weekly command is listed, and of
+		// the daily ones only those that do not count from the active note.
+		expect(filed.filter((c) => !listed(c)).map((c) => c.name)).toEqual(
+			COMMAND_ACTIONS.map((a) => commandName("day", a)).filter((name) => fromNote.test(name)),
+		);
+		expect(filed.filter((c) => c.name.endsWith("weekly note")).every(listed)).toBe(true);
+	});
+
+	it("AC-ARCH-08.1: a calendar row's week number is the week of the row's first day", () => {
+		const sentence = /With an ISO format and a (\w+) start, the row (\w{3}) (\d{1,2}) – \w{3} \d{1,2} ([A-Z][a-z]+ \d{4}) shows (\d+), although (\w{3} \d{1,2} [A-Z][a-z]+) in that row writes `([^`]+)`/;
+		const match = sentence.exec(guide);
+		expect(match).not.toBeNull();
+		const [, day, firstWeekday, firstDate, monthYear, shown, inRow, writes] = match!;
+		const year = monthYear!.split(" ")[1];
+
+		startWeekOn(day!.toLowerCase() as WeekStartOption);
+		const first = window.moment(`${firstDate} ${monthYear}`, "D MMMM YYYY", "en", true);
+		const inRowDate = window.moment(`${inRow} ${year}`, "ddd D MMMM YYYY", "en", true);
+		const row = getMonthGrid(first, resolveWeekStart(day!.toLowerCase() as WeekStartOption), "GGGG-[W]WW").find(
+			(week) => week.days.some((d) => d.date.isSame(inRowDate, "day")),
+		);
+
+		expect(row?.days[0]?.date.format("ddd D")).toBe(`${firstWeekday} ${firstDate}`);
+		expect(row?.weekNumber).toBe(Number(shown));
+		expect(formatWithWeekTokens("GGGG-[W]WW", inRowDate, "week")).toBe(writes);
 	});
 });
 

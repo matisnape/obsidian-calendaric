@@ -52,6 +52,7 @@ This lets you encode the full date range of the week directly in the filename, w
 - A format that uses ISO week tokens (`W`, `WW`, `GGGG`) asked for ISO weeks. ISO weeks always start on Monday, whatever **Start week on** says, and the week tokens in that format follow the ISO week.
 - Template variables in a weekly note's body read the same week as its filename.
 - The calendar's week number column (**Show week numbers**) numbers weeks the way the weekly note's **Format** does: ISO week numbers for an ISO format, **Start week on** weeks otherwise.
+  - The number is the week of the row's first day. With an ISO format and a Saturday start, the row Sat 11 – Fri 17 April 2026 shows 15, although Wed 15 April in that row writes `2026-W16`.
 
 | Format | Filename for Wed 15 April 2026, **Start week on** Saturday |
 |---|---|
@@ -79,6 +80,8 @@ Each switched-on group (**Daily Notes**, **Weekly Notes**) adds its own commands
 | **Open previous daily note**, **Open previous weekly note** | The same, for the period before. |
 | **Jump forward to next existing daily note**, **Jump forward to next existing weekly note** | Opens the closest existing note after the one in the active pane. It never creates a note. |
 | **Jump backward to previous existing daily note**, **Jump backward to previous existing weekly note** | The same, before the one in the active pane. |
+
+The palette lists the next, previous and jump commands only while the active pane holds a note of that group.
 
 ---
 
