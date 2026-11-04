@@ -77,14 +77,20 @@ export function readStoredConfig(raw: unknown): LoadedConfig {
 
 	const version = storedVersion(raw);
 	const upgraded = version < CONFIG_VERSION;
-	const source = upgraded ? adoptTopLevelGranularities(raw) : raw;
-	const stored = loadStoredConfig(source);
-	return {
-		// Never lower the marker: a newer version's file stays marked as its own.
-		stored: { ...stored, configVersion: Math.max(version, CONFIG_VERSION) },
-		upgraded,
-		// Both: the adoption reads the globals of `raw` through their type guards,
-		// and only `source` holds the adopted granularities.
-		reset: unreadableFields(raw).length > 0 || unreadableFields(source).length > 0,
-	};
+	try {
+		const source = upgraded ? adoptTopLevelGranularities(raw) : raw;
+		const stored = loadStoredConfig(source);
+		return {
+			// Never lower the marker: a newer version's file stays marked as its own.
+			stored: { ...stored, configVersion: Math.max(version, CONFIG_VERSION) },
+			upgraded,
+			// Both: the adoption reads the globals of `raw` through their type guards,
+			// and only `source` holds the adopted granularities.
+			reset: unreadableFields(raw).length > 0 || unreadableFields(source).length > 0,
+		};
+	} catch {
+		// A failed upgrade writes nothing (AC-MIG-07.5). The file is read as it
+		// stands, its marker unchanged, so the next load tries the upgrade again.
+		return { stored: loadStoredConfig(raw), upgraded: false, reset: true };
+	}
 }

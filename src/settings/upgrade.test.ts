@@ -302,3 +302,79 @@ describe("AC-MIG-07.4 an upgraded file is not upgraded again", () => {
 		expect(disk.writes).toBe(0);
 	});
 });
+
+describe("AC-MIG-07.5 an upgrade is written whole or not at all", () => {
+	/** A disk that holds bytes, as data.json does, and hands back what it parses. */
+	function byteDisk(file: unknown, onParse: (data: Record<string, unknown>) => void = () => undefined) {
+		const disk = { bytes: JSON.stringify(file), saves: [] as unknown[] };
+		const plugin = new CalendaricPlugin({} as never, {} as never);
+		plugin.loadData = (): Promise<unknown> => {
+			const data = JSON.parse(disk.bytes) as Record<string, unknown>;
+			onParse(data);
+			return Promise.resolve(data);
+		};
+		plugin.saveData = (value: unknown): Promise<void> => {
+			disk.saves.push(JSON.parse(JSON.stringify(value)));
+			disk.bytes = JSON.stringify(value);
+			return Promise.resolve();
+		};
+		return { disk, plugin };
+	}
+
+	it("AC-MIG-07.5: an upgrade that throws partway writes nothing and the plugin still loads", async () => {
+		const { disk, plugin } = byteDisk(editedFlatFile(), (data) => {
+			// The adoption reads `month` after `day` and `week`: it fails midway.
+			// Only the first read throws, so a write attempted afterwards would land.
+			let thrown = false;
+			Object.defineProperty(data.month as object, "folder", {
+				enumerable: true,
+				get: () => {
+					if (thrown) return "journal/month";
+					thrown = true;
+					throw new Error("disk went away");
+				},
+			});
+		});
+		const before = disk.bytes;
+
+		await plugin.loadSettings();
+
+		expect(disk.saves).toHaveLength(0);
+		expect(disk.bytes).toBe(before);
+		expect(plugin.settings).toBeDefined();
+		expect(notices).toHaveLength(1);
+	});
+
+	it("AC-MIG-07.5: a successful upgrade is one saveData call carrying the whole upgraded shape", async () => {
+		const file = editedFlatFile();
+		const { disk, plugin } = byteDisk(file);
+
+		await plugin.loadSettings();
+
+		expect(disk.saves).toHaveLength(1);
+		const saved = disk.saves[0] as Record<string, unknown>;
+		const group: Record<string, unknown> = { id: "Default" };
+		// The fresh group's defaults, with every old value laid over them.
+		for (const granularity of GRANULARITIES) {
+			group[granularity] = { ...DEFAULT_SETTINGS[granularity], ...(file[granularity] as object) };
+		}
+		expect(saved).toEqual({
+			...defaultGlobals(),
+			weekStart: "sunday",
+			showWeekNumbers: false,
+			confirmBeforeCreate: false,
+			overrideLocale: "pl",
+			hasMigratedDailyNoteSettings: true,
+			activeCalendarSet: "Default",
+			calendarSets: [group],
+			configVersion: CONFIG_VERSION,
+		});
+	});
+});
+
+/** The globals of a fresh install, the ones an old file never carried included. */
+function defaultGlobals(): Record<string, unknown> {
+	const globals: Record<string, unknown> = { ...DEFAULT_SETTINGS };
+	for (const granularity of GRANULARITIES) delete globals[granularity];
+	return globals;
+}
