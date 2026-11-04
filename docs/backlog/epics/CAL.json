@@ -1240,7 +1240,7 @@
       "story": "As someone reading a note for any period, I want to step to a neighbouring day without leaving the note, so that I can move through the week from where I am.",
       "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "pn:timeline-complication-day-strip"
       ],

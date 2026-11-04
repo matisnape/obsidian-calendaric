@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-10-17",
+    "generated": "2026-11-04",
     "purpose": "User stories and acceptance criteria for the Calendaric rewrite. Acceptance criteria are the contract a building agent is validated against.",
     "schema": "../mapping/BACKLOG-SCHEMA.md",
     "map": "../mapping/calendaric-map.json",
@@ -3720,7 +3720,7 @@
       "story": "As someone reading a note for any period, I want to step to a neighbouring day without leaving the note, so that I can move through the week from where I am.",
       "rationale": "A label that only names the period is informative; the day strip is what makes it a way to move around.",
       "priority": "should",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:timeline-complication-day-strip"
       ],
@@ -3748,8 +3748,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/dayStrip.test.ts six 'AC-CAL-14.1:' tests (Sunday and Monday start, week note's own week, ISO week under Sunday start, month and year notes use their first day's week, own day marked for a daily note, today marked only inside the week) and src/ui/periodLabel.test.ts 'AC-CAL-14.1:' DOM tests (click and Enter/Space toggle the strip, marks, and the real plugin honouring weekStart monday vs sunday). Orchestrator mutations in a scratch worktree at f357356: dropping the weekStart offset in dayStrip.ts failed 5 dayStrip + 4 periodLabel tests; isToday:false failed 2; removing Space from the keydown handler failed the keyboard test. Gap: month and year strips are proved at the stripDays level only; the DOM draw path is the same for every granularity."
         },
         {
           "id": "AC-CAL-14.2",
@@ -3761,8 +3761,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/ui/periodLabel.test.ts 'AC-CAL-14.2: a neighbouring day that has a note opens that note in the pane, and no file is created' builds the real CalendaricPlugin and startPeriodLabels() over fake ports and a real PeriodicNoteIndex; the existing note is prefix-matched (Daily/2026-04-16 standup.md), so only the index can find it; asserts the opened file, mode reuse, unchanged file list. Orchestrator mutation: existing = null in src/main.ts openPeriodNote failed exactly that test (30 -> 29 passed), restored 30.",
           "failure_path": true
         },
         {
@@ -3775,8 +3775,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/ui/periodLabel.test.ts 'AC-CAL-14.3: a day with no note gets one written from the configured template, then opened in the pane' asserts Daily/2026-04-17.md opened with mode reuse, exactly one new file, and content '# 2026-04-17' rendered from the {{title}} template. Orchestrator mutations: templatePath '' failed exactly that test; openDay ignoring the clicked date failed the 14.2 and 14.3 plugin tests; a day click that does nothing failed 3 tests."
         }
       ],
       "notes": [
