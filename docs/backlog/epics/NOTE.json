@@ -763,7 +763,7 @@
       "story": "As someone reviewing my history, I want to jump to the closest existing note before or after the one I am looking at, without creating anything new, so that I can browse what I have actually written without accidentally adding empty notes.",
       "rationale": "Browsing history and filling in a missing day are two different intents and must not be conflated.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "pn:find-adjacent-note"
       ],

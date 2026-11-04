@@ -889,7 +889,7 @@
       "story": "As someone reviewing my history, I want to jump to the closest existing note before or after the one I am looking at, without creating anything new, so that I can browse what I have actually written without accidentally adding empty notes.",
       "rationale": "Browsing history and filling in a missing day are two different intents and must not be conflated.",
       "priority": "must",
-      "status": "todo",
+      "status": "done",
       "covers": [
         "pn:find-adjacent-note"
       ],
@@ -914,8 +914,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "vitest: src/notes/periodicNoteIndex.adjacent.test.ts 'returns the nearest later and the nearest earlier note, not merely any one' and 'answers only with a note of the reference note's own granularity' over PeriodicNoteIndex.closestTo. Orchestrator mutations at d4b0b92: flipping the best-candidate comparison failed the nearest test; deleting the granularity prefix filter failed the own-granularity test."
         },
         {
           "id": "AC-NOTE-09.2",
@@ -926,8 +926,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: 'returns nothing forward from the latest note and backward from the earliest' asserts null both ways and no throw. Mutation: falling back to another note when none lies that way (wrap-around) failed it.",
           "failure_path": true
         },
         {
@@ -939,8 +939,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: 'returns nothing either way from an ordinary note between periodic ones' and 'returns nothing from a file in the daily folder whose name is no date'. Mutation: treating an unrecognised file as a dated one failed both.",
           "failure_path": true
         },
         {
@@ -953,8 +953,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "vitest: src/commands/jumpCommands.adjacent.test.ts three tests over jumpToClosestNote. Guarded by openOrCreatePeriodNote (vi.mock) never being called and workspace.opened being exactly the later existing note, skipping the empty neighbour; a third test shows openNeighbourNote alone calls open-or-create for the neighbouring date. Mutation: an added openOrCreatePeriodNote call failed 2 of 3. Gap: the createFile/createFolder spies in these tests cannot go red, because jumpToClosestNote receives no vault; credit rests on the mock and workspace.opened assertions.",
           "failure_path": true
         }
       ]
