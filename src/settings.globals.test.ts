@@ -188,7 +188,7 @@ describe("US-SET-02 global settings", () => {
 	});
 
 	it("AC-SET-02.5: a threshold that is not a positive whole number is stored as 250, and the field says so", () => {
-		for (const entry of ["0", "-5", "abc", "2.5", ""]) {
+		for (const entry of ["0", "-5", "abc", "2.5", "", "1e3", "0x10"]) {
 			const { tab, plugin } = renderTab({ wordsPerDot: 100 });
 			const field = threshold(tab);
 			expect(field.input.value).toBe("100");

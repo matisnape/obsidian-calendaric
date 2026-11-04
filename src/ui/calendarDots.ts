@@ -3,9 +3,10 @@ import type { ICalendarMonth, PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
 import { getWeekAnchor } from "./calendarUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";
+import { DEFAULT_WORDS_PER_DOT, isWordsPerDot } from "../settings/model";
 
 /** Words per filled segment of the word-count dot when no usable `wordsPerDot` is stored. */
-export const DEFAULT_WORDS_PER_SEGMENT = 250;
+export const DEFAULT_WORDS_PER_SEGMENT = DEFAULT_WORDS_PER_DOT;
 
 /** How many of the word-count dot's segments there are to fill. */
 export const WORD_DOT_SEGMENTS = 5;
@@ -18,8 +19,7 @@ export const WORD_DOT_SEGMENTS = 5;
  */
 export function wordCountSegments(words: number, threshold?: number): number {
 	if (words <= 0) return 0;
-	const perSegment =
-		threshold !== undefined && Number.isInteger(threshold) && threshold > 0 ? threshold : DEFAULT_WORDS_PER_SEGMENT;
+	const perSegment = isWordsPerDot(threshold) ? threshold : DEFAULT_WORDS_PER_SEGMENT;
 	return Math.min(WORD_DOT_SEGMENTS, Math.max(1, Math.floor(words / perSegment)));
 }
 

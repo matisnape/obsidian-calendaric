@@ -52,7 +52,7 @@ async function filledOnDay3(stored: Record<string, unknown>, wordCount: number):
 }
 
 describe("the stored words-per-dot threshold reaches the dots", () => {
-	it("AC-SET-02.4: a stored threshold changes how many segments a note fills, through the calendar render", async () => {
+	it("AC-SET-06.5: the stored wordsPerDot is read by the calendar render and decides how many segments a note fills", async () => {
 		expect(await filledOnDay3({}, 500)).toBe(2);
 		expect(await filledOnDay3({ wordsPerDot: 100 }, 500)).toBe(5);
 		expect(await filledOnDay3({ wordsPerDot: 500 }, 500)).toBe(1);
@@ -63,7 +63,7 @@ describe("the stored words-per-dot threshold reaches the dots", () => {
 		expect(await filledOnDay3({ wordsPerDot: -3 }, 500)).toBe(2);
 	});
 
-	it("AC-SET-02.4: an edit that moves the dot at the stored threshold redraws the calendar", async () => {
+	it("AC-SET-06.5: after an edit, the calendar render redraws when the dot moves at the stored wordsPerDot", async () => {
 		const settings = settingsFrom({ wordsPerDot: 100 });
 		const path = thirdDayPath(settings);
 		const vault = new FakeVaultPort();
@@ -90,7 +90,7 @@ describe("the stored words-per-dot threshold reaches the dots", () => {
 		expect(filled()).toBe(2);
 	});
 
-	it("AC-SET-02.4: an edit redraws the grid when it moves the dot at the stored threshold", async () => {
+	it("AC-SET-06.5: the dot scanner judges an edit at the wordsPerDot of the render that drew it", async () => {
 		const redraws = async (wordsPerDot: number | undefined): Promise<number> => {
 			const vault = new FakeVaultPort();
 			vault.seedFile("Daily/a.md", words(150));

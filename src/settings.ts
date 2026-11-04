@@ -218,7 +218,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		thresholdSetting.addText((text) => {
 			text.setValue(String(this.plugin.settings.wordsPerDot ?? DEFAULT_WORDS_PER_DOT));
 			text.inputEl.addEventListener("change", () => {
-				const entered = text.inputEl.value.trim() === "" ? Number.NaN : Number(text.inputEl.value);
+				// Digits only: Number() alone would also take "1e3" or "0x10" as a whole number.
+				const typed = text.inputEl.value.trim();
+				const entered = /^\d+$/.test(typed) ? Number(typed) : Number.NaN;
 				const valid = isWordsPerDot(entered);
 				thresholdProblem.empty();
 				if (!valid) {
