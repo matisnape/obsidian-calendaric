@@ -83,6 +83,8 @@ export function readStoredConfig(raw: unknown): LoadedConfig {
 		// Never lower the marker: a newer version's file stays marked as its own.
 		stored: { ...stored, configVersion: Math.max(version, CONFIG_VERSION) },
 		upgraded,
-		reset: unreadableFields(source).length > 0,
+		// Both: the adoption reads the globals of `raw` through their type guards,
+		// and only `source` holds the adopted granularities.
+		reset: unreadableFields(raw).length > 0 || unreadableFields(source).length > 0,
 	};
 }

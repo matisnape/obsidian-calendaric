@@ -179,6 +179,18 @@ describe("AC-MIG-07.2 a file from a newer version loads and keeps what it does n
 		expect(plugin.settings.weekStart).toBe(DEFAULT_SETTINGS.weekStart);
 	});
 
+	it("AC-MIG-07.2: a field it does not recognise is not an error", async () => {
+		await loadedPlugin(onDisk({ ...newer, weekStart: "sunday" }));
+
+		expect(notices).toEqual([]);
+	});
+
+	it("AC-MIG-07.2: a known field holding a value it cannot interpret falls back with one notice", async () => {
+		await loadedPlugin(onDisk(newer));
+
+		expect(notices).toHaveLength(1);
+	});
+
 	it("AC-MIG-07.2: every field it does not recognise, and the newer marker, survive a save", async () => {
 		const disk = onDisk(newer);
 		const plugin = await loadedPlugin(disk);
@@ -250,6 +262,14 @@ describe("AC-MIG-07.3 an unreadable file or field falls back, says so once, and 
 	it("AC-MIG-07.3: a global of the wrong type is reported too", async () => {
 		await loadedPlugin(onDisk({ showWeekNumbers: "yes", activeCalendarSet: "Default", calendarSets: [{ id: "Default" }] }));
 
+		expect(notices).toHaveLength(1);
+	});
+
+	it("AC-MIG-07.3: a global of the wrong type in an older file is reported as well", async () => {
+		const plugin = await loadedPlugin(onDisk({ ...editedFlatFile(), showWeekNumbers: "yes" }));
+
+		expect(plugin.settings.showWeekNumbers).toBe(DEFAULT_SETTINGS.showWeekNumbers);
+		expect(plugin.settings.day.folder).toBe("journal/day");
 		expect(notices).toHaveLength(1);
 	});
 
