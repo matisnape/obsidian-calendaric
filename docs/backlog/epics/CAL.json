@@ -717,7 +717,7 @@
       "story": "As someone using the calendar on a keyboard or a touchscreen laptop, I want to see the full detail behind a cell's indicators without needing to hover, so that I get the same information a mouse user gets from hovering.",
       "rationale": "A dot alone only shows a rough level; the detail view is what makes it actionable, and it must be reachable without a pointer, from a keyboard or a touchscreen laptop.",
       "priority": "should",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "calui:hover-popover-desktop"
       ],
