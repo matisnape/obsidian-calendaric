@@ -103,7 +103,7 @@
       "story": "As someone configuring Calendaric, I want settings that apply to the whole plugin kept separate from any single granularity's settings, so that I can find and change a plugin-wide option without opening every granularity's section.",
       "rationale": "Global and per-granularity settings answer different questions, and mixing them makes the screen for either harder to read.",
       "priority": "should",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [
         "cal:settings-tab-ui"
       ],
@@ -125,8 +125,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "The settings screen draws every plugin-wide row (Start week on, Confirm before creating new note, Show week numbers, Show period label, Words per dot, Override locale) inside exactly two .calendaric-global-settings containers, General at the top and Advanced at the bottom; neither holds a granularity group. src/settings.globals.test.ts pins this on the rendered tab; renaming either container's class or moving a row out turns it red. Two containers were accepted by the orchestrator; visual styling (CSS) is a follow-up and is not covered here."
         },
         {
           "id": "AC-SET-02.2",
@@ -137,8 +137,8 @@
           ],
           "verifies": "data",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "applySettings writes the globals once at the top level of the stored config through pickGlobals, never into a calendar set. The screen test (typing 400 into Words per dot) and src/settings/model.test.ts both count a single \"wordsPerDot\" key in the saved JSON and none inside any set. Dropping the global write, or also writing it into a set, turns them red."
         },
         {
           "id": "AC-SET-02.3",
@@ -150,8 +150,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "On a fresh install the model gives every global its documented default (monday, true, true, \"\", false, true, 250), and the rendered screen shows Monday, both toggles on, Show period label on, 250 and \"Same as Obsidian\" for locale, with nothing blank. Changing any default or blanking the threshold field turns the tests red."
         },
         {
           "id": "AC-SET-02.4",
@@ -163,8 +163,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null
+          "status": "pass",
+          "evidence": "A \"Words per dot\" control sits in the General global container and shows 250 on a fresh install, with an empty problem line; the model default equals the dots' own fallback. Moving the row out of the container, renaming it, or changing DEFAULT_WORDS_PER_DOT turns the tests red. The value reaches the dots: calendar.ts passes wordsPerDot into the indicator context, and render tests show a 500-word note filling 2, 5 or 1 segment at 250, 100 and 500 words per dot."
         },
         {
           "id": "AC-SET-02.5",
@@ -176,8 +176,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": null,
+          "status": "pass",
+          "evidence": "Entering 0, -5, abc, 2.5, empty, 1e3 or 0x10 stores 250, updates the live setting and shows a message naming 250; a later valid entry stores that value and clears the message. Mutating the fallback, the message, the digits-only check, or the integer and positivity rule turns the tests red. Not pinned: the field's aria-invalid marker (an extra beyond this criterion).",
           "failure_path": true
         }
       ],

@@ -2,7 +2,7 @@ import { App, Notice, PluginSettingTab, Setting, setIcon } from "obsidian";
 import type { PeriodicConfig } from "./types";
 import { GRANULARITY, GRANULARITY_REGISTRY } from "./granularity/registry";
 import type { SettingsId } from "./granularity/registry";
-import { clearStartupNote, DEFAULT_FORMATS } from "./settings/model";
+import { clearStartupNote, DEFAULT_FORMATS, DEFAULT_WORDS_PER_DOT, isWordsPerDot } from "./settings/model";
 import type { WeekStartOption } from "./settings/model";
 import { renderDailyNotesImportCard } from "./settings/dailyNotesImportCard";
 import { renderPeriodicNotesImportCard } from "./settings/periodicNotesImportCard";
@@ -159,7 +159,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	// -------------------------------------------------------------------------
 	// General section
 	// -------------------------------------------------------------------------
-	private renderGeneralSection(containerEl: HTMLElement): void {
+	private renderGeneralSection(parentEl: HTMLElement): void {
+		// AC-SET-02.1: the plugin-wide settings get their own container, apart from every granularity group.
+		const containerEl = parentEl.createDiv({ cls: "calendaric-global-settings" });
 		containerEl.createEl("h2", { text: "General" });
 
 		new Setting(containerEl)
@@ -206,6 +208,29 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 					await this.save();
 				});
 			});
+
+		// AC-SET-02.5: an unusable entry is stored as the default and the field says so.
+		// Committed on change, like the format field, so clearing the field to retype it does not warn.
+		const thresholdSetting = new Setting(containerEl)
+			.setName("Words per dot")
+			.setDesc(`How many words of a note fill one segment of its word-count dot. Default ${DEFAULT_WORDS_PER_DOT}.`);
+		const thresholdProblem = thresholdSetting.descEl.createDiv({ cls: "calendaric-setting-problem" });
+		thresholdSetting.addText((text) => {
+			text.setValue(String(this.plugin.settings.wordsPerDot ?? DEFAULT_WORDS_PER_DOT));
+			text.inputEl.addEventListener("change", () => {
+				// Digits only: Number() alone would also take "1e3" or "0x10" as a whole number.
+				const typed = text.inputEl.value.trim();
+				const entered = /^\d+$/.test(typed) ? Number(typed) : Number.NaN;
+				const valid = isWordsPerDot(entered);
+				thresholdProblem.empty();
+				if (!valid) {
+					thresholdProblem.appendText(`Not a positive whole number, so the default of ${DEFAULT_WORDS_PER_DOT} is used.`);
+				}
+				markInvalid(text.inputEl, !valid);
+				this.plugin.settings.wordsPerDot = valid ? entered : DEFAULT_WORDS_PER_DOT;
+				void this.save();
+			});
+		});
 	}
 
 	// -------------------------------------------------------------------------
@@ -461,7 +486,9 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	// -------------------------------------------------------------------------
 	// Advanced section
 	// -------------------------------------------------------------------------
-	private renderAdvancedSection(containerEl: HTMLElement): void {
+	private renderAdvancedSection(parentEl: HTMLElement): void {
+		// Override locale is plugin-wide too, so it gets the same global container (AC-SET-02.1).
+		const containerEl = parentEl.createDiv({ cls: "calendaric-global-settings" });
 		containerEl.createEl("h2", { text: "Advanced" });
 
 		const m = getMoment();

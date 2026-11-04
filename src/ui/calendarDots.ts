@@ -3,9 +3,10 @@ import type { ICalendarMonth, PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
 import { getWeekAnchor } from "./calendarUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";
+import { DEFAULT_WORDS_PER_DOT, isWordsPerDot } from "../settings/model";
 
-/** Words per filled segment of the word-count dot, until a setting carries one. */
-export const DEFAULT_WORDS_PER_SEGMENT = 250;
+/** Words per filled segment of the word-count dot when no usable `wordsPerDot` is stored. */
+export const DEFAULT_WORDS_PER_SEGMENT = DEFAULT_WORDS_PER_DOT;
 
 /** How many of the word-count dot's segments there are to fill. */
 export const WORD_DOT_SEGMENTS = 5;
@@ -16,9 +17,9 @@ export const WORD_DOT_SEGMENTS = 5;
  * never more than five. A threshold that is not a positive whole number is
  * ignored in favour of the default (AC-CAL-07.3).
  */
-export function wordCountSegments(words: number, threshold: number): number {
+export function wordCountSegments(words: number, threshold?: number): number {
 	if (words <= 0) return 0;
-	const perSegment = Number.isInteger(threshold) && threshold > 0 ? threshold : DEFAULT_WORDS_PER_SEGMENT;
+	const perSegment = isWordsPerDot(threshold) ? threshold : DEFAULT_WORDS_PER_SEGMENT;
 	return Math.min(WORD_DOT_SEGMENTS, Math.max(1, Math.floor(words / perSegment)));
 }
 
@@ -55,6 +56,8 @@ export class DotScanner {
 	 * dot it changes. `undefined` while that render is still reading the note.
 	 */
 	private shown = new Map<string, number | undefined>();
+	/** The threshold the shown dots were drawn at, so an edit is judged by the same one. */
+	private shownWordsPerDot: number | undefined;
 
 	constructor(private deps: CalendarDeps, onUpdate: () => void) {
 		this.unsubscribe = deps.vault.onChange((change) => {
@@ -122,12 +125,14 @@ export class DotScanner {
 	 * Word count of each note in `paths`, read through the vault port. A path
 	 * whose note is gone or cannot be read is left out, so its cell draws no
 	 * word-count dot rather than a wrong one. A count is kept until the vault
-	 * reports a change at its path.
+	 * reports a change at its path. `wordsPerDot` is the threshold this render
+	 * draws the dots at; a later edit to a shown note is judged by it.
 	 */
-	async getWordCounts(paths: Iterable<string>): Promise<Map<string, number>> {
+	async getWordCounts(paths: Iterable<string>, wordsPerDot?: number): Promise<Map<string, number>> {
 		const counts = new Map<string, number>();
 		const shown = new Map<string, number | undefined>([...paths].map((path) => [path, undefined]));
 		this.shown = shown;
+		this.shownWordsPerDot = wordsPerDot;
 		await Promise.all(
 			[...shown.keys()].map(async (path) => {
 				const words = await this.readWordCount(path);
@@ -150,8 +155,8 @@ export class DotScanner {
 		// Still being read by the render that shows it: its count is unknown.
 		if (drawn === undefined) return onUpdate();
 		const words = (await this.readWordCount(path)) ?? 0;
-		// ponytail: threshold is the default until a setting carries one, as in the widget
-		if (wordCountSegments(words, DEFAULT_WORDS_PER_SEGMENT) !== wordCountSegments(drawn, DEFAULT_WORDS_PER_SEGMENT)) {
+		const threshold = this.shownWordsPerDot;
+		if (wordCountSegments(words, threshold) !== wordCountSegments(drawn, threshold)) {
 			onUpdate();
 		}
 	}

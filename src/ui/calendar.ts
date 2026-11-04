@@ -11,7 +11,7 @@ import { ConfirmationModal } from "./modal";
 import { DotScanner } from "./calendarDots";
 import { CALENDAR_INDICATORS } from "./indicators";
 import { INDICATOR_API_VERSION } from "../indicatorContract";
-import type { IndicatorCell } from "../indicatorContract";
+import type { IndicatorCell, IndicatorContext } from "../indicatorContract";
 import { MonthNavigation } from "./calendarNav";
 import {
 	HOVER_LINK_SOURCE,
@@ -258,7 +258,9 @@ export class CalendarWidget implements HoverParent {
 	 */
 	private drawIndicators(cells: readonly IndicatorCell[]): void {
 		// Read here, once: the scanner watches the paths of its last read for edits.
-		const context = { wordCounts: this.dots.getWordCounts(cells.filter((cell) => cell.noteExists).map((cell) => cell.path)) };
+		const existing = cells.filter((cell) => cell.noteExists).map((cell) => cell.path);
+		const wordsPerDot = this.settings.wordsPerDot;
+		const context: IndicatorContext = { wordCounts: this.dots.getWordCounts(existing, wordsPerDot), wordsPerDot };
 		for (const indicator of CALENDAR_INDICATORS) {
 			// Widened on purpose: typed, it is the current version, and the check is for one that is not.
 			const version: number = indicator.apiVersion;
