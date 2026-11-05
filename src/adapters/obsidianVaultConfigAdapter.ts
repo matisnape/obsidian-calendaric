@@ -6,8 +6,7 @@ export class ObsidianVaultConfigAdapter implements VaultConfigPort {
 	constructor(private app: App) {}
 
 	getDefaultNewFileFolder(): string {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const config = (this.app.vault as any).config as Record<string, unknown> | undefined;
+		const config = (this.app.vault as unknown as { config?: Record<string, unknown> }).config;
 		if (!config) return "";
 
 		const location = config["newFileLocation"];

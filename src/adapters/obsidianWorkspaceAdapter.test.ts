@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import { ObsidianWorkspaceAdapter } from "./obsidianWorkspaceAdapter";
+import type { NoteFile } from "./vaultPort";
 
 interface VaultSpy {
 	app: App;
@@ -13,7 +14,7 @@ interface VaultSpy {
 	/** Obsidian rewrites path on the same instance, so a move mutates the handle. */
 	move(from: string, to: string): void;
 	/** A folder can occupy a note's path; it resolves but is not openable. */
-	putFolderAt(path: string): TFile;
+	putFolderAt(path: string): NoteFile;
 }
 
 // Structural App fixture — the leaf argument per destination and the identity of
@@ -55,13 +56,13 @@ function makeVault(existingPaths: string[]): VaultSpy {
 		openedFiles,
 		fileAt: (path) => {
 			const file = files.get(path);
-			if (!file) throw new Error(`fixture has no file at ${path}`);
-			return file as TFile;
+			if (!(file instanceof TFile)) throw new Error(`fixture has no file at ${path}`);
+			return file;
 		},
 		replaceAt: (path) => put(path),
 		move: (from, to) => {
-			const file = files.get(from) as TFile | undefined;
-			if (!file) throw new Error(`fixture has no file at ${from}`);
+			const file = files.get(from);
+			if (!(file instanceof TFile)) throw new Error(`fixture has no file at ${from}`);
 			files.delete(from);
 			file.path = to;
 			files.set(to, file);
@@ -69,7 +70,7 @@ function makeVault(existingPaths: string[]): VaultSpy {
 		putFolderAt: (path) => {
 			const folder = { path, children: [] };
 			files.set(path, folder);
-			return folder as unknown as TFile;
+			return folder;
 		},
 	};
 }

@@ -36,15 +36,15 @@ export class DailyNotesImportConflictModal extends Modal {
 		}
 
 		const buttons = contentEl.createDiv({ cls: "modal-button-container" });
-		buttons.createEl("button", { text: "Keep my values" }).addEventListener("click", async () => {
-			await this.onConfirm([]);
-			this.close();
-		});
-		const importBtn = buttons.createEl("button", { text: "Import selected", cls: "mod-cta" });
-		importBtn.addEventListener("click", async () => {
-			const confirmed = [...boxes.entries()].filter(([, box]) => box.checked).map(([key]) => key);
+		const confirmAndClose = async (confirmed: DailyNotesImportKey[]): Promise<void> => {
 			await this.onConfirm(confirmed);
 			this.close();
+		};
+		buttons.createEl("button", { text: "Keep my values" }).addEventListener("click", () => void confirmAndClose([]));
+		const importBtn = buttons.createEl("button", { text: "Import selected", cls: "mod-cta" });
+		importBtn.addEventListener("click", () => {
+			const confirmed = [...boxes.entries()].filter(([, box]) => box.checked).map(([key]) => key);
+			void confirmAndClose(confirmed);
 		});
 	}
 

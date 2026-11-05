@@ -21,10 +21,8 @@ export class ElectronDesktopShellAdapter implements DesktopShellPort {
 	constructor(private readonly app: App) {}
 
 	openPluginFile(pluginRelativePath: string): void {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const basePath = (this.app.vault.adapter as any).basePath as string | undefined;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const load = (window as any).require as ((id: string) => unknown) | undefined;
+		const basePath = (this.app.vault.adapter as unknown as { basePath?: string }).basePath;
+		const load = (window as unknown as { require?: (id: string) => unknown }).require;
 		if (!basePath || typeof load !== "function") return;
 
 		// The configuration folder is the user's to rename, so it is read rather

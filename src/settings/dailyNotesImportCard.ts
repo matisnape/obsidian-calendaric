@@ -109,7 +109,7 @@ function renderOffer(
 	const buttons = card.createDiv({ cls: "calendaric-callout__buttons" });
 
 	const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
-	importBtn.addEventListener("click", async () => {
+	const runImport = async (): Promise<void> => {
 		const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
 			const previousDay = { ...settings.day };
 			const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
@@ -134,7 +134,8 @@ function renderOffer(
 			return;
 		}
 		new DailyNotesImportConflictModal(app, plan.conflicts, applyAndSaveImport).open();
-	});
+	};
+	importBtn.addEventListener("click", () => void runImport());
 
 	const disableBtn = buttons.createEl("button", { text: "Disable daily notes plugin" });
 	disableBtn.addEventListener("click", () => {
@@ -152,9 +153,10 @@ function renderOffer(
 	});
 
 	const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
-	dismissBtn.addEventListener("click", async () => {
+	const dismiss = async (): Promise<void> => {
 		settings.hasMigratedDailyNoteSettings = true;
 		await actions.save();
 		actions.refresh();
-	});
+	};
+	dismissBtn.addEventListener("click", () => void dismiss());
 }

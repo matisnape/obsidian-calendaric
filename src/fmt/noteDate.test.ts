@@ -104,7 +104,7 @@ describe("computeNoteDate", () => {
 		// open for that cell — and the same note's days already fall in two
 		// different rows, so no single anchor can make a row the unit.
 		const WEEK_FORMAT = "GGGG-[W]WW";
-		const row = [...Array(7)].map((_, i) => moment("2026-04-15T12:00:00").add(i, "days"));
+		const row = Array.from({ length: 7 }, (_, i) => moment("2026-04-15T12:00:00").add(i, "days"));
 
 		const filenames = new Set(row.map((day) => day.format(WEEK_FORMAT)));
 		const identities = new Set(row.map((day) => computeNoteDate(day, "week", WEEK_FORMAT)));

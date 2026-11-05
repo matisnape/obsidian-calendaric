@@ -41,9 +41,8 @@ type ActiveGranularity = SettingsId;
  */
 const FORMAT_GUIDE_URL = "https://github.com/matisnape/obsidian-calendaric/blob/master/docs/guide.md";
 
-function getMoment() {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	return (window as any).moment as typeof import("moment") | undefined;
+function getMoment(): typeof window.moment | undefined {
+	return (window as { moment?: typeof window.moment }).moment;
 }
 
 /** AC-SET-04.1: the invalid state a field carries while its problem line is showing. */
@@ -372,10 +371,10 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			updateFormatExample(formatInput.value);
 			showFormatProblems(formatInput.value);
 		});
-		formatInput.addEventListener("change", async () => {
+		formatInput.addEventListener("change", () => {
 			if (showFormatProblems(formatInput.value).errors.length > 0) return;
 			config.format = formatInput.value;
-			await this.save();
+			void this.save();
 		});
 
 		// Note Folder
@@ -509,7 +508,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 			.addDropdown((dd) => {
 				dd.addOption("", "Same as Obsidian");
 				if (m) {
-					for (const locale of (m.locales() as string[]).sort()) {
+					for (const locale of m.locales().sort()) {
 						dd.addOption(locale, locale);
 					}
 				}
