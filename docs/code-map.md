@@ -275,9 +275,9 @@ To find the code behind one criterion, search for its id: `grep -rn "AC-CAL-05.3
 
 TypeDoc turns the doc comments in `src/` into HTML pages, one per module.
 
-- **Published site:** <http://anks.pl/obsidian-calendaric/>. `.github/workflows/docs.yml` rebuilds it on every push to `master`.
+- **Published site:** <http://anks.pl/obsidian-calendaric/>. `.github/workflows/docs.yml` rebuilds it on every push to `master` that changes the source or the docs config (the `paths` list in the workflow).
 - **Local build:** `npm run docs` writes the pages to `dist/docs/`. Open `dist/docs/index.html`. The folder is gitignored.
-- **What it covers:** every module under `src/`, except the test-only files: `*.test.ts`, `src/__mocks__/` and `src/ui/test-setup.ts`. The test fakes in `src/adapters/fake*.ts` stay in, because they document how to stand in for each port. The settings live in `typedoc.json`.
+- **What it covers:** every module under `src/`, except the test-only files: `*.test.ts`, the compile-time tests `*.typetest.ts`, `src/__mocks__/` and `src/ui/test-setup.ts`. The test fakes in `src/adapters/fake*.ts` stay in, because they document how to stand in for each port. The settings live in `typedoc.json`.
 - **Types a module does not export** still get a page, under that module's `<internal>` group. The `typedoc-plugin-missing-exports` plugin adds them, so a signature never names a type you cannot open.
 - **Obsidian's own types** are not documented here. A reference to one links to Obsidian's API docs instead.
 - **Warnings fail the build** (`treatWarningsAsErrors`). A broken `{@link}` or a bad doc tag stops `npm run docs` with a non-zero exit code.

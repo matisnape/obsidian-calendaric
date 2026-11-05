@@ -47,7 +47,7 @@ To try a change, copy the fresh `main.js` into the vault's plugin folder and rel
 
 - The output folder is gitignored. Never commit it.
 - Any TypeDoc warning fails the command, for example a `{@link}` to a name that does not exist.
-- `.github/workflows/docs.yml` runs the same command on every push to `master` and publishes the result to <http://anks.pl/obsidian-calendaric/> through GitHub Pages.
+- `.github/workflows/docs.yml` runs the same command on every push to `master` that changes the source or the docs config, and publishes the result to <http://anks.pl/obsidian-calendaric/> through GitHub Pages.
 
 ### Linting
 
