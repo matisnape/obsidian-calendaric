@@ -172,7 +172,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private renderGeneralSection(parentEl: HTMLElement): void {
 		// AC-SET-02.1: the plugin-wide settings get their own container, apart from every granularity group.
 		const containerEl = parentEl.createDiv({ cls: "calendaric-global-settings" });
-		containerEl.createEl("h2", { text: "General" });
+		new Setting(containerEl).setName("General").setHeading();
 
 		new Setting(containerEl)
 			.setName("Start week on")
@@ -247,7 +247,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	// Periodic Notes section
 	// -------------------------------------------------------------------------
 	private renderPeriodicNotesSection(containerEl: HTMLElement): void {
-		containerEl.createEl("h2", { text: "Periodic Notes" });
+		new Setting(containerEl).setName("Periodic notes").setHeading();
 
 		for (const entry of GRANULARITY_REGISTRY) {
 			if ("settings" in entry) this.renderPeriodicGroup(containerEl, entry.id);
@@ -272,7 +272,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// Left: arrow + title
 		const infoEl = heading.createDiv({ cls: "setting-item-info" });
-		const nameEl = infoEl.createEl("h3", { cls: "setting-item-name periodic-group-title" });
+		const nameEl = infoEl.createDiv({ cls: "setting-item-name periodic-group-title" });
 
 		const arrowEl = nameEl.createDiv({ cls: "arrow" });
 		setIcon(arrowEl, "chevron-right");
@@ -299,13 +299,13 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// Content area
 		const content = group.createDiv({ cls: "periodic-group-content" });
-		content.style.display = "none";
+		content.hide();
 
 		// Toggle expand on heading click
 		heading.addEventListener("click", () => {
 			isExpanded = !isExpanded;
 			arrowEl.toggleClass("expanded", isExpanded);
-			content.style.display = isExpanded ? "" : "none";
+			content.toggle(isExpanded);
 		});
 
 		this.renderPeriodicGroupContent(content, granularity, config, periodicity);
@@ -380,7 +380,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 
 		// Note Folder
 		const folderSetting = new Setting(content)
-			.setName("Note Folder")
+			.setName("Note folder")
 			.setDesc(`New ${periodicity} notes will be placed here`);
 		// AC-SET-04.2: a missing folder is reported, never refused -- note
 		// creation builds the chain on demand. Checked on blur and on display,
@@ -480,7 +480,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 		const heading = group.createDiv({ cls: "setting-item setting-item-heading periodic-group-heading" });
 
 		const infoEl = heading.createDiv({ cls: "setting-item-info" });
-		const nameEl = infoEl.createEl("h3", { cls: "setting-item-name periodic-group-title" });
+		const nameEl = infoEl.createDiv({ cls: "setting-item-name periodic-group-title" });
 		const arrowEl = nameEl.createDiv({ cls: "arrow" });
 		setIcon(arrowEl, "chevron-right");
 		nameEl.createSpan({ text: label });
@@ -499,7 +499,7 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private renderAdvancedSection(parentEl: HTMLElement): void {
 		// Override locale is plugin-wide too, so it gets the same global container (AC-SET-02.1).
 		const containerEl = parentEl.createDiv({ cls: "calendaric-global-settings" });
-		containerEl.createEl("h2", { text: "Advanced" });
+		new Setting(containerEl).setName("Advanced").setHeading();
 
 		const m = getMoment();
 

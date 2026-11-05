@@ -53,6 +53,10 @@ export class Setting {
 		this.descEl.appendText(desc);
 		return this;
 	}
+	setHeading(): this {
+		this.settingEl.addClass("setting-item-heading");
+		return this;
+	}
 	addDropdown(_cb: (dd: unknown) => void): this { return this; }
 	addToggle(_cb: (toggle: unknown) => void): this { return this; }
 	addText(_cb: (text: unknown) => void): this { return this; }

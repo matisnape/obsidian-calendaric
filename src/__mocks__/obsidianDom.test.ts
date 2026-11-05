@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 //
-// The shim's other seven methods delegate straight to a standard DOM call and
+// The shim's other methods delegate straight to a standard DOM call and
 // are checked by the tests that render real view code. toggleClass branches,
 // and AC-CAL-02.4 will read its answer to decide whether the "return to today"
 // control is inactive, so it gets its own check: a shim that toggled the wrong
@@ -16,5 +16,15 @@ describe("the Obsidian DOM shim", () => {
 
 		el.toggleClass("is-disabled", false);
 		expect(el.classList.contains("is-disabled")).toBe(false);
+	});
+
+	it("toggle hides the element on false and shows it again on true", () => {
+		const el = document.createElement("div");
+
+		el.toggle(false);
+		expect(el.style.display).toBe("none");
+
+		el.toggle(true);
+		expect(el.style.display).toBe("");
 	});
 });

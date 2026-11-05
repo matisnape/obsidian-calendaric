@@ -114,7 +114,7 @@ describe("format field validity", () => {
 describe("folder field validity", () => {
 	it("AC-SET-04.2: a folder that does not exist warns on blur and is still saved", () => {
 		const { tab, saveSettings } = renderTab(toSettings(defaultStoredConfig()));
-		const folder = field(tab, "Note Folder");
+		const folder = field(tab, "Note folder");
 
 		folder.input.value = "Journal/Daily";
 		folder.input.dispatchEvent(new Event("input"));
@@ -133,7 +133,7 @@ describe("folder field validity", () => {
 		const vault = new FakeVaultPort();
 		vault.seedFile("Journal", "");
 		const { tab, saveSettings } = renderTab(toSettings(defaultStoredConfig()), { vault });
-		const folder = field(tab, "Note Folder");
+		const folder = field(tab, "Note folder");
 
 		type(folder.input, "Journal/Daily");
 
@@ -146,7 +146,7 @@ describe("folder field validity", () => {
 		const vault = new FakeVaultPort();
 		vault.seedFolder("Journal");
 		const { tab } = renderTab(toSettings(defaultStoredConfig()), { vault });
-		const folder = field(tab, "Note Folder");
+		const folder = field(tab, "Note folder");
 
 		type(folder.input, "Journal");
 
@@ -178,7 +178,7 @@ describe("template field validity", () => {
 describe("reopening the settings screen", () => {
 	it("AC-SET-04.4: each field shows what was typed and the same warning after a reopen", () => {
 		const settings = toSettings(defaultStoredConfig());
-		const typed = { Format: "DD", "Note Folder": "Journal/Daily/", "Daily Note Template": " Templates/missing" };
+		const typed = { Format: "DD", "Note folder": "Journal/Daily/", "Daily Note Template": " Templates/missing" };
 
 		const { tab } = renderTab(settings);
 		const shown: Record<string, string> = {};
@@ -193,7 +193,7 @@ describe("reopening the settings screen", () => {
 		for (const [name, value] of Object.entries(typed)) {
 			expect(field(reopened, name).input.value).toBe(value);
 			expect(field(reopened, name).problem()).toBe(shown[name]);
-			expect(field(reopened, name).input.getAttribute("aria-invalid")).toBe(name === "Note Folder" ? null : "true");
+			expect(field(reopened, name).input.getAttribute("aria-invalid")).toBe(name === "Note folder" ? null : "true");
 		}
 	});
 });

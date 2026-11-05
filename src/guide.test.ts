@@ -89,7 +89,6 @@ function settingNames(): Set<string> {
 	tab.display();
 	const el = tab.containerEl;
 	const names = [
-		...Array.from(el.querySelectorAll("h2")).map((h) => h.textContent ?? ""),
 		// A group title also holds its "Opens at startup" badge; the name is the plain span.
 		...Array.from(el.querySelectorAll(".periodic-group-title > span:not(.badge)")).map((s) => s.textContent ?? ""),
 		...Array.from(el.querySelectorAll(".setting-item-name:not(.periodic-group-title)")).map((n) => n.textContent ?? ""),

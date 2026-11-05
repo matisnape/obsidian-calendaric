@@ -208,7 +208,7 @@ export class CalendarWidget implements HoverParent {
 				}
 
 				if (this.settings.week.enabled) {
-					wDiv.style.cursor = "pointer";
+					wDiv.setCssProps({ cursor: "pointer" });
 					keyboardActivated(wDiv);
 					detailTargets.push([wDiv, weekCell, (e) => void this.handleNoteClick(anchor.clone(), "week", e)]);
 					// The hover previews `weekPath`, which is the path the click
@@ -243,7 +243,7 @@ export class CalendarWidget implements HoverParent {
 				}
 
 				if (this.settings.day.enabled) {
-					dayDiv.style.cursor = "pointer";
+					dayDiv.setCssProps({ cursor: "pointer" });
 					keyboardActivated(dayDiv);
 					detailTargets.push([dayDiv, dayCell, (e) => void this.handleNoteClick(day.date, "day", e)]);
 					dayDiv.addEventListener("mouseover", (e) => {

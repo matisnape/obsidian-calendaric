@@ -11,7 +11,7 @@
 // against the tree -- not by reading the one file the first test happened to
 // need. Scoping that grep to `src/ui/` is what made the first version of this
 // shim too small: it has to serve the settings tab too, and the settings tab
-// is where three of these eight live.
+// is where several of these live.
 //
 //   createEl      calendar.ts:71-165, modal.ts, settings.ts, dailyNotesImport*
 //   createDiv     calendar.ts:67-170, modal.ts:31, settings.ts, dailyNotesImportCard
@@ -21,12 +21,14 @@
 //   toggleClass   settings.ts:189 (and calendar.ts:141 once pull request #20 lands)
 //   setAttr       settings.ts:211,212
 //   appendText    settings.ts:213,229
+//   hide, toggle  settings.ts (the collapsible granularity groups)
+//   setCssProps   calendar.ts (the pointer cursor on clickable cells)
 //
-// Only `toggleClass` is exercised by a test of its own, because only it
-// branches: it adds the class on true and removes it on false, and AC-CAL-02.4
+// `toggleClass` and `toggle` are exercised by tests of their own, because
+// they branch. toggleClass adds the class on true and removes it on false, and AC-CAL-02.4
 // will ask this shim whether the "return to today" control is inactive. A shim
 // that got that backwards would hand a green verdict to a criterion that is
-// false. The other seven delegate straight to a standard DOM call with no
+// false. The others delegate straight to a standard DOM call with no
 // branch, so the tests that render real view code are their check.
 //
 // `detach()` (calendarCommand.ts:77, obsidianCalendarLeafAdapter.ts:51,77) is
@@ -159,5 +161,19 @@ export function installObsidianDom(): void {
 
 	Element.prototype.appendText = function (this: Element, val: string): void {
 		this.appendChild((this.ownerDocument ?? document).createTextNode(val));
+	};
+
+	HTMLElement.prototype.hide = function (this: HTMLElement): void {
+		this.toggle(false);
+	};
+
+	HTMLElement.prototype.toggle = function (this: HTMLElement, show: boolean): void {
+		this.style.display = show ? "" : "none";
+	};
+
+	HTMLElement.prototype.setCssProps = function (this: HTMLElement, props: Record<string, string>): void {
+		for (const [name, value] of Object.entries(props)) {
+			this.style.setProperty(name, value);
+		}
 	};
 }

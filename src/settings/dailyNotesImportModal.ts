@@ -21,9 +21,9 @@ export class DailyNotesImportConflictModal extends Modal {
 
 	onOpen(): void {
 		const { contentEl } = this;
-		contentEl.createEl("h2", { text: "Daily Notes import" });
+		contentEl.createEl("h2", { text: "Daily notes import" });
 		contentEl.createEl("p", {
-			text: "These settings already have a value in Calendaric. Tick the ones you want to replace with the Daily Notes value.",
+			text: "Calendaric already has a value for these settings. Tick the ones you want to replace with the daily notes value.",
 		});
 
 		const boxes = new Map<DailyNotesImportKey, HTMLInputElement>();

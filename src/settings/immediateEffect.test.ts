@@ -422,7 +422,7 @@ describe("AC-SET-07.4: a failed save on the settings screen", () => {
 		expect(notices).toEqual(["Could not save settings."]);
 		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(false);
 		const offers = Array.from(tab.containerEl.querySelectorAll("strong")).filter(
-			(el) => el.textContent === "Daily Notes plugin detected",
+			(el) => el.textContent === "Daily notes plugin detected",
 		);
 		expect(offers).toHaveLength(1);
 	});
@@ -470,7 +470,7 @@ describe("AC-SET-07.4: an import card's failed save", () => {
 		buttonNamed(container, "Import settings").click();
 		await settle();
 
-		expect(notices).toEqual(["Could not save the Daily Notes import."]);
+		expect(notices).toEqual(["Could not save the daily notes import."]);
 		expect(plugin.settings.day).toBe(day);
 		expect(plugin.settings.day).toEqual(before);
 		expect(plugin.settings.hasMigratedDailyNoteSettings).toBe(false);
