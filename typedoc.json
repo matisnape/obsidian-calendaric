@@ -7,7 +7,8 @@
 	"entryPointStrategy": "expand",
 	"exclude": [
 		"**/*.test.ts",
-		"**/__mocks__/**"
+		"**/__mocks__/**",
+		"src/ui/test-setup.ts"
 	],
 	"out": "dist/docs",
 	"readme": "none",
