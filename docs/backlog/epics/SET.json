@@ -670,7 +670,7 @@
       "story": "As someone who keeps monthly or yearly notes, I want to switch those granularities on and set their format, folder and template on the settings screen, so that the first release supports month and year as DEC-23 says it does.",
       "rationale": "DEC-23 puts day, week, month and year in the first release, and this epic's notes keep the per-granularity fields for all four. The settings screen still draws Monthly Notes and Yearly Notes as placeholder groups with a locked toggle, so month and year cannot be switched on at all.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [],
       "constrained_by": [],
       "granularity": [
@@ -693,8 +693,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "vitest: src/settings.globals.test.ts > \"AC-SET-08.1: the Monthly and Yearly Notes toggles switch on, and the groups offer the daily and weekly fields\". PR #85, 1678 tests pass on the merged tree."
         },
         {
           "id": "AC-SET-08.2",
@@ -706,8 +706,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts > \"AC-SET-08.2: switching the group on adds its commands, and Open current writes this period\" (non-default folder and format). PR #85."
         },
         {
           "id": "AC-SET-08.3",
@@ -719,8 +719,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": "",
+          "status": "pass",
+          "evidence": "vitest: src/settings/immediateEffect.test.ts > \"AC-SET-08.3: switching the group off removes its commands, and opening the vault then writes no note of it\". PR #85.",
           "failure_path": true
         },
         {
@@ -733,8 +733,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "integration",
-          "status": "unverified",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "vitest: src/settings.globals.test.ts > \"AC-SET-08.4: neither month nor year is a placeholder, and quarter stays a locked placeholder in registry order\". PR #85."
         },
         {
           "id": "AC-SET-08.5",
@@ -745,8 +745,8 @@
           ],
           "verifies": "behaviour",
           "testable_by": "unit",
-          "status": "unverified",
-          "evidence": ""
+          "status": "pass",
+          "evidence": "vitest: src/guide.test.ts > \"AC-SET-08.5: the guide names the monthly and yearly groups, their settings and their commands in bold\". PR #85."
         }
       ]
     }
