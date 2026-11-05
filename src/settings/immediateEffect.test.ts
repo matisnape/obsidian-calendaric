@@ -570,8 +570,8 @@ describe("a saved change on the settings screen", () => {
 
 describe("US-SET-08: monthly and yearly notes switched on and off on the settings screen", () => {
 	const GROUPS = [
-		{ id: "month", label: "Monthly Notes", folder: "Monthly", format: "YYYY-MM" },
-		{ id: "year", label: "Yearly Notes", folder: "Yearly", format: "YYYY" },
+		{ id: "month", label: "Monthly Notes", folder: "Monthly", format: "YYYY-[M]MM" },
+		{ id: "year", label: "Yearly Notes", folder: "Yearly", format: "[Y]YYYY" },
 	] as const;
 
 	function enableToggle(tab: CalendaricSettingsTab, label: string): HTMLInputElement {
