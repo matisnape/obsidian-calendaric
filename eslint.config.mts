@@ -36,6 +36,16 @@ export default defineConfig(
 	},
 	...obsidianmd.configs.recommended,
 	{
+		files: ["package.json"],
+		rules: {
+			// moment stays: test-setup installs it as window.moment, the library Obsidian ships to plugins.
+			"depend/ban-dependencies": [
+				"error",
+				{ presets: ["native", "microutilities", "preferred"], allowed: ["moment"] },
+			],
+		},
+	},
+	{
 		// Node CLI scripts: console is their output, not stray debugging. The
 		// plugin reports no-console through rule-custom-message, so that rule is
 		// re-set here with its no-new-func entry kept and no-console left out.
