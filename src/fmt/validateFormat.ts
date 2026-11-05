@@ -18,7 +18,7 @@ export interface FormatProblems {
  * alone accepts is not enough (AC-FMT-05.1). `/` is absent because it is the
  * folder separator a format may use on purpose.
  */
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- the control characters are the point: a filename may not contain them
 const ILLEGAL_CHARACTERS = /[<>:"\\|?*\x00-\x1f]/;
 
 /** Reserved on Windows whatever the extension, so "CON" is still reserved as "CON.md". */

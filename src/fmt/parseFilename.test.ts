@@ -1,10 +1,11 @@
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
-import moment from "moment";
 // Importing a locale makes it active, so pin the default back for every
 // test that does not ask for another one.
 import "moment/locale/pl";
 import "moment/locale/ar";
 import "moment/locale/ar-dz";
+
+const moment = window.moment;
 moment.locale("en");
 import { parseFilename } from "./parseFilename";
 import { formatWithWeekTokens } from "../notes/noteUtils";

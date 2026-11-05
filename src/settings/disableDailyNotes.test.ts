@@ -109,8 +109,8 @@ afterEach(() => {
 
 /** The two places the card offers to disable the core plugin. */
 const paths = [
-	{ name: "the import offer", migrated: false, label: "Disable Daily Notes plugin" },
-	{ name: "the notice shown after import", migrated: true, label: "Disable Daily Notes" },
+	{ name: "the import offer", migrated: false, label: "Disable daily notes plugin" },
+	{ name: "the notice shown after import", migrated: true, label: "Disable daily notes" },
 ];
 
 describe.each(paths)("disabling from $name", ({ migrated, label }) => {
@@ -216,7 +216,7 @@ describe("AC-MIG-02.5: the disable action when the host plugin cannot be turned 
 			throw new Error("host refused");
 		});
 
-		button(containerEl, "Disable Daily Notes plugin").click();
+		button(containerEl, "Disable daily notes plugin").click();
 		button(modals[0]!.contentEl, "Disable plugin").click();
 		await flush();
 
@@ -229,7 +229,7 @@ describe("AC-MIG-02.5: the disable action when the host plugin cannot be turned 
 		const { containerEl, actions } = renderCard(host, freshSettings(true));
 		delete host.plugin!.disable;
 
-		button(containerEl, "Disable Daily Notes").click();
+		button(containerEl, "Disable daily notes").click();
 		button(modals[0]!.contentEl, "Disable plugin").click();
 		await flush();
 
@@ -241,7 +241,7 @@ describe("AC-MIG-02.5: the disable action when the host plugin cannot be turned 
 		const host = makeHost();
 		const { containerEl, actions } = renderCard(host, freshSettings(true));
 
-		button(containerEl, "Disable Daily Notes").click();
+		button(containerEl, "Disable daily notes").click();
 		host.plugin!.enabled = false;
 		button(modals[0]!.contentEl, "Disable plugin").click();
 		await flush();
@@ -260,7 +260,7 @@ describe("a save that fails after the host plugin is turned off", () => {
 		actions.save.mockImplementation(() => Promise.reject(failure));
 		const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-		button(containerEl, "Disable Daily Notes plugin").click();
+		button(containerEl, "Disable daily notes plugin").click();
 		button(modals[0]!.contentEl, "Disable plugin").click();
 		await flush();
 
@@ -299,7 +299,7 @@ describe("AC-MIG-02.2: day notes after the core plugin is turned off", () => {
 			await openOrCreatePeriodNote("day", date, settings.day, null, ports);
 			expect(ports.workspace.opened).toEqual([]);
 
-			button(containerEl, "Disable Daily Notes").click();
+			button(containerEl, "Disable daily notes").click();
 			button(modals[0]!.contentEl, "Disable plugin").click();
 			await flush();
 			expect(host.disable).toHaveBeenCalledWith(true);

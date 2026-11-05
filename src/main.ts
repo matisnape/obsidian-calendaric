@@ -262,7 +262,6 @@ export default class CalendaricPlugin extends Plugin {
 	}
 
 	onunload() {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
 		this.index?.destroy();
 		this.index = null;
 		this.stopTemplateOnArrival?.();

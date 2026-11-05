@@ -1,8 +1,3 @@
-/* eslint-disable import/no-nodejs-modules -- That rule guards the BUNDLE: a
-   plugin shipping node:fs breaks on Obsidian mobile and fails community review.
-   This file is a test, esbuild never sees it, and two of the five criteria it
-   settles are about the SHAPE of the settings screen, which means reading the
-   repository's own source. Same exemption, same reason, as src/arch.test.ts. */
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";

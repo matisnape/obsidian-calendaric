@@ -248,7 +248,7 @@
   border-top: none;
 }
 
-.periodic-group-heading h3 {
+.periodic-group-heading .periodic-group-title {
   font-size: 1.1em;
   margin: 0;
 }

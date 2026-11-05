@@ -33,18 +33,9 @@ export class ObsidianCalendarLeaf implements CalendarLeafHandle {
 
 	focus(): void {
 		// revealLeaf brings the leaf forward but leaves the keyboard where it
-		// was, so the focus half of the story needs this second call.
-		//
-		// The object form, setActiveLeaf(leaf, { focus: true }), needs Obsidian
-		// 0.16.3, and manifest.json declares minAppVersion 0.15.0. On an older
-		// host the object would land in the pushHistory slot and focus would
-		// never be requested, so AC-CMD-01.1 would not hold on the version the
-		// plugin promises to support. This three-argument overload reaches
-		// 0.15.0 and still works today, so it is the call that honours the
-		// declared floor. Raising minAppVersion instead would drop older
-		// installs, which is a support decision rather than this ticket's.
-		// eslint-disable-next-line @typescript-eslint/no-deprecated -- reaches manifest.json's declared minAppVersion 0.15.0; the object form needs 0.16.3
-		this.app.workspace.setActiveLeaf(this.leaf, false, true);
+		// was, so the focus half of the story needs this second call. The object
+		// form needs Obsidian 0.16.3; manifest.json's minAppVersion is above it.
+		this.app.workspace.setActiveLeaf(this.leaf, { focus: true });
 	}
 
 	detach(): void {

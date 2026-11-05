@@ -115,6 +115,20 @@ describe("CalendarWidget: the week-number column", () => {
 	});
 });
 
+describe("CalendarWidget: the month navigation arrows", () => {
+	it("draws an SVG arrow in both the previous and the next button", () => {
+		const host = render(DEFAULT_SETTINGS);
+		for (const label of ["Previous month", "Next month"]) {
+			const btn = host.querySelector(`.calendaric-nav-btn[aria-label="${label}"]`);
+			const svg = btn?.firstElementChild;
+			// A failed parse hands back a <parsererror> document, not an svg.
+			expect(svg?.namespaceURI, label).toBe("http://www.w3.org/2000/svg");
+			expect(svg?.localName, label).toBe("svg");
+			expect(svg?.querySelector("path"), label).not.toBeNull();
+		}
+	});
+});
+
 /** Monthly notes configured, in the vault root, and created without a prompt. */
 const MONTHLY: CalendaricSettings = {
 	...DEFAULT_SETTINGS,

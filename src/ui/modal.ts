@@ -35,12 +35,13 @@ export class ConfirmationModal extends Modal {
 		});
 
 		const createBtn = buttons.createEl("button", { text: "Create", cls: "mod-cta" });
-		createBtn.addEventListener("click", async () => {
+		const accept = async (): Promise<void> => {
 			// Set before the await: closing mid-accept must not read as a dismissal.
 			this.accepted = true;
 			await this.params.onAccept();
 			this.close();
-		});
+		};
+		createBtn.addEventListener("click", () => void accept());
 	}
 
 	onClose(): void {

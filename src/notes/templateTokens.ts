@@ -1,5 +1,4 @@
-import type { Moment, unitOfTime } from "moment";
-import type { PeriodicConfig, ReleaseGranularity } from "../types";
+import type { DurationUnit, Moment, PeriodicConfig, ReleaseGranularity } from "../types";
 import { formatWithWeekTokens, spanWeekStart } from "./noteUtils";
 import { granularityEntry } from "../granularity/registry";
 
@@ -12,7 +11,7 @@ import { granularityEntry } from "../granularity/registry";
  * hour-or-finer offset has nothing to point at; add `h`/`m`/`s` here if a
  * granularity below a day ever arrives.
  */
-const OFFSET_UNITS: Record<string, unitOfTime.DurationConstructor> = {
+const OFFSET_UNITS: Record<string, DurationUnit> = {
 	y: "years",
 	Q: "quarters",
 	M: "months",

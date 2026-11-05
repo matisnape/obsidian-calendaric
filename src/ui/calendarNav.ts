@@ -1,4 +1,4 @@
-import type { Moment } from "moment";
+import type { Moment } from "../types";
 
 /**
  * Which month the grid shows, and what the three navigation controls do to it.

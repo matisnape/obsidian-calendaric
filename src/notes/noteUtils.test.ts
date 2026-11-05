@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import moment from "moment";
 import {
 	applyWeekTokens,
 	formatWithWeekTokens,
@@ -14,6 +13,8 @@ import type { PeriodicConfig } from "../types";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { applyLocale, restoreLocale } from "../fmt/locale";
+
+const moment = window.moment;
 
 /**
  * The plugin's default week start. {{weekday:fmt}} resolves within the

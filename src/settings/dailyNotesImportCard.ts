@@ -54,7 +54,7 @@ export function renderDailyNotesImportCard(
  */
 function renderUnreadableNotice(containerEl: HTMLElement, problem: string): void {
 	const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--warning" });
-	notice.createEl("strong", { text: "Daily Notes settings could not be read" });
+	notice.createEl("strong", { text: "Daily notes settings could not be read" });
 	notice.createEl("p", {
 		text: `${problem} Calendaric cannot import them, so enter the format, folder and template below by hand.`,
 	});
@@ -68,12 +68,12 @@ function renderStillActiveNotice(
 	actions: DailyNotesImportCardActions,
 ): void {
 	const notice = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
-	notice.createEl("strong", { text: "Daily Notes plugin is still active" });
+	notice.createEl("strong", { text: "Daily notes plugin is still active" });
 	notice.createEl("p", {
-		text: "Both plugins may create daily notes. Consider disabling the core Daily Notes plugin.",
+		text: "Both plugins may create daily notes. Consider disabling the core daily notes plugin.",
 	});
 	const buttons = notice.createDiv({ cls: "calendaric-callout__buttons" });
-	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes", cls: "mod-cta" });
+	const disableBtn = buttons.createEl("button", { text: "Disable daily notes", cls: "mod-cta" });
 	disableBtn.addEventListener("click", () => {
 		// AC-MIG-02.1: nothing is turned off until the user confirms.
 		new DisableDailyNotesModal(plugin.app, async () => {
@@ -101,15 +101,15 @@ function renderOffer(
 ): void {
 	const { app, settings } = plugin;
 	const card = containerEl.createDiv({ cls: "calendaric-callout calendaric-callout--info" });
-	card.createEl("strong", { text: "Daily Notes plugin detected" });
+	card.createEl("strong", { text: "Daily notes plugin detected" });
 	card.createEl("p", {
-		text: "Calendaric can import your existing Daily Notes settings (format, folder, template). After import, you can disable the core Daily Notes plugin.",
+		text: "Calendaric can import your existing daily notes settings (format, folder, template). After import, you can disable the core daily notes plugin.",
 	});
 
 	const buttons = card.createDiv({ cls: "calendaric-callout__buttons" });
 
 	const importBtn = buttons.createEl("button", { text: "Import settings", cls: "mod-cta" });
-	importBtn.addEventListener("click", async () => {
+	const runImport = async (): Promise<void> => {
 		const applyAndSaveImport = async (confirmed: DailyNotesImportKey[]) => {
 			const previousDay = { ...settings.day };
 			const previouslyMigrated = settings.hasMigratedDailyNoteSettings;
@@ -121,7 +121,7 @@ function renderOffer(
 				Object.assign(settings.day, previousDay);
 				settings.hasMigratedDailyNoteSettings = previouslyMigrated;
 				console.error("Calendaric: the Daily Notes import could not be saved", error);
-				new Notice("Could not save the Daily Notes import.");
+				new Notice("Could not save the daily notes import.");
 				return;
 			}
 			plugin.onSettingsChange();
@@ -134,9 +134,10 @@ function renderOffer(
 			return;
 		}
 		new DailyNotesImportConflictModal(app, plan.conflicts, applyAndSaveImport).open();
-	});
+	};
+	importBtn.addEventListener("click", () => void runImport());
 
-	const disableBtn = buttons.createEl("button", { text: "Disable Daily Notes plugin" });
+	const disableBtn = buttons.createEl("button", { text: "Disable daily notes plugin" });
 	disableBtn.addEventListener("click", () => {
 		new DisableDailyNotesModal(app, async () => {
 			const outcome = companion.disableDailyNotes();
@@ -152,9 +153,10 @@ function renderOffer(
 	});
 
 	const dismissBtn = buttons.createEl("button", { text: "Dismiss" });
-	dismissBtn.addEventListener("click", async () => {
+	const dismiss = async (): Promise<void> => {
 		settings.hasMigratedDailyNoteSettings = true;
 		await actions.save();
 		actions.refresh();
-	});
+	};
+	dismissBtn.addEventListener("click", () => void dismiss());
 }

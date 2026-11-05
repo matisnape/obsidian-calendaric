@@ -33,7 +33,7 @@ What each setting and command does is described in the [user guide](../guide.md)
 | Vault | An Obsidian folder of Markdown notes. Obsidian keeps its own config in a hidden `.obsidian/` folder inside it. |
 | Periodic note | A note that belongs to a date period, like the daily note for 12 April 2026 or the weekly note for week 15. |
 | Granularity | The period length a note covers: day, week, month or year. Quarter exists in the code but is reserved and switched off for this release. |
-| Group | One granularity's block in the settings screen, such as **Daily Notes** or **Weekly Notes**. Each has its own toggle, **Format**, **Note Folder** and template. |
+| Group | One granularity's block in the settings screen, such as **Daily Notes** or **Weekly Notes**. Each has its own toggle, **Format**, **Note folder** and template. |
 | Format | A [moment.js format string](https://momentjs.com/docs/#/displaying/format/) that decides a note's filename, such as `YYYY-MM-DD` for `2026-04-12`. |
 | Week start | The day a week begins on, set by **Start week on**. It changes which days share a week row, and which Monday a weekly template means. |
 | Template | A note whose content is copied into each new periodic note. |
@@ -129,10 +129,10 @@ Sunday: {{sunday:YYYY-MM-DD}}
 
 Open **Settings → Calendaric**.
 
-1. Under **Periodic Notes**, select the **Daily Notes** heading to expand it.
-2. Set **Note Folder** to `Journal/Daily`.
+1. Under **Periodic notes**, select the **Daily Notes** heading to expand it.
+2. Set **Note folder** to `Journal/Daily`.
 3. Set **Daily Note Template** to `Templates/Daily`.
-4. Expand **Weekly Notes**. Set **Note Folder** to `Journal/Weekly`.
+4. Expand **Weekly Notes**. Set **Note folder** to `Journal/Weekly`.
 5. Set **Weekly Note Template** to `Templates/Weekly`.
 6. Leave every other setting at its default. In particular **Confirm before creating new note** stays on, so every new note asks first, and **Start week on** stays **Monday**.
 
@@ -306,7 +306,7 @@ Run them in any order once setup is done.
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | In **Daily Notes**, set **Note Folder** to `QA/Deep/Daily`. Leave the field. | The field says the folder does not exist yet and is created with the first note. |
+| 1 | In **Daily Notes**, set **Note folder** to `QA/Deep/Daily`. Leave the field. | The field says the folder does not exist yet and is created with the first note. |
 | 2 | In the calendar, go to April 2026. Select the 9 April cell. | The **New daily note** dialog appears. It names Thursday, April 9, 2026 and the file `2026-04-09.md`. |
 | 3 | Select **Never mind**. | Nothing opens. The file explorer shows no `QA` folder. |
 | 4 | Select the 9 April cell again, then **Create**. | The note opens. The folders `QA`, `QA/Deep` and `QA/Deep/Daily` now exist. |
@@ -314,7 +314,7 @@ Run them in any order once setup is done.
 | 6 | Turn **Confirm before creating new note** off. Select the 10 April cell. | The note is created and opens at once, with no dialog. |
 | 7 | (Fold state, AC-NOTE-05.4.) Open `Templates/Daily`, fold the `# …` heading, close it. Create the 11 April note. | The new note opens with that heading folded. |
 
-Clean up: delete `QA/`. Set **Note Folder** back to `Journal/Daily`. Turn **Confirm before creating new note** back on.
+Clean up: delete `QA/`. Set **Note folder** back to `Journal/Daily`. Turn **Confirm before creating new note** back on.
 
 - [ ] Pass
 - [ ] Fail
@@ -618,9 +618,9 @@ Clean up: set **Words per dot** back to `250`.
 | 1 | Outside Obsidian, create `Journal/Daily/2026-04-29.md` with text. | A dot appears on 29 April without touching the view. |
 | 2 | In Obsidian, rename it to `2026-04-30.md`. | The dot moves to 30 April. |
 | 3 | Delete it. | The dot disappears. |
-| 4 | Change **Daily Notes → Note Folder** to `Elsewhere`. | Every daily dot disappears. The grid redrew. |
+| 4 | Change **Daily Notes → Note folder** to `Elsewhere`. | Every daily dot disappears. The grid redrew. |
 | 5 | Create the 9 April note from the calendar. | It is created under `Elsewhere/`, not `Journal/Daily`. |
-| 6 | Set **Note Folder** back to `Journal/Daily`. | The seed dots come back. |
+| 6 | Set **Note folder** back to `Journal/Daily`. | The seed dots come back. |
 
 Clean up: delete `Elsewhere/`.
 
@@ -695,7 +695,7 @@ Clean up: delete `2026-04-09`. Turn **Allow prefix matching** off.
 | # | Action | Expected result |
 |---|---|---|
 | 1 | Open **Settings → Calendaric**. | No prompt to name or choose a configuration group. |
-| 2 | Look at the layout. | A **General** section (**Start week on**, **Confirm before creating new note**, **Show week numbers**, **Show period label**, **Words per dot**), a **Periodic Notes** section with one group per granularity, and an **Advanced** section with **Override locale**. The plugin-wide settings sit apart from the groups. |
+| 2 | Look at the layout. | The plugin-wide settings at the top, under no heading (**Start week on**, **Confirm before creating new note**, **Show week numbers**, **Show period label**, **Words per dot**), a **Periodic notes** section with one group per granularity, and an **Advanced** section with **Override locale**. The plugin-wide settings sit apart from the groups. |
 | 3 | Check the values. | **Start week on**: **Monday**. **Confirm before creating new note**: on. **Show week numbers**: on. **Show period label**: on. **Words per dot**: `250`. **Override locale**: **Same as Obsidian**. **Daily Notes** and **Weekly Notes** on. Expand **Daily Notes**: **Format** is empty and shows `YYYY-MM-DD` as its placeholder, and "Your current syntax looks like this:" shows today's date. |
 
 - [ ] Pass
@@ -711,12 +711,12 @@ Clean up: delete `2026-04-09`. Turn **Allow prefix matching** off.
 | 1 | Type `0` into **Words per dot** and leave the field. | Message: "Not a positive whole number, so the default of 250 is used." |
 | 2 | Repeat with `-3`, then `abc`. | The same message each time. |
 | 3 | In **Daily Notes**, type `YYYY:MM` into **Format**. | A message starting "Not saved:" says `":" cannot appear in a filename on Windows`. The field is marked invalid. |
-| 4 | Set **Format** back to `YYYY-MM-DD`. Leaving it empty is also "Not saved:", because an empty format is an error. Set **Note Folder** to `Not/Yet` and leave it. | "Saved, but Not/Yet does not exist yet. It is created with the first note." |
-| 5 | Close settings and reopen them. Expand **Daily Notes**. | **Note Folder** still says `Not/Yet`, with the same warning. |
+| 4 | Set **Format** back to `YYYY-MM-DD`. Leaving it empty is also "Not saved:", because an empty format is an error. Set **Note folder** to `Not/Yet` and leave it. | "Saved, but Not/Yet does not exist yet. It is created with the first note." |
+| 5 | Close settings and reopen them. Expand **Daily Notes**. | **Note folder** still says `Not/Yet`, with the same warning. |
 | 6 | Select **Format & template guide** under **Format**. | The guide opens in the browser. No error. |
 | 7 | Select **Syntax reference**. | The moment.js format page opens. |
 
-Clean up: set **Note Folder** back to `Journal/Daily` and **Words per dot** to `250`.
+Clean up: set **Note folder** back to `Journal/Daily` and **Words per dot** to `250`.
 
 - [ ] Pass
 - [ ] Fail
@@ -881,16 +881,16 @@ QA-P-01 covers hotkeys (AC-CMD-05.2 to 05.4). QA-P-05 covers the date switcher (
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Open **Settings → Calendaric**. | No "Daily Notes plugin detected" card. |
+| 1 | Open **Settings → Calendaric**. | No "Daily notes plugin detected" card. |
 | 2 | Switch core **Daily notes** on. In its options set folder `Journal/Daily`, format `YYYY-MM-DD`, template `Templates/Daily`. | — |
-| 3 | Open **Settings → Calendaric**. | A card titled "Daily Notes plugin detected", with **Import settings**, **Disable Daily Notes plugin** and **Dismiss**. |
+| 3 | Open **Settings → Calendaric**. | A card titled "Daily notes plugin detected", with **Import settings**, **Disable daily notes plugin** and **Dismiss**. |
 | 4 | Select **Import settings**. | **Daily Notes** now shows `Journal/Daily`, `YYYY-MM-DD` and `Templates/Daily`, and is on. |
-| 5 | Close and reopen settings. | The import card does not come back. In its place, a card titled "Daily Notes plugin is still active" offers **Disable Daily Notes** and **Dismiss**. |
-| 6 | Select **Disable Daily Notes**. | A dialog "Turn off the core daily notes plugin?" says hotkeys bound to its commands may stop working. Nothing is off yet. |
+| 5 | Close and reopen settings. | The import card does not come back. In its place, a card titled "Daily notes plugin is still active" offers **Disable daily notes** and **Dismiss**. |
+| 6 | Select **Disable daily notes**. | A dialog "Turn off the core daily notes plugin?" says hotkeys bound to its commands may stop working. Nothing is off yet. |
 | 7 | Select **Cancel**. | Core **Daily notes** is still on. |
-| 8 | Select **Disable Daily Notes** again, then **Disable plugin**. | Core **Daily notes** is off. Creating a day note from the calendar works, in `Journal/Daily`. |
+| 8 | Select **Disable daily notes** again, then **Disable plugin**. | Core **Daily notes** is off. Creating a day note from the calendar works, in `Journal/Daily`. |
 | 9 | Switch core **Daily notes** back on in **Settings → Core plugins**. | It turns on normally. Its folder, format and template are still set. No notes were deleted. |
-| 10 | (Conflict.) Delete `data.json` again and reopen. Set **Daily Notes → Note Folder** to `Mine` in Calendaric. Select **Import settings**. | A "Daily Notes import" dialog lists "Note folder — yours: "Mine" · Daily Notes: "Journal/Daily"". **Keep my values** leaves `Mine`. **Import selected** with the box ticked replaces it. |
+| 10 | (Conflict.) Delete `data.json` again and reopen. Set **Daily Notes → Note folder** to `Mine` in Calendaric. Select **Import settings**. | A "Daily notes import" dialog lists "Note folder — yours: "Mine" · Daily Notes: "Journal/Daily"". **Keep my values** leaves `Mine`. **Import selected** with the box ticked replaces it. |
 
 Clean up: switch core **Daily notes** off. Redo setup step 5 if values changed.
 

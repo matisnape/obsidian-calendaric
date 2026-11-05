@@ -95,16 +95,8 @@ function makeApp(workspace: FakeWorkspace): App {
 				leaf.fake.shown = true;
 			},
 
-			setActiveLeaf: (leaf: { fake: FakeLeaf }, pushHistory?: unknown, focus?: unknown) => {
-				// Only the three-argument overload exists on 0.15.0. Rejecting
-				// the object form is the point: it is what lets this gate catch
-				// a call that needs a newer host than the manifest promises.
-				if (typeof pushHistory !== "boolean" || typeof focus !== "boolean") {
-					throw new TypeError(
-						"setActiveLeaf on Obsidian 0.15.0 takes (leaf, pushHistory, focus)",
-					);
-				}
-				workspace.activated.push({ leaf: leaf.fake, focus });
+			setActiveLeaf: (leaf: { fake: FakeLeaf }, params?: { focus?: boolean }) => {
+				workspace.activated.push({ leaf: leaf.fake, focus: params?.focus });
 			},
 		},
 	};

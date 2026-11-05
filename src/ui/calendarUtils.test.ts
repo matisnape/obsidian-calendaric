@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import moment from "moment";
 import { getMonthGrid, getWeekAnchor, getWeekdayHeaders, resolveWeekStart } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import type { PeriodicConfig } from "../types";
+
+const moment = window.moment;
 
 /** The weekly-note format the plugin ships with. */
 const WEEK_FORMAT = "gggg-[W]ww";

@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { PeriodicConfig, ReleaseGranularity } from "../types";
+import type { Moment, PeriodicConfig, ReleaseGranularity } from "../types";
 import { RELEASE_GRANULARITIES } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import { resolveNoteFolder } from "../notes/noteUtils";

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import moment from "moment";
 import { MonthNavigation } from "./calendarNav";
 import { getMonthGrid } from "./calendarUtils";
+
+const moment = window.moment;
 
 /** The weekly-note format the plugin ships with. */
 const WEEK_FORMAT = "gggg-[W]ww";
