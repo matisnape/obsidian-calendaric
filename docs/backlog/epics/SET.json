@@ -670,7 +670,7 @@
       "story": "As someone who keeps monthly or yearly notes, I want to switch those granularities on and set their format, folder and template on the settings screen, so that the first release supports month and year as DEC-23 says it does.",
       "rationale": "DEC-23 puts day, week, month and year in the first release, and this epic's notes keep the per-granularity fields for all four. The settings screen still draws Monthly Notes and Yearly Notes as placeholder groups with a locked toggle, so month and year cannot be switched on at all.",
       "priority": "must",
-      "status": "todo",
+      "status": "in-progress",
       "covers": [],
       "constrained_by": [],
       "granularity": [
