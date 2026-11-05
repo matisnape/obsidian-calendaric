@@ -3,9 +3,6 @@
 // The two built-in indicator dots — note exists, word count — as the grid
 // draws them, over fake ports. The word count arrives after an async read, so
 // every test waits for the pane to settle before it looks.
-/* eslint-disable import/no-nodejs-modules -- That rule guards the BUNDLE. This
-   file is a test, esbuild never sees it, and AC-CAL-07.4 reads styles.css to
-   check the two dots do not share a colour. */
 import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import type { App } from "obsidian";

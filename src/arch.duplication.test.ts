@@ -1,5 +1,3 @@
-/* eslint-disable import/no-nodejs-modules -- a test reading the repository's
-   own source; esbuild never bundles it. */
 import { readdirSync, readFileSync } from "node:fs";
 import { sep } from "node:path";
 import { fileURLToPath } from "node:url";
