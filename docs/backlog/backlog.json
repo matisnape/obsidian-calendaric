@@ -4445,6 +4445,93 @@
       }
     },
     {
+      "id": "US-SET-08",
+      "epic": "SET",
+      "title": "Monthly and yearly notes can be switched on and configured on the settings screen",
+      "story": "As someone who keeps monthly or yearly notes, I want to switch those granularities on and set their format, folder and template on the settings screen, so that the first release supports month and year as DEC-23 says it does.",
+      "rationale": "DEC-23 puts day, week, month and year in the first release, and this epic's notes keep the per-granularity fields for all four. The settings screen still draws Monthly Notes and Yearly Notes as placeholder groups with a locked toggle, so month and year cannot be switched on at all.",
+      "priority": "must",
+      "status": "todo",
+      "covers": [],
+      "constrained_by": [],
+      "granularity": [
+        "month",
+        "year"
+      ],
+      "depends_on": [
+        "US-SET-01",
+        "US-SET-03"
+      ],
+      "open_questions": [],
+      "acceptance_criteria": [
+        {
+          "id": "AC-SET-08.1",
+          "given": "the settings screen is open",
+          "when": "the Monthly Notes or the Yearly Notes group is shown",
+          "then": [
+            "its enable toggle can be switched on",
+            "it offers the same fields the Daily Notes and Weekly Notes groups offer: format, folder, template, prefix matching and open on startup"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": ""
+        },
+        {
+          "id": "AC-SET-08.2",
+          "given": "monthly or yearly notes are switched off",
+          "when": "they are switched on and the setting is saved",
+          "then": [
+            "that granularity's commands appear in the command palette without Obsidian being restarted",
+            "running its open command opens or creates the current month's or year's note in the configured folder and format"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": ""
+        },
+        {
+          "id": "AC-SET-08.3",
+          "given": "monthly or yearly notes are switched on",
+          "when": "they are switched off again and the setting is saved",
+          "then": [
+            "that granularity's commands leave the command palette",
+            "no note of that granularity is created by any command or by opening Obsidian"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": "",
+          "failure_path": true
+        },
+        {
+          "id": "AC-SET-08.4",
+          "given": "the settings screen is open",
+          "when": "its periodic-notes section is drawn",
+          "then": [
+            "neither month nor year is drawn as a placeholder group",
+            "quarter is unchanged: it stays reserved as DEC-23 says"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "integration",
+          "status": "unverified",
+          "evidence": ""
+        },
+        {
+          "id": "AC-SET-08.5",
+          "given": "monthly and yearly notes can be switched on",
+          "when": "the user guide is read",
+          "then": [
+            "it names the monthly and yearly commands and settings the plugin now offers"
+          ],
+          "verifies": "behaviour",
+          "testable_by": "unit",
+          "status": "unverified",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "US-CMD-01",
       "epic": "CMD",
       "title": "Open the calendar view from the command palette",
