@@ -35,4 +35,23 @@ export default defineConfig(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		// Node CLI scripts: console is their output, not stray debugging. The
+		// plugin reports no-console through rule-custom-message, so that rule is
+		// re-set here with its no-new-func entry kept and no-console left out.
+		files: ["scripts/**"],
+		rules: {
+			"obsidianmd/rule-custom-message": [
+				"error",
+				{
+					"no-new-func": {
+						messages: {
+							"The Function constructor is eval":
+								"Using the `Function` constructor is dangerous because it executes arbitrary code, similar to `eval()`",
+						},
+					},
+				},
+			],
+		},
+	},
 );
