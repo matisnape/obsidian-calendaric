@@ -58,7 +58,7 @@ You need Obsidian 1.13.7 or later on a desktop computer. Calendaric does not run
 4. Create the folder `<your vault>/.obsidian/plugins/obsidian-calendaric/`. The folder name must be `obsidian-calendaric`, the plugin id.
 5. Copy `main.js`, `manifest.json` and `styles.css` from the clone into that folder.
 6. In Obsidian, open **Settings → Community plugins**. If community plugins are off, turn them on. Reload the list of installed plugins, then switch on **Calendaric**.
-7. Open **Settings → Calendaric**. If the top of the screen shows **Daily Notes plugin detected**, select **Import settings**. The card then reads **Daily Notes plugin is still active**: select **Disable Daily Notes**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
+7. Open **Settings → Calendaric**. If the top of the screen shows **Daily notes plugin detected**, select **Import settings**. The card then reads **Daily notes plugin is still active**: select **Disable daily notes**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
 8. Find the calendar in the right sidebar. Its tab is called **Calendar**. If it is not there, run **Open calendar** from the command palette.
 9. Click today's date in the grid.
 
@@ -166,7 +166,7 @@ Week cells only react while **Weekly Notes** is switched on and **Show week numb
 | Quarter | **Quarterly Notes** | no | `YYYY-[Q]Q` | not created | none |
 | Year | **Yearly Notes** | no | `YYYY` | `2026` | none |
 
-**How to use it:** in **Settings → Calendaric → Periodic Notes**, switch a group on with the toggle on its heading. Select the heading to expand the group's fields.
+**How to use it:** in **Settings → Calendaric → Periodic notes**, switch a group on with the toggle on its heading. Select the heading to expand the group's fields.
 
 **What you should see:** turning a group on or off changes the calendar and the command palette at once. No restart is needed.
 
@@ -180,7 +180,7 @@ Week cells only react while **Weekly Notes** is switched on and **Show week numb
 
 A file is a period's note when one of these holds:
 
-- **Its name matches the format**, and it sits in the group's **Note Folder** or a subfolder of it.
+- **Its name matches the format**, and it sits in the group's **Note folder** or a subfolder of it.
 - **Its name starts with the formatted date** and carries more text after it, while **Allow prefix matching** is on. With the format `gggg-[W]ww`, the file `2026-W07, 09.02 - 15.02` counts as week 7.
 - **Its frontmatter names the period**, in a fixed format, and it sits in the right folder. The key is the granularity's id:
 
@@ -192,7 +192,7 @@ A file is a period's note when one of these holds:
 
 **What you should see:** clicking a cell opens such a note instead of creating a second one. The [period label](#the-period-label-and-the-day-strip) shows a "≈" mark on a note found by prefix matching.
 
-A new note is always written at the exact path the format and folder give. If **Note Folder** is empty, Obsidian's own default folder for new notes is used. Missing folders are created.
+A new note is always written at the exact path the format and folder give. If **Note folder** is empty, Obsidian's own default folder for new notes is used. Missing folders are created.
 
 ## Templates
 
@@ -332,7 +332,7 @@ You can bind hotkeys to any of these in **Settings → Hotkeys**. A hotkey stays
 
 ## Settings reference
 
-Open **Settings → Calendaric**. The screen has, from top to bottom, any [import cards](#importing-from-the-older-plugins), then **General**, **Periodic Notes** and **Advanced**.
+Open **Settings → Calendaric**. The screen has, from top to bottom, any [import cards](#importing-from-the-older-plugins), then the plugin-wide settings, which have no heading of their own, then **Periodic notes** and **Advanced**. This manual calls the first block [General](#general).
 
 ### General
 
@@ -351,7 +351,7 @@ Each group heading (**Daily Notes**, **Weekly Notes**) has an on/off toggle. Sel
 | Setting | What it does |
 |---|---|
 | **Format** | The filename pattern. The line under it shows today's date in that pattern. **Syntax reference** opens the moment.js token list, and **Format & template guide** opens [the guide](guide.md#format-field). An empty field uses the default format, shown as the placeholder. |
-| **Note Folder** | The folder new notes go into. A folder that does not exist yet is created with the first note. |
+| **Note folder** | The folder new notes go into. A folder that does not exist yet is created with the first note. |
 | **Daily Note Template**, **Weekly Note Template** | The template note's path. See [Templates](#templates). |
 | **Allow prefix matching** | Also counts a note whose filename starts with the date and carries more text, for example `2026-02-09, travel day`. |
 | **Open on startup** | See [Open on startup](#open-on-startup). |
@@ -384,17 +384,17 @@ When more than one source covers a granularity, Periodic Notes wins for every gr
 
 ### Daily Notes import
 
-The card **Daily Notes plugin detected** appears while the core Daily Notes plugin is on and you have not imported or dismissed it.
+The card **Daily notes plugin detected** appears while the core Daily Notes plugin is on and you have not imported or dismissed it.
 
 | Button | Result |
 |---|---|
 | **Import settings** | Copies the format, folder and template into **Daily Notes**, and switches **Daily Notes** on. An empty Daily Notes format becomes `YYYY-MM-DD`. |
-| **Disable Daily Notes plugin** | Asks *"Turn off the core daily notes plugin?"*, then turns it off when you select **Disable plugin**. **Cancel** leaves it on. Hotkeys bound to its commands may stop working. |
+| **Disable daily notes plugin** | Asks *"Turn off the core daily notes plugin?"*, then turns it off when you select **Disable plugin**. **Cancel** leaves it on. Hotkeys bound to its commands may stop working. |
 | **Dismiss** | Hides the import offer for good. While the core plugin stays on, the card turns into the notice below. |
 
-After the import, while the core plugin is still on, the card reads **Daily Notes plugin is still active** with **Disable Daily Notes** and **Dismiss** buttons.
+After the import, while the core plugin is still on, the card reads **Daily notes plugin is still active** with **Disable daily notes** and **Dismiss** buttons.
 
-Import before you disable. **Disable Daily Notes plugin** without an import also hides the offer for good.
+Import before you disable. **Disable daily notes plugin** without an import also hides the offer for good.
 
 ### Periodic Notes import
 
@@ -444,5 +444,5 @@ Opening a note that already exists always works.
 | *Could not open "…" — the file no longer exists at that path.* | The note moved or was deleted after Calendaric found it. | Click the cell again. |
 | *Calendaric: the calendar view could not be opened.* | Obsidian refused to make the sidebar pane. | Restart Obsidian. |
 | *Calendaric: some settings could not be read and were reset to their defaults.* | The stored settings file was damaged. The file is not overwritten until you change a setting. | Check your settings, or repair `.obsidian/plugins/obsidian-calendaric/data.json`. |
-| **Daily Notes settings could not be read**, **Periodic notes settings could not be read** or **Calendar plugin settings could not be read** | The other plugin's settings have a shape Calendaric does not expect, so the import cannot run. | Type the format, folder and template into Calendaric by hand. |
+| **Daily notes settings could not be read**, **Periodic notes settings could not be read** or **Calendar plugin settings could not be read** | The other plugin's settings have a shape Calendaric does not expect, so the import cannot run. | Type the format, folder and template into Calendaric by hand. |
 | *… is unavailable* on the settings screen | That part of the settings screen does not work with your Obsidian version. The rest still works. | Report it, with your Obsidian version. |

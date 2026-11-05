@@ -52,8 +52,9 @@ To try a change, copy the fresh `main.js` into the vault's plugin folder and rel
 ### Linting
 
 - `npm run lint` runs eslint with the Obsidian plugin rules.
-- The pull-request workflow (`.github/workflows/ci.yml`) runs install, test, build and `npm run check:ac` on every pull request, whatever its base branch. It does **not** run lint, because `master` still carries lint errors and a lint gate would fail every pull request. Run `npm run lint` yourself and check that your change adds no new errors.
-- The **release** workflow does run lint, through `npm run verify`. Until the existing errors on `master` are cleaned up, a tagged release fails at the lint gate. That is deliberate: lint debt may block a release, it may not be hidden.
+- The pull-request workflow (`.github/workflows/ci.yml`) runs install, test, build and `npm run check:ac` on every pull request, whatever its base branch. It does **not** run lint yet. The workflow was written while `master` still had lint errors, and its closing comment records that reason (decision DEC-26).
+- `master` now lints with 0 errors. Warnings remain, and they do not fail `npm run lint`. Run it yourself before you open a pull request, and check that your change adds no error.
+- The **release** workflow does run lint, through `npm run verify`. A lint error fails the release.
 
 ## Releasing
 

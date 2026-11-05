@@ -165,7 +165,7 @@ Each entry says what the module owns and what it depends on. "Pure" means no run
 - AC-ARCH-03.4: three named pure modules import nothing from `"obsidian"`, type imports included.
 - AC-ARCH-11.1 to 11.3 and 11.5: the calendar view chain (`CalendarView.ts` → `calendar.ts` → `calendarDots.ts`) takes one required `deps: CalendarDeps` parameter and never reads `app.vault`. AC-ARCH-11.4 (the view renders and reacts to a vault change with fake ports only) is asserted in `src/ui/calendarFakes.test.ts`.
 
-**moment follows the same idea.** `src/` imports moment as a type only. At runtime every module reads `window.moment`, the copy Obsidian provides, so the bundle carries no second copy. In tests, `src/ui/test-setup.ts` puts the npm `moment` package on `window.moment`.
+**moment follows the same idea.** No module under `src/` imports `"moment"`, not even as a type. The `Moment` type comes from `src/types.ts`, which reads it off `window.moment` (`ReturnType<typeof window.moment>`). At runtime every module reads `window.moment`, the copy Obsidian provides, so the bundle carries no second copy. The Obsidian lint preset warns on a `"moment"` import (`@typescript-eslint/no-restricted-imports`). The one exception is `src/ui/test-setup.ts`, which puts the npm `moment` package on `window.moment` for the tests.
 
 ## Data flows
 
