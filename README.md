@@ -22,6 +22,7 @@ The [user manual's quick start](docs/user-manual.md#quick-start) covers the firs
 - [User manual](docs/user-manual.md): every feature, setting and command, with what you should see.
 - [Format and template guide](docs/guide.md): format tokens, week rules and template variables. The settings screen links to it.
 - [Code map](docs/code-map.md): what each module does, how a click becomes a file, and where each backlog epic lives.
+- [API reference](http://anks.pl/obsidian-calendaric/): every module's functions, classes and types, generated from the doc comments by TypeDoc. See [Build the API docs](#build-the-api-docs).
 - [Backlog](docs/backlog/README.md): the user stories and acceptance criteria. Run `python3 docs/backlog/report.py` for progress.
 
 ## Development
@@ -34,9 +35,19 @@ npm test             # vitest, once
 npm run verify       # the release gates: typecheck, lint, test
 npm run check:ac     # every passing acceptance criterion is backed by a test
 npm run release-check  # manifest.json, versions.json and tag checks
+npm run docs         # API reference into dist/docs/
 ```
 
 To try a change, copy the fresh `main.js` into the vault's plugin folder and reload Obsidian.
+
+### Build the API docs
+
+1. Run `npm run docs`. TypeDoc reads the settings in `typedoc.json`.
+2. Open `dist/docs/index.html` in a browser.
+
+- The output folder is gitignored. Never commit it.
+- Any TypeDoc warning fails the command, for example a `{@link}` to a name that does not exist.
+- `.github/workflows/docs.yml` runs the same command on every push to `master` and publishes the result to <http://anks.pl/obsidian-calendaric/> through GitHub Pages.
 
 ### Linting
 

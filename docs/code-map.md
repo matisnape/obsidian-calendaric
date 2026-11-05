@@ -9,7 +9,7 @@ Calendaric is an Obsidian plugin written in TypeScript. esbuild bundles `src/mai
 - `src/adapters/` holds the only code that calls Obsidian's API. Each `*Port.ts` file is an interface, and each `obsidian*Adapter.ts` file implements one against the real app.
 - `src/arch.test.ts` fails the test run when a module breaks those rules.
 
-To find the code for a feature, start from the [epic table](#where-each-epic-lives). To follow a click to the disk, read [Data flows](#data-flows).
+To find the code for a feature, start from the [epic table](#where-each-epic-lives). To follow a click to the disk, read [Data flows](#data-flows). For one function's signature and doc comment, use the [API reference](#api-reference).
 
 <details>
 <summary>Glossary</summary>
@@ -269,6 +269,18 @@ To find the code behind one criterion, search for its id: `grep -rn "AC-CAL-05.3
 | Type-check, tests included | `npm run typecheck` |
 | Build `main.js` | `npm run build` |
 | Typecheck, lint and test as one gate | `npm run verify` |
+| Build the API reference | `npm run docs` |
+
+## API reference
+
+TypeDoc turns the doc comments in `src/` into HTML pages, one per module.
+
+- **Published site:** <http://anks.pl/obsidian-calendaric/>. `.github/workflows/docs.yml` rebuilds it on every push to `master`.
+- **Local build:** `npm run docs` writes the pages to `dist/docs/`. Open `dist/docs/index.html`. The folder is gitignored.
+- **What it covers:** every module under `src/`, except `*.test.ts` files and `src/__mocks__/`. The settings live in `typedoc.json`.
+- **Types a module does not export** still get a page, under that module's `<internal>` group. The `typedoc-plugin-missing-exports` plugin adds them, so a signature never names a type you cannot open.
+- **Obsidian's own types** are not documented here. A reference to one links to Obsidian's API docs instead.
+- **Warnings fail the build** (`treatWarningsAsErrors`). A broken `{@link}` or a bad doc tag stops `npm run docs` with a non-zero exit code.
 
 ## Where to look when something breaks
 

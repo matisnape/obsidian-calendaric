@@ -15,7 +15,8 @@
 		"verify": "node scripts/verify.mjs",
 		"release-check": "node scripts/release-check.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"prepare": "npm run build"
+		"prepare": "npm run build",
+		"docs": "typedoc"
 	},
 	"keywords": [],
 	"license": "0-BSD",
@@ -29,6 +30,8 @@
 		"jiti": "2.6.1",
 		"moment": "^2.30.1",
 		"tslib": "2.4.0",
+		"typedoc": "0.28.20",
+		"typedoc-plugin-missing-exports": "4.1.4",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "8.35.1",
 		"vitest": "^3.2.4"
