@@ -62,6 +62,24 @@ This lets you encode the full date range of the week directly in the filename, w
 
 ---
 
+## Note groups
+
+Each kind of periodic note has its own group under **Periodic notes** in the
+settings: **Daily Notes**, **Weekly Notes**, **Monthly Notes** and **Yearly Notes**.
+Switch a group on with the toggle next to its name. Every group offers the same settings:
+
+| Setting | What it does |
+|---|---|
+| **Format** | The filename of the group's notes. See [Format Field](#format-field). |
+| **Note folder** | The folder new notes of the group are placed in. |
+| **Daily Note Template**, **Weekly Note Template**, **Monthly Note Template**, **Yearly Note Template** | The file a new note's body is copied from. See [Template Variables](#template-variables). |
+| **Allow prefix matching** | Also recognises a note whose filename starts with the date and then carries extra text. |
+| **Open on startup** | Opens the group's note when the vault opens. Only one group can have it on, and only while the group is switched on. |
+
+**Quarterly Notes** and **Custom Notes** are shown, but cannot be switched on yet.
+
+---
+
 ## Commands
 
 Open the command palette and type a command's name.
@@ -72,15 +90,15 @@ Open the command palette and type a command's name.
 | **Reveal active note** | Shows the period of the daily or weekly note in the active pane in the calendar. |
 | **Open date switcher** | Type a date in words, like last monday or next week, to open that period's note. Needs the Natural Language Dates plugin enabled. |
 
-Each switched-on group (**Daily Notes**, **Weekly Notes**) adds its own commands:
+Each switched-on group (**Daily Notes**, **Weekly Notes**, **Monthly Notes**, **Yearly Notes**) adds its own commands:
 
 | Command | What it does |
 |---|---|
-| **Open current daily note**, **Open current weekly note** | Opens the note for the period that holds today, creating it first when the vault has none. |
-| **Open next daily note**, **Open next weekly note** | Opens the note for the period after the note in the active pane, creating it first when the vault has none. |
-| **Open previous daily note**, **Open previous weekly note** | The same, for the period before. |
-| **Jump forward to next existing daily note**, **Jump forward to next existing weekly note** | Opens the closest existing note after the one in the active pane. It never creates a note. |
-| **Jump backward to previous existing daily note**, **Jump backward to previous existing weekly note** | The same, before the one in the active pane. |
+| **Open current daily note**, **Open current weekly note**, **Open current monthly note**, **Open current yearly note** | Opens the note for the period that holds today, creating it first when the vault has none. |
+| **Open next daily note**, **Open next weekly note**, **Open next monthly note**, **Open next yearly note** | Opens the note for the period after the note in the active pane, creating it first when the vault has none. |
+| **Open previous daily note**, **Open previous weekly note**, **Open previous monthly note**, **Open previous yearly note** | The same, for the period before. |
+| **Jump forward to next existing daily note**, **Jump forward to next existing weekly note**, **Jump forward to next existing monthly note**, **Jump forward to next existing yearly note** | Opens the closest existing note after the one in the active pane. It never creates a note. |
+| **Jump backward to previous existing daily note**, **Jump backward to previous existing weekly note**, **Jump backward to previous existing monthly note**, **Jump backward to previous existing yearly note** | The same, before the one in the active pane. |
 
 The palette lists the next, previous and jump commands only while the active pane holds a note of that group.
 
@@ -89,6 +107,8 @@ The palette lists the next, previous and jump commands only while the active pan
 ## Template Variables
 
 Template variables are substituted in the body of a note when it is created. They are distinct from Format tokens and are not valid in the **Format** field.
+
+**Monthly Notes** and **Yearly Notes** have no variables of their own. The universal ones work in them.
 
 ### Universal
 

@@ -157,8 +157,8 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 		const quarterInputs = Array.from(quarterGroup!.querySelectorAll("input"));
 		expect(quarterInputs).not.toHaveLength(0);
 		expect(quarterInputs.every((input) => input.disabled)).toBe(true);
-		// Only day and week carry the row at all.
-		expect(startupRows(tab)).toHaveLength(2);
+		// Quarter carries no row at all: day, week, month and year do.
+		expect(startupRows(tab)).toHaveLength(4);
 	});
 
 	it("AC-CMD-09.6 (reserved quarter): a stored quarter startup flag opens nothing, not even a quarter note that exists", async () => {
@@ -175,16 +175,16 @@ describe("US-CMD-09: the settings that startUp reads", () => {
 		expect(p.vault.listNotes().map((note) => note.path)).toEqual(["2026-Q2.md"]);
 	});
 
-	it("AC-CMD-09.6 (not enabled): a switched-off day or week cannot be set to open on startup until it is switched on", async () => {
+	it("AC-CMD-09.6 (not enabled): a switched-off granularity cannot be set to open on startup until it is switched on", async () => {
 		const settings = settingsWith("week");
 		const tab = makeTab(settings);
 		const startupToggles = () => startupRows(tab).map((row) => row.querySelector("input") as HTMLInputElement);
-		expect(startupToggles().map((input) => input.disabled)).toEqual([true, false]);
+		expect(startupToggles().map((input) => input.disabled)).toEqual([true, false, true, true]);
 
 		const dayEnabled = tab.containerEl.querySelector(".periodic-group-heading input") as HTMLInputElement;
 		await handlers.get(dayEnabled)!(true);
 
-		expect(startupToggles().map((input) => input.disabled)).toEqual([false, false]);
+		expect(startupToggles().map((input) => input.disabled)).toEqual([false, false, true, true]);
 	});
 
 	it("AC-CMD-09.6 (not enabled): a startup flag on a switched-off granularity opens and writes nothing", async () => {

@@ -247,12 +247,10 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private renderPeriodicNotesSection(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Periodic notes").setHeading();
 
+		// Registry order, so a reserved granularity keeps its place between the others.
 		for (const entry of GRANULARITY_REGISTRY) {
 			if ("settings" in entry) this.renderPeriodicGroup(containerEl, entry.id);
-		}
-
-		for (const entry of GRANULARITY_REGISTRY) {
-			if (!("settings" in entry)) this.renderPlaceholderGroup(containerEl, entry.label);
+			else this.renderPlaceholderGroup(containerEl, entry.label);
 		}
 		this.renderPlaceholderGroup(containerEl, "Custom Notes");
 	}

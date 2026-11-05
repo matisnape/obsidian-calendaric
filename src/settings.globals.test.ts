@@ -206,3 +206,68 @@ describe("US-SET-02 global settings", () => {
 		}
 	});
 });
+
+// US-SET-08: monthly and yearly notes get the same editable group as daily and weekly.
+function group(tab: CalendaricSettingsTab, label: string): HTMLElement {
+	const found = Array.from(tab.containerEl.querySelectorAll<HTMLElement>(".periodic-group")).find(
+		(el) => el.querySelector(".periodic-group-title > span")?.textContent === label,
+	);
+	if (!found) throw new Error(`no group named ${label}`);
+	return found;
+}
+
+const enableToggle = (el: HTMLElement) =>
+	el.querySelector(".periodic-group-heading .setting-item-control input") as HTMLInputElement;
+
+const fieldNames = (el: HTMLElement) =>
+	Array.from(el.querySelectorAll(".periodic-group-content .setting-item-name")).map((name) => name.textContent);
+
+const fieldsOf = (adjective: string) => [
+	"Format",
+	"Note folder",
+	`${adjective} Note Template`,
+	"Allow prefix matching",
+	"Open on startup",
+];
+
+describe("US-SET-08 monthly and yearly settings", () => {
+	it("AC-SET-08.1: the Monthly and Yearly Notes toggles switch on, and the groups offer the daily and weekly fields", () => {
+		expect(fieldNames(group(renderTab().tab, "Daily Notes"))).toEqual(fieldsOf("Daily"));
+		expect(fieldNames(group(renderTab().tab, "Weekly Notes"))).toEqual(fieldsOf("Weekly"));
+
+		for (const [label, adjective, id] of [
+			["Monthly Notes", "Monthly", "month"],
+			["Yearly Notes", "Yearly", "year"],
+		] as const) {
+			const { tab, plugin } = renderTab();
+			expect(fieldNames(group(tab, label))).toEqual(fieldsOf(adjective));
+			// A fresh tab shows the default format with no problem line under it.
+			expect(group(tab, label).querySelector(".calendaric-setting-problem")?.textContent).toBe("");
+
+			const toggle = enableToggle(group(tab, label));
+			expect(toggle.disabled).toBe(false);
+			toggle.checked = true;
+			toggle.dispatchEvent(new Event("change"));
+
+			expect(plugin.settings[id].enabled).toBe(true);
+			const stored = plugin.saved as StoredConfig;
+			expect(stored.calendarSets.find((set) => set.id === stored.activeCalendarSet)?.[id]?.enabled).toBe(true);
+		}
+	});
+
+	it("AC-SET-08.4: neither month nor year is a placeholder, and quarter stays a locked placeholder in registry order", () => {
+		const { tab } = renderTab();
+		const titles = Array.from(tab.containerEl.querySelectorAll(".periodic-group-title > span")).map((el) => el.textContent);
+		expect(titles).toEqual(["Daily Notes", "Weekly Notes", "Monthly Notes", "Quarterly Notes", "Yearly Notes", "Custom Notes"]);
+
+		for (const label of ["Monthly Notes", "Yearly Notes"]) {
+			expect(enableToggle(group(tab, label)).disabled, label).toBe(false);
+			expect(group(tab, label).querySelector(".periodic-group-content"), label).not.toBeNull();
+		}
+		for (const label of ["Quarterly Notes", "Custom Notes"]) {
+			expect(enableToggle(group(tab, label)).disabled, label).toBe(true);
+			expect(enableToggle(group(tab, label)).checked, label).toBe(false);
+			expect(group(tab, label).querySelector(".periodic-group-content"), label).toBeNull();
+		}
+	});
+});
