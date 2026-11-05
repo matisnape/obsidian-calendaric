@@ -67,6 +67,11 @@ def build(text: str) -> tuple[str, list]:
     for ac, reason in appendix.items():
         if not reason:
             problems.append(f"{ac} is in the appendix with no reason")
+        if ac in by_ac:
+            problems.append(f"{ac} is both in the appendix and on a Covers line")
+    defined = set(re.findall(r"^#+ (QA-[A-Z]+-\d+)", text, re.M))
+    for ref in sorted(set(re.findall(r"QA-[A-Z]+-\d+", text)) - defined):
+        problems.append(f"{ref} is referred to but no scenario has that id")
 
     human = [ac for ac, kind in known.items() if kind in HUMAN_KINDS]
     rows, clicked, listed = [], 0, 0

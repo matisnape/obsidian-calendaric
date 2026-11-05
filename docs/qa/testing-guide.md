@@ -150,12 +150,12 @@ Install these only when a scenario asks. Install them from **Settings → Commun
 
 | Plugin | Needed by | Notes |
 |---|---|---|
-| Natural Language Dates (`nldates-obsidian`) | QA-P-05, QA-CMD-10 | The date switcher only exists while it is enabled. |
-| Calendar (by Liam Cain) | QA-MIG-03 | Disable it again after the scenario. |
-| Periodic Notes (by Liam Cain) | QA-MIG-04, QA-MIG-05 | Disable it again after the scenario. |
-| Core **Daily notes** | QA-MIG-01, QA-MIG-02 | A core plugin, under **Settings → Core plugins**. |
+| Natural Language Dates (`nldates-obsidian`) | QA-P-05, QA-CAL-09, QA-CMD-02 | The date switcher only exists while it is enabled. |
+| Calendar (by Liam Cain) | QA-MIG-02 | Disable it again after the scenario. |
+| Periodic Notes (by Liam Cain) | QA-MIG-03 | Disable it again after the scenario. |
+| Core **Daily notes** | QA-MIG-01, QA-MIG-04 | A core plugin, under **Settings → Core plugins**. |
 
-While a predecessor plugin is enabled, Calendaric refuses to create notes for the granularity that plugin also manages. That is the feature tested in QA-MIG-06. Disable predecessors after their scenario, or later scenarios fail for the wrong reason.
+While a predecessor plugin is enabled, Calendaric refuses to create notes for the granularity that plugin also manages. That is the feature tested in QA-MIG-04. Disable predecessors after their scenario, or later scenarios fail for the wrong reason.
 
 ### Switch on monthly, yearly or quarter notes by hand
 
@@ -279,7 +279,8 @@ Clean up: delete the notes this scenario created. Turn **Confirm before creating
 
 ### QA-P-06 Date switcher with no active pane (exploratory)
 
-- Covers: none. AC-CMD-10.6 is in the [appendix](#not-testable-by-clicking), because no click path is known to reach the state it describes.
+- Covers: none.
+- Why: the criterion it explores is in the [appendix](#not-testable-by-clicking), because no click path is known to reach the state it describes.
 - `DISCREPANCY`: the release checklist says "no command with no pane open". The code hides the command only when Obsidian reports no active view at all. Closing every tab still leaves Obsidian's empty "New tab" pane, which is expected to count as an active view.
 - Preconditions: as QA-P-05, with Natural Language Dates enabled.
 
@@ -401,7 +402,7 @@ Clean up: delete `2026-04-25.md` and `2026-04-26.md`.
 #### QA-NOTE-07 Startup opens a note in a new tab
 
 - Covers: AC-NOTE-06.3
-- Preconditions: setup done. See QA-CMD-09 for the full startup scenario; this step only checks where the note opens.
+- Preconditions: setup done. See QA-CMD-05 for the full startup scenario; this step only checks where the note opens.
 
 | # | Action | Expected result |
 |---|---|---|
@@ -595,11 +596,11 @@ Clean up: delete both monthly notes. Switch monthly notes off again.
 |---|---|---|
 | 1 | Look at **Words per dot** in settings. | It shows `250`. |
 | 2 | Set **Words per dot** to `10`. | The 6 April cell's word-count dot fills more segments at once. No reload. |
-| 3 | Rest the pointer on the 6 April cell, no key held. | A detail box appears listing **Note exists** and **25 words**, with an **Open note** button. |
+| 3 | Rest the pointer on the 6 April cell, no key held. | A detail box appears listing **Note exists** and **25 words**. It has no button: hover only shows. |
 | 4 | Move the pointer off the cell and away from the box. | The box closes within about a quarter of a second. |
 | 5 | Rest the pointer on 9 April (no note). | No detail box. |
 | 6 | Select the calendar, then press Tab until 6 April has focus. | The same detail box appears, without the mouse. |
-| 7 | On a touchscreen laptop only: tap the 6 April cell. | The same detail appears. Skip on other machines and say so. |
+| 7 | On a touchscreen laptop only: tap the 6 April cell. | The same detail appears, now with an **Open note** button. Skip on other machines and say so. |
 
 Clean up: set **Words per dot** back to `250`.
 
@@ -667,7 +668,7 @@ Clean up: delete `Elsewhere/`.
 | # | Action | Expected result |
 |---|---|---|
 | 1 | Open today's daily note (run **Open current daily note**, create it if asked). | A label at the top says **Today**. |
-| 2 | Open `2026-04-06`. | The label names that day relative to today, such as "7 months ago". It follows the note's date, not today. |
+| 2 | Open `2026-04-06`. | The label names that day relative to today, such as "213 days ago": a day note counts in days. It follows the note's date, not today. |
 | 3 | Open `Notes/Meeting`. | No label. The note text is unchanged. |
 | 4 | Turn **Allow prefix matching** on in **Daily Notes**. Open `2026-04-20, travel day`. | The label shows a `≈` marker. Its tooltip says the match is inexact. `2026-04-06` shows no marker. |
 | 5 | With `2026-04-06` open, turn **Show period label** off. | The label disappears from the open note without reopening it. |
@@ -708,8 +709,8 @@ Clean up: delete `2026-04-09`. Turn **Allow prefix matching** off.
 |---|---|---|
 | 1 | Type `0` into **Words per dot** and leave the field. | Message: "Not a positive whole number, so the default of 250 is used." |
 | 2 | Repeat with `-3`, then `abc`. | The same message each time. |
-| 3 | In **Daily Notes**, type `[` into **Format**. | A message starting "Not saved:" appears and the field is marked invalid. |
-| 4 | Restore **Format** to empty (the default). Set **Note Folder** to `Not/Yet` and leave it. | "Saved, but Not/Yet does not exist yet. It is created with the first note." |
+| 3 | In **Daily Notes**, type `YYYY:MM` into **Format**. | A message starting "Not saved:" says `":" cannot appear in a filename on Windows`. The field is marked invalid. |
+| 4 | Set **Format** back to `YYYY-MM-DD`. Leaving it empty is also "Not saved:", because an empty format is an error. Set **Note Folder** to `Not/Yet` and leave it. | "Saved, but Not/Yet does not exist yet. It is created with the first note." |
 | 5 | Close settings and reopen them. Expand **Daily Notes**. | **Note Folder** still says `Not/Yet`, with the same warning. |
 | 6 | Select **Format & template guide** under **Format**. | The guide opens in the browser. No error. |
 | 7 | Select **Syntax reference**. | The moment.js format page opens. |
@@ -905,11 +906,13 @@ Clean up: switch core **Daily notes** off. Redo setup step 5 if values changed.
 | 1 | Open **Settings → Calendaric**. | No "Calendar plugin detected" card. |
 | 2 | Enable the Calendar plugin. In its settings set week start to Sunday, turn on "Show week number" and "Confirm before creating new note", words per dot 300. | — |
 | 3 | Open **Settings → Calendaric**. | A "Calendar plugin detected" card lists each incoming value as `"current" → "incoming"`, with **Import settings**. |
-| 4 | Select **Import settings**. | A "Calendar plugin import" dialog lists values Calendaric already has. Select **Keep my values**: nothing changes. |
-| 5 | Select **Import settings** again, tick every row, select **Import selected**. | **Start week on** is **Sunday**, **Words per dot** is `300`, and the others match. |
+| 4 | Select **Import settings**. | No dialog: none of these values was set by you. The import applies at once. **Start week on** is **Sunday**, **Words per dot** is `300`, **Show week numbers** and **Confirm before creating new note** are on. |
+| 5 | Look at the card. | The "Calendar plugin detected" card is still there and says "Calendaric already has every value it can import." |
 | 6 | Close Obsidian. In `.obsidian/plugins/calendar/data.json`, set every field the import reads to empty or remove it: `weeklyNoteFormat`, `weeklyNoteTemplate`, `weeklyNoteFolder`, `weekStart`, `shouldConfirmBeforeCreate`, `wordsPerDot`, `showWeeklyNote`, `localeOverride`. Reopen. | No Calendar import is offered. |
 | 7 | Set only `"weekStart": "monday"`, `"shouldConfirmBeforeCreate": true`, `"wordsPerDot": 250`, `"showWeeklyNote": true`, `"localeOverride": "system-default"`, with the three weekly fields empty. Reopen. | The Calendar import is offered again. |
-| 8 | (Weekly config.) Set `"weeklyNoteFolder": "CalWeekly"` and `"weeklyNoteFormat": "gggg-[W]ww"`. Reopen and import. | **Weekly Notes** gets folder `CalWeekly` and is on. |
+| 8 | (Weekly config.) Set `"weeklyNoteFolder": "CalWeekly"` and `"weeklyNoteFormat": "gggg-[W]ww"`. Reopen and select **Import settings**. | A "Calendar plugin import" dialog lists **Weekly note folder** — yours: "Journal/Weekly" · Calendar plugin: "CalWeekly". |
+| 9 | Select **Keep my values**. | **Weekly Notes** keeps folder `Journal/Weekly`. |
+| 10 | Select **Import settings** again, tick the row, select **Import selected**. | **Weekly Notes** gets folder `CalWeekly` and is on. |
 
 Clean up: disable the Calendar plugin. Redo setup steps 5 and 6.
 
@@ -980,7 +983,7 @@ ARCH criteria about the build, CI, code layout or the review process are listed 
 | AC-ARCH-05.3 | Compile-time contract of the indicator interface. Checked by the type checker. |
 | AC-ARCH-05.4 | File footprint of a change. Checked in code review. |
 | AC-ARCH-06.1 | Clean-checkout build. A build fact, checked in CI. Setup step 1 exercises it once. |
-| AC-ARCH-06.3 | Release tag matches `manifest.json`. A release fact, checked by `scripts/release-check`. |
+| AC-ARCH-06.3 | Release tag matches `manifest.json`. A release fact, checked by `scripts/release-check.mjs`. |
 | AC-ARCH-06.4 | `minAppVersion` against the APIs used. Checked against Obsidian's changelog. |
 | AC-ARCH-06.5 | Build fails when a gate fails. A build fact. |
 | AC-ARCH-06.6 | Build fails loudly when a gate cannot run. A build fact. |
@@ -1045,7 +1048,7 @@ Generated by `python3 docs/qa/coverage.py --write`, from two sources:
 Run `python3 docs/qa/coverage.py --check` to confirm the table is current. It fails when a criterion is in neither place, when this file names an id that does not exist, or when the table is stale.
 
 <!-- coverage:start -->
-214 integration and manual criteria: 182 covered by a scenario, 32 listed as not testable by clicking. Scenarios also touch 1 unit criteria, not listed here.
+214 integration and manual criteria: 181 covered by a scenario, 33 listed as not testable by clicking. Scenarios also touch 1 unit criteria, not listed here.
 
 | AC | testable_by | Scenario |
 |---|---|---|
@@ -1173,7 +1176,7 @@ Run `python3 docs/qa/coverage.py --check` to confirm the table is current. It fa
 | AC-CMD-10.3 | integration | QA-P-05 |
 | AC-CMD-10.4 | integration | QA-P-05 |
 | AC-CMD-10.5 | integration | QA-P-05 |
-| AC-CMD-10.6 | integration | QA-P-06 |
+| AC-CMD-10.6 | integration | not testable by clicking |
 | AC-CMD-10.7 | integration | QA-P-05 |
 | AC-FMT-03.3 | manual | QA-P-04, QA-FMT-01 |
 | AC-FMT-04.6 | integration | QA-NOTE-03 |
