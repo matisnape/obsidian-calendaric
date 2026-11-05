@@ -106,6 +106,11 @@ NO_REGRESSION_IDS = frozenset({
                       # reading GitHub's check-run API. Neither side is here.
     "AC-MIG-01.1",    # code review of settings.ts: testable_by manual
     "AC-MIG-01.5",    # code review of the import modal: testable_by manual
+    "AC-ARCH-06.7",   # settled by a real `npm install git+file://` into an
+                      # empty consumer project; the install runs npm's own git
+                      # source path, which no in-repo test drives.
+    "AC-ARCH-09.3",   # settled by a real failing pull_request run on GitHub;
+                      # the observed event is GitHub's, not this repository's.
 })
 
 
