@@ -49,6 +49,7 @@ export default defineConfig(
 		// Node CLI scripts: console is their output, not stray debugging. The
 		// plugin reports no-console through rule-custom-message, so that rule is
 		// re-set here with its no-new-func entry kept and no-console left out.
+		// The no-new-func entry is copied from eslint-plugin-obsidianmd 0.4.0; recheck it on upgrade.
 		files: ["scripts/**"],
 		rules: {
 			"obsidianmd/rule-custom-message": [
