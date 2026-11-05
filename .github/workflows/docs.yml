@@ -1,0 +1,54 @@
+name: API docs
+
+# Builds the TypeDoc API reference and publishes it to GitHub Pages
+# (http://anks.pl/obsidian-calendaric/). Pages is set to "GitHub Actions" as its
+# source in the repository settings. Runs on master only, so the site always
+# matches the merged code, and by hand from the Actions tab.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One Pages deployment at a time. A newer push waits for the running deploy
+# instead of cancelling it halfway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: build and deploy API docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Keep this version equal to the node pin in mise.toml, as in ci.yml.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.12.0
+          cache: npm
+
+      # --ignore-scripts because package.json's prepare hook builds main.js,
+      # which the docs do not need.
+      - name: install
+        run: npm ci --ignore-scripts
+
+      - name: docs
+        run: npm run docs
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
