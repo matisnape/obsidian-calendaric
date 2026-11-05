@@ -13,6 +13,8 @@ import { VIEW_TYPE_CALENDAR } from "../ui/viewType";
 import { PeriodicNoteIndex } from "../notes/periodicNoteIndex";
 import type { PeriodicConfigs } from "../notes/periodicNoteIndex";
 import type { PeriodNotePorts } from "../notes/periodNoteOpen";
+import { startUp } from "../notes/periodNoteOpen";
+import { COMMAND_ACTIONS } from "../commands/granularityCommands";
 import { restoreLocale } from "../fmt/locale";
 import { GRANULARITIES, toSettings } from "./model";
 import type { StoredConfig } from "./model";
@@ -76,6 +78,12 @@ class FakeCommandHost {
 
 	has(id: string): boolean {
 		return this.palette.has(`calendaric:${id}`);
+	}
+
+	run(id: string): void {
+		const command = this.palette.get(`calendaric:${id}`);
+		if (!command?.callback) throw new Error(`no command ${id} in the palette`);
+		command.callback();
 	}
 }
 
@@ -557,5 +565,71 @@ describe("a saved change on the settings screen", () => {
 
 		expect(host.has("week-open-current")).toBe(false);
 		expect(refresh).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("US-SET-08: monthly and yearly notes switched on and off on the settings screen", () => {
+	const GROUPS = [
+		{ id: "month", label: "Monthly Notes", folder: "Monthly", format: "YYYY-[M]MM" },
+		{ id: "year", label: "Yearly Notes", folder: "Yearly", format: "[Y]YYYY" },
+	] as const;
+
+	function enableToggle(tab: CalendaricSettingsTab, label: string): HTMLInputElement {
+		const group = Array.from(tab.containerEl.querySelectorAll(".periodic-group")).find(
+			(el) => el.querySelector(".periodic-group-title > span")?.textContent === label,
+		);
+		const input = group?.querySelector(".periodic-group-heading input");
+		expect(input, label).toBeTruthy();
+		return input as HTMLInputElement;
+	}
+
+	async function switchGroup(tab: CalendaricSettingsTab, label: string, on: boolean): Promise<void> {
+		const toggle = enableToggle(tab, label);
+		toggle.checked = on;
+		await toggleHandlers.get(toggle)!(on);
+	}
+
+	async function settingsScreen() {
+		const loaded = await loadedPlugin();
+		const app = loaded.plugin.app as unknown as App;
+		const tab = new CalendaricSettingsTab(app, loaded.plugin, makeSettingsTabPorts(app));
+		tab.display();
+		return { ...loaded, tab };
+	}
+
+	it("AC-SET-08.2: switching the group on adds its commands, and Open current writes this period's note in the folder and format", async () => {
+		for (const { id, label, folder, format } of GROUPS) {
+			const { plugin, host, vault, tab } = await settingsScreen();
+			plugin.settings[id].folder = folder;
+			plugin.settings[id].format = format;
+			expect(host.has(`${id}-open-current`)).toBe(false);
+
+			await switchGroup(tab, label, true);
+
+			for (const action of COMMAND_ACTIONS) expect(host.has(`${id}-${action}`), `${id}-${action}`).toBe(true);
+			host.run(`${id}-open-current`);
+			await settle();
+			expect(vault.listNotes().map((file) => file.path)).toEqual([`${folder}/${window.moment().format(format)}.md`]);
+		}
+	});
+
+	it("AC-SET-08.3: switching the group off removes its commands, and opening the vault then writes no note of it", async () => {
+		for (const { id, label, folder, format } of GROUPS) {
+			const { plugin, host, vault, tab } = await settingsScreen();
+			plugin.settings[id].folder = folder;
+			plugin.settings[id].format = format;
+			await switchGroup(tab, label, true);
+			expect(host.has(`${id}-open-current`)).toBe(true);
+			plugin.settings[id].openAtStartup = true;
+
+			await switchGroup(tab, label, false);
+
+			for (const action of COMMAND_ACTIONS) expect(host.has(`${id}-${action}`), `${id}-${action}`).toBe(false);
+			// Still set, so the startUp below tests the switch-off rather than a cleared flag.
+			expect(plugin.settings[id].openAtStartup).toBe(true);
+			const ports: PeriodNotePorts = { vault, vaultConfig: new FakeVaultConfigPort(""), workspace: new FakeWorkspacePort() };
+			await startUp(plugin.settings, window.moment(), ports);
+			expect(vault.listNotes()).toEqual([]);
+		}
 	});
 });

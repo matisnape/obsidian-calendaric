@@ -196,10 +196,27 @@ describe("the guide's names", () => {
 	it("AC-ARCH-08.4: every command the plugin registers is named in bold in the guide", () => {
 		const named = new Set([...prose.matchAll(/\*\*([^*]+)\*\*/g)].map(([, name]) => name!.trim()));
 		// Commands exist only for a switched-on group, and only a group with a
-		// settings section can be switched on; monthly and yearly are placeholders.
+		// settings section can be switched on; quarter is a placeholder (DEC-23).
 		const switchable = RELEASE_GRANULARITIES.filter((g) => "settings" in GRANULARITY[g]);
 
 		expect([...commandNames(switchable)].filter((name) => !named.has(name))).toEqual([]);
+	});
+
+	it("AC-SET-08.5: the guide names the monthly and yearly groups, their settings and their commands in bold", () => {
+		const named = new Set([...prose.matchAll(/\*\*([^*]+)\*\*/g)].map(([, name]) => name!.trim()));
+		const expected = [
+			...(["month", "year"] as const).flatMap((g) => [
+				GRANULARITY[g].label,
+				...COMMAND_ACTIONS.map((action) => commandName(g, action)),
+			]),
+			"Monthly Note Template",
+			"Yearly Note Template",
+		];
+		// Read off the tab and the palette, so a renamed group, field or command fails here too.
+		const known = new Set([...settingNames(), ...commandNames()]);
+		expect(expected.filter((name) => !known.has(name))).toEqual([]);
+
+		expect(expected.filter((name) => !named.has(name))).toEqual([]);
 	});
 
 	it("AC-ARCH-08.5: the guide quotes no name outside bold, where the check above cannot see it", () => {
