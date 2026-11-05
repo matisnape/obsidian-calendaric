@@ -287,9 +287,10 @@ Clean up: delete the notes this scenario created. Turn **Confirm before creating
 | # | Action | Expected result |
 |---|---|---|
 | 1 | Close every tab in the main area. | Obsidian shows an empty new tab. |
-| 2 | Open the command palette and type `date switcher`. | Expected from the code: **Open date switcher** is still listed. Record what you see. Either result is information, not a failure. |
+| 2 | Open the command palette and type `date switcher`. | **Open date switcher** is still listed (the code's behaviour, see `DISCREPANCY` above). |
 
-- [ ] Recorded
+- [ ] Pass
+- [ ] Fail
 
 ## Feature scenarios
 
@@ -911,7 +912,7 @@ Clean up: switch core **Daily notes** off. Redo setup step 5 if values changed.
 | 6 | Close Obsidian. In `.obsidian/plugins/calendar/data.json`, set every field the import reads to empty or remove it: `weeklyNoteFormat`, `weeklyNoteTemplate`, `weeklyNoteFolder`, `weekStart`, `shouldConfirmBeforeCreate`, `wordsPerDot`, `showWeeklyNote`, `localeOverride`. Reopen. | No Calendar import is offered. |
 | 7 | Set only `"weekStart": "monday"`, `"shouldConfirmBeforeCreate": true`, `"wordsPerDot": 250`, `"showWeeklyNote": true`, `"localeOverride": "system-default"`, with the three weekly fields empty. Reopen. | The Calendar import is offered again. |
 | 8 | (Weekly config.) Set `"weeklyNoteFolder": "CalWeekly"` and `"weeklyNoteFormat": "gggg-[W]ww"`. Reopen and select **Import settings**. | A "Calendar plugin import" dialog lists **Weekly note folder** — yours: "Journal/Weekly" · Calendar plugin: "CalWeekly". |
-| 9 | Select **Keep my values**. | **Weekly Notes** keeps folder `Journal/Weekly`. |
+| 9 | Select **Keep my values**. | **Weekly Notes** keeps folder `Journal/Weekly`. The values that were no conflict still import: **Start week on** is back to **Monday** and **Words per dot** to `250`. |
 | 10 | Select **Import settings** again, tick the row, select **Import selected**. | **Weekly Notes** gets folder `CalWeekly` and is on. |
 
 Clean up: disable the Calendar plugin. Redo setup steps 5 and 6.
