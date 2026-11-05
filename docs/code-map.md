@@ -68,7 +68,7 @@ Each entry says what the module owns and what it depends on. "Pure" means no run
 
 - **`src/granularity/registry.ts`**: the one list of granularities, `GRANULARITY_REGISTRY`, narrowest first.
   - Each entry (`day.ts`, `week.ts`, `month.ts`, `quarter.ts`, `year.ts`) carries its label, default format, and optional facts: `release` (the first release acts on it), `cell` (the calendar draws it), `settings` (the settings screen edits it).
-  - Only `day` and `week` carry `settings` today, which is why the settings screen shows Monthly and Yearly Notes as disabled placeholders.
+  - Only `day` and `week` carry `settings` today, which is why the settings screen shows Monthly, Quarterly and Yearly Notes (plus a Custom Notes group) as disabled placeholders.
   - Adding a granularity is one module plus one registry entry (US-ARCH-05, tested by `src/registry.test.ts`).
 
 ### Dates and filenames (`src/fmt/`, pure)
@@ -163,7 +163,7 @@ Each entry says what the module owns and what it depends on. "Pure" means no run
 - AC-ARCH-01.2: no domain module imports `"obsidian"` at runtime, or imports an adapter or a view module.
 - AC-ARCH-01.3: `src/main.ts` reaches every layer, and nothing imports `src/main.ts` at runtime.
 - AC-ARCH-03.4: three named pure modules import nothing from `"obsidian"`, type imports included.
-- AC-ARCH-11.1 to 11.5: the calendar view chain (`CalendarView.ts` → `calendar.ts` → `calendarDots.ts`) takes one required `deps: CalendarDeps` parameter and never reads `app.vault`.
+- AC-ARCH-11.1 to 11.3 and 11.5: the calendar view chain (`CalendarView.ts` → `calendar.ts` → `calendarDots.ts`) takes one required `deps: CalendarDeps` parameter and never reads `app.vault`. AC-ARCH-11.4 (the view renders and reacts to a vault change with fake ports only) is asserted in `src/ui/calendarFakes.test.ts`.
 
 **moment follows the same idea.** `src/` imports moment as a type only. At runtime every module reads `window.moment`, the copy Obsidian provides, so the bundle carries no second copy. In tests, `src/ui/test-setup.ts` puts the npm `moment` package on `window.moment`.
 
@@ -240,6 +240,7 @@ The backlog groups stories into epics. `python3 docs/backlog/report.py` shows th
 | SET | The settings model, screen, persistence | `src/settings.ts`, `src/settings/model.ts`, `src/settings/upgrade.ts`, `src/main.ts` (`loadSettings`, `saveSettings`) |
 | CMD | Palette commands, ribbon, startup, date switcher | `src/commands/`, `src/ui/calendarCommand.ts`, `src/ui/dateSwitcherModal.ts`, `src/notes/periodNoteOpen.ts` (`startUp`) |
 | MIG | Imports from predecessors, the predecessor guard, stored-data upgrades | `src/settings/` (`dailyNotesImport.ts`, `periodicNotesImport.ts`, `calendarImport.ts`, `importSource.ts`, the `*Card.ts` and `*Modal.ts` files, `upgrade.ts`), `src/notes/predecessorGuard.ts`, `src/adapters/companionPluginPort.ts`, `src/adapters/communityPluginRegistry.ts` |
+| ICE | Behaviour kept out of the first release, with the evidence for each exclusion | No code: `docs/backlog/epics/ICE.json` only |
 | ARCH | Layering, one registry, testability, build and release gates | `src/arch.test.ts`, `src/arch.duplication.test.ts`, `src/registry.test.ts`, `src/granularity/`, `src/adapters/`, `scripts/verify.mjs`, `scripts/release-check.mjs`, `.github/workflows/ci.yml`, `tsconfig.json` |
 
 To find the code behind one criterion, search for its id: `grep -rn "AC-CAL-05.3" src`.

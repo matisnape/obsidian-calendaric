@@ -58,7 +58,7 @@ You need Obsidian 1.13.7 or later on a desktop computer. Calendaric does not run
 4. Create the folder `<your vault>/.obsidian/plugins/obsidian-calendaric/`. The folder name must be `obsidian-calendaric`, the plugin id.
 5. Copy `main.js`, `manifest.json` and `styles.css` from the clone into that folder.
 6. In Obsidian, open **Settings → Community plugins**. If community plugins are off, turn them on. Reload the list of installed plugins, then switch on **Calendaric**.
-7. Open **Settings → Calendaric**. If the top of the screen shows **Daily Notes plugin detected**, select **Import settings**, then **Disable Daily Notes plugin**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
+7. Open **Settings → Calendaric**. If the top of the screen shows **Daily Notes plugin detected**, select **Import settings**. The card then reads **Daily Notes plugin is still active**: select **Disable Daily Notes**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
 8. Find the calendar in the right sidebar. Its tab is called **Calendar**. If it is not there, run **Open calendar** from the command palette.
 9. Click today's date in the grid.
 
@@ -112,7 +112,7 @@ Cells only react while **Daily Notes** is switched on in the settings.
 
 **What it does:** each number in the **W** column stands for that row's weekly note.
 
-**How to use it:** the same gestures as a day cell. The dialog is titled **New weekly note** and names the week, for example *"The week of November 2, 2026 has no weekly note yet."*.
+**How to use it:** the same gestures as a day cell. The dialog is titled **New weekly note** and names the week, for example *"The week of November 2, 2026 has no weekly note yet. Create …?"*, where … is the file name your weekly format gives.
 
 **What you should see:** the weekly note opens. Which week a row means, and what number it shows, depend on **Start week on** and on the weekly format. The guide explains the rules in [Which week a token reads](guide.md#which-week-a-token-reads).
 
@@ -142,7 +142,7 @@ Week cells only react while **Weekly Notes** is switched on and **Show week numb
 
 - **Note dot**: a small grey circle. The cell's note exists.
 - **Word-count dot**: a small pie of 5 wedges. More filled wedges means more words.
-  - One wedge fills per **Words per dot** words, at least one and at most 5.
+  - One wedge fills per **Words per dot** words, at least one and at most 5. A note with no words gets no word-count dot.
   - With the default of 250: up to 499 words fills 1 wedge, 500 fills 2, 750 fills 3, 1000 fills 4, 1250 or more fills 5.
   - Frontmatter (the `---` block at the top of a note) is not counted.
 
@@ -309,7 +309,7 @@ You can bind hotkeys to any of these in **Settings → Hotkeys**. A hotkey stays
 **What you should see:**
 
 - With an empty box: shortcuts for **Today**, **Yesterday**, **Tomorrow**, and **This**, **Last** and **Next** week, month and year, for the granularities that are on.
-- After you type: matching shortcuts, including weekdays such as **Last Monday**, plus the plugin's reading of your whole phrase.
+- After you type: the shortcuts that match, including weekdays such as **Last Monday**. Only when no shortcut matches does the switcher offer your whole phrase, read as a date.
 - A phrase with "week", "month" or "year" in it opens that granularity's note. Any other phrase opens a day note.
 - Under each suggestion, the name of the note it opens.
 - *"Date not recognised."* when nothing matches. *"Notes for that period are turned off."* when the date is valid but its granularity is off.
@@ -411,7 +411,7 @@ The card **Periodic notes plugin detected** appears while Periodic Notes is on a
 The card **Calendar plugin detected** appears while the Calendar plugin is on and holds a value Calendaric reads.
 
 - It copies week start, confirm-before-create, show week numbers, words per dot and the locale override. These overwrite Calendaric's values without a conflict dialog.
-- It also copies the weekly note format, folder and template, and switches weekly notes on. It skips these when Periodic Notes manages weekly notes.
+- It also copies the weekly note format, folder and template, and switches weekly notes on when it carries at least one of them. It skips these when Periodic Notes manages weekly notes.
 - A value Calendaric cannot use is listed with the reason, for example a week start that is not a weekday.
 - When nothing would change, it says *"Calendaric already has every value it can import."*.
 
