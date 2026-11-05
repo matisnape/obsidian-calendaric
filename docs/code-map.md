@@ -68,7 +68,7 @@ Each entry says what the module owns and what it depends on. "Pure" means no run
 
 - **`src/granularity/registry.ts`**: the one list of granularities, `GRANULARITY_REGISTRY`, narrowest first.
   - Each entry (`day.ts`, `week.ts`, `month.ts`, `quarter.ts`, `year.ts`) carries its label, default format, and optional facts: `release` (the first release acts on it), `cell` (the calendar draws it), `settings` (the settings screen edits it).
-  - Only `day` and `week` carry `settings` today, which is why the settings screen shows Monthly, Quarterly and Yearly Notes (plus a Custom Notes group) as disabled placeholders.
+  - `day`, `week`, `month` and `year` carry `settings`. `quarter` does not, so the settings screen shows Quarterly Notes as a disabled placeholder, in registry order between Monthly and Yearly Notes. A Custom Notes placeholder follows the last group.
   - Adding a granularity is one module plus one registry entry (US-ARCH-05, tested by `src/registry.test.ts`).
 
 ### Dates and filenames (`src/fmt/`, pure)

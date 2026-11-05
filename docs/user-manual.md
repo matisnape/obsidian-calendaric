@@ -170,7 +170,7 @@ Week cells only react while **Weekly Notes** is switched on and **Show week numb
 
 **What you should see:** turning a group on or off changes the calendar and the command palette at once. No restart is needed.
 
-**Monthly and yearly notes, today:** the settings screen cannot switch them on. Their groups, and **Quarterly Notes** and **Custom Notes**, show a toggle that stays off and greyed out. Monthly and yearly notes become active only through the [Periodic Notes import](#periodic-notes-import), or by editing the plugin's `data.json` by hand. Once active, they get their commands, the ribbon menu entry and the month header click. Their group still reads as off on the settings screen.
+**Placeholder groups:** **Quarterly Notes** and **Custom Notes** are shown, but cannot be switched on yet. Their toggle stays off and greyed out.
 
 **Quarter is reserved.** Calendaric stores a quarter configuration so that it survives a save, but it never creates a quarterly note, offers a quarterly command, or opens one at startup.
 
@@ -252,7 +252,7 @@ The other granularities get the same set, with the same rules:
 | Monthly | **Open current monthly note**, **Open next monthly note**, **Open previous monthly note**, **Jump forward to next existing monthly note**, **Jump backward to previous existing monthly note** |
 | Yearly | **Open current yearly note**, **Open next yearly note**, **Open previous yearly note**, **Jump forward to next existing yearly note**, **Jump backward to previous existing yearly note** |
 
-Monthly and yearly commands appear only once those granularities are active. See [Periodic notes by granularity](#periodic-notes-by-granularity).
+A granularity's commands appear only while its group is switched on. See [Periodic notes by granularity](#periodic-notes-by-granularity).
 
 **What you should see:**
 
@@ -346,13 +346,13 @@ Open **Settings → Calendaric**. The screen has, from top to bottom, any [impor
 
 ### Periodic Notes, per group
 
-Each group heading (**Daily Notes**, **Weekly Notes**) has an on/off toggle. Select the heading to show these fields:
+Each group heading (**Daily Notes**, **Weekly Notes**, **Monthly Notes**, **Yearly Notes**) has an on/off toggle. Select the heading to show these fields:
 
 | Setting | What it does |
 |---|---|
 | **Format** | The filename pattern. The line under it shows today's date in that pattern. **Syntax reference** opens the moment.js token list, and **Format & template guide** opens [the guide](guide.md#format-field). An empty field uses the default format, shown as the placeholder. |
 | **Note folder** | The folder new notes go into. A folder that does not exist yet is created with the first note. |
-| **Daily Note Template**, **Weekly Note Template** | The template note's path. See [Templates](#templates). |
+| **Daily Note Template**, **Weekly Note Template**, **Monthly Note Template**, **Yearly Note Template** | The template note's path. See [Templates](#templates). |
 | **Allow prefix matching** | Also counts a note whose filename starts with the date and carries more text, for example `2026-02-09, travel day`. |
 | **Open on startup** | See [Open on startup](#open-on-startup). |
 
@@ -402,7 +402,6 @@ The card **Periodic notes plugin detected** appears while Periodic Notes is on a
 
 - It lists every change as `old → new` before you select **Import settings**.
 - It copies, for each granularity the active set has on: whether it is on, the format, the folder, the template, and prefix matching.
-- This is the only way to switch on monthly and yearly notes from the user interface today.
 - It leaves the other calendar sets and **Open on startup** alone.
 - Once nothing is left to import, the card reads **Periodic notes settings already imported**.
 
