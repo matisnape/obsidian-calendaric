@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from "vitest";
-import moment from "moment";
 import { createNote, createPeriodicNote } from "./noteCreate";
 import { computeNotePath } from "./noteUtils";
 import { openNoteIn } from "./noteOpen";
@@ -8,6 +7,8 @@ import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import { RELEASE_GRANULARITIES } from "../types";
 import type { PeriodicConfig, ReleaseGranularity } from "../types";
+
+const moment = window.moment;
 
 function makeConfig(overrides: Partial<PeriodicConfig> = {}): PeriodicConfig {
 	return {

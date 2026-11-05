@@ -1,6 +1,5 @@
-import type { Moment } from "moment";
 import type { WeekStartOption } from "../settings";
-import type { ICalendarDay, ICalendarMonth } from "../types";
+import type { ICalendarDay, ICalendarMonth, Moment } from "../types";
 import { getWeekNumber } from "../notes/noteUtils";
 import { weekStartDay } from "../fmt/locale";
 

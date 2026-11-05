@@ -1,4 +1,3 @@
-import type { Moment } from "moment";
 import { Menu } from "obsidian";
 import type { App, EventRef, HoverParent, HoverPopover } from "obsidian";
 import type { CalendaricSettings } from "../settings";
@@ -26,7 +25,7 @@ import { computeNoteDate } from "../fmt/noteDate";
 import { resolveEffectiveConfig } from "../settings/model";
 import { RELEASE_GRANULARITIES } from "../types";
 import { granularityEntry } from "../granularity/registry";
-import type { CellGranularity, PeriodicConfig, ReleaseGranularity } from "../types";
+import type { CellGranularity, Moment, PeriodicConfig, ReleaseGranularity } from "../types";
 
 export class CalendarWidget implements HoverParent {
 	/** Page preview writes the popover it opens for a cell here. */

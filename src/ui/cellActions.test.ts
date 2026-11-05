@@ -1,6 +1,4 @@
 import { describe, it, expect } from "vitest";
-import moment from "moment";
-import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
 import {
 	HOVER_LINK_SOURCE,
@@ -16,7 +14,9 @@ import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import type { FoldState, NoteFile, VaultPort } from "../adapters/vaultPort";
 import { FakeVaultConfigPort } from "../adapters/fakeVaultConfigPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
-import type { PeriodicConfig } from "../types";
+import type { Moment, PeriodicConfig } from "../types";
+
+const moment = window.moment;
 
 const dayConfig: PeriodicConfig = {
 	enabled: true,

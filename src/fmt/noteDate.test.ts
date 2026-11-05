@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import moment from "moment";
 import { computeNoteDate } from "./noteDate";
+
+const moment = window.moment;
 
 describe("computeNoteDate", () => {
 	it("AC-FMT-06.1: collapses two times on the same calendar day to the same day-note date", () => {

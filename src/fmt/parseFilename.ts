@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { Granularity } from "../types";
+import type { Granularity, Moment } from "../types";
 import { formatWithWeekTokens, literalWeekTokens, spanWeekStart, WEEKDAY_ISO, weekdayWithin } from "../notes/noteUtils";
 
 export interface ParseFilenameResult {

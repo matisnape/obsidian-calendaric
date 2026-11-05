@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- test setup installs the real package as window.moment, the job Obsidian does at runtime
 import moment from "moment";
 import { installObsidianDom } from "../__mocks__/obsidianDom";
 

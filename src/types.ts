@@ -1,6 +1,18 @@
-import type { Moment } from "moment";
 import { GRANULARITY_REGISTRY } from "./granularity/registry";
 import type { CellId, GranularityIds, ReleaseIds } from "./granularity/registry";
+
+/**
+ * The date type, read off the clock Obsidian hangs on the window. src never
+ * imports "moment": the bundle must not carry a copy, and the pure modules may
+ * not import "obsidian" either, so every file takes the type from here.
+ */
+export type Moment = ReturnType<typeof window.moment>;
+
+/**
+ * A unit `Moment.add` accepts, such as "days" or "quarters". `Parameters` reads
+ * the last overload, `add(unit, amount)`, so the unit is the first argument.
+ */
+export type DurationUnit = Parameters<Moment["add"]>[0];
 
 /** Every granularity, in the order the UI and the commands use: the registry's own order. */
 export const ALL_GRANULARITIES = GRANULARITY_REGISTRY.map((entry) => entry.id) as unknown as GranularityIds;

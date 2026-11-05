@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from "vitest";
-import moment from "moment";
 import { DEFAULT_WORDS_PER_SEGMENT, DotScanner, countWords, wordCountSegments } from "./calendarDots";
 import { getMonthGrid, getWeekAnchor } from "./calendarUtils";
 import { computeNotePath } from "../notes/noteUtils";
@@ -8,6 +7,8 @@ import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import { FakeWorkspacePort } from "../adapters/fakeWorkspacePort";
 import type { CalendarDeps } from "../adapters/calendarDeps";
 import type { PeriodicConfig } from "../types";
+
+const moment = window.moment;
 
 const WEEK_FORMAT = "gggg-[W]ww";
 

@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { Granularity, PeriodicConfig, ReleaseGranularity } from "../types";
+import type { Granularity, Moment, PeriodicConfig, ReleaseGranularity } from "../types";
 import { isReleaseGranularity } from "../types";
 import type { FoldState, NoteFile, VaultPort } from "../adapters/vaultPort";
 import { folderChainSegments, hasUnusableSegment } from "./noteUtils";

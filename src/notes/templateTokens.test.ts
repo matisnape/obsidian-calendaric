@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import moment from "moment";
 import { substituteTemplateTokens } from "./templateTokens";
 import { createNote } from "./noteCreate";
 import { FakeVaultPort } from "../adapters/fakeVaultPort";
 import type { PeriodicConfig } from "../types";
 import { applyLocale, restoreLocale } from "../fmt/locale";
+
+const moment = window.moment;
 
 // {{weekday:fmt}} resolves within the configured week (AC-FMT-03.2); these
 // cases were written for the plugin's default Monday start.

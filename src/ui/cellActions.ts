@@ -1,6 +1,5 @@
-import type { Moment } from "moment";
 import type { HoverParent } from "obsidian";
-import type { CellGranularity, PeriodicConfig } from "../types";
+import type { CellGranularity, Moment, PeriodicConfig } from "../types";
 import type { NoteFile, VaultPort } from "../adapters/vaultPort";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { WorkspacePort } from "../adapters/workspacePort";

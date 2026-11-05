@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { ICalendarMonth, PeriodicConfig } from "../types";
+import type { ICalendarMonth, Moment, PeriodicConfig } from "../types";
 import { computeNotePath } from "../notes/noteUtils";
 import { getWeekAnchor } from "./calendarUtils";
 import type { CalendarDeps } from "../adapters/calendarDeps";

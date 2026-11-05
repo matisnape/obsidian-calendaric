@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import moment from "moment";
+
+const moment = window.moment;
 moment.locale("en");
 import { PeriodicNoteIndex } from "./periodicNoteIndex";
 import type { PeriodicConfigs } from "./periodicNoteIndex";

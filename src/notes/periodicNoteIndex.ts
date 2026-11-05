@@ -1,4 +1,4 @@
-import type { Moment } from "moment";
+import type { Moment } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { NoteFile, VaultChange, VaultIndexPort } from "../adapters/vaultPort";
 import type { FileConfigs, FileGranularity } from "../fmt/resolveFileDate";

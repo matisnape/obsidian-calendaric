@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { Granularity } from "../types";
+import type { Granularity, Moment } from "../types";
 import { granularityEntry } from "../granularity/registry";
 
 function startUnit(granularity: Granularity, weekFormat: string) {

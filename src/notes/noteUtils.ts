@@ -1,5 +1,4 @@
-import type { Moment } from "moment";
-import type { Granularity, PeriodicConfig } from "../types";
+import type { Granularity, Moment, PeriodicConfig } from "../types";
 import type { VaultConfigPort } from "../adapters/vaultConfigPort";
 import type { VaultPort } from "../adapters/vaultPort";
 
