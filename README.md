@@ -1,32 +1,50 @@
-# Obsidian Sample Plugin
+# Calendaric
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Calendaric is an Obsidian plugin that shows a month calendar in the sidebar and creates one note per day, week, month or year. It replaces the Calendar plugin, the Periodic Notes plugin and the core Daily Notes plugin with one plugin.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+- **Status:** feature work is done. There is no published release yet, so you install it from source.
+- **Platform:** desktop only, Obsidian 1.13.7 or later.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Install
 
-## First time developing plugins?
+You need Node.js. The pinned version is in `mise.toml`.
 
-Quick starting guide for new plugin devs:
+1. Clone this repository.
+2. Run `npm ci`. It also runs the build, so `main.js` exists afterwards.
+3. Create `<your vault>/.obsidian/plugins/obsidian-calendaric/`.
+4. Copy `main.js`, `manifest.json` and `styles.css` into it.
+5. In Obsidian, switch on **Calendaric** under **Settings → Community plugins**.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+The [user manual's quick start](docs/user-manual.md#quick-start) covers the first daily note, including the step for vaults where the core Daily Notes plugin is still on.
 
-## Releasing new releases
+## Documentation
+
+- [User manual](docs/user-manual.md): every feature, setting and command, with what you should see.
+- [Format and template guide](docs/guide.md): format tokens, week rules and template variables. The settings screen links to it.
+- [Code map](docs/code-map.md): what each module does, how a click becomes a file, and where each backlog epic lives.
+- [Backlog](docs/backlog/README.md): the user stories and acceptance criteria. Run `python3 docs/backlog/report.py` for progress.
+
+## Development
+
+```bash
+npm ci               # install and build
+npm run build        # type-check, then bundle src/main.ts into main.js
+npm run dev          # rebuild on every change
+npm test             # vitest, once
+npm run verify       # the release gates: typecheck, lint, test
+npm run check:ac     # every passing acceptance criterion is backed by a test
+npm run release-check  # manifest.json, versions.json and tag checks
+```
+
+To try a change, copy the fresh `main.js` into the vault's plugin folder and reload Obsidian.
+
+### Linting
+
+- `npm run lint` runs eslint with the Obsidian plugin rules.
+- The pull-request workflow runs install, test and build on every pull request against `master`. It does **not** run lint, because `master` still carries lint errors and a lint gate would fail every pull request. Run `npm run lint` yourself and check that your change adds no new errors.
+- The **release** workflow does run lint, through `npm run verify`. Until the existing errors on `master` are cleaned up, a tagged release fails at the lint gate. That is deliberate: lint debt may block a release, it may not be hidden.
+
+## Releasing
 
 1. Update `minAppVersion` in `manifest.json` by hand if this release uses newer Obsidian APIs.
    See **Why `minAppVersion` is what it is** below before changing it.
@@ -74,71 +92,3 @@ One thing this does **not** buy you: `node_modules/obsidian` ships the `1.10.3` 
 definitions, which is below `1.13.7`. Type-checking therefore cannot catch a call that needs
 `1.11` or newer. Raising `minAppVersion` is a promise about the user's app, not a compiler
 setting.
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-Node is pinned to the version in `mise.toml`. With only that installed, a clean checkout needs
-exactly two commands:
-
-```bash
-npm ci          # also runs `prepare`, which builds — so main.js exists after this alone
-npm run build   # tsc --noEmit, then esbuild
-```
-
-Both produce `main.js` at the repository root, next to the `manifest.json` and `styles.css`
-that are checked in. Those three files are the release artefacts; nothing else is needed and
-no manual step follows.
-
-For day-to-day work:
-
-- `npm run dev` — esbuild in watch mode.
-- `npm run verify` — the three release gates: `typecheck`, `lint`, `test`. Reports every gate's
-  verdict and fails if any one of them fails or cannot run.
-- `npm run release-check` — the static manifest, `versions.json` and tag checks.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action runs install, test and build on every pull request against `master`.
-- That action does **not** run lint. eslint currently reports errors that already exist on `master`, so a lint gate would fail every pull request whatever it changed. Run `npm run lint` yourself and check that your own change adds no new errors.
-- The **release** workflow does run lint, through `npm run verify`. Until the existing errors on `master` are cleaned up, a tagged release will fail at the lint gate. That is deliberate: `master`'s lint debt is allowed to block a release, it is not allowed to be hidden.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
-
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
-
-## API Documentation
-
-See https://docs.obsidian.md
