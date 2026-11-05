@@ -207,7 +207,6 @@ describe("US-SET-02 global settings", () => {
 	});
 });
 
-// US-SET-08: monthly and yearly notes get the same editable group as daily and weekly.
 function group(tab: CalendaricSettingsTab, label: string): HTMLElement {
 	const found = Array.from(tab.containerEl.querySelectorAll<HTMLElement>(".periodic-group")).find(
 		(el) => el.querySelector(".periodic-group-title > span")?.textContent === label,
@@ -241,7 +240,6 @@ describe("US-SET-08 monthly and yearly settings", () => {
 		] as const) {
 			const { tab, plugin } = renderTab();
 			expect(fieldNames(group(tab, label))).toEqual(fieldsOf(adjective));
-			// A fresh tab shows the default format with no problem line under it.
 			expect(group(tab, label).querySelector(".calendaric-setting-problem")?.textContent).toBe("");
 
 			const toggle = enableToggle(group(tab, label));

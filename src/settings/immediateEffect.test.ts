@@ -80,7 +80,6 @@ class FakeCommandHost {
 		return this.palette.has(`calendaric:${id}`);
 	}
 
-	/** Runs a command the way choosing it in the palette does. */
 	run(id: string): void {
 		const command = this.palette.get(`calendaric:${id}`);
 		if (!command?.callback) throw new Error(`no command ${id} in the palette`);
@@ -575,7 +574,6 @@ describe("US-SET-08: monthly and yearly notes switched on and off on the setting
 		{ id: "year", label: "Yearly Notes", folder: "Yearly", format: "YYYY" },
 	] as const;
 
-	/** The group's own enable toggle, drawn in its heading row. */
 	function enableToggle(tab: CalendaricSettingsTab, label: string): HTMLInputElement {
 		const group = Array.from(tab.containerEl.querySelectorAll(".periodic-group")).find(
 			(el) => el.querySelector(".periodic-group-title > span")?.textContent === label,
