@@ -171,7 +171,6 @@ export class CalendaricSettingsTab extends PluginSettingTab {
 	private renderGeneralSection(parentEl: HTMLElement): void {
 		// AC-SET-02.1: the plugin-wide settings get their own container, apart from every granularity group.
 		const containerEl = parentEl.createDiv({ cls: "calendaric-global-settings" });
-		new Setting(containerEl).setName("General").setHeading();
 
 		new Setting(containerEl)
 			.setName("Start week on")

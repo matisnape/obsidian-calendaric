@@ -70,7 +70,7 @@ describe("CalendaricSettingsTab.display", () => {
 		const tab = makeTab();
 		tab.display();
 
-		expect(headings(tab.containerEl)).toEqual(["General", "Periodic notes", "Advanced"]);
+		expect(headings(tab.containerEl)).toEqual(["Periodic notes", "Advanced"]);
 		expect(tab.containerEl.querySelector(".calendaric-test-card")).not.toBeNull();
 		expect(warnings(tab.containerEl)).toHaveLength(0);
 	});
@@ -95,7 +95,7 @@ describe("CalendaricSettingsTab.display", () => {
 		const tab = makeTab();
 		tab.display();
 
-		expect(headings(tab.containerEl)).toEqual(["General", "Periodic notes", "Advanced"]);
+		expect(headings(tab.containerEl)).toEqual(["Periodic notes", "Advanced"]);
 	});
 
 	it("AC-ARCH-07.1: names the skipped section rather than dropping it silently", () => {
