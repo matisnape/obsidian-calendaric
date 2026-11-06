@@ -13,12 +13,6 @@
 	],
 	"out": "dist/docs",
 	"readme": "none",
-	"projectDocuments": [
-		"docs/user-manual.md",
-		"docs/guide.md",
-		"docs/code-map.md",
-		"docs/qa/testing-guide.md"
-	],
 	"highlightLanguages": [
 		"bash",
 		"console",
@@ -30,8 +24,7 @@
 		"json5",
 		"yaml",
 		"tsx",
-		"typescript",
-		"markdown"
+		"typescript"
 	],
 	"plugin": [
 		"typedoc-plugin-missing-exports"

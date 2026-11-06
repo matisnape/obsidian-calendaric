@@ -32,3 +32,8 @@ docs/backlog/pull_requests.json
 
 # TypeDoc API reference (npm run docs). Published by .github/workflows/docs.yml.
 dist/docs/
+
+# Guides copied from docs/ by site/assemble.sh
+site/guides/*
+!site/guides/index.md
+_site/
