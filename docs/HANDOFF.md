@@ -154,7 +154,6 @@ section: a block in the project's `evolution-log.md` with
 | `docs/backlog/README.md` | What the backlog is and how it was built. |
 | `docs/backlog/epics/*.json` | The stories. The source of truth. |
 | `docs/mapping/README.md` | The survey: sources, citation grammar, what the merge gate checks. |
-| `docs/reviews/*.md` | Seven rounds of adversarial review, and the responses. |
 | `docs/calendaric.html` | A browser view. `https://anks.localhost/obsidian-calendaric/calendaric.html`, or `cd docs && python3 -m http.server 8975`. |
 | `AGENTS.md` | Obsidian plugin conventions — file layout, manifest rules, release artifacts. |
 | `.claude/stack.json` | The resolved project shape. Git-ignored, per-machine. |
