@@ -462,7 +462,7 @@
       "story": "As a release owner, I want one clean build to run every gate and produce every release artifact, so that releases are reproducible.",
       "rationale": "AGENTS.md sets the manifest and versioning rules a release must satisfy. Elsewhere in the source material, the Periodic Notes fork had to drop lint from its build entirely because of a tooling bug, showing that a green build result does not by itself prove every gate ran. Separately, obsidian-daily-notes-interface needed a build-on-install script specifically so a consumer installing it directly from source would never silently receive unbuilt TypeScript in place of the compiled output.",
       "priority": "must",
-      "status": "in-progress",
+      "status": "done",
       "covers": [
         "forks:git-dependency-self-build"
       ],
@@ -509,8 +509,8 @@
           ],
           "verifies": "architecture",
           "testable_by": "manual",
-          "status": "unverified",
-          "evidence": "UNSETTLED, reported rather than judged: the criterion is about a pushed tag matching manifest.json version with no leading v. The comparison logic is covered (scripts/release-check.test.mjs, the AC-ARCH-06.3 case), but no tag has ever been pushed on this repository -- the only tag present, 1.0.0, is inherited from the upstream template history dating to 2020. Settling this needs a real tagged release, deliberately not created here."
+          "status": "pass",
+          "evidence": "Observed on the real release, 2026-11-06: tag 0.1.0 (no leading v) pushed on master e406586, where manifest.json version is 0.1.0. release.yml run https://github.com/matisnape/obsidian-calendaric/actions/runs/42190349395 passed its tag check and drafted the release with main.js, manifest.json and styles.css; published as https://github.com/matisnape/obsidian-calendaric/releases/tag/0.1.0"
         },
         {
           "id": "AC-ARCH-06.4",
