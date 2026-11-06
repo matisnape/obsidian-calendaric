@@ -157,13 +157,13 @@ Install these only when a scenario asks. Install them from **Settings → Commun
 
 While a predecessor plugin is enabled, Calendaric refuses to create notes for the granularity that plugin also manages. That is the feature tested in QA-MIG-04. Disable predecessors after their scenario, or later scenarios fail for the wrong reason.
 
-### Switch on monthly, yearly or quarter notes by hand
+### Switch on quarter notes by hand
 
-The settings screen shows **Monthly Notes**, **Yearly Notes** and **Quarterly Notes** with a disabled toggle. In this release they can only be switched on by a Periodic Notes import or by editing `data.json`. Some scenarios need that:
+**Monthly Notes** and **Yearly Notes** have a normal toggle: switch them on in **Settings → Calendaric** like **Daily Notes**. **Quarterly Notes** (and **Custom Notes**) are shown with a disabled toggle and cannot be switched on there. Quarter can only be switched on by editing `data.json`. Some scenarios need that:
 
 1. Open **Settings → Community plugins** and switch **Calendaric** off.
 2. Open `data.json` in a text editor.
-3. Find `calendarSets`, then its first entry, then `month` (or `year`, or `quarter`).
+3. Find `calendarSets`, then its first entry, then `quarter`.
 4. Set `"enabled": true` there. Save the file.
 5. Switch **Calendaric** on again.
 
@@ -562,13 +562,13 @@ Clean up: delete `2026-W17` and `2026-W18`.
 | # | Action | Expected result |
 |---|---|---|
 | 1 | Go to April 2026. Select the month header (the "Apr 2026" title). | The grid returns to the current month, like **Today**. |
-| 2 | Switch monthly notes on by hand (refer to [Switch on monthly notes](#switch-on-monthly-yearly-or-quarter-notes-by-hand)). Go to April 2026. | — |
+| 2 | Open **Settings → Calendaric** and switch the **Monthly Notes** heading toggle on. Close settings. Go to April 2026. | — |
 | 3 | Select the month header, then **Create** in the **New monthly note** dialog. | `2026-04` opens. The grid still shows April 2026. |
 | 4 | Hold Mod and select the header of May 2026, then **Create**. | `2026-05` opens in a split. |
 | 5 | Go to April 2026. Right-click the month header. | The file menu for `2026-04` appears at the pointer. |
 | 6 | Inspect the header with **View → Toggle developer tools**. | The header element has the class `calendaric-month-header` and the label "Open this month's note". |
 
-Clean up: delete both monthly notes. Switch monthly notes off again.
+Clean up: delete both monthly notes. Switch the **Monthly Notes** toggle off again.
 
 - [ ] Pass
 - [ ] Fail
@@ -731,7 +731,7 @@ Clean up: set **Note folder** back to `Journal/Daily` and **Words per dot** to `
 | 1 | In **Daily Notes**, turn **Open on startup** on. | The **Daily Notes** heading shows a **Opens at startup** badge. |
 | 2 | In **Weekly Notes**, turn **Open on startup** on. | **Daily Notes** switches off by itself, at once. Only **Weekly Notes** has the badge. |
 | 3 | Switch the **Weekly Notes** heading toggle off. | Its **Open on startup** toggle can no longer be changed. |
-| 4 | Look at **Quarterly Notes**. | Its toggle is disabled. It has no **Open on startup** option. |
+| 4 | Look at **Quarterly Notes**. | Its toggle is disabled. It has no **Open on startup** option. (**Monthly Notes** and **Yearly Notes** do offer **Open on startup**: see QA-SET-06.) |
 | 5 | Close Obsidian. In `data.json`, set `openAtStartup` to `true` for both `day` and `week` in the first `calendarSets` entry. Reopen. | Both groups show **Opens at startup**. Calendaric did not pick one for you. |
 | 6 | Turn **Open on startup** on for **Daily Notes** again (off then on). | Only **Daily Notes** stays on. |
 
@@ -775,6 +775,93 @@ Clean up: `chmod u+w` the file.
 - [ ] Pass
 - [ ] Fail
 
+#### QA-SET-06 Monthly and yearly groups can be switched on and have the full set of fields
+
+- Covers: AC-SET-08.1, AC-SET-08.4
+- Preconditions: setup done. **Monthly Notes** and **Yearly Notes** are off (the default).
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Open **Settings → Calendaric** and look at the **Periodic notes** section. | Groups in this order: **Daily Notes**, **Weekly Notes**, **Monthly Notes**, **Quarterly Notes**, **Yearly Notes**, **Custom Notes**. |
+| 2 | Look at the toggle of **Monthly Notes** and of **Yearly Notes**. | Both are off, and both can be clicked (neither looks greyed out). |
+| 3 | Switch the **Monthly Notes** heading toggle on. | The toggle stays on. No "unavailable" message. |
+| 4 | Select the **Monthly Notes** heading to expand it. | The group offers **Format**, **Note folder**, **Monthly Note Template**, **Allow prefix matching** and **Open on startup**, like **Daily Notes** and **Weekly Notes**. **Format** is empty and shows `YYYY-MM` as its placeholder. |
+| 5 | Switch the **Yearly Notes** heading toggle on, then expand the group. | The group offers **Format**, **Note folder**, **Yearly Note Template**, **Allow prefix matching** and **Open on startup**. **Format** is empty and shows `YYYY` as its placeholder. |
+| 6 | Turn **Open on startup** on in **Monthly Notes**. | The **Monthly Notes** heading shows an **Opens at startup** badge. |
+| 7 | Turn **Open on startup** on in **Yearly Notes**. | **Monthly Notes** switches off its **Open on startup** by itself, and its badge goes away. Only **Yearly Notes** has the badge. |
+| 8 | Look at **Quarterly Notes** and **Custom Notes**. | Both toggles are off and disabled: clicking them does nothing. Neither group offers any fields. |
+| 9 | Close settings and reopen **Settings → Calendaric**. | **Monthly Notes** and **Yearly Notes** are still on, and **Yearly Notes** still has **Opens at startup**. |
+
+Clean up: turn **Open on startup** off in **Yearly Notes**. Switch **Monthly Notes** and **Yearly Notes** off.
+
+- [ ] Pass
+- [ ] Fail
+
+#### QA-SET-07 Switching monthly and yearly on adds their commands without a restart
+
+- Covers: AC-SET-08.2
+- Preconditions: setup done. **Monthly Notes** and **Yearly Notes** are off. **Confirm before creating new note** is off. `QA/Monthly` and `QA/Yearly` do not exist.
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Open the command palette and type `monthly`, then `yearly`. | No Calendaric command for either. |
+| 2 | Open **Settings → Calendaric**. Switch the **Monthly Notes** heading toggle on. Close settings. Do not restart Obsidian. | — |
+| 3 | Open the command palette and type `monthly note`. | **Open current monthly note**, **Open next monthly note**, **Open previous monthly note**, **Jump forward to next existing monthly note** and **Jump backward to previous existing monthly note** are listed. |
+| 4 | Type `yearly` in the palette. | Still no yearly command. |
+| 5 | Open **Settings → Calendaric**. Switch the **Yearly Notes** heading toggle on. Close settings. | — |
+| 6 | Open the command palette and type `yearly note`. | **Open current yearly note**, **Open next yearly note**, **Open previous yearly note**, **Jump forward to next existing yearly note** and **Jump backward to previous existing yearly note** are listed. |
+| 7 | Run **Open current monthly note**. | A note for the current month opens, named with the default format (`YYYY-MM`, for example `2026-11`). It is created in the vault root, because **Note folder** is empty. |
+| 8 | Run **Open current yearly note**. | A note for the current year opens, named `YYYY` (for example `2026`), in the vault root. |
+| 9 | Run **Open current monthly note** again. | The same note opens. The vault has one file for the month, not two. |
+
+Clean up: delete the two notes. Switch **Monthly Notes** and **Yearly Notes** off.
+
+- [ ] Pass
+- [ ] Fail
+
+#### QA-SET-08 Switching monthly and yearly off removes their commands and creates no note
+
+- Covers: AC-SET-08.3
+- Preconditions: setup done. **Monthly Notes** and **Yearly Notes** are on. **Confirm before creating new note** is off. The vault holds no monthly or yearly note (the files `YYYY-MM.md` and `YYYY.md` for the current month and year do not exist).
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Open the command palette and type `monthly note`, then `yearly note`. | The monthly and the yearly commands are listed. |
+| 2 | Open **Settings → Calendaric**. Switch the **Monthly Notes** heading toggle off. Close settings. Do not restart Obsidian. | — |
+| 3 | Open the command palette and type `monthly`. | No monthly command. |
+| 4 | Type `yearly note` in the palette. | The yearly commands are still listed. |
+| 5 | Open **Settings → Calendaric**. Switch the **Yearly Notes** heading toggle off. Close settings. | — |
+| 6 | Open the command palette and type `yearly`. | No yearly command. **Open current daily note** and **Open current weekly note** are still there. |
+| 7 | Switch the **Monthly Notes** toggle on, turn its **Open on startup** on, then switch the **Monthly Notes** toggle off again. Quit Obsidian and reopen the vault. | No monthly note opens. A switched-off group never opens at startup. |
+| 8 | Look at the file explorer. | No monthly or yearly note was created. |
+| 9 | Press **Previous month** and **Next month** in the calendar, then select the month header. | No monthly note opens and no dialog asks to create one. |
+
+Clean up: switch **Monthly Notes** on, turn **Open on startup** off, then switch it off again.
+
+- [ ] Pass
+- [ ] Fail
+
+#### QA-SET-09 Monthly and yearly notes follow their own folder and format
+
+- Covers: AC-SET-08.2
+- Preconditions: setup done. **Confirm before creating new note** is off. **Monthly Notes** and **Yearly Notes** are on, with default format and empty folder and template. `QA/` does not exist.
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | In **Monthly Notes**, set **Note folder** to `QA/Monthly` and leave the field. | The field says the folder does not exist yet and is created with the first note. |
+| 2 | In **Monthly Notes**, set **Format** to `YYYY_MM`. | "Your current syntax looks like this:" shows the current year, an underscore and the month number. |
+| 3 | In **Yearly Notes**, set **Note folder** to `QA/Yearly` and **Format** to `[Year] YYYY`. | "Your current syntax looks like this:" shows `Year ` and the current year. |
+| 4 | Close settings. Run **Open current monthly note**. | A note opens, named for the current month in the `YYYY_MM` shape (for example `2026_11`). The file explorer shows it at `QA/Monthly/`. No note appears in the vault root. |
+| 5 | Run **Open current yearly note**. | A note opens, named `Year ` and the current year (for example `Year 2026`). It is at `QA/Yearly/`. |
+| 6 | Run **Open current monthly note** again. | The same note opens. `QA/Monthly` holds one file. |
+| 7 | Run **Open next monthly note**. | The note for the next month opens or is created in `QA/Monthly`, in the same `YYYY_MM` shape. |
+| 8 | Open **Settings → Calendaric**. In **Monthly Notes**, set **Format** to `YYYY-MM`. Close settings. Run **Open current monthly note**. | A second note, in the `YYYY-MM` shape, is created in `QA/Monthly`. The `YYYY_MM` note is left alone. |
+
+Clean up: delete `QA/`. Empty **Note folder** in **Monthly Notes** and **Yearly Notes**. Set **Format** back to `YYYY-MM` and `YYYY`. Switch both groups off. Turn **Confirm before creating new note** back on.
+
+- [ ] Pass
+- [ ] Fail
+
 ### CMD: commands and the ribbon icon
 
 #### QA-CMD-01 Open calendar
@@ -805,7 +892,7 @@ Clean up: `chmod u+w` the file.
 | 3 | Open `2026-04-06`, then type `daily note` in the palette. | All five: **Open current daily note**, **Jump forward to next existing daily note**, **Jump backward to previous existing daily note**, **Open next daily note**, **Open previous daily note**. |
 | 4 | Switch **Weekly Notes** off and type `weekly`. | No weekly command at all. |
 | 5 | Switch **Daily Notes** off too and type `Calendaric:`. | Only **Open calendar** and **Reveal active note** (and **Open date switcher** if Natural Language Dates is on). |
-| 6 | Switch quarter on by hand in `data.json` (refer to setup) and type `quarter`. | No quarterly command. |
+| 6 | Switch quarter on by hand in `data.json` (refer to [Switch on quarter notes by hand](#switch-on-quarter-notes-by-hand)) and type `quarter`. | No quarterly command. |
 
 Clean up: switch quarter off, **Daily Notes** and **Weekly Notes** on.
 
@@ -936,7 +1023,7 @@ Clean up: disable the Calendar plugin. Redo setup steps 5 and 6.
 | 7 | Also enable the Calendar plugin with weekly fields set, and turn on weekly notes in Periodic Notes. Open Calendaric settings. | The Calendar card offers no weekly folder, format or template: Periodic Notes governs week. |
 | 8 | Switch on core **Daily notes**, with daily notes off in Periodic Notes. | The Daily Notes import card is offered for day. |
 
-Clean up: disable Periodic Notes, Calendar and core **Daily notes**. Switch monthly notes off by hand. Redo setup step 5.
+Clean up: disable Periodic Notes, Calendar and core **Daily notes**. Switch the **Monthly Notes** toggle off. Redo setup step 5.
 
 - [ ] Pass
 - [ ] Fail
@@ -1049,7 +1136,7 @@ Generated by `python3 docs/qa/coverage.py --write`, from two sources:
 Run `python3 docs/qa/coverage.py --check` to confirm the table is current. It fails when a criterion is in neither place, when this file names an id that does not exist, or when the table is stale.
 
 <!-- coverage:start -->
-214 integration and manual criteria: 181 covered by a scenario, 33 listed as not testable by clicking. Scenarios also touch 1 unit criteria, not listed here.
+218 integration and manual criteria: 185 covered by a scenario, 33 listed as not testable by clicking. Scenarios also touch 1 unit criteria, not listed here.
 
 | AC | testable_by | Scenario |
 |---|---|---|
@@ -1257,6 +1344,10 @@ Run `python3 docs/qa/coverage.py --check` to confirm the table is current. It fa
 | AC-SET-07.2 | integration | QA-CAL-07 |
 | AC-SET-07.3 | integration | QA-SET-04 |
 | AC-SET-07.4 | manual | QA-SET-05 |
+| AC-SET-08.1 | integration | QA-SET-06 |
+| AC-SET-08.2 | integration | QA-SET-07, QA-SET-09 |
+| AC-SET-08.3 | integration | QA-SET-08 |
+| AC-SET-08.4 | integration | QA-SET-06 |
 | AC-TPL-03.2 | integration | QA-P-04 |
 | AC-TPL-04.1 | integration | QA-TPL-01 |
 | AC-TPL-04.2 | integration | QA-TPL-01 |
