@@ -11,6 +11,10 @@ on:
     paths:
       - "src/**"
       - "typedoc.json"
+      - "docs/user-manual.md"
+      - "docs/guide.md"
+      - "docs/code-map.md"
+      - "docs/qa/testing-guide.md"
       - "tsconfig.json"
       - "package.json"
       - "package-lock.json"
