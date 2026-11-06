@@ -79,7 +79,7 @@ jobs:
       - name: API docs (TypeDoc)
         run: |
           npm run docs
-          cp -R dist/docs _site/docs
+          sudo cp -R dist/docs _site/docs
 
       - uses: actions/upload-pages-artifact@v5
         with:
