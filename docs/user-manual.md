@@ -5,7 +5,7 @@
 Calendaric is an Obsidian plugin that shows a month calendar in the sidebar and creates one note per day, week, month or year.
 It replaces four older plugins: Calendar, Periodic Notes, the core Daily Notes plugin, and the library they shared.
 
-- Install it from source (there is no published release yet), switch it on, and the calendar appears in the right sidebar.
+- Install it from the [0.1.0 release](https://github.com/matisnape/obsidian-calendaric/releases/tag/0.1.0) (download three files into your vault), switch it on, and the calendar appears in the right sidebar.
 - Click a day to open that day's note. If the note does not exist, Calendaric asks, then creates it.
 - If the core Daily Notes plugin is still on, Calendaric will not create daily notes until you hand them over. The [quick start](#quick-start) shows how.
 
@@ -50,21 +50,19 @@ Format tokens and template variables have their own reference: the [format and t
 
 ## Quick start
 
-You need Obsidian 1.13.7 or later on a desktop computer. Calendaric does not run on mobile. You also need Node.js, because you build the plugin yourself.
+You need Obsidian 1.13.7 or later on a desktop computer. Calendaric does not run on mobile.
 
-1. Clone the repository: `git clone https://github.com/matisnape/obsidian-calendaric.git`.
-2. In the clone, run `npm ci`. This also builds the plugin, because the install runs the build script.
-3. If `main.js` is missing afterwards, run `npm run build`.
-4. Create the folder `<your vault>/.obsidian/plugins/obsidian-calendaric/`. The folder name must be `obsidian-calendaric`, the plugin id.
-5. Copy `main.js`, `manifest.json` and `styles.css` from the clone into that folder.
-6. In Obsidian, open **Settings → Community plugins**. If community plugins are off, turn them on. Reload the list of installed plugins, then switch on **Calendaric**.
-7. Open **Settings → Calendaric**. If the top of the screen shows **Daily notes plugin detected**, select **Import settings**. The card then reads **Daily notes plugin is still active**: select **Disable daily notes**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
-8. Find the calendar in the right sidebar. Its tab is called **Calendar**. If it is not there, run **Open calendar** from the command palette.
-9. Click today's date in the grid.
+1. Download `main.js`, `manifest.json` and `styles.css` from the [0.1.0 release](https://github.com/matisnape/obsidian-calendaric/releases/tag/0.1.0).
+2. Create the folder `<your vault>/.obsidian/plugins/obsidian-calendaric/`. The folder name must be `obsidian-calendaric`, the plugin id.
+3. Put the three files into that folder.
+4. In Obsidian, open **Settings → Community plugins**. If community plugins are off, turn them on. Reload the list of installed plugins, then switch on **Calendaric**.
+5. Open **Settings → Calendaric**. If the top of the screen shows **Daily notes plugin detected**, select **Import settings**. The card then reads **Daily notes plugin is still active**: select **Disable daily notes**, then **Disable plugin** in the dialog. Skip this step if the card is not there.
+6. Find the calendar in the right sidebar. Its tab is called **Calendar**. If it is not there, run **Open calendar** from the command palette.
+7. Click today's date in the grid.
 
 **What you should see:** a dialog titled **New daily note** asks whether to create a file such as `2026-11-05.md`. Select **Create**. The note opens in the active pane, and a dot appears under today's date.
 
-If a notice says *"Calendaric: The core Daily Notes plugin still manages daily notes, so Calendaric did not create this one."*, step 7 did not happen. Select **Use Calendaric** in the notice, then click the day again.
+If a notice says *"Calendaric: The core Daily Notes plugin still manages daily notes, so Calendaric did not create this one."*, step 5 did not happen. Select **Use Calendaric** in the notice, then click the day again.
 
 ## The calendar view
 

@@ -76,6 +76,11 @@ jobs:
           source: site
           destination: _site
 
+      # The Primer theme adds an "Improve this page" link built from the page path
+      # (guides/x.md), which does not exist in the repo. Drop it.
+      - name: remove broken edit link
+        run: sudo find _site -name '*.html' -exec sed -i 's#This site is open source\. <a href="[^"]*">Improve this page</a>\.##' {} +
+
       - name: API docs (TypeDoc)
         run: |
           npm run docs
