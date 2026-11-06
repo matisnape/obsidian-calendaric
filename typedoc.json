@@ -1,0 +1,32 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"name": "Calendaric",
+	"entryPoints": [
+		"src"
+	],
+	"entryPointStrategy": "expand",
+	"exclude": [
+		"**/*.test.ts",
+		"**/*.typetest.ts",
+		"**/__mocks__/**",
+		"src/ui/test-setup.ts"
+	],
+	"out": "dist/docs",
+	"readme": "none",
+	"plugin": [
+		"typedoc-plugin-missing-exports"
+	],
+	"compilerOptions": {
+		"skipLibCheck": true
+	},
+	"externalSymbolLinkMappings": {
+		"obsidian": {
+			"*": "https://docs.obsidian.md/Reference/TypeScript+API/Reference"
+		},
+		"typescript": {
+			"setInterval": "https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval"
+		}
+	},
+	"excludeExternals": true,
+	"treatWarningsAsErrors": true
+}

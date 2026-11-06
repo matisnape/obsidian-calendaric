@@ -29,3 +29,6 @@ __pycache__/
 # only reflects this branch's own epic edits. Regenerate with:
 #   python3 docs/backlog/build_pr_index.py
 docs/backlog/pull_requests.json
+
+# TypeDoc API reference (npm run docs). Published by .github/workflows/docs.yml.
+dist/docs/
