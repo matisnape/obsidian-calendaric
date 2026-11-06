@@ -1,15 +1,31 @@
-name: API docs
+name: Site
 
-# Builds the TypeDoc API reference and publishes it to GitHub Pages
-# (http://anks.pl/obsidian-calendaric/). Pages is set to "GitHub Actions" as its
-# source in the repository settings. Runs on master only, so the site always
-# matches the merged code, and by hand from the Actions tab. The paths filter
-# skips pushes that cannot change the site (backlog, markdown), to save run minutes.
+# Builds the site and publishes it to GitHub Pages (https://anks.pl/obsidian-calendaric/):
+#   /        landing page         (site/index.md, Jekyll)
+#   /guides/ the Markdown guides  (docs/*.md copied by site/assemble.sh, Jekyll)
+#   /docs/   TypeDoc API reference
+# Pages is set to "GitHub Actions" as its source in the repository settings.
+# The build runs on pull requests too, so a change can be checked before merge;
+# only master deploys. The paths filter skips changes that cannot alter the site.
 on:
   push:
     branches: [master]
     paths:
       - "src/**"
+      - "site/**"
+      - "typedoc.json"
+      - "docs/user-manual.md"
+      - "docs/guide.md"
+      - "docs/code-map.md"
+      - "docs/qa/testing-guide.md"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "site/**"
       - "typedoc.json"
       - "docs/user-manual.md"
       - "docs/guide.md"
@@ -33,14 +49,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: build and deploy API docs
+  build:
+    name: build site
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - uses: actions/checkout@v7
 
@@ -55,12 +67,33 @@ jobs:
       - name: install
         run: npm ci --ignore-scripts
 
-      - name: docs
-        run: npm run docs
+      - name: assemble guides
+        run: site/assemble.sh
+
+      - name: build pages (Jekyll)
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: site
+          destination: _site
+
+      - name: API docs (TypeDoc)
+        run: |
+          npm run docs
+          cp -R dist/docs _site/docs
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: dist/docs
+          path: _site
 
+  deploy:
+    name: deploy
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v5

@@ -1,0 +1,11 @@
+title: Calendaric
+description: Calendar and periodic notes for Obsidian.
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-relative-links
+# Turns [x](guide.md#a) into a link to the rendered page.
+relative_links:
+  enabled: true
+  collections: false
+exclude:
+  - assemble.sh
