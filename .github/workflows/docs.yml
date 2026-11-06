@@ -90,6 +90,10 @@ jobs:
         with:
           path: _site
 
+  # A Pages deployment is keyed by the commit sha. Once one is cancelled (the
+  # 10-minute timeout below, or a stall on GitHub's side), every rerun for that
+  # same commit fails within seconds with "Deployment cancelled." Rerunning does
+  # not help: land a new commit on master instead.
   deploy:
     name: deploy
     needs: build
