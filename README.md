@@ -2,18 +2,24 @@
 
 Calendaric is an Obsidian plugin that shows a month calendar in the sidebar and creates one note per day, week, month or year. It replaces the Calendar plugin, the Periodic Notes plugin and the core Daily Notes plugin with one plugin.
 
-- **Status:** feature work is done. There is no published release yet, so you install it from source.
+- **Status:** feature work is done. The latest release is on the [releases page](https://github.com/matisnape/obsidian-calendaric/releases/latest). The plugin is not in Obsidian's community plugin catalog yet, so you install it by hand.
 - **Platform:** desktop only, Obsidian 1.13.7 or later.
 
 ## Install
+
+1. Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/matisnape/obsidian-calendaric/releases/latest).
+2. Create `<your vault>/.obsidian/plugins/obsidian-calendaric/`.
+3. Copy the three files into it.
+4. In Obsidian, switch on **Calendaric** under **Settings → Community plugins**.
+
+### Install from source
 
 You need Node.js. The pinned version is in `mise.toml`.
 
 1. Clone this repository.
 2. Run `npm ci`. It also runs the build, so `main.js` exists afterwards.
-3. Create `<your vault>/.obsidian/plugins/obsidian-calendaric/`.
-4. Copy `main.js`, `manifest.json` and `styles.css` into it.
-5. In Obsidian, switch on **Calendaric** under **Settings → Community plugins**.
+3. Copy `main.js`, `manifest.json` and `styles.css` into `<your vault>/.obsidian/plugins/obsidian-calendaric/`.
+4. Switch the plugin on as in step 4 above.
 
 The [user manual's quick start](docs/user-manual.md#quick-start) covers the first daily note, including the step for vaults where the core Daily Notes plugin is still on.
 
