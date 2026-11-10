@@ -51,10 +51,12 @@ export interface CompanionPluginPort {
  * The Calendar plugin, as far as it can still create notes on its own.
  *
  * Its one setting that does is `showWeeklyNote`: with it on, the grid shows
- * week numbers and a click on one creates a weekly note. Its weekly format,
- * folder and template fields are dead in the surveyed build
- * (docs/mapping/sources/cal.json), and it has no daily switch of its own --
- * the daily notes it creates follow Daily Notes' or Periodic Notes' settings.
+ * week numbers and a click on one creates a weekly note. Its own source never
+ * reads its weekly format, folder and template fields
+ * (docs/mapping/sources/cal.json), but obsidian-daily-notes-interface does:
+ * that weekly note uses them whenever Periodic Notes is not handling weekly
+ * notes. It has no daily switch of its own -- the daily notes it creates
+ * follow Daily Notes' or Periodic Notes' settings.
  *
  * A port of its own rather than two more members on `CompanionPluginPort`,
  * which the Daily Notes import and its tests implement in full.
