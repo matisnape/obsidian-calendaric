@@ -104,7 +104,8 @@ export async function startUp(
 ): Promise<void> {
 	announceOverlaps(ports.vault);
 
-	// Only one granularity can have openAtStartup (enforced by clearStartupNote).
+	// The settings tab keeps one openAtStartup on (clearStartupNote), but a
+	// hand-edited data.json can carry more: the first enabled one in release order wins.
 	const key = RELEASE_GRANULARITIES.find((granularity) => settings[granularity].openAtStartup && settings[granularity].enabled);
 	if (!key) return;
 	const config = settings[key];

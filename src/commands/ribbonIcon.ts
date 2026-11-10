@@ -37,11 +37,12 @@ export interface MenuEntry {
 export type ShowMenu = (entries: MenuEntry[], evt: MouseEvent) => void;
 
 /**
- * One ribbon icon for the first active granularity, with a right-click menu for
- * every active one (US-CMD-08).
+ * One ribbon icon for the first active granularity, with a right-click menu
+ * listing every active one when there are two or more (US-CMD-08).
  *
  * `sync` runs on load and after every settings change. Clicks read the
- * granularities of the last sync, so the icon always opens what it says.
+ * granularities of the last sync, so the icon opens what its tooltip says
+ * while any granularity is on. With none on, it stays and does nothing.
  */
 export class RibbonIcon {
 	private el: HTMLElement | null = null;
